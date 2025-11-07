@@ -21,7 +21,7 @@ PROMPT_DIR = Config.get_prompt_dir()
 SYSTEM_PROMPT_PATH = "./prompt/promptGen System.txt"
 USER_PROMPT_PATH = "./prompt/promptGen User.txt"
 AI_PROMPT_PATH = "./prompt/promptGen AI.txt"
-JSON_PATH = Config.get_json_path()
+JSON_PATH = "./preprocess_data/csv_all_methods.json"
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
     # 사용자에게 모델 선택 요청 (번호 입력)
     while True:
         # 예시를 위해 고정 (원본 로직 유지)
-        model_choice = '4' #o1-mini
+        model_choice = '6' #o4-mini
 
         if model_choice in Config.MODEL_MAP:
             model = Config.MODEL_MAP[model_choice]

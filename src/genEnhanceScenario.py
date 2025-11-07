@@ -8,6 +8,7 @@ import io
 import subprocess
 import os
 from pathlib import Path
+import re
 
 # Custom Config Class
 from config import Config
@@ -18,7 +19,7 @@ PROMPT_DIR = Config.get_prompt_dir()
 SYSTEM_PROMPT_PATH = "./prompt/enhanceScenarioSystem.txt"
 USER_PROMPT_PATH = "./prompt/enhanceScenarioUser.txt"
 AI_PROMPT_PATH = "./prompt/enhanceScenarioAI.txt"
-JSON_PATH = Config.get_json_path()
+JSON_PATH = "./preprocess_data/dab_all_methods.json"
 SOURCE_DIR = "./result"
 
 def read_and_join_java_sources_with_header(folder_path, class_name, method_name):
@@ -27,16 +28,19 @@ def read_and_join_java_sources_with_header(folder_path, class_name, method_name)
     각 파일 앞에 'class_name::method_name' 포맷의 헤더를 붙임.
     """
     java_files = []
+    
+    # 파일명 패턴: 예) MyClass_doSomething_1_Test.java
+    pattern = re.compile(rf"^{re.escape(class_name)}_{re.escape(method_name)}_(\d+)_Test\.java$")
 
-    # 1. 모든 .java 파일 수집
+    # 1. 매칭되는 파일만 수집
     for root, _, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(".java"):
+            if pattern.match(file):
                 full_path = os.path.join(root, file)
                 java_files.append((file, full_path))
 
-    # 2. 파일 이름 기준 정렬
-    java_files.sort(key=lambda x: x[0])
+    # 2. 파일 이름 기준 정렬 (숫자 순으로)
+    java_files.sort(key=lambda x: int(re.search(r"_(\d+)_Test\.java$", x[0]).group(1)))
 
     # 3. 파일 내용 합치기
     combined_code = ""
@@ -57,7 +61,7 @@ def main():
     # 사용자에게 모델 선택 요청 (번호 입력)
     while True:
         # 예시를 위해 고정 (원본 로직 유지)
-        model_choice = '4' #o1-mini
+        model_choice = '6' #o1-mini
 
         if model_choice in Config.MODEL_MAP:
             model = Config.MODEL_MAP[model_choice]
@@ -95,7 +99,11 @@ def main():
             library_name = row.get("lib", "").strip()
             class_name = row.get("class", "").strip()
             name = row.get("name", "").strip()
-            unit_tests = read_and_join_java_sources_with_header(SOURCE_DIR, class_name, name)
+
+            unit_tests = read_and_join_java_sources_with_header(f'{library_name}_{class_name}_{name}_result', class_name, name)
+            if os.path.exists(f'{library_name}_{class_name}_{name}_e1_result'):
+                unit_tests += "\n\n// --- already Enhanced Scenario 1 Tests --- \n\n"
+                unit_tests += read_and_join_java_sources_with_header(f'{library_name}_{class_name}_{name}_e1_result', class_name, name)
 
             target_dict = dict()
             
@@ -116,7 +124,7 @@ def main():
                 user_prompt_modified = user_prompt.replace("{ LIBRARY_NAME }", library_name)
                 user_prompt_modified = user_prompt_modified.replace("{ CLASS_BODY }", original_code)
                 user_prompt_modified = user_prompt_modified.replace("{ CLASS_NAME }", target_dict["clazz"])
-                user_prompt_modified = user_prompt_modified.replace("{ EXISTING_TEST_SUITE }", unit_tests)
+                user_prompt_modified = user_prompt_modified.replace("{ EXISTING_TEST_SUITE }", unit_tests, 1)
                 user_prompt_modified = user_prompt_modified.replace("{ METHOD_NAME }", target_dict["methodName"])
                 user_prompt_modified = user_prompt_modified.replace("{ VISIBILITY }", target_dict["visibility"])
                 user_prompt_modified = user_prompt_modified.replace("{ METHOD_SIGNATURE }", target_dict["signature"])

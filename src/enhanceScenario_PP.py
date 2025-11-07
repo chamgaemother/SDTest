@@ -7,15 +7,19 @@ output_dir = "./result/enhance_scenarios"
 from Utils import count_txt_files_in_enhance
 def main() :
     global output_dir
- 
-    if count_txt_files_in_enhance() > 0:
-        output_dir = "./result/2enhance_scenarios"
+    # 출력 디렉토리 생성 (없으면)
+    target = "2enhance_scenarios.txt"
+    for filename in os.listdir(input_dir):
+        if filename.endswith(target):
+            output_dir = "./result/2enhance_scenarios"
+        else :
+            output_dir = "./result/enhance_scenarios"
     os.makedirs(output_dir, exist_ok=True)
 
-
+    # 결과 출력용
     print(f"Splitting JSON 'enhance_scenarios' into chunks of 5...")
 
-    # .txt 
+    # .txt 파일 반복 처리
     for filename in os.listdir(input_dir):
         target = "enhance_scenarios.txt"
         if count_txt_files_in_enhance() > 0:
@@ -31,7 +35,7 @@ def main() :
                     print(f"❌ Error parsing {filename}: {e}")
                     continue
 
-            #
+            # 시나리오 추출 및 분할
             scenarios = data.get("scenarios", [])
             chunks = [scenarios[i:i + 5] for i in range(0, len(scenarios), 5)]
 
@@ -47,4 +51,3 @@ def main() :
 
     print("🎉 Done.")
 
-main()

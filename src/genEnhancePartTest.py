@@ -16,7 +16,7 @@ from Utils import count_txt_files_in_enhance, chat_with_openai, load_prompt, cou
 SYSTEM_PROMPT_PATH = "./prompt/enhanceTest System.txt"
 USER_PROMPT_PATH = "./prompt/enhanceTest User.txt"
 AI_PROMPT_PATH = "./prompt/enhanceTest AI.txt"
-JSON_PATH = Config.get_json_path()
+JSON_PATH = "./preprocess_data/dab_all_methods.json"
 
 def process_prompt_file(i, file_path, library_name, class_name, name, original_code, target_dict,
                         user_prompt, system_prompt, ai_prompt, model):
@@ -101,7 +101,7 @@ def process_prompt_file(i, file_path, library_name, class_name, name, original_c
 def main() :
     print("-- OpenAI Chat 시작 (종료하려면 'exit' 입력)")
 
-    model_choice = '4'  # gpt-4o-mini 고정
+    model_choice = '6'  # gpt-4o-mini 고정
     model = Config.MODEL_MAP.get(model_choice)
     if not model:
         print("-- 유효하지 않은 모델 선택")
