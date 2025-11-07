@@ -11,7 +11,11 @@ class Config:
     "1": "gpt-4o",
     "2": "gpt-4o-mini",
     "3": "o1",
-    "4": "o1-mini"
+    "4": "o1-mini",
+    "5": "o3-mini",
+    "6": "o4-mini",
+    "7": "gpt-4.1",
+    "8": "gpt-5"
     }
 
     @classmethod
@@ -69,3 +73,4 @@ class Config:
     def set_max_tokens(cls, new_max_tokens):
   
         cls.__MAX_TOKENS = new_max_tokens
+
