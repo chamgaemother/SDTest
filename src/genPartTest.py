@@ -16,7 +16,7 @@ from Utils import count_txt_files_in_scenarios, chat_with_openai, load_prompt, e
 SYSTEM_PROMPT_PATH = "./prompt/initialTest System.txt"
 USER_PROMPT_PATH = "./prompt/initialTest User.txt"
 AI_PROMPT_PATH = "./prompt/initialTest AI.txt"
-JSON_PATH = "./preprocess_data/csv_all_methods.json"
+JSON_PATH = Config.get_json_path()
 
 def process_prompt_file(i, file_path, library_name, class_name, name, original_code, target_dict,
                         user_prompt, system_prompt, ai_prompt, model):
@@ -172,4 +172,5 @@ def main() :
     print("\n-- 모든 경로에 대한 처리가 완료되었습니다!")
 
 if __name__ == "__main__":
+
     main()
