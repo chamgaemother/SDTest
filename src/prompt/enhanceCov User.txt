@@ -1,0 +1,71 @@
+[ROLE]
+A highly capable AI assistant specialized in generating JUnit 5 test classes.
+The goal is to generate comprehensive and well-structured test code for a given **method** within a given Java class.
+Below is the original Java class (which contains the target method) and the existing JUnit 5 test code that runs well for that method.
+
+[INPUT]
+- Library Name: { Library Name }
+- Class Name: { CLASS_NAME }
+- Class body    → { CLASS_BODY }
+- Target method →  { METHOD_NAME }
+- Visibility → { VISIBILITY }
+- Method signature →  { METHOD_SIGNATURE }
+- Target method body → { METHOD_BODY }
+- Original Class Code: { Insert actual source code here }
+- Existing Unit Test Codes: { Original Unit Test }
+
+[FULL CFG]
+=== BLOCK LIST ===
+{ BLOCK_LIST }
+=== BLOCK EDGES ===
+{ BLOCK_EDGES }
+
+[DECISION FLOW SUMMARY]
+{ FLOW_SUMMARY }
+
+[REQUIREMENT]
+1. **Coverage Improvement**
+   - Analyze the existing unit test code to find which branches/conditions of the method need more tests.
+   - Propose and implement **new test methods** for untested or under-tested scenarios (null inputs, invalid strings, exceptions, etc.).
+   - Minimize mocking; test the real implementation whenever possible.
+   - Please create and implement a new test scenario that does not overlap coverage.
+
+2. **Final Deliverable**
+   - A single compilable JUnit 5 test class that runs without errors.
+   - Include a comment or @DisplayName describing newly added cases.
+   -Please briefly comment the scenario explaining the newly added case.
+   - Provide a short description (1–2 paragraphs) after the test class on how coverage was improved.
+
+3. **Completeness**
+   - Create a fully compilable JUnit 5 test class that can run without errors.
+   - The existing unit test code is a normal code that runs without errors. 
+   - Please include only new test scenario implementations that do not duplicate existing test scenarios in the results.
+   - Name it `public class { class_name }_{ METHOD_NAME }_enhance_Test' and make sure it targets the method of your choice.
+
+[EMPHASIS / REQUESTS]
+Maximize **method-level**  addtional branch coverage for the target method while maintaining clarity and correctness.
+
+[OUTPUT FORMAT]
+The final output should follow this structure:
+```json
+{ 
+    "improvementTest": "<insert JUnit5 test class result here>", 
+    "note": "<insert brief description here>" 
+}
+```
+
+Enclose the JSON output in triple backticks as "json" for easier parsing.  
+Output only one JSON file.
+
+ [Generation Instructions]
+ 1. **No shared setup** – do **not** use `@BeforeEach` or any setup method; initialize all state and inputs inside each `@Test`.
+ 2. **Display names** – annotate each test with `@DisplayName` using the scenario’s `description`.
+ 3. **Exact assertions** – use precisely the assertion style(`assertEquals`, `assertThrows`, `assertAll`, etc.).
+ 4. **Visibility** – if the method under test or required fields are private or package-private, use reflection or test-only accessors without modifying production code.
+ + - **Always** include the full reflection code in each test for private/package-private elements: locate the member, call `setAccessible(true)`, and invoke or read/write as needed.
+ 5. **Independence** – ensure each test runs in isolation, resets or avoids any static or shared state per scenario.
+ 6. **Coverage** – cover all branches, edge cases, and exception paths described by the scenarios.
+ 7. **Imports and class setup** – include all needed imports; name the class  
+    `public class { class_name }_{ METHOD_NAME }_enhance_Test { … }`.  
+ 8. **Compile-ready** – the generated code must compile and run as-is without further edits.
+
