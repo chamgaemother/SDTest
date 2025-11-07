@@ -21,7 +21,7 @@ PROMPT_DIR = Config.get_prompt_dir()
 SYSTEM_PROMPT_PATH = "./prompt/errorGuide_System.txt"
 USER_PROMPT_PATH = "./prompt/errorGuide_User.txt"
 AI_PROMPT_PATH = "./prompt/errorFix AI.txt"
-JSON_PATH = "./preprocess_data/dab_all_methods.json"
+JSON_PATH = Config.get_json_path()
 SOURCE_DIR = "./result"
 ERROR_DIR = "./error_logs"
 
@@ -245,4 +245,5 @@ def main():
     return
 
 if __name__ == "__main__":
+
     main()
