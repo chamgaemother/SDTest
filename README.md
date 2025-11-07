@@ -45,10 +45,10 @@ In your config (e.g. `config.py`), set the following fields:
 ### Step 3: Run the core MANTIS pipeline
 
 ```python main.py``` : 
-Generates MANTIS el.0.
+Generates MANTIS e0.
 
 ```python main_enhance.py``` : 
-Based on MANTIS el.N, generates MANTIS el.N+1 (up to 2 iterations).
+Based on MANTIS eN, generates MANTIS eN+1.
 
 ### Step 4: Measure Coverage
 
