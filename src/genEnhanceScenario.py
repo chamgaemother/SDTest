@@ -19,7 +19,7 @@ PROMPT_DIR = Config.get_prompt_dir()
 SYSTEM_PROMPT_PATH = "./prompt/enhanceScenarioSystem.txt"
 USER_PROMPT_PATH = "./prompt/enhanceScenarioUser.txt"
 AI_PROMPT_PATH = "./prompt/enhanceScenarioAI.txt"
-JSON_PATH = "./preprocess_data/dab_all_methods.json"
+JSON_PATH = Config.get_json_path()
 SOURCE_DIR = "./result"
 
 def read_and_join_java_sources_with_header(folder_path, class_name, method_name):
@@ -164,4 +164,5 @@ def main():
 
 # 채팅 실행
 if __name__ == "__main__":
+
     main()
