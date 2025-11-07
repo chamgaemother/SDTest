@@ -21,7 +21,7 @@ PROMPT_DIR = Config.get_prompt_dir()
 SYSTEM_PROMPT_PATH = "./prompt/promptGen System.txt"
 USER_PROMPT_PATH = "./prompt/promptGen User.txt"
 AI_PROMPT_PATH = "./prompt/promptGen AI.txt"
-JSON_PATH = "./preprocess_data/csv_all_methods.json"
+JSON_PATH = Config.get_json_path()
 
 
 def main():
@@ -141,4 +141,5 @@ def main():
 
 # 채팅 실행
 if __name__ == "__main__":
+
     main()
