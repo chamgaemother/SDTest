@@ -1,4 +1,4 @@
-# MANTIS : Multi-Agent based Unit-Test Generation
+# SDTest : Scenario-Driven Unit Test Generation with Multi-Agent LLMs.
 
 ----------
 # Requirement
