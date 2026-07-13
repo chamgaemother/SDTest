@@ -1,0 +1,187 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.DataUtil;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.zip.GZIPOutputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC11: parse(File, charsetName) uses file path as baseUri and UTF-8 charset when provided")
+    public void test_TC11() throws Exception {
+        // GIVEN a temporary HTML file with a simple span element
+        File temp = File.createTempFile("tc11", ".html");
+        temp.deleteOnExit();
+        String html = "<span>hello</span>";
+        Files.write(temp.toPath(), html.getBytes("UTF-8"));
+
+        // WHEN parsing with explicit UTF-8 charset
+        Document doc = Jsoup.parse(temp, "UTF-8");
+
+        // THEN the span text should be 'hello'
+        // (covers B0→B1→B2→B3 where DataUtil.load(File, charset, baseUri) is invoked)
+        assertEquals("hello", doc.select("span").text());
+    }
+
+    @Test
+    @DisplayName("TC12: parse(File) uses BOM or meta to detect charset and file path as baseUri")
+    public void test_TC12() throws Exception {
+        // GIVEN a temporary HTML file starting with UTF-8 BOM and containing <em>e</em>
+        File temp = File.createTempFile("tc12", ".html");
+        temp.deleteOnExit();
+        byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] content = "<em>e</em>".getBytes("UTF-8");
+        try (FileOutputStream fos = new FileOutputStream(temp)) {
+            fos.write(bom);
+            fos.write(content);
+        }
+
+        // WHEN parsing without specifying charset
+        Document doc = Jsoup.parse(temp);
+
+        // THEN the em text should be 'e'
+        // (covers B0→B1→B2→B3 with null charset, BOM detection path)
+        assertEquals("e", doc.select("em").text());
+    }
+
+    @Test
+    @DisplayName("TC13: parse(File, charsetName, baseUri, parser) uses custom parser on gzipped file")
+    public void test_TC13() throws Exception {
+        // GIVEN a gzipped HTML file with a self-closing item tag
+        File temp = File.createTempFile("tc13", ".gz");
+        temp.deleteOnExit();
+        try (GZIPOutputStream gos = new GZIPOutputStream(new FileOutputStream(temp))) {
+            gos.write("<item/>".getBytes("UTF-8"));
+        }
+        Parser xml = Parser.xmlParser();
+
+        // WHEN parsing with explicit charset, baseUri and XML parser
+        Document doc = Jsoup.parse(temp, "UTF-8", "base", xml);
+
+        // THEN the XML parser should yield exactly one <item> element
+        // (covers B0→B1→B4→B5 that delegate to DataUtil.load with Parser)
+        assertEquals(1, doc.select("item").size());
+    }
+
+    @Test
+    @DisplayName("TC14: parse(Path, charsetName) reads Path with provided charset and resolves baseUri automatically")
+    public void test_TC14() throws Exception {
+        // GIVEN a Path to HTML file with a div containing 'ok'
+        Path path = Files.createTempFile("tc14", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<div>ok</div>";
+        Files.write(path, html.getBytes("UTF-8"), StandardOpenOption.WRITE);
+
+        // WHEN parsing with explicit charset via Path overload
+        Document doc = Jsoup.parse(path, "UTF-8");
+
+        // THEN should parse and select div text 'ok'
+        // (covers B0→B1→B2→B3 DataUtil.load(Path, charset, baseUri))
+        assertEquals("ok", doc.select("div").text());
+    }
+
+    @Test
+    @DisplayName("TC15: parse(Path) auto-detects charset and uses absolute path for baseUri")
+    public void test_TC15() throws Exception {
+        // GIVEN a Path to HTML file with BOM plus <i>it</i>
+        Path path = Files.createTempFile("tc15", ".html");
+        path.toFile().deleteOnExit();
+        byte[] bom = new byte[]{(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] content = "<i>it</i>".getBytes("UTF-8");
+        try (OutputStream os = Files.newOutputStream(path, StandardOpenOption.WRITE)) {
+            os.write(bom);
+            os.write(content);
+        }
+
+        // WHEN parsing via single-arg Path overload
+        Document doc = Jsoup.parse(path);
+
+        // THEN the italics text should be 'it'
+        // (covers B0→B1→B2→B3 null charset path and absolute path URI)
+        assertEquals("it", doc.select("i").text());
+    }
+
+    @Test
+    @DisplayName("TC16: parse(Path, charsetName, baseUri, parser) applies custom parser on Path")
+    public void test_TC16() throws Exception {
+        // GIVEN a Path to file with XML-style <tag/>
+        Path path = Files.createTempFile("tc16", ".xml");
+        path.toFile().deleteOnExit();
+        String xmlContent = "<tag/>";
+        Files.write(path, xmlContent.getBytes("UTF-8"));
+
+        Parser xml = Parser.xmlParser();
+
+        // WHEN parsing via Path overload with parser
+        Document doc = Jsoup.parse(path, "UTF-8", "u", xml);
+
+        // THEN exactly one <tag> element is present
+        // (covers B0→B1→B4→B5 DataUtil.load with Parser on Path)
+        assertEquals(1, doc.select("tag").size());
+    }
+
+    @Test
+    @DisplayName("TC17: parse(InputStream, charsetName, baseUri) closes stream and parses with given charset")
+    public void test_TC17() throws Exception {
+        // GIVEN a custom InputStream that tracks close() and contains <b>bs</b>
+        byte[] data = "<b>bs</b>".getBytes("UTF-8");
+        AtomicBoolean closed = new AtomicBoolean(false);
+        InputStream in = new ByteArrayInputStream(data) {
+            @Override
+            public void close() throws IOException {
+                super.close();
+                closed.set(true);
+            }
+        };
+
+        // WHEN parsing via InputStream overload
+        Document doc = Jsoup.parse(in, "UTF-8", "u");
+
+        // THEN the bold text is 'bs' and the stream has been closed
+        // (covers B0→B1→B2→B3 DataUtil.load(InputStream,...))
+        assertEquals("bs", doc.select("b").text());
+        assertTrue(closed.get(), "InputStream should be closed after parsing");
+    }
+
+    @Test
+    @DisplayName("TC18: parse(InputStream, charsetName, baseUri, parser) with xml parser")
+    public void test_TC18() throws Exception {
+        // GIVEN an InputStream containing <x/> and a custom XML parser
+        byte[] data = "<x/>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(data);
+        Parser xml = Parser.xmlParser();
+
+        // WHEN parsing via InputStream overload with parser
+        Document doc = Jsoup.parse(in, "UTF-8", "u", xml);
+
+        // THEN exactly one <x> element is parsed
+        // (covers B0→B1→B4→B5 DataUtil.load(InputStream,...,Parser))
+        assertEquals(1, doc.select("x").size());
+    }
+
+    @Test
+    @DisplayName("TC19: parse(File, charsetName) throws IOException on invalid charset")
+    public void test_TC19() throws Exception {
+        // GIVEN a temporary HTML file with a simple paragraph
+        File temp = File.createTempFile("tc19", ".html");
+        temp.deleteOnExit();
+        Files.write(temp.toPath(), "<p>p</p>".getBytes("UTF-8"));
+
+        // WHEN/THEN parsing with a bad charset should throw IOException
+        // (covers B0→B1→EX path where DataUtil.load throws due to UnsupportedCharsetException)
+        assertThrows(IOException.class, () -> Jsoup.parse(temp, "BAD-CHARSET"));
+    }
+}

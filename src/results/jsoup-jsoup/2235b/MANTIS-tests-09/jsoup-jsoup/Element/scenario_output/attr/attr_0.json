@@ -1,0 +1,127 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "attr(String,String): new attribute key not present adds attribute (branch: key not in attributes)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "element created with no attributes",
+      "expectedResult": "element.attributes().get(\"data-test\") == \"123\"; attributes().size() == 1",
+      "tags": [
+        "branch-false",
+        "new-attribute",
+        "overload:String,String",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 attr-add-new",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    el.attr(\"data-test\",\"123\");",
+        "  THEN",
+        "    assert el.attributes().get(\"data-test\").equals(\"123\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "attr(String,String): existing attribute key updates value (branch: key present in attributes)",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "element created with attribute key=\"foo\" value=\"bar\"",
+      "expectedResult": "element.attributes().get(\"foo\") == \"baz\"; attributes().size() == 1",
+      "tags": [
+        "branch-true",
+        "update-attribute",
+        "overload:String,String",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 attr-update-existing",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"foo\",\"bar\");",
+        "  WHEN",
+        "    el.attr(\"foo\",\"baz\");",
+        "  THEN",
+        "    assert el.attributes().get(\"foo\").equals(\"baz\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "attr(String,String): null key throws IllegalArgumentException (branch: Validate.notNull(key) fails)",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no attribute added",
+      "tags": [
+        "exception",
+        "null-key",
+        "overload:String,String",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 attr-null-key",
+        "  GIVEN",
+        "    String key = null;",
+        "  WHEN",
+        "    call new Element(\"div\").attr(key,\"val\");",
+        "  THEN",
+        "    throws IllegalArgumentException"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "attr(String,boolean): true adds boolean attribute with empty value (branch: attributeValue true)",
+      "path": "B0→B7→B8→B9",
+      "precondition": "element created with no attributes",
+      "expectedResult": "element.attributes().hasKey(\"disabled\"); element.attributes().get(\"disabled\").equals(\"\")",
+      "tags": [
+        "boolean-true",
+        "overload:String,boolean",
+        "branch-true",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 attr-boolean-true",
+        "  GIVEN",
+        "    Element el = new Element(\"button\");",
+        "  WHEN",
+        "    el.attr(\"disabled\", true);",
+        "  THEN",
+        "    assert el.attributes().hasKey(\"disabled\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "attr(String,boolean): false removes existing boolean attribute (branch: attributeValue false)",
+      "path": "B0→B7→B10→B11",
+      "precondition": "element created and attr(\"hidden\",true) called",
+      "expectedResult": "!element.attributes().hasKey(\"hidden\")",
+      "tags": [
+        "boolean-false",
+        "overload:String,boolean",
+        "branch-false",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 attr-boolean-false-remove",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"hidden\", true);",
+        "  WHEN",
+        "    el.attr(\"hidden\", false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"hidden\");"
+      ]
+    }
+  ]
+}

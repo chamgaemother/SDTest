@@ -1,0 +1,69 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.DocumentType;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_2_Test {
+
+    @Test
+    @DisplayName("clone() deep copies a DocumentType node and preserves independent instances")
+    public void test_TC08() {
+        // GIVEN a Document with a prepended DocumentType child to trigger childNodes clone path
+        Document doc = new Document("ns", "base");
+        DocumentType dt = new DocumentType("html", "pub", "sys");
+        doc.prependChild(dt); // ensure doc.documentType() returns dt
+
+        // WHEN cloning the document (deep clone should copy childNodes including DocumentType)
+        Document copy = doc.clone();
+
+        // THEN the cloned documentType is not the same instance but has the same name
+        DocumentType originalDt = doc.documentType();
+        DocumentType copyDt = copy.documentType();
+        assertNotNull(originalDt, "Original documentType should not be null");
+        assertNotNull(copyDt, "Cloned documentType should not be null");
+        assertNotSame(originalDt, copyDt, "Expected a distinct DocumentType instance in clone");
+        assertEquals(originalDt.name(), copyDt.name(), "Expected cloned DocumentType to have same name");
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with no explicit Connection yields independent new sessions for both original and clone")
+    public void test_TC09() {
+        // GIVEN a Document with no connection set, so connection() returns newSession each time
+        Document doc = new Document("http://no-conn");
+
+        // WHEN retrieving connections and cloning
+        Connection origConn = doc.connection(); // branch: connection null => Jsoup.newSession()
+        Document copy = doc.clone();
+        Connection copyConn = copy.connection(); // branch: connection still null in clone => Jsoup.newSession()
+
+        // THEN both connections are non-null and distinct sessions
+        assertNotNull(origConn, "Original connection should not be null");
+        assertNotNull(copyConn, "Cloned connection should not be null");
+        assertNotSame(origConn, copyConn, "Expected distinct sessions for original and clone");
+    }
+
+    @Test
+    @DisplayName("clone() deep copies a custom parser instance so changes to clone.parser() configuration do not affect original")
+    public void test_TC10() {
+        // GIVEN a Document with a custom Parser configured to track errors (to exercise parser.clone branch)
+        Parser p = Parser.htmlParser().setTrackErrors(5);
+        Document doc = new Document("http://x").parser(p);
+        int originalErrorCount = doc.parser().getErrors().size();
+        assertEquals(5, originalErrorCount, "Precondition: parser should track 5 initial errors");
+
+        // WHEN cloning and modifying clone's parser track errors setting
+        Document copy = doc.clone();
+        Parser copyParser = copy.parser();
+        copyParser.setTrackErrors(0); // modifying clone parser should not affect original
+
+        // THEN parsers are distinct and original still has its errors list size 5
+        assertNotSame(doc.parser(), copyParser, "Expected distinct Parser instance in clone");
+        assertEquals(5, doc.parser().getErrors().size(), "Original parser's error list should remain unchanged");
+    }
+}

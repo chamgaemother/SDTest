@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "charset(htmlSyntax, both existing meta[charset] and meta[name=charset]) updates charset and removes obsolete only",
+      "path": "B0→B1(html)→B2(selectFirst meta[charset]!=null)→B3(update attr)→B4(remove meta[name=charset])→B5",
+      "precondition": "Document.createShell with head containing one <meta charset> and two <meta name=charset>",
+      "expectedResult": "existing <meta charset> attr updated; all <meta name=charset> removed; no new <meta charset> added",
+      "tags": [
+        "positive",
+        "html",
+        "obsolete-removal",
+        "duplicate-obsolete"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 html dual-existing-meta cleanup",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://x\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\",\"OLD\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\").attr(\"content\",\"a\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\").attr(\"content\",\"b\");",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    assert doc.outputSettings().charset() == StandardCharsets.US_ASCII;",
+        "    Elements metasCharset = doc.head().select(\"meta[charset]\");",
+        "    assert metasCharset.size() == 1 && metasCharset.first().attr(\"charset\").equals(\"US-ASCII\");",
+        "    assert doc.head().select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "charset(null) throws NullPointerException on null Charset parameter",
+      "path": "B0→B1(updateMetaCharsetElement)→B2(outputSettings.charset throws NPE)",
+      "precondition": "Document.createShell without any meta elements",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 charset null parameter throws NPE",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "  WHEN",
+        "    call doc.charset(null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

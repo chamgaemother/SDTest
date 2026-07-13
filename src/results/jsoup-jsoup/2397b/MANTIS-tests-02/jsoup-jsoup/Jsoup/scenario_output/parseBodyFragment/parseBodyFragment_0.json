@@ -1,0 +1,147 @@
+{
+  "method": "parseBodyFragment",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) with simple single tag retains element in body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "result.body().html() equals \"<p>Test</p>\"",
+      "tags": [
+        "overload:String,String",
+        "basic",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 simple-element",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Test</p>\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) with empty bodyHtml yields empty body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "result.body().html() equals \"\"",
+      "tags": [
+        "overload:String,String",
+        "boundary-empty",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 empty-body",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) resolves relative link when baseUri non-empty",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "doc.select(\"a\").first().absUrl(\"href\") equals \"http://example.com/path\"",
+      "tags": [
+        "overload:String,String",
+        "relative-resolution",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O1 relative-link-resolution",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"/path\\\">link</a>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().absUrl(\"href\").equals(\"http://example.com/path\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) retains fragments order with multiple siblings",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "result.body().html() equals \"<div>A</div><span>B</span>\"",
+      "tags": [
+        "overload:String,String",
+        "multiple-elements",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O1 multiple-siblings",
+        "  GIVEN",
+        "    String html = \"<div>A</div><span>B</span>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>A</div><span>B</span>\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseBodyFragment(String bodyHtml) with simple single tag and empty baseUri produces same result as explicit empty baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "result.body().html() equals \"<p>Alpha</p>\"",
+      "tags": [
+        "overload:String",
+        "basic",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O2 simple-element-no-base",
+        "  GIVEN",
+        "    String html = \"<p>Alpha</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Alpha</p>\");"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseBodyFragment(String bodyHtml) does not resolve relative link when baseUri empty",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "doc.select(\"a\").first().absUrl(\"href\") equals \"\"",
+      "tags": [
+        "overload:String",
+        "relative-resolution-false",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_O2 relative-link-no-resolution",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"/no\\\">x</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().absUrl(\"href\").equals(\"\");"
+      ]
+    }
+  ]
+}

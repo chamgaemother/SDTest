@@ -1,0 +1,37 @@
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("sourceRange returns parent's sourceRange(key) when parent is non-null (parent != null branch)")
+    void test_TC02() {
+        // Arrange: create a stub Attributes whose sourceRange returns a fixed AttributeRange.
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // We return specific values to test that sourceRange delegates to parent
+                return new Range.AttributeRange(10, 20, 30, 40);
+            }
+        };
+        // Create an Attribute with non-null parent to trigger delegation branch B2
+        Attribute attr = new Attribute("myKey", "myVal", stubParent);
+
+        // Act: call sourceRange, expecting the stubbed values
+        Range.AttributeRange result = attr.sourceRange();
+
+        // Assert: verify delegation to parent by checking all fields of the returned range
+        assertAll("Delegated sourceRange values should match the stubbed parent values",
+            () -> assertEquals(10, result.startTagStart(), "startTagStart should be 10"),
+            () -> assertEquals(20, result.startTagEnd(),   "startTagEnd should be 20"),
+            () -> assertEquals(30, result.endTagStart(),   "endTagStart should be 30"),
+            () -> assertEquals(40, result.endTagEnd(),     "endTagEnd should be 40")
+        );
+    }
+}

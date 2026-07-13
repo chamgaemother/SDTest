@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "shallowClone() when attributes is null skips attribute‐copying branch and clones minimal state",
+      "path": "B0→B1→B3",
+      "precondition": "new Document created with no attributes added",
+      "expectedResult": "returns a new Document with default namespace, baseUri, and cloned outputSettings but without attributes",
+      "tags": [
+        "shallowClone",
+        "null-attributes",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 shallowClone with null attributes",
+        "  GIVEN",
+        "    Document doc = new Document(\"ns\",\"http://u\");",
+        "    // no attributes added, so attributes field is null",
+        "  WHEN",
+        "    Document clone = doc.shallowClone();",
+        "  THEN",
+        "    assertNotSame(doc, clone);",
+        "    assertEquals(doc.baseUri(), clone.baseUri());",
+        "    assertNotNull(clone.outputSettings());",
+        "    // branch: attributes==null so no clone.attributes",
+        "    assertNull(clone.attributes());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "shallowClone() when attributes is non-null exercises attribute‐copying branch",
+      "path": "B0→B1→B2→B3",
+      "precondition": "new Document with at least one attribute on root",
+      "expectedResult": "returns a new Document whose attributes map equals original's but is a distinct object",
+      "tags": [
+        "shallowClone",
+        "attributes",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 shallowClone with non-null attributes",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://u\");",
+        "    doc.attr(\"data-test\",\"val\");",
+        "  WHEN",
+        "    Document clone = doc.shallowClone();",
+        "  THEN",
+        "    assertNotSame(doc.attributes(), clone.attributes());",
+        "    assertEquals(\"val\", clone.attr(\"data-test\"));",
+        "END"
+      ]
+    }
+  ]
+}

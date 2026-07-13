@@ -1,0 +1,53 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Default htmlParser settings are case-insensitive so uppercase tags are folded and not selectable",
+      "path": "B0→B1→B3→B6→B8",
+      "precondition": "Parser obtained via Parser.htmlParser() with default ParseSettings",
+      "expectedResult": "Document.select(\"TAG\") returns size 0, lowercase tag found instead",
+      "tags": [
+        "positive",
+        "case-insensitive",
+        "default-settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 htmlParser default-case-insensitive",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(\"<TAG>Text</TAG>\", \"\");",
+        "  THEN",
+        "    assertEquals(0, doc.select(\"TAG\").size());",
+        "    assertEquals(1, doc.select(\"tag\").size());"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Default xmlParser settings are case-sensitive so uppercase tags are preserved and selectable",
+      "path": "B0→B1→B3→B6→B7",
+      "precondition": "Parser obtained via Parser.xmlParser() with default ParseSettings",
+      "expectedResult": "Document.select(\"TAG\") returns size 1, uppercase tag preserved",
+      "tags": [
+        "positive",
+        "case-sensitive",
+        "default-settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 xmlParser default-case-sensitive",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(\"<TAG>Text</TAG>\", \"\");",
+        "  THEN",
+        "    assertEquals(1, doc.select(\"TAG\").size());",
+        "    // verify lowercase query returns nothing when case-sensitive",
+        "    assertEquals(0, doc.select(\"tag\").size());"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,191 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "setTrackErrors(0) disables error tracking and isTrackErrors() returns false",
+      "path": "B0→B1(>0?)→B3(=0)→B4",
+      "precondition": "Parser htmlParser()",
+      "expectedResult": "isTrackErrors() returns false; getErrors().getMaxSize() == 0",
+      "tags": [
+        "negative",
+        "boundary",
+        "error-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 disable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assertFalse(parser.isTrackErrors());",
+        "    assertEquals(0, parser.getErrors().getMaxSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "setTrackErrors(5) enables tracking up to 5 errors and isTrackErrors() returns true",
+      "path": "B0→B1(>0)→B2",
+      "precondition": "Parser xmlParser()",
+      "expectedResult": "isTrackErrors() returns true; getErrors().getMaxSize() == 5",
+      "tags": [
+        "positive",
+        "boundary",
+        "error-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 enable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assertTrue(parser.isTrackErrors());",
+        "    assertEquals(5, parser.getErrors().getMaxSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "setTrackPosition(true) and setTrackPosition(false) toggle position tracking flag",
+      "path": "B0→B1(true)→B2(false)",
+      "precondition": "Parser htmlParser()",
+      "expectedResult": "isTrackPosition() returns false after false, true after true",
+      "tags": [
+        "positive",
+        "toggle",
+        "position-tracking"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 position-tracking-toggle",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assertTrue(parser.isTrackPosition());",
+        "  WHEN",
+        "    parser.setTrackPosition(false);",
+        "  THEN",
+        "    assertFalse(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "newInstance() produces an independent Parser clone with same settings but separate errors list",
+      "path": "B0→B1→B2(clone)→B3",
+      "precondition": "Parser p1 = Parser.htmlParser().setTrackErrors(3).setTrackPosition(true)",
+      "expectedResult": "p2 != p1; p2.settings() == p1.settings(); changes to p2.errors not affect p1.errors",
+      "tags": [
+        "clone",
+        "independence",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone-independence",
+        "  GIVEN",
+        "    Parser p1 = Parser.htmlParser().setTrackErrors(3).setTrackPosition(true);",
+        "  WHEN",
+        "    Parser p2 = p1.newInstance();",
+        "    p2.setTrackErrors(1);",
+        "  THEN",
+        "    assertNotSame(p1, p2);",
+        "    assertEquals(p1.settings(), p2.settings());",
+        "    assertNotEquals(p1.getErrors().getMaxSize(), p2.getErrors().getMaxSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "setTreeBuilder replaces TreeBuilder and propagates parser reference",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "getTreeBuilder() returns new builder; newBuilder.parser == parser",
+      "tags": [
+        "setter",
+        "builder",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 set-treebuilder-propagation",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder customBuilder = new XmlTreeBuilder();",
+        "  WHEN",
+        "    Parser returned = parser.setTreeBuilder(customBuilder);",
+        "  THEN",
+        "    assertSame(parser, returned);",
+        "    assertSame(customBuilder, parser.getTreeBuilder());",
+        "    assertSame(parser, customBuilder.parser);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseBodyFragment moves nodes correctly and loops removal and appendChild paths",
+      "path": "B0→B1→B2(loop×n)→B3(loop×n)→B4",
+      "precondition": "String html = \"<div>A</div><p>B</p>\"; String base = \"http://x/\"",
+      "expectedResult": "Returned Document body contains two children matching original order",
+      "tags": [
+        "fragment",
+        "loop",
+        "body",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse-body-fragment-loop",
+        "  GIVEN",
+        "    String html = \"<div>A</div><p>B</p>\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    List<Node> children = doc.body().childNodes();",
+        "    assertEquals(2, children.size());",
+        "    assertEquals(\"div\", ((Element)children.get(0)).tagName());",
+        "    assertEquals(\"p\", ((Element)children.get(1)).tagName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "unescapeEntities processes numeric and named entities with inAttribute true/false",
+      "path": "B0→B1(true)→B2(false)",
+      "precondition": "String input = \"&lt; &amp; &#65;\"",
+      "expectedResult": "output equals \"< & A\" for both modes",
+      "tags": [
+        "utility",
+        "entities",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 unescape-html-entities",
+        "  GIVEN",
+        "    String input = \"&lt; &amp; &#65;\";",
+        "  WHEN",
+        "    String out1 = Parser.unescapeEntities(input, true);",
+        "    String out2 = Parser.unescapeEntities(input, false);",
+        "  THEN",
+        "    assertEquals(\"< & A\", out1);",
+        "    assertEquals(\"< & A\", out2);",
+        "END"
+      ]
+    }
+  ]
+}

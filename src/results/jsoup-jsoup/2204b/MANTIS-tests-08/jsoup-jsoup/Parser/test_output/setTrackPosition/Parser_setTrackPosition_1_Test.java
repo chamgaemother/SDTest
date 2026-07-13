@@ -1,0 +1,52 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_setTrackPosition_1_Test {
+
+    @Test
+    @DisplayName("TC03: Calling setTrackPosition(true) twice retains true and returns same instance")
+    public void test_TC03() {
+        // GIVEN: a new HTML parser with default trackPosition = false (B0 initial state)
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Initial trackPosition should be false");
+
+        // WHEN: first call with true should set trackPosition to true (enter branch B1→B2)
+        Parser first = parser.setTrackPosition(true);
+        // The first call returns this instance and sets the flag
+        assertSame(parser, first, "First call should return same instance");
+        assertTrue(parser.isTrackPosition(), "After first call, trackPosition should be true");
+
+        // WHEN: second call with true again should be idempotent (B1→B2 again)
+        Parser second = parser.setTrackPosition(true);
+        // Second call still returns same instance and leaves flag true
+        assertSame(parser, second, "Second call should return same instance");
+        assertTrue(parser.isTrackPosition(), "After second call, trackPosition should remain true");
+    }
+
+    @Test
+    @DisplayName("TC04: Chaining setTrackPosition(false) then true then false returns same instance and toggles state accordingly")
+    public void test_TC04() {
+        // GIVEN: a new HTML parser with default trackPosition = false (B0 initial state)
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Initial trackPosition should be false");
+
+        // WHEN: call with false (no-op, stays false - B1→B2)
+        Parser a = parser.setTrackPosition(false);
+        assertSame(parser, a, "First call (false) should return same instance");
+        assertFalse(parser.isTrackPosition(), "After setting false, trackPosition should remain false");
+
+        // WHEN: call with true sets to true (B1→B2)
+        Parser b = parser.setTrackPosition(true);
+        assertSame(parser, b, "Second call (true) should return same instance");
+        assertTrue(parser.isTrackPosition(), "After setting true, trackPosition should be true");
+
+        // WHEN: call with false clears it back to false (B1→B2)
+        Parser c = parser.setTrackPosition(false);
+        assertSame(parser, c, "Third call (false) should return same instance");
+        assertFalse(parser.isTrackPosition(), "After setting false again, trackPosition should be false");
+    }
+}

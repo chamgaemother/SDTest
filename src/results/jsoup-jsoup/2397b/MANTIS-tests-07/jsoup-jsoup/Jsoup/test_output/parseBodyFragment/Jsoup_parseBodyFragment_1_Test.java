@@ -1,0 +1,56 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * JUnit 5 tests for Jsoup.parseBodyFragment(String, String) to verify relative link handling and base tag override.
+ */
+public class Jsoup_parseBodyFragment_1_Test {
+
+    @Test
+    @DisplayName("TC06: parseBodyFragment(String html, String baseUri) with empty baseUri and fragment containing a relative link preserves the relative href")
+    public void test_TC06() {
+        // Branches: empty baseUri -> B4; no base tag in html -> B6 (relative link preserved)
+        String html = "<a href='page.html'>Link</a>";
+        String baseUri = "";
+        // WHEN
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // THEN: the href should remain exactly as 'page.html', not resolved absolutely
+        String bodyHtml = doc.body().html();
+        assertTrue(bodyHtml.contains("href=\"page.html\""),
+                "Expected relative link 'page.html' to be preserved when baseUri is empty");
+    }
+
+    @Test
+    @DisplayName("TC07: parseBodyFragment(String html, String baseUri) with non-empty baseUri resolves relative href to absolute URL")
+    public void test_TC07() {
+        // Branches: non-empty baseUri -> B4; no base tag in html -> B5 (relative resolution)
+        String html = "<a href='page.html'>Link</a>";
+        String baseUri = "https://example.com/path/";
+        // WHEN
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // THEN: the href should resolve to the full absolute URL based on provided baseUri
+        String bodyHtml = doc.body().html();
+        assertTrue(bodyHtml.contains("href=\"https://example.com/path/page.html\""),
+                "Expected relative link to resolve against baseUri to https://example.com/path/page.html");
+    }
+
+    @Test
+    @DisplayName("TC08: parseBodyFragment(String html, String baseUri) with <base href> in fragment overrides the provided baseUri for link resolution")
+    public void test_TC08() {
+        // Branches: non-empty baseUri -> B4; base tag present in html -> B7 (override to embedded base href)
+        String html = "<base href='https://site.com/'>" +
+                      "<a href='page.html'>Link</a>";
+        String baseUri = "https://example.com/";
+        // WHEN
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // THEN: the <base> tag should override the parameter baseUri for resolving href
+        String bodyHtml = doc.body().html();
+        assertTrue(bodyHtml.contains("href=\"https://site.com/page.html\""),
+                "Expected relative link to resolve against embedded base href https://site.com/");
+    }
+}

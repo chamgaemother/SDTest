@@ -1,0 +1,245 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "No attributes yields empty dataset (attributes==null branch)",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); // no attrs initially",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true(attributes==null)",
+        "boundary",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty-with-no-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Only non-data attributes yields empty dataset (filters by 'data-' prefix)",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"class\",\"x\");",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-false(attributes==null)",
+        "boundary",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset ignores-non-data-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"class\",\"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single data- attribute yields one entry (key without prefix)",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-name\",\"value\");",
+      "expectedResult": "returned map contains {\"name\"=\"value\"}",
+      "tags": [
+        "branch-false(attributes==null)",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset single-data-attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-name\",\"value\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1 && ds.get(\"name\").equals(\"value\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Multiple data- attributes yields multiple entries (loop-N with N=2)",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-one\",\"1\"); el.attr(\"data-two\",\"2\");",
+      "expectedResult": "returned map contains {\"one\"=\"1\",\"two\"=\"2\"}",
+      "tags": [
+        "loop-N",
+        "branch-false(attributes==null)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset multiple-data-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-one\",\"1\");",
+        "    el.attr(\"data-two\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2 && ds.get(\"one\").equals(\"1\") && ds.get(\"two\").equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Hyphenated data- attribute key retains inner hyphens",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-long-name\",\"x\");",
+      "expectedResult": "returned map contains {\"long-name\"=\"x\"}",
+      "tags": [
+        "loop-1",
+        "boundary",
+        "hyphenated-key"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset hyphenated-data-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-long-name\",\"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.containsKey(\"long-name\") && ds.get(\"long-name\").equals(\"x\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Upper-case data- prefix recognized case-insensitively? (should filter only lower-case 'data-')",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attributes().put(\"DATA-Case\",\"v\");",
+      "expectedResult": "returned map does not contain 'Case' key",
+      "tags": [
+        "loop-1",
+        "case-sensitive",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset uppercase-data-prefix-ignored",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes().put(\"DATA-Case\",\"v\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert !ds.containsKey(\"Case\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Dataset map is live view: adding to map updates underlying attributes",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.put(\"new\",\"val\"), el.attr(\"data-new\",\"val\") exists",
+      "tags": [
+        "live-view",
+        "side-effect",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset map-live-view-add",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"new\",\"val\");",
+        "  THEN",
+        "    assert el.attr(\"data-new\").equals(\"val\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Removing from dataset map removes underlying data- attribute",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"data-x\",\"a\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.remove(\"x\"), el.hasAttr(\"data-x\")==false",
+      "tags": [
+        "live-view",
+        "side-effect",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 dataset map-live-view-remove",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-x\",\"a\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.remove(\"x\");",
+        "  THEN",
+        "    assert !el.hasAttr(\"data-x\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Overwriting dataset entry updates underlying attribute value",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-k\",\"old\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.put(\"k\",\"new\"), el.attr(\"data-k\").equals(\"new\")",
+      "tags": [
+        "live-view",
+        "side-effect",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 dataset map-live-view-overwrite",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-k\",\"old\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"k\",\"new\");",
+        "  THEN",
+        "    assert el.attr(\"data-k\").equals(\"new\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Calling dataset after new attribute added includes the new entry (fresh view)",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "first ds.size()==0, after el.attr(\"data-a\",\"1\"), el.dataset().get(\"a\").equals(\"1\")",
+      "tags": [
+        "fresh-view",
+        "loop-0→loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 dataset fresh-view-after-attr",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds1 = el.dataset();",
+        "    el.attr(\"data-a\",\"1\");",
+        "    Map<String,String> ds2 = el.dataset();",
+        "  THEN",
+        "    assert ds1.isEmpty() && ds2.get(\"a\").equals(\"1\");"
+      ]
+    }
+  ]
+}

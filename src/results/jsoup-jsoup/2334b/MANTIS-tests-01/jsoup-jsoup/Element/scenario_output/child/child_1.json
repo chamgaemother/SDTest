@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "child(1) called twice uses cached shadowChildrenRef on second invocation",
+      "path": "B0→B2→B4→B5→B2'→B3'→B5'",
+      "precondition": "Element parent with two Element children appended",
+      "expectedResult": "both calls return the same second child instance without rebuilding list",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child caching behavior",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"a\");",
+        "    Element second = new Element(\"b\");",
+        "    parent.appendChild(first);",
+        "    parent.appendChild(second);",
+        "  WHEN",
+        "    Element result1 = parent.child(1);",
+        "    Element result2 = parent.child(1);",
+        "  THEN",
+        "    assert result1 == second;",
+        "    assert result2 == second;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "child(2) after mutation clears cache via nodelistChanged and rebuilds new shadowChildrenRef",
+      "path": "B0→B2→B4→B5→nodelistChanged→B2→B4→B5",
+      "precondition": "Element parent with two Element children appended",
+      "expectedResult": "after appending third Element, child(2) returns the newly added third element",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 shadow list invalidation on appendChild",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element e1 = new Element(\"li\");",
+        "    Element e2 = new Element(\"li\");",
+        "    parent.appendChild(e1);",
+        "    parent.appendChild(e2);",
+        "    parent.child(1); // populate cache",
+        "  WHEN",
+        "    Element e3 = new Element(\"li\");",
+        "    parent.appendChild(e3); // triggers nodelistChanged",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assert result == e3;"
+      ]
+    }
+  ]
+}

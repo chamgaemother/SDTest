@@ -1,0 +1,170 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "maxWidth(0) throws IllegalArgumentException for non-positive width",
+      "path": "B0→B?→Precond check→exception",
+      "precondition": "Builder created from simple text reader",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 maxWidth zero validation",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"any\");",
+        "  WHEN",
+        "    call b.maxWidth(0);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "from(File,charset) throws IORuntimeException when file not found",
+      "path": "B0→B?→FileInputStream→catch→throw IORuntimeException",
+      "precondition": "No file exists at given path",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 missing file path",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "override stringWidth to constant high value forces immediate broken-word without hyphens when breakWords=false",
+      "path": "wordWrap loop→tooLong→breakWords false branch",
+      "precondition": "text \"abcde\" and maxWidth 1",
+      "expectedResult": "output first character then newline then rest without hyphens",
+      "tags": [
+        "branch",
+        "custom-function"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 custom stringWidth and breakWords=false",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcde\");",
+        "    b.maxWidth(1).stringWidth(s -> 100).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.startsWith(\"a\\n\");",
+        "    assertFalse(result.contains(\"-\"));"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "newLine(\"\\r\\n\") uses CRLF as delimiter in output",
+      "path": "wordWrap explicit newline branch→writeNewLine uses custom newLine",
+      "precondition": "text contains explicit newline and maxWidth large",
+      "expectedResult": "output lines separated by CRLF",
+      "tags": [
+        "boundary",
+        "newline",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 custom newLine CRLF",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"A\\nB\");",
+        "    b.newLine(\"\\r\\n\");",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    assert out.equals(\"A\\r\\nB\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "includeExtraWordChars(\"?\") makes punctuation '?' be treated as part of word",
+      "path": "wordWrap punctuation branch→isWordCharacter true with extraWordChars",
+      "precondition": "text \"?X?\" and default width",
+      "expectedResult": "output '?X?' in one segment without splitting on '?'",
+      "tags": [
+        "boundary",
+        "extraWordChars"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 includeExtraWordChars question",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"?X?\");",
+        "    b.includeExtraWordChars(\"?\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"?X?\");"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "writeBrokenWord prefix branch without hyphen for short word (length=2)",
+      "path": "wordWrap→tooLong→writeBrokenWord else-path",
+      "precondition": "maxWidth=1, text 'AB'",
+      "expectedResult": "line 'A' then 'B' each on own line, no hyphens",
+      "tags": [
+        "branch",
+        "hyphenation",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 broken-word short prefix",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"AB\");",
+        "    b.maxWidth(1);",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    assert out.equals(\"A\\nB\");"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "close(reader) throws IORuntimeException when reader.close() throws IOException",
+      "path": "wrap(writer) finally→close(reader)→catch→throw IORuntimeException",
+      "precondition": "Reader stub that returns -1 then throws on close",
+      "expectedResult": "IORuntimeException caused by IOException",
+      "tags": [
+        "exception",
+        "cleanup"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 reader close failure",
+        "  GIVEN",
+        "    Reader stub = new Reader() {",
+        "      boolean readOnce = false;",
+        "      @Override int read(char[] c, int o, int l){ if(!readOnce){ readOnce=true; return -1;} return -1;} ",
+        "      @Override void close() throws IOException { throw new IOException(\"close fail\"); }",
+        "    };",
+        "    Builder b = WordWrap.from(BufferedReader.wrap(stub), true);",
+        "  WHEN",
+        "    call b.wrap(new StringWriter());",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    }
+  ]
+}

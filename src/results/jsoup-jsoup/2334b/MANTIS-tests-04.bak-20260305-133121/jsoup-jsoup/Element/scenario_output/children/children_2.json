@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "children() on element with only non-Element child nodes returns empty Elements list",
+      "path": "B0→B3→B5",
+      "precondition": "parent has childNodes size > 0 but all are TextNode/DataNode/CDataNode/Comment",
+      "expectedResult": "return empty Elements list",
+      "tags": [
+        "positive",
+        "filter",
+        "no-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 children filters non-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"hello\");",
+        "    parent.appendChild(new DataNode(\"data\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() second call on multiple-element children returns cached Elements instance",
+      "path": "B0→B3→B7",
+      "precondition": "parent has two Element children and cache built on first call",
+      "expectedResult": "second call returns same Elements instance containing both children in order",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 children cache hit multiple-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li1 = parent.appendElement(\"li\");",
+        "    Element li2 = parent.appendElement(\"li\");",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertSame(first, second);",
+        "    assertEquals(2, second.size());",
+        "    assertSame(li1, second.get(0));",
+        "    assertSame(li2, second.get(1));",
+        "END"
+      ]
+    }
+  ]
+}

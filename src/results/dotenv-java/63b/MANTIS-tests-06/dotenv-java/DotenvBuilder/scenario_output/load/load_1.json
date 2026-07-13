@@ -1,0 +1,153 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "load() with default systemProperties=false sets each parsed entry as System property",
+      "path": "B0→B1→B2",
+      "precondition": "Temporary .env file with one entry 'KEY1=VAL1' exists",
+      "expectedResult": "System.getProperty('KEY1') == 'VAL1' and Dotenv.get('KEY1') == 'VAL1'",
+      "tags": [
+        "positive",
+        "systemProperties-branch",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load default systemProperties sets sysprops",
+        "  GIVEN",
+        "    // Arrange a temp directory with .env containing 'KEY1=VAL1'",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename('.env');",
+        "    System.clearProperty('KEY1');",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert System.getProperty('KEY1').equals('VAL1');",
+        "    assert dotenv.get('KEY1').equals('VAL1');"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() with missing .env file and ignoreIfMissing() suppresses exception and returns empty Dotenv",
+      "path": "B0→B2",
+      "precondition": "No .env file in empty temp directory",
+      "expectedResult": "no exception; entries(entry->true).size() == 0",
+      "tags": [
+        "positive",
+        "ignoreIfMissing",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 ignoreIfMissing suppresses missing-file exception",
+        "  GIVEN",
+        "    // Arrange empty temp directory without .env",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename('.env').ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries(entry->true).isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "load() with malformed line and default throwIfMalformed=true throws DotenvException",
+      "path": "B0→[exception]",
+      "precondition": "Temporary .env file with one well-formed and one malformed line exists",
+      "expectedResult": "DotenvException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "malformed"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 malformed default throws",
+        "  GIVEN",
+        "    // Arrange .env containing 'GOOD=1' and 'BADLINE'",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename('.env');",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "load() with malformed line and ignoreIfMalformed() suppresses exception and skips malformed entries",
+      "path": "B0→B2",
+      "precondition": "Temporary .env file containing one valid 'X=Y' and one malformed line",
+      "expectedResult": "no exception; entries(entry->true).size() == 1 and contains X",
+      "tags": [
+        "positive",
+        "ignoreIfMalformed",
+        "malformed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 ignoreIfMalformed suppresses malformed",
+        "  GIVEN",
+        "    // Arrange .env with 'X=Y' and 'MALFORMED'",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename('.env').ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries(entry->true).size() == 1;",
+        "    assert dotenv.get('X').equals('Y');"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "entries(null) returns full entries set including system env variables",
+      "path": "B0→B2",
+      "precondition": "One entry in .env; builder.load() invoked; call entries(null)",
+      "expectedResult": "entries(null) size > entries(e->true) size and contains both file and env entries",
+      "tags": [
+        "positive",
+        "filter-null",
+        "entries"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 entries null filter returns combined set",
+        "  GIVEN",
+        "    // Arrange .env with 'A=B' and set a real System env var 'PATH'",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir).filename('.env').load();",
+        "  WHEN",
+        "    Set<DotenvEntry> full = ((DotenvImpl)dotenv).entries(null);",
+        "    Set<DotenvEntry> fileOnly = dotenv.entries(e->true);",
+        "  THEN",
+        "    assert full.size() > fileOnly.size();",
+        "    assert full.stream().anyMatch(e->e.getKey().equals('PATH'));"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "get(key, default) returns default when neither system env nor file contains the key",
+      "path": "B0→B2",
+      "precondition": "Empty .env and no System.getenv for 'NONEXISTENT'",
+      "expectedResult": "get('NONEXISTENT','def') returns 'def'",
+      "tags": [
+        "positive",
+        "default-value",
+        "get-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 get with default returns default when missing",
+        "  GIVEN",
+        "    // Arrange empty .env without 'NONEXISTENT' and ensure System.getenv('NONEXISTENT') is null",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir).filename('.env').ignoreIfMissing().load();",
+        "  WHEN",
+        "    String result = dotenv.get('NONEXISTENT','def');",
+        "  THEN",
+        "    assert result.equals('def');"
+      ]
+    }
+  ]
+}

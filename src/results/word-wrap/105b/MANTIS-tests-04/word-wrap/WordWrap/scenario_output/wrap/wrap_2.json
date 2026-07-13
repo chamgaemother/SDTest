@@ -1,0 +1,131 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "wrap(CharSequence) with custom newLine delimiter covers write(String) overload and use of newLine in wordWrap(Reader,Writer)",
+      "path": "B0→B3→B7→B8→B12→B15→B16→B19",
+      "precondition": "none",
+      "expectedResult": "lines separated by `<NL>`",
+      "tags": [
+        "positive",
+        "custom-newline",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 custom-newline-writeString",
+        "  GIVEN",
+        "    String text = \"foo bar baz\";",
+        "    Builder b = WordWrap.from(text).newLine(\"<NL>\").maxWidth(5);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.contains(\"<NL>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "wrap(CharSequence) with only whitespace tests isWhitespace branch and suppresses output of pure-space word",
+      "path": "B0→B3→B6→B9→B11→B18",
+      "precondition": "none",
+      "expectedResult": "empty string (whitespace not emitted)",
+      "tags": [
+        "boundary",
+        "whitespace",
+        "negative-output"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 whitespace-only-suppressed",
+        "  GIVEN",
+        "    String text = \"     \";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "wrap(CharSequence) breaks long word without hyphen when insertHyphens=false in writeBrokenWord else-path",
+      "path": "B0→B3→B5(loop)→B10→B13→B14→B17",
+      "precondition": "none",
+      "expectedResult": "word fragments split with newline but no hyphens",
+      "tags": [
+        "positive",
+        "breakWords",
+        "hyphen-off",
+        "split"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 broken-word-no-hyphen",
+        "  GIVEN",
+        "    String text = \"ABCDEFGHI\"; // length 9, maxWidth 3",
+        "    Builder b = WordWrap.from(text).maxWidth(3).breakWords(true).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.contains(\"ABC\\n\");",
+        "    assertFalse(result.contains(\"-\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "wrap(CharSequence) encountering consecutive punctuation covers previousWasPunctuation true branch skipping word append",
+      "path": "B0→B3→B6→B7→B11→B12→B15",
+      "precondition": "none",
+      "expectedResult": "punctuation characters emitted directly without merging into word",
+      "tags": [
+        "edge",
+        "punctuation",
+        "previousWasPunctuation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 consecutive-punctuation",
+        "  GIVEN",
+        "    String text = \"a,,b\"; // comma is punctuation",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assertTrue(result.startsWith(\"a,\"));",
+        "    assertTrue(result.contains(\",b\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "wrap(CharSequence) with custom stringWidth function triggers tooLong via non-default width logic",
+      "path": "B0→B3→B5→B6→B8→B10→B13→B16",
+      "precondition": "none",
+      "expectedResult": "wrap uses provided width function to split lines",
+      "tags": [
+        "positive",
+        "custom-width",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 custom-width-function",
+        "  GIVEN",
+        "    String text = \"1234567 89\";",
+        "    Function<CharSequence,Number> f = s -> s.length()/2; // smaller width",
+        "    Builder b = WordWrap.from(text).maxWidth(3).stringWidth(f);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.size() > 1;",
+        "END"
+      ]
+    }
+  ]
+}

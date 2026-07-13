@@ -1,0 +1,79 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC01: children() on element with no child nodes returns empty Elements without initializing shadow cache")
+    void test_TC01() {
+        // Bypass ensureChildNodes so childNodes remains EmptyNodes (cache-miss, branch-true, loop0)
+        Element el = new Element("div");
+        Elements result = el.children();
+        assertEquals(0, result.size(), "Expected no child Elements when none added");
+    }
+
+    @Test
+    @DisplayName("TC02: children() on element with non-Element child only yields empty Elements after filtering")
+    void test_TC02() {
+        // appendText adds a TextNode, not an Element (branch-false, loop1 filter miss)
+        Element el = new Element("div");
+        el.appendText("text");
+        Elements result = el.children();
+        assertEquals(0, result.size(), "Expected no child Elements when only text nodes present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() on element with exactly one Element child returns single-element Elements and caches list")
+    void test_TC03() {
+        // appendElement yields one Element child (loop1 match, cache-miss)
+        Element el = new Element("div");
+        Element child = el.appendElement("span");
+        Elements result = el.children();
+        assertEquals(1, result.size(), "Expected one child Element");
+        assertEquals("span", result.get(0).tagName(), "Expected child tagName to be 'span'");
+    }
+
+    @Test
+    @DisplayName("TC04: children() on element with mixed children returns only Element nodes preserving order")
+    void test_TC04() {
+        // Mix TextNode, Element, TextNode (loop N, filter-mixed)
+        Element el = new Element("div");
+        el.appendText("t1");
+        Element p = el.appendElement("p");
+        el.appendText("t2");
+        Elements result = el.children();
+        assertEquals(1, result.size(), "Expected only one Element child among mixed nodes");
+        assertSame(p, result.get(0), "Expected the <p> child to be returned in original order");
+    }
+
+    @Test
+    @DisplayName("TC05: children() returns cached result on second call without rebuilding list")
+    void test_TC05() {
+        // Prime cache with first children() call (cache-hit thereafter, loop0)
+        Element el = new Element("div");
+        el.appendElement("span");
+        Elements first = el.children();
+        Elements second = el.children();
+        assertEquals(1, second.size(), "Expected cached result size 1");
+        assertEquals("span", second.get(0).tagName(), "Expected cached child tagName 'span'");
+    }
+
+    @Test
+    @DisplayName("TC06: children() after modifying children invalidates cache and rebuilds on next call")
+    void test_TC06() {
+        // After prime, append b invalidates shadowChildrenRef (nodelistChanged), rebuild loop N
+        Element el = new Element("div");
+        Element span = el.appendElement("span");
+        el.children(); // prime cache
+        Element b = el.appendElement("b");
+        Elements result = el.children();
+        assertEquals(2, result.size(), "Expected two child Elements after cache invalidation and rebuild");
+        assertSame(span, result.get(0), "Expected original <span> still first after rebuild");
+        assertEquals("b", result.get(1).tagName(), "Expected new <b> as second child");
+    }
+}

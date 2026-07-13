@@ -1,0 +1,117 @@
+{
+  "scenarios": [
+    {
+      "id": "TC28",
+      "description": "parse(InputStream, charsetName, baseUri, parser) uses a non-null charset and custom parser branch",
+      "path": "B0→B1→B2(InputStream overload)→B4→B6",
+      "precondition": "TrackCloseStream wrapping valid HTML bytes",
+      "expectedResult": "Document body contains parsed fragment and InputStream is closed",
+      "tags": [
+        "positive",
+        "input-stream",
+        "parser",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC28 parse InputStream with charset and parser",
+        "  GIVEN",
+        "    TrackCloseStream in = new TrackCloseStream(\"<u/>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"/b/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<u/>\");",
+        "    assert in.closed == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC29",
+      "description": "parse(Path, charsetName, baseUri, parser) uses custom XML parser on Path branch",
+      "path": "B0→B1→B2(Path overload)→B3→B7",
+      "precondition": "Temporary Path file containing XML and valid permissions",
+      "expectedResult": "Document body contains XML element and baseUri is as provided",
+      "tags": [
+        "positive",
+        "path",
+        "parser",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC29 parse Path with charset and parser",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"tc29\", \".xml\");",
+        "    Files.write(path, \"<root/>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<root/>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC30",
+      "description": "parse(URL, timeoutMillis) throws HttpStatusException on non-OK HTTP response",
+      "path": "B0→B1→B2(URL overload)→B3→exception",
+      "precondition": "Local HTTP server returns 404 status",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "network",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC30 parse URL receives 404",
+        "  GIVEN",
+        "    HttpServer srv = createServerReturningStatus(404, \"Not Found\");",
+        "    URL url = new URL(\"http://localhost:\" + srv.getPort() + \"/\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 500);",
+        "  THEN",
+        "    throws HttpStatusException;",
+        "  CLEANUP",
+        "    srv.stop(0);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC31",
+      "description": "parse(InputStream, null charsetName, baseUri) uses null charset branch without parser",
+      "path": "B0→B1→B2(InputStream overload)→B5→B6",
+      "precondition": "TrackCloseStream wrapping valid HTML bytes",
+      "expectedResult": "Document body contains parsed fragment and InputStream is closed",
+      "tags": [
+        "positive",
+        "input-stream",
+        "charset-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC31 parse InputStream with null charset without parser",
+        "  GIVEN",
+        "    TrackCloseStream in = new TrackCloseStream(\"<span>x</span>\".getBytes(\"UTF-8\"));",
+        "    String charset = null;",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>x</span>\");",
+        "    assert in.closed == true;",
+        "END"
+      ]
+    }
+  ]
+}

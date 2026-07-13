@@ -1,0 +1,135 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "three-level nested tree exercises multiple descend (childNodeSize>0) and ascend-without-siblings (node.nextSibling==null && depth>0) branches",
+      "path": "B0→B1→B5→B11→B12→B23→B1→B5→B11→B12→B23→B1→B5→B11→B13→B16→B19(loop ascend)→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "head and tail are called in depth-first order: div@0, span@1, em@2, em@2, span@1, div@0",
+      "tags": [
+        "positive",
+        "depth",
+        "ascend-no-sibling"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 three-level nested traverse",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element l1 = new Element(\"span\");",
+        "    Element l2 = new Element(\"em\");",
+        "    root.appendChild(l1);",
+        "    l1.appendChild(l2);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override public void head(Node n,int d){ seq.add(n.nodeName()+\"@\"+d); }",
+        "      @Override public void tail(Node n,int d){ seq.add(n.nodeName()+\"@\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"div@0\",\"span@1\",\"em@2\",\"em@2\",\"span@1\",\"div@0\"), seq);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "root with two children exercises sibling branch (node.nextSibling!=null && depth>0) path",
+      "path": "B0→B1→B5→B11→B12→B23→B1→B5→B11→B13→B16→B17→B20→B22→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "head and tail calls in order: div, a, a, b, b, div",
+      "tags": [
+        "positive",
+        "sibling",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 two-children sibling traverse",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    root.appendChild(a);",
+        "    root.appendChild(b);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override public void head(Node n,int d){ seq.add(n.nodeName()); }",
+        "      @Override public void tail(Node n,int d){ seq.add(n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"div\",\"a\",\"a\",\"b\",\"b\",\"div\"), seq);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "multiple Elements overload traverses each element subtree in order (loop>1)",
+      "path": "B0→B1→B2→B1→B2→B1→B3",
+      "precondition": "none",
+      "expectedResult": "head and tail called for x then y: x,x,y,y",
+      "tags": [
+        "positive",
+        "elements",
+        "loop"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 multiple-elements overload traverse",
+        "  GIVEN",
+        "    Element x = new Element(\"x\");",
+        "    Element y = new Element(\"y\");",
+        "    Elements els = new Elements(x, y);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override public void head(Node n,int d){ seq.add(n.nodeName()); }",
+        "      @Override public void tail(Node n,int d){ seq.add(n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, els);",
+        "  THEN",
+        "    assertEquals(List.of(\"x\",\"x\",\"y\",\"y\"), seq);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "iterate Elements overload stops on first STOP filter result in filter overload",
+      "path": "B0→B1→B2(stop)→B3",
+      "precondition": "none",
+      "expectedResult": "filter stops on STOP and does not traverse second element",
+      "tags": [
+        "positive",
+        "filter",
+        "stop"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 elements-filter-stop",
+        "  GIVEN",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    Elements els = new Elements(a,b);",
+        "    List<String> seen = new ArrayList<>();",
+        "    NodeFilter filter = new NodeFilter() {",
+        "      @Override public FilterResult head(Node n,int d){",
+        "        seen.add(n.nodeName());",
+        "        return n == a ? FilterResult.STOP : FilterResult.CONTINUE;",
+        "      }",
+        "      @Override public FilterResult tail(Node n,int d){ return FilterResult.CONTINUE; }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.filter(filter, els);",
+        "  THEN",
+        "    assertEquals(List.of(\"a\"), seen);",
+        "END"
+      ]
+    }
+  ]
+}

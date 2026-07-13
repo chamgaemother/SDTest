@@ -1,0 +1,61 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for org.jsoup.nodes.Element.attr(String, String).
+ */
+public class Element_attr_0_Test {
+
+    @Test
+    @DisplayName("TC01: Adding a new attribute when none exists (attributeKey non-null, attributeValue non-null)")
+    public void test_TC01() {
+        // GIVEN a fresh element with no attributes (branch B0→B1→B2→B4: no nulls, non-empty key/value)
+        Element el = new Element("div");
+        // WHEN adding a new attribute
+        el.attr("data-test", "value");
+        // THEN the attribute map should contain the new key with the correct value
+        assertEquals("value", el.attributes().get("data-test"),
+                "Expected new attribute 'data-test' to be set to 'value'");
+    }
+
+    @Test
+    @DisplayName("TC02: Overriding an existing attribute value (attributeKey non-null, attributeValue non-null)")
+    public void test_TC02() {
+        // GIVEN an element with an existing attribute (branch B0→B1→B2→B4: non-null key/value)
+        Element el = new Element("span");
+        el.attr("id", "first");
+        assertEquals("first", el.attributes().get("id"),
+                "Precondition failed: attribute 'id' should initially be 'first'");
+        // WHEN overriding the existing attribute
+        el.attr("id", "second");
+        // THEN the attribute map should have the updated value
+        assertEquals("second", el.attributes().get("id"),
+                "Expected overriding attribute 'id' to update value to 'second'");
+    }
+
+    @Test
+    @DisplayName("TC03: Passing a null attributeKey triggers a NullPointerException")
+    public void test_TC03() {
+        // GIVEN a new element (branch B0→B1→B3: null key path)
+        Element el = new Element("p");
+        // WHEN calling attr with null key, THEN expect NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            el.attr(null, "value");
+        }, "attr(null, value) should throw NullPointerException when key is null");
+    }
+
+    @Test
+    @DisplayName("TC04: Passing a null attributeValue triggers a NullPointerException")
+    public void test_TC04() {
+        // GIVEN a new element (branch B0→B1→B3: null value path)
+        Element el = new Element("p");
+        // WHEN calling attr with null value, THEN expect NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            el.attr("key", null);
+        }, "attr(key, null) should throw NullPointerException when value is null");
+    }
+}

@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "tagSet updates parser settings to case-sensitive mode and chains return value",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser created via Parser.htmlParser() with default (lower-case) settings",
+      "expectedResult": "returned Parser has its settings() equal to provided settings and still parses tags in original case",
+      "tags": [
+        "positive",
+        "chaining",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 tagSet switches to case-sensitive settings",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings custom = new ParseSettings(ParseSettings.preserveCase, ParseSettings.preserveCase);",
+        "  WHEN",
+        "    Parser returned = parser.tagSet(custom);",
+        "  THEN",
+        "    assert returned == parser;",
+        "    assert returned.settings() == custom;",
+        "    // verify parse honors case: uppercase tag remains uppercase",
+        "    Document doc = parser.parseInput(\"<TAG>Text</TAG>\", \"\");",
+        "    assert doc.select(\"TAG\").size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "tagSet throws NullPointerException when given null settings",
+      "path": "B0→B2→B4",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 tagSet null-argument throws NPE",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    ParseSettings settings = null;",
+        "  WHEN",
+        "    call parser.tagSet(settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,156 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class WordWrap_wrap_Test {
+
+    // Utility to read entire file as String
+    private String readFile(File f) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        try (Reader r = new BufferedReader(new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8))) {
+            char[] buf = new char[1024];
+            int n;
+            while ((n = r.read(buf)) != -1) {
+                sb.append(buf, 0, n);
+            }
+        }
+        return sb.toString();
+    }
+
+    @Test
+    @DisplayName("TC01: wrap(CharSequence) with short text under maxWidth avoids any wrapping (branch false for tooLong)")
+    public void test_TC01() {
+        // input shorter than default 80 cols, so tooLong never true -> no wrap
+        String text = "Hello world";
+        String result = WordWrap.from(text).wrap();
+        assertEquals("Hello world", result);
+    }
+
+    @Test
+    @DisplayName("TC02: wrap(CharSequence) with newline in input preserves line boundary and does not wrap (branch ch=='\\n')")
+    public void test_TC02() {
+        // Contains newline, triggers explicit newline handling branch
+        String text = "A line\nB line";
+        String result = WordWrap.from(text).wrap();
+        assertEquals("A line\nB line", result);
+    }
+
+    @Test
+    @DisplayName("TC03: wrap(CharSequence) with a long unbroken word and breakWords=true inserts hyphens and wraps")
+    public void test_TC03() {
+        // Unbroken word length 11 > maxWidth=5, breakWords true triggers hyphenated splits
+        String text = "abcdefghijk";
+        String result = WordWrap.from(text).maxWidth(5).wrap();
+        // expect splits of 3 chars + hyphen then newline repeatedly
+        String expected = "abc-\ndef-\nghij-\nk";
+        assertEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC04: wrap(CharSequence) with long unbroken word and breakWords=false sets broken flag rather than hyphenating")
+    public void test_TC04() {
+        // Unbroken word length 8 > maxWidth=3, breakWords false triggers broken flag and no hyphens
+        String text = "abcdefgh";
+        String result = WordWrap.from(text).maxWidth(3).breakWords(false).wrap();
+        // intended behavior: no hyphen splitting, entire word remains on single line
+        assertEquals("abcdefgh", result);
+    }
+
+    @Test
+    @DisplayName("TC05: wrap(CharSequence) with inserted extraWordChars treats punctuation as word character avoiding break at punctuation")
+    public void test_TC05() {
+        // Include '!' as extra word char so punctuation isn't boundary -> hyphenation occurs after a!b
+        String text = "a!bcdefg";
+        String result = WordWrap.from(text).maxWidth(4).includeExtraWordChars("!").wrap();
+        // Expect first line includes "a!b-" if hyphen inserted after fitting up to width
+        // verify hyphenation point
+        assertEquals(true, result.contains("a!b-"));
+    }
+
+    @Test
+    @DisplayName("TC06: wrapToList returns list of lines equivalent to wrap output")
+    public void test_TC06() {
+        // Multiple words wrap into known lines under width=7
+        String text = "one two three four";
+        List<String> lines = WordWrap.from(text).maxWidth(7).wrapToList();
+        String joined = WordWrap.from(text).maxWidth(7).wrap();
+        String[] expectedLines = joined.split("\n", -1);
+        assertEquals(Arrays.asList(expectedLines), lines);
+    }
+
+    @Test
+    @DisplayName("TC07: wrap(LineConsumer) consumes lines via consumer methods, covering write and writeNewLine paths")
+    public void test_TC07() {
+        // Single line input to custom consumer -> one write then no extra newline at end
+        String text = "x y z";
+        class CustomConsumer implements LineConsumer {
+            List<String> lines = new ArrayList<>();
+            StringBuilder current = new StringBuilder();
+            @Override public void write(char[] chars, int off, int len) { current.append(chars, off, len); }
+            @Override public void writeNewLine() {
+                lines.add(current.toString());
+                current.setLength(0);
+            }
+            List<String> getLines() {
+                if (current.length() > 0) {
+                    lines.add(current.toString());
+                }
+                return lines;
+            }
+        }
+        CustomConsumer c = new CustomConsumer();
+        WordWrap.from(text).wrap(c);
+        assertEquals(Arrays.asList("x y z"), c.getLines());
+    }
+
+    @Test
+    @DisplayName("TC08: wrap(File,Charset) writes output to file and closes reader (exception path absent)")
+    public void test_TC08() throws IOException {
+        // writing simple text to temp file
+        String text = "hello world";
+        File f = File.createTempFile("wraptest", ".txt");
+        f.deleteOnExit();
+        WordWrap.from(text).wrap(f, StandardCharsets.UTF_8);
+        String fileContent = readFile(f);
+        assertEquals("hello world", fileContent);
+    }
+
+    @Test
+    @DisplayName("TC09: wrapUtf8(String) writes to filename using UTF-8 and covers wrapUtf8(filename) path")
+    public void test_TC09() throws IOException {
+        // writing to a filename
+        String text = "foo bar baz";
+        File f = File.createTempFile("wraptest", ".txt");
+        f.deleteOnExit();
+        WordWrap.from(text).wrapUtf8(f.getAbsolutePath());
+        String fileContent = readFile(new File(f.getAbsolutePath()));
+        assertEquals("foo bar baz", fileContent);
+    }
+
+    @Test
+    @DisplayName("TC10: wrap() return with empty input yields empty string (zero iterations of main loop)")
+    public void test_TC10() {
+        // Empty input triggers immediate loop exit and no output
+        String text = "";
+        String result = WordWrap.from(text).wrap();
+        assertEquals("", result);
+    }
+}

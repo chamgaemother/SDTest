@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "First reflection invocation of private static tagSet() initializes and returns non-empty tag set (init branch)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "returns a non-empty Set<String> containing known tag names and initializes static cache",
+      "tags": [
+        "positive",
+        "reflection",
+        "initialization"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 tagSet first-call initializes cache",
+        "  GIVEN",
+        "    // reflection to access private static tagSet method",
+        "    Class<?> cls = org.jsoup.parser.Parser.class;",
+        "    Method tagSetMethod = cls.getDeclaredMethod(\"tagSet\");",
+        "    tagSetMethod.setAccessible(true);",
+        "  WHEN",
+        "    // invoke first time",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    Set<String> tags = (Set<String>) tagSetMethod.invoke(null);",
+        "  THEN",
+        "    assertNotNull(tags);",
+        "    assertFalse(tags.isEmpty());",
+        "    assertTrue(tags.contains(\"html\"));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Second reflection invocation of private static tagSet() returns cached instance without reinitializing (cache branch)",
+      "path": "B0→B1→B3→B4",
+      "precondition": "TC03 has been executed to populate the cache",
+      "expectedResult": "returns the same Set<String> instance as the first invocation",
+      "tags": [
+        "positive",
+        "reflection",
+        "cache"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 tagSet second-call returns cached set",
+        "  GIVEN",
+        "    // assume cache populated by first invocation",
+        "    Class<?> cls = org.jsoup.parser.Parser.class;",
+        "    Method tagSetMethod = cls.getDeclaredMethod(\"tagSet\");",
+        "    tagSetMethod.setAccessible(true);",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    Set<String> first = (Set<String>) tagSetMethod.invoke(null);",
+        "  WHEN",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    Set<String> second = (Set<String>) tagSetMethod.invoke(null);",
+        "  THEN",
+        "    assertSame(first, second);"
+      ]
+    }
+  ]
+}

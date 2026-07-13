@@ -1,0 +1,81 @@
+{
+  "method": "setTrackPosition",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Calling setTrackPosition(true) on a new Parser sets trackPosition from false to true and returns the same instance",
+      "path": "B0→B1(true)→B2",
+      "precondition": "Parser parser = Parser.htmlParser(); // default trackPosition=false",
+      "expectedResult": "returned instance is the same parser; parser.isTrackPosition() == true",
+      "tags": [
+        "branch-true",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 setTrackPosition enables position tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Parser result = parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert result == parser;",
+        "    assert parser.isTrackPosition() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Calling setTrackPosition(false) on a new Parser leaves trackPosition false and returns the same instance",
+      "path": "B0→B1(false)→B2",
+      "precondition": "Parser parser = Parser.xmlParser(); // default trackPosition=false",
+      "expectedResult": "returned instance is the same parser; parser.isTrackPosition() == false",
+      "tags": [
+        "branch-false",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 setTrackPosition leaves tracking disabled",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Parser result = parser.setTrackPosition(false);",
+        "  THEN",
+        "    assert result == parser;",
+        "    assert parser.isTrackPosition() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Chaining setTrackPosition(true) then setTrackPosition(false) flips trackPosition from false→true→false on the same instance",
+      "path": "B0→B1(true)→B2→B1(false)→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); // default trackPosition=false",
+      "expectedResult": "after first call parser.isTrackPosition()==true; after second call parser.isTrackPosition()==false; both returns reference same parser",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "chaining",
+        "priority-P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 setTrackPosition chaining toggles tracking",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    Parser first = parser.setTrackPosition(true);",
+        "    Parser second = first.setTrackPosition(false);",
+        "  THEN",
+        "    assert first == parser;",
+        "    assert second == parser;",
+        "    assert parser.isTrackPosition() == false;",
+        "END"
+      ]
+    }
+  ]
+}

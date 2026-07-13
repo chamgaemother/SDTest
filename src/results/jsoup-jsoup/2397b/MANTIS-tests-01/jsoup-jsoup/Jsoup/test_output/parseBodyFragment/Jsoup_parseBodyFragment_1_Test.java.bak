@@ -1,0 +1,48 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("parseBodyFragment with empty HTML string and non-empty baseUri yields empty body and correct baseUri")
+    public void test_TC08() {
+        // Given an empty HTML fragment and a non-empty baseUri to test boundary of empty input
+        String html = "";
+        String baseUri = "http://example.com/";
+        // When parsing the body fragment
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // Then the body HTML should be empty (no nodes) and baseUri preserved
+        assertEquals("", doc.body().html(), "Expected empty body HTML for empty input");
+        assertEquals(baseUri, doc.baseUri(), "Expected baseUri to be exactly the provided URI");
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment throws NullPointerException when baseUri is null")
+    public void test_TC09() {
+        // Given any non-null html and a null baseUri to trigger null check branch
+        String html = "Hello";
+        String baseUri = null;
+        // When parsing with null baseUri, expect NullPointerException (per contract)
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(html, baseUri);
+        }, "Expected NullPointerException when baseUri is null");
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment preserves HTML comments within the body fragment")
+    public void test_TC10() {
+        // Given an HTML fragment containing element nodes and a comment node
+        String html = "<p>One</p><!-- note --><p>Two</p>";
+        String baseUri = "";
+        // When parsing the fragment, exercising normal path with non-empty fragment and empty baseUri
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // Then the serialized body HTML must include the comment exactly, to ensure comment preservation
+        String bodyHtml = doc.body().html();
+        assertTrue(bodyHtml.contains("<!-- note -->"),
+                   "Expected the comment '<!-- note -->' to be preserved in the output");
+    }
+}

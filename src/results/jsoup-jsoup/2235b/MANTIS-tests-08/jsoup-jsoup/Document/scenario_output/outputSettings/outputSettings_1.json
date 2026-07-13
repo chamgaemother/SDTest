@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Setter returns this and allows fluent chaining when called consecutively",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"http://chain\"); Document.OutputSettings s1 = new Document.OutputSettings(); Document.OutputSettings s2 = new Document.OutputSettings().prettyPrint(false);",
+      "expectedResult": "doc.outputSettings(s1).outputSettings(s2) returns same Document instance, and doc.outputSettings() is s2",
+      "tags": [
+        "positive",
+        "fluent",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 outputSettings fluent chaining",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://chain\");",
+        "    OutputSettings s1 = new OutputSettings();",
+        "    OutputSettings s2 = new OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    Document r1 = doc.outputSettings(s1);",
+        "    Document r2 = r1.outputSettings(s2);",
+        "  THEN",
+        "    assertSame(doc, r1);",
+        "    assertSame(doc, r2);",
+        "    assertSame(s2, doc.outputSettings());"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Getter returns internal reference even after setter mutation",
+      "path": "B0→B1",
+      "precondition": "Document doc = new Document(\"http://example\"); Document.OutputSettings newOs = new Document.OutputSettings().indentAmount(5); doc.outputSettings(newOs);",
+      "expectedResult": "doc.outputSettings().indentAmount() == 5 and same instance",
+      "tags": [
+        "positive",
+        "stateful"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 outputSettings state persistence",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example\");",
+        "    OutputSettings newOs = new OutputSettings().indentAmount(5);",
+        "    doc.outputSettings(newOs);",
+        "  WHEN",
+        "    OutputSettings current = doc.outputSettings();",
+        "  THEN",
+        "    assertSame(newOs, current);",
+        "    assertEquals(5, current.indentAmount());"
+      ]
+    }
+  ]
+}

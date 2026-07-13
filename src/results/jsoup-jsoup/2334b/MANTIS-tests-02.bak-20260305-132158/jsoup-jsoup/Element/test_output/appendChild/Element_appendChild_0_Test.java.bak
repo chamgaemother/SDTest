@@ -1,0 +1,69 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("TC01: appendChild(null) throws IllegalArgumentException when child is null")
+    public void test_TC01() throws Exception {
+        // GIVEN an Element with no children
+        Element parent = new Element("div");
+        // WHEN & THEN: passing null should throw IllegalArgumentException and leave childNodes empty
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            parent.appendChild(null);
+        }, "Expected appendChild(null) to throw, but it didn't");
+        // verify no mutation to childNodes (still empty list)
+        assertEquals(0, parent.childNodeSize(), "After exception, childNodeSize should remain 0");
+    }
+
+    @Test
+    @DisplayName("TC02: appendChild(first child) creates new NodeList and sets siblingIndex=0")
+    public void test_TC02() throws Exception {
+        // GIVEN a fresh Element with EmptyNodes, so ensureChildNodes() will allocate a new NodeList
+        Element parent = new Element("span");
+        TextNode child = new TextNode("text");
+        // precondition: childNodes == EmptyNodes -> new NodeList on appendChild
+        // WHEN
+        parent.appendChild(child);
+        // THEN size should be 1
+        assertEquals(1, parent.childNodeSize(), "First appendChild should create new NodeList and add one child");
+        // access the package-private field childNodes via reflection
+        Field childNodesField = Element.class.getDeclaredField("childNodes");
+        childNodesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Node> nodes = (List<Node>) childNodesField.get(parent);
+        assertSame(child, nodes.get(0), "The stored child should be the same instance passed in");
+        // child.siblingIndex should be 0 for the first child
+        assertEquals(0, child.siblingIndex(), "First child's siblingIndex should be set to 0");
+    }
+
+    @Test
+    @DisplayName("TC03: appendChild(subsequent children) reuses NodeList and increments siblingIndex")
+    public void test_TC03() throws Exception {
+        // GIVEN an Element with one existing child in its NodeList
+        Element parent = new Element("p");
+        TextNode first = new TextNode("one");
+        parent.appendChild(first);
+        // second appendChild should reuse the same NodeList, not create a new one
+        TextNode second = new TextNode("two");
+        // WHEN
+        parent.appendChild(second);
+        // THEN childNodeSize should be 2
+        assertEquals(2, parent.childNodeSize(), "After adding second child, childNodeSize should be 2");
+        // reflection to verify reuse: the childNodes list instance should still contain both
+        Field childNodesField = Element.class.getDeclaredField("childNodes");
+        childNodesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Node> nodes = (List<Node>) childNodesField.get(parent);
+        assertSame(second, nodes.get(1), "Second child should be at index 1 in the same NodeList instance");
+        // siblingIndex of second should be set to 1
+        assertEquals(1, second.siblingIndex(), "Second child's siblingIndex should be incremented to 1");
+    }
+}

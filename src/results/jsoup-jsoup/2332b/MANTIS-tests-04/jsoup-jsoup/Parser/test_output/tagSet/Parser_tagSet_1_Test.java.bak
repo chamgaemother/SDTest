@@ -1,0 +1,84 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+import org.jsoup.nodes.Element;
+
+/**
+ * JUnit5 tests for Parser methods based on provided scenarios.
+ */
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("settings(ParseSettings) updates parser settings and returns this for chaining")
+    public void test_TC01() {
+        // GIVEN: a fresh HTML parser
+        Parser parser = Parser.htmlParser();
+        ParseSettings newSettings = new ParseSettings(true, false);
+        // WHEN: settings() called to set new settings
+        Parser returned = parser.settings(newSettings);
+        // THEN: chaining returns same instance and settings updated
+        assertSame(parser, returned, "settings() should return this for chaining");
+        assertSame(newSettings, parser.settings(), "parser.settings() should return the newly set ParseSettings");
+    }
+
+    @Test
+    @DisplayName("setTrackErrors(5) enables tracking and isTrackErrors() returns true")
+    public void test_TC02() {
+        // GIVEN: a fresh XML parser
+        Parser parser = Parser.xmlParser();
+        // WHEN: enabling error tracking with positive maxErrors (>0) to cover the tracking branch
+        parser.setTrackErrors(5);
+        // THEN: parser.isTrackErrors() should be true and max size equals 5
+        assertTrue(parser.isTrackErrors(), "Error tracking should be enabled when maxErrors > 0");
+        assertEquals(5, parser.getErrors().getMaxSize(), "getErrors().getMaxSize() should equal the value passed to setTrackErrors");
+    }
+
+    @Test
+    @DisplayName("setTrackErrors(0) disables tracking and isTrackErrors() returns false")
+    public void test_TC03() {
+        // GIVEN: a fresh HTML parser
+        Parser parser = Parser.htmlParser();
+        // WHEN: disabling error tracking by passing zero to cover the no-tracking branch
+        parser.setTrackErrors(0);
+        // THEN: parser.isTrackErrors() should be false and max size equals 0
+        assertFalse(parser.isTrackErrors(), "Error tracking should be disabled when maxErrors == 0");
+        assertEquals(0, parser.getErrors().getMaxSize(), "getErrors().getMaxSize() should be 0 when tracking is disabled");
+    }
+
+    @Test
+    @DisplayName("setTrackPosition(true) and then isTrackPosition() returns true, chaining preserved")
+    public void test_TC04() {
+        // GIVEN: a fresh HTML parser
+        Parser parser = Parser.htmlParser();
+        // WHEN: enabling position tracking to cover the true branch
+        Parser returned = parser.setTrackPosition(true);
+        // THEN: chaining returns same instance and position tracking is enabled
+        assertSame(parser, returned, "setTrackPosition() should return this for chaining");
+        assertTrue(parser.isTrackPosition(), "isTrackPosition() should return true after setting trackPosition to true");
+    }
+
+    @Test
+    @DisplayName("isContentForTagData delegates to TreeBuilder and returns true for \"script\"")
+    public void test_TC05() {
+        // GIVEN: a fresh HTML parser whose HtmlTreeBuilder treats <script> contents as data
+        Parser parser = Parser.htmlParser();
+        // WHEN: checking content-for-tag-data for "script" to cover the delegate branch returning true
+        boolean result = parser.isContentForTagData("script");
+        // THEN: result should be true as HtmlTreeBuilder designates "script" as data
+        assertTrue(result, "isContentForTagData(\"script\") should return true per HtmlTreeBuilder semantics");
+    }
+
+    @Test
+    @DisplayName("defaultNamespace() returns XML namespace for xmlParser")
+    public void test_TC06() {
+        // GIVEN: a fresh XML parser
+        Parser parser = Parser.xmlParser();
+        // WHEN: retrieving default namespace to cover XML builder branch
+        String ns = parser.defaultNamespace();
+        // THEN: should equal the predefined XML namespace constant
+        assertEquals(Parser.NamespaceXml, ns, "defaultNamespace() should return the XML namespace for xmlParser");
+    }
+}

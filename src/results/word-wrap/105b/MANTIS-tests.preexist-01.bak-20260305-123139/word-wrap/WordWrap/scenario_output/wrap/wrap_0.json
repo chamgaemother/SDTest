@@ -1,0 +1,236 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_overload_wrap_String",
+      "description": "Builder.wrap() returns original short text when under maxWidth (branch false for tooLong)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Reader on text \"Hello world\"; default maxWidth=80",
+      "expectedResult": "return value is \"Hello world\"",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 simple-short-text",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"Hello world\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"Hello world\");"
+      ]
+    },
+    {
+      "id": "TC02_overload_wrap_String",
+      "description": "Builder.wrap() splits long text at whitespace when exceeding maxWidth (branch true for tooLong then writeLine)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Reader on text \"one two three\"; set maxWidth to 7 via builder.maxWidth(7)",
+      "expectedResult": "return value is \"one two\\nthree\"",
+      "tags": [
+        "branch-true",
+        "boundary",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 wrap-at-space",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"one two three\").maxWidth(7);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"one two\\nthree\");"
+      ]
+    },
+    {
+      "id": "TC03_overload_wrap_String",
+      "description": "Builder.wrap() breaks words with hyphens when word longer than maxWidth (breakWords true, insertHyphens true)",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "Reader on text \"abcdefgh\"; builder.maxWidth(3)",
+      "expectedResult": "return value is \"abc-\\ndef-\\ngh\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 hyphen-break",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdefgh\").maxWidth(3);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc-\\ndef-\\ngh\");"
+      ]
+    },
+    {
+      "id": "TC04_overload_wrap_String",
+      "description": "Builder.wrap() does not insert hyphens when insertHyphens(false) on long word",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "Reader on text \"abcdef\"; builder.maxWidth(3).insertHyphens(false)",
+      "expectedResult": "return value is \"abc\\ndef\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 no-hyphen-break",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(3).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc\\ndef\");"
+      ]
+    },
+    {
+      "id": "TC05_overload_wrapToList",
+      "description": "Builder.wrapToList() returns list of lines for multi-line text",
+      "path": "B0→B1→B2→B4→B8",
+      "precondition": "Reader on text \"a b c d e\"; builder.maxWidth(3)",
+      "expectedResult": "return List [\"a b\",\"c d\",\"e\"]",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:wrapToList"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrapToList multi-line",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a b c d e\").maxWidth(3);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"a b\",\"c d\",\"e\"));"
+      ]
+    },
+    {
+      "id": "TC06_overload_wrap_Writer",
+      "description": "Builder.wrap(Writer) throws IORuntimeException when underlying writer throws IOException",
+      "path": "B0→B1→B9→B10",
+      "precondition": "Reader on \"x\"; Writer stub that throws IOException on write; mocking is necessary to simulate write failure",
+      "expectedResult": "throws IORuntimeException; no reader left open",
+      "tags": [
+        "exception",
+        "overload:wrap(Writer)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 writer-exception",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"x\");",
+        "    Writer w = stub Writer that throws IOException on write;",
+        "  WHEN",
+        "    call b.wrap(w);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC07_overload_wrap_File_charset",
+      "description": "Builder.wrap(File,Charset) throws IORuntimeException when output file cannot be created",
+      "path": "B0→B1→B11→B12",
+      "precondition": "Input File exists; output file path unwritable; mocking of FileOutputStream used to throw IOException",
+      "expectedResult": "throws IORuntimeException",
+      "tags": [
+        "exception",
+        "overload:wrap(File,Charset)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 file-output-exception",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\");",
+        "    File f = non-writable temp file;",
+        "  WHEN",
+        "    call b.wrap(f,StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC08_overload_wrapUtf8_String",
+      "description": "Builder.wrapUtf8(String) writes UTF-8 encoded file when called",
+      "path": "B0→B1→B13→B14",
+      "precondition": "temp filename; input \"hi\"",
+      "expectedResult": "file content equals \"hi\" in UTF-8",
+      "tags": [
+        "overload:wrapUtf8(String,Charset)",
+        "IO"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 wrapUtf8 string filename",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hi\");",
+        "    String fname = tempFile.getAbsolutePath();",
+        "  WHEN",
+        "    b.wrapUtf8(fname);",
+        "  THEN",
+        "    assert file at fname contains \"hi\" in UTF-8;"
+      ]
+    },
+    {
+      "id": "TC09_overload_wrapUtf8_File",
+      "description": "Builder.wrapUtf8(File) writes file with UTF-8 line breaks preserved",
+      "path": "B0→B1→B15",
+      "precondition": "File target; input \"line1\\nline2\"",
+      "expectedResult": "file content equals \"line1\\nline2\"",
+      "tags": [
+        "overload:wrapUtf8(File)",
+        "newline"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 wrapUtf8 file overload",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"line1\\nline2\");",
+        "    File f = create temp file;",
+        "  WHEN",
+        "    b.wrapUtf8(f);",
+        "  THEN",
+        "    assert f content equals \"line1\\nline2\";"
+      ]
+    },
+    {
+      "id": "TC10_overload_wrap_String_illegalMaxWidth",
+      "description": "Builder.maxWidth(0) before wrap() throws IllegalArgumentException for non-positive maxWidth",
+      "path": "B0→B1→B16",
+      "precondition": "Reader on any text; builder.maxWidth(0)",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "boundary",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 illegal-maxWidth",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"x\");",
+        "    b.maxWidth(0);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Uppercase known form-submittable tag with preserveCase=true triggers clone branch and returns true",
+      "path": "B0→B1(null?→B3)→B4→B6(clone)→B7→B8",
+      "precondition": "static init has 'input' with formSubmit=true",
+      "expectedResult": "returned Tag is a clone (not the static instance), tagName == 'INPUT', isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "preserve-case",
+        "form-submittable"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone-path-for-uppercase-input",
+        "  GIVEN",
+        "    String originalLower = \"input\";",
+        "    String upper = originalLower.toUpperCase();",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(upper, Parser.NamespaceHtml, settings);",
+        "  THEN",
+        "    assert result != Tag.valueOf(originalLower);",
+        "    assert result.getName().equals(\"INPUT\");",
+        "    assert result.isFormSubmittable();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Known form-submittable tag in wrong namespace returns new generic tag with formSubmittable=false",
+      "path": "B0→B1(first get matches but ns mismatch)→B3→B4→B5→B7",
+      "precondition": "static init has 'input' in html namespace with formSubmit=true",
+      "expectedResult": "returned Tag is new generic (isKnownTag()==false), isFormSubmittable() == false",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "generic-path",
+        "form-submittable-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 namespace-mismatch-generates-generic-for-input",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String wrongNs = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, wrongNs, settings);",
+        "  THEN",
+        "    assert !result.isKnownTag();",
+        "    assert result.isFormSubmittable() == false;",
+        "END"
+      ]
+    }
+  ]
+}

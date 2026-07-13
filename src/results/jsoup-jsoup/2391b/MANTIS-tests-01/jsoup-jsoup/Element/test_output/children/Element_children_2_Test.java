@@ -1,0 +1,33 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+public class Element_children_2_Test {
+
+    @Test
+    @DisplayName("children() rebuilds and returns a new Elements when cached list modCount mismatches after mutation")
+    public void test_TC06() {
+        // GIVEN: parent element with one child primes the cache
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // first call to children() populates internal cache with one-element list
+        Elements first = parent.children();
+        // ensure cache contains exactly one element
+        assertEquals(1, first.size(), "Cache should initially contain one child element");
+
+        // WHEN: empty() clears childNodes and changes its modCount, invalidating the cache
+        parent.empty();  // mutation causes childNodeSize==0 and modCount mismatch
+
+        // THEN: second call returns a fresh, empty Elements
+        Elements second = parent.children();
+        // size should be zero after clearing children
+        assertEquals(0, second.size(), "After mutation, children() should reflect no child elements");
+        // instance should differ from the first cached Elements
+        assertNotSame(first, second, "children() should build and return a new Elements instance when cache is invalidated");
+    }
+}

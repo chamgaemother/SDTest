@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild(DataNode) on empty childNodes creates NodeList and sets sibling index",
+      "path": "B0→B1(reparentChild)→B2(ensureChildNodes=true)→B3→B4",
+      "precondition": "standalone Element with empty childNodes and DataNode instance",
+      "expectedResult": "DataNode added as only child with siblingIndex=0",
+      "tags": [
+        "positive",
+        "node-type",
+        "iteration=0→1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild DataNode path",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    DataNode data = new DataNode(\"hello\");",
+        "  WHEN",
+        "    parent.appendChild(data);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert data.parent() == parent;",
+        "    assert data.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild on Element whose childNodes is already a NodeList (skip ensureChildNodes branch)",
+      "path": "B0→B1(reparentChild)→B2(ensureChildNodes=false)→B3→B4",
+      "precondition": "Element parent; call ensureChildNodes() before appendChild",
+      "expectedResult": "new child appended with correct siblingIndex when ensureChildNodes is skipped",
+      "tags": [
+        "positive",
+        "branch-skip",
+        "iteration>0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 skip ensureChildNodes branch",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    // force childNodes to be a NodeList instance",
+        "    parent.ensureChildNodes();",
+        "    Element child1 = new Element(\"span\");",
+        "    parent.appendChild(child1);",
+        "    Element child2 = new Element(\"p\");",
+        "  WHEN",
+        "    parent.appendChild(child2);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert child2.siblingIndex() == 1;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "appendChild(same DataNode twice) triggers reparent removal and re-add at end",
+      "path": "B0→B1(reparentChild with removal branch)→B2(ensureChildNodes=false)→B3→B4",
+      "precondition": "Element parent; append DataNode once already",
+      "expectedResult": "list remains size 1, DataNode siblingIndex resets to 0 after re-add",
+      "tags": [
+        "negative",
+        "reparent-remove",
+        "iteration=remove→add"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 reparent DataNode twice",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    DataNode data = new DataNode(\"x\");",
+        "    parent.appendChild(data);",
+        "    assert parent.childNodeSize() == 1;",
+        "  WHEN",
+        "    parent.appendChild(data);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert data.siblingIndex() == 0;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() returns a deep copy with independent outputSettings, parser, and child nodes")
+    public void test_TC01() {
+        // GIVEN a shell document with a child html element (ensures B1->childNodes branch executed)
+        Document original = Document.createShell("http://example.com");
+        // WHEN clone is called to perform deep copy (invokes B2->B3 branch of clone override)
+        Document copy = original.clone();
+        // THEN assert copy is a new instance
+        assertNotSame(original, copy, "Cloned document should not be same instance as original");
+        // AND outputSettings should be independent instances (deep clone)
+        assertNotSame(original.outputSettings(), copy.outputSettings(),
+                "OutputSettings should be deep-copied, not same instance");
+        // AND parser should be a cloned instance, not same as original.parser
+        assertNotSame(original.parser(), copy.parser(),
+                "Parser should be deep-copied via clone(), not same instance");
+        // AND child nodes list sizes should be equal
+        List<?> originalChildren = original.childNodes();
+        List<?> copyChildren = copy.childNodes();
+        assertEquals(originalChildren.size(), copyChildren.size(),
+                "Child nodes count should be equal after clone");
+        // AND each corresponding child node should be different objects but with equal outerHtml
+        for (int i = 0; i < originalChildren.size(); i++) {
+            Object origNode = originalChildren.get(i);
+            Object copyNode = copyChildren.get(i);
+            assertNotSame(origNode, copyNode, "Each child node should be a distinct instance");
+            // Compare HTML content to ensure same content
+            assertEquals(origNode.toString(), copyNode.toString(),
+                    "Child node content should be equal after deep clone");
+        }
+    }
+
+    @Test
+    @DisplayName("clone() propagates exception when parser.clone() throws RuntimeException")
+    public void test_TC02() {
+        // GIVEN a Document with a stub parser that throws on clone (triggers exception path in clone)
+        Document doc = new Document("namespace", "http://base");
+        Parser failingParser = new Parser() {
+            @Override
+            public Parser clone() {
+                throw new RuntimeException("fail");
+            }
+        };
+        doc.parser(failingParser);
+        // WHEN clone() is called, THEN a RuntimeException with message "fail" is thrown
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> doc.clone(),
+                "Expected clone() to propagate RuntimeException from parser.clone()");
+        assertEquals("fail", ex.getMessage(),
+                "Exception message should match the stubbed parser.clone() failure message");
+    }
+}

@@ -1,0 +1,137 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load returns DotenvImpl with one file entry when systemProperties=false (branch-false, loop-0)",
+      "path": "B0→B2",
+      "precondition": "Create temporary directory with .env containing a single line 'KEY=VALUE'; use real DotenvReader and DotenvParser",
+      "expectedResult": "returned Dotenv contains entry KEY=VALUE; System.getProperty(\"KEY\") remains null",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains .env with content 'KEY=VALUE'; DotenvBuilder b = Dotenv.configure().directory(tmpDir)",
+        "WHEN\n  Dotenv dt = b.load();",
+        "THEN\n  assert dt.get(\"KEY\").equals(\"VALUE\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load sets system properties for multiple entries when systemProperties=true (branch-true, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "Create temporary directory with .env containing multiple lines 'A=1' and 'B=2'; use real DotenvReader and DotenvParser",
+      "expectedResult": "returned Dotenv contains entries A=1 and B=2; System.getProperty(\"A\")=='1' and System.getProperty(\"B\")=='2'",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains .env with 'A=1' and 'B=2'; DotenvBuilder b = Dotenv.configure().directory(tmpDir).systemProperties()",
+        "WHEN\n  Dotenv dt = b.load();",
+        "THEN\n  assert dt.get(\"A\").equals(\"1\"); assert dt.get(\"B\").equals(\"2\"); assert System.getProperty(\"A\").equals(\"1\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load throws DotenvException when .env is missing and throwIfMissing=true (exception)",
+      "path": "B0",
+      "precondition": "Use a directory without .env; default builder (throwIfMissing=true, throwIfMalformed=true)",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no system properties set",
+      "tags": [
+        "exception",
+        "throwIfMissing-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains no .env; DotenvBuilder b = Dotenv.configure().directory(tmpDir)",
+        "WHEN\n  call b.load();",
+        "THEN\n  throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load returns empty Dotenv when .env is missing and ignoreIfMissing() applied (branch-false, loop-0)",
+      "path": "B0→B2",
+      "precondition": "Use a directory without .env; builder.ignoreIfMissing() to prevent exception",
+      "expectedResult": "returned Dotenv with no entries; System.getenv unaffected",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "ignoreIfMissing"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains no .env; DotenvBuilder b = Dotenv.configure().directory(tmpDir).ignoreIfMissing()",
+        "WHEN\n  Dotenv dt = b.load();",
+        "THEN\n  assert dt.entries().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load throws DotenvException on malformed .env when throwIfMalformed=true (exception)",
+      "path": "B0",
+      "precondition": "Create directory with .env containing invalid line 'INVALIDLINE'; default builder",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException",
+      "tags": [
+        "exception",
+        "throwIfMalformed-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains .env with content 'INVALIDLINE'; DotenvBuilder b = Dotenv.configure().directory(tmpDir)",
+        "WHEN\n  call b.load();",
+        "THEN\n  throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load skips malformed entries and returns valid ones when ignoreIfMalformed() applied (branch-false, loop-0)",
+      "path": "B0→B2",
+      "precondition": "Create directory with .env containing 'GOOD=1' and 'BADLINE'; builder.ignoreIfMalformed()",
+      "expectedResult": "returned Dotenv contains only GOOD=1; no exception",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "ignoreIfMalformed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains .env with 'GOOD=1' and 'BADLINE'; DotenvBuilder b = Dotenv.configure().directory(tmpDir).ignoreIfMalformed()",
+        "WHEN\n  Dotenv dt = b.load();",
+        "THEN\n  assert dt.get(\"GOOD\").equals(\"1\"); assert dt.get(\"BADLINE\").equals(null);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load with ignoreIfMalformed() and systemProperties=true applies only valid entries to system properties (branch-true, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "Create directory with .env containing 'X=Y' and 'INVALID'; builder.ignoreIfMalformed().systemProperties()",
+      "expectedResult": "returned Dotenv contains X=Y; System.getProperty(\"X\")==\"Y\"; no exception",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "ignoreIfMalformed",
+        "systemProperties"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  File tmpDir contains .env with 'X=Y' and 'INVALID'; DotenvBuilder b = Dotenv.configure().directory(tmpDir).ignoreIfMalformed().systemProperties()",
+        "WHEN\n  Dotenv dt = b.load();",
+        "THEN\n  assert dt.get(\"X\").equals(\"Y\"); assert System.getProperty(\"X\").equals(\"Y\");"
+      ]
+    }
+  ]
+}

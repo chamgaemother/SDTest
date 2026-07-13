@@ -1,0 +1,106 @@
+{
+  "method": "isFormSubmittable",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Known form-submit tag 'input' returns true (branch: Tags.containsKey && formSubmit==true)",
+      "path": "B0→B1",
+      "precondition": "Ensure Tag.Tags is initialized with standard HTML tags via static init",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "branch-true",
+        "known-tag",
+        "form-submittable",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 isFormSubmittable positive-known-submit",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"input\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Known non-submit tag 'div' returns false (branch: Tags.containsKey && formSubmit==false)",
+      "path": "B0→B1",
+      "precondition": "Ensure Tag.Tags is initialized with standard HTML tags via static init",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "branch-false",
+        "known-tag",
+        "non-submit",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 isFormSubmittable known-non-submit",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"div\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Unknown tag 'foo' returns false (branch: no entry in Tags → default new Tag formSubmit==false)",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "branch-false",
+        "unknown-tag",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 isFormSubmittable unknown-tag",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"foo\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Known submit tag 'button' in non-HTML namespace returns false (branch: namespace mismatch → new default Tag formSubmit==false)",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "branch-false",
+        "known-tag",
+        "namespace-mismatch",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 isFormSubmittable namespace-mismatch",
+        "  GIVEN",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "    String ns = \"http://www.example.com/custom\";",
+        "    Tag tag = Tag.valueOf(\"button\", ns, settings);",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

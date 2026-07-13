@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse handles an at-rule with block containing a nested ruleset (hasRuleSet=true)",
+      "path": "B0→B1→B2(ATKEYWORD)→B4(handleAtRule start)→…→hasRuleSet=true→nested handleRuleSet→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "ContentHandler.startAtRule('media'), selectors for 'h1' are emitted and endAtRule('media') then endDocument",
+      "tags": [
+        "positive",
+        "atrule",
+        "nested-ruleset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 nested-ruleset-in-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media screen { h1{} }\\n\");",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startedAtRuleNames.contains(\"media\");",
+        "    assert !doc.selectorsList.isEmpty();",
+        "    assert doc.selectorsList.get(0).get(0).toString().contains(\"h1\");",
+        "    assert doc.endedAtRuleNames.contains(\"media\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse handles an at-rule with block containing declarations only (hasRuleSet=false)",
+      "path": "B0→B1→B2(ATKEYWORD)→B4(handleAtRule start)→…→hasRuleSet=false→handleDeclarationBlock→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "ContentHandler.startAtRule('font-face') and declaration for property 'font-family' with correct value then endAtRule('font-face') and endDocument",
+      "tags": [
+        "positive",
+        "atrule",
+        "declaration-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 declaration-block-in-atrule",
+        "  GIVEN",
+        "    String css = \"@font-face { font-family: 'A'; }\";",
+        "    Reader reader = new StringReader(css);",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startedAtRuleNames.contains(\"font-face\");",
+        "    // Declaration event occurred; error handler no errors",
+        "    assert err.errors.isEmpty();",
+        "    assert doc.endedAtRuleNames.contains(\"font-face\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse handles nested at-rule inside an at-rule block (inner ATKEYWORD branch)",
+      "path": "B0→B1→B2(ATKEYWORD outer)→B4→…→hasRuleSet=true→while→iter.last.type==ATKEYWORD→handleAtRule(inner)→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "Both outer and inner at-rule names appear in startAtRule and endAtRule lists, then endDocument",
+      "tags": [
+        "positive",
+        "atrule",
+        "nested-atrule"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 nested-atrule-in-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@outer { @inner{} }\\n\");",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startedAtRuleNames.containsAll(List.of(\"outer\",\"inner\"));",
+        "    assert doc.endedAtRuleNames.containsAll(List.of(\"inner\",\"outer\"));",
+        "END"
+      ]
+    }
+  ]
+}

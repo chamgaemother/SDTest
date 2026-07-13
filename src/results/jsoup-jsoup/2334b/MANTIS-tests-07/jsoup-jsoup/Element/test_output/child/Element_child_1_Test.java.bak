@@ -1,0 +1,55 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * JUnit 5 tests for Element.child(int) method, covering cache-hit scenarios.
+ */
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("TC08: child(index) returns correct Element on second access using cached shadowChildrenRef")
+    public void test_TC08() {
+        // GIVEN: parent with three children, cache populated by first access
+        Element parent = new Element("div");
+        Element e1 = new Element("p");
+        Element e2 = new Element("span");
+        Element e3 = new Element("a");
+        parent.appendChild(e1);
+        parent.appendChild(e2);
+        parent.appendChild(e3);
+        // first access populates shadowChildrenRef cache (path enters B3 building list)
+        Element first = parent.child(0);
+        // sanity check that first is e1
+        assertSame(e1, first, "Initial child(0) should be first element and populate cache");
+
+        // WHEN: second access should hit cache and return second child (path B4)
+        Element result = parent.child(1);
+
+        // THEN: returned element must be the same reference e2
+        assertSame(e2, result, "Second call should return the second element from cached child list without recomputing");
+    }
+
+    @Test
+    @DisplayName("TC09: child(index) throws IndexOutOfBoundsException on cached shadowChildrenRef when index out of range")
+    public void test_TC09() {
+        // GIVEN: parent with two children, cache populated by first access
+        Element parent = new Element("div");
+        Element e1 = new Element("p");
+        Element e2 = new Element("span");
+        parent.appendChild(e1);
+        parent.appendChild(e2);
+        // populate cache via valid index 0 (path B3)
+        Element first = parent.child(0);
+        assertSame(e1, first, "Initial child(0) should be first element and populate cache");
+
+        // WHEN & THEN: accessing out-of-range index should throw IndexOutOfBoundsException (path B5)
+        assertThrows(IndexOutOfBoundsException.class,
+            () -> parent.child(2),
+            "Accessing child(2) when only 2 children exist should throw IndexOutOfBoundsException even with cached list");
+    }
+}

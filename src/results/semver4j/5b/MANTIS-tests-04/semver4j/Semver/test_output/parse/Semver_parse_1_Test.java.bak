@@ -1,0 +1,24 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Semver_parse_Test {
+
+    @Test
+    @DisplayName("parse(\"2147483648.0.0\") returns null when major version overflows Integer.MAX_VALUE")
+    void test_TC11() {
+        // The major identifier "2147483648" exceeds Integer.MAX_VALUE, forcing a NumberFormatException in parsing
+        String version = "2147483648.0.0";
+        // Expect parse to catch the overflow exception and return null
+        assertNull(org.semver4j.Semver.parse(version));
+    }
+
+    @Test
+    @DisplayName("parse(\"01.02.03\") returns null when numeric identifiers have leading zeros")
+    void test_TC12() {
+        // Numeric identifiers "01", "02", "03" use leading zeros, violating semver numeric identifier rules
+        String version = "01.02.03";
+        // Expect parse to reject leading zeros and return null
+        assertNull(org.semver4j.Semver.parse(version));
+    }
+}

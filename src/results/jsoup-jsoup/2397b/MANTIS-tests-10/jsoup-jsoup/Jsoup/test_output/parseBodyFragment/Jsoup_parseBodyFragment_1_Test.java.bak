@@ -1,0 +1,77 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("Empty bodyHtml with non-empty baseUri returns empty body without errors")
+    public void test_TC06() {
+        // Scenario TC06: empty bodyHtml should result in an empty body and baseUri preserved.
+        String bodyHtml = "";
+        String baseUri = "http://example.com/";
+        // B0→B1→B3→B5: no content nodes, straightforward path.
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        // Expect no children in body
+        assertEquals("", doc.body().html(), "Body HTML should be empty for empty input");
+        // The document base URI should remain as provided
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be preserved when input is empty");
+    }
+
+    @Test
+    @DisplayName("Relative link in fragment is resolved to absolute URL when baseUri is non-empty")
+    public void test_TC07() {
+        // Scenario TC07: relative link should resolve against provided baseUri.
+        String bodyHtml = "<a href='page.html'>link</a>";
+        String baseUri = "http://example.com/dir/";
+        // B0→B1→B4→B6: processing link resolution path
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        Element link = doc.body().selectFirst("a");
+        assertNotNull(link, "Anchor element should be present");
+        // href should be rewritten to full absolute URL
+        String resolvedHref = link.attr("href");
+        assertEquals("http://example.com/dir/page.html", resolvedHref,
+                "Relative URL should be resolved to absolute using baseUri");
+    }
+
+    @Test
+    @DisplayName("Fragment containing <base> tag overrides provided baseUri for subsequent link resolution")
+    public void test_TC08() {
+        // Scenario TC08: <base> tag inside fragment takes precedence over method baseUri.
+        String bodyHtml = "<base href='http://other.com/dir/'/><a href='x.html'>x</a>";
+        String baseUri = "http://example.com/";
+        // B0→B1→B4→B6: route with base-tag override, then resolution
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        Element link = doc.body().selectFirst("a");
+        assertNotNull(link, "Anchor element should be present after parsing");
+        // href should resolve against the <base> tag href, not the method parameter
+        String resolvedHref = link.attr("href");
+        assertEquals("http://other.com/dir/x.html", resolvedHref,
+                "Href resolution should use <base> tag href instead of provided baseUri");
+    }
+
+    @Test
+    @DisplayName("Multiple sibling nodes in fragment are all parsed into body children")
+    public void test_TC09() {
+        // Scenario TC09: ensure multiple sibling elements are all parsed in order.
+        String bodyHtml = "<p>One</p><p>Two</p>";
+        String baseUri = "";
+        // B0→B1→B3→B5: path with iteration over sibling nodes
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        List<Element> paragraphs = doc.body().select("p");
+        // Expect exactly two <p> elements
+        assertEquals(2, paragraphs.size(), "Should parse two sibling <p> elements");
+        // Their text should match the input order
+        assertAll("Paragraph texts",
+            () -> assertEquals("One", paragraphs.get(0).text(), "First paragraph text should be 'One'"),
+            () -> assertEquals("Two", paragraphs.get(1).text(), "Second paragraph text should be 'Two'")
+        );
+    }
+}

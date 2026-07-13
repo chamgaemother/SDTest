@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "traverse visits two sibling leaf nodes under root exercising skip-removal logic (parent!=null && hasParent→B6→B11 path)",
+      "path": "B0→B1→B2→B5→B11→B12(loop×0)→B23→B1→B5→B11→B12(loop×0)→B23→B1→B24",
+      "precondition": "root has two leaf children",
+      "expectedResult": "calls head and tail on root and on each of the two children in document order",
+      "tags": [
+        "positive",
+        "sibling",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 traverse two siblings",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"span\");",
+        "    root.appendChild(c1); root.appendChild(c2);",
+        "    List<String> log = new ArrayList<>();",
+        "    NodeVisitor visitor = (node, depth) -> log.add(node.nodeName()+\":head:\"+depth),",
+        "                   (node, depth) -> log.add(node.nodeName()+\":tail:\"+depth);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertIterableEquals(List.of(",
+        "      \"div:head:0\",",
+        "      \"p:head:1\",\"p:tail:1\",",
+        "      \"span:head:1\",\"span:tail:1\",",
+        "      \"div:tail:0\"",
+        "    ), log);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "traverse removes first of two siblings triggering B9→B10 removal branch with non-null nextSibling",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B10→B1→B5→B11→B12→B23→B1→B24",
+      "precondition": "root has two leaf children; visitor.head removes the first child only",
+      "expectedResult": "first child is removed without tail, then second child is visited head/tail, then root tail",
+      "tags": [
+        "negative",
+        "removal",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 traverse remove-first-sibling",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"a\");",
+        "    Element c2 = new Element(\"b\");",
+        "    root.appendChild(c1); root.appendChild(c2);",
+        "    List<String> log = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override public void head(Node node, int depth) {",
+        "        log.add(node.nodeName()+\":head:\"+depth);",
+        "        if (node == c1) node.remove();",
+        "      }",
+        "      @Override public void tail(Node node, int depth) {",
+        "        log.add(node.nodeName()+\":tail:\"+depth);",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertIterableEquals(List.of(",
+        "      \"div:head:0\",",
+        "      \"a:head:1\",           // c1 removed, tail skipped",
+        "      \"b:head:1\",\"b:tail:1\",",
+        "      \"div:tail:0\"",
+        "    ), log);",
+        "END"
+      ]
+    }
+  ]
+}

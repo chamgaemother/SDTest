@@ -1,0 +1,45 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(1) called twice uses cached shadowChildrenRef on second invocation")
+    public void test_TC06() {
+        // GIVEN a parent element with two children
+        Element parent = new Element("div");
+        Element first = new Element("a");
+        Element second = new Element("b");
+        parent.appendChild(first);
+        parent.appendChild(second);
+        // WHEN calling child(1) twice
+        Element result1 = parent.child(1);
+        Element result2 = parent.child(1);
+        // THEN both calls should return the same instance (cache reuse)
+        assertSame(second, result1, "First child(1) should return the second element");
+        assertSame(second, result2, "Second child(1) should return the same cached second element");
+    }
+
+    @Test
+    @DisplayName("child(2) after mutation clears cache via nodelistChanged and rebuilds new shadowChildrenRef")
+    public void test_TC07() {
+        // GIVEN a parent element with two children, and its cache populated
+        Element parent = new Element("ul");
+        Element e1 = new Element("li");
+        Element e2 = new Element("li");
+        parent.appendChild(e1);
+        parent.appendChild(e2);
+        // populate the shadowChildrenRef cache for index 1
+        Element cached = parent.child(1);
+        assertSame(e2, cached, "Initial call to child(1) sets up the cache");
+        // WHEN appending a third child (should invalidate the cache)
+        Element e3 = new Element("li");
+        parent.appendChild(e3); // triggers nodelistChanged internally
+        // THEN child(2) should return the newly added third element
+        Element result = parent.child(2);
+        assertSame(e3, result, "After mutation, child(2) should return the newly added element");
+    }
+}

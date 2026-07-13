@@ -1,0 +1,38 @@
+package org.jsoup.parser;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Test class for Tag.isFormSubmittable method based on provided scenarios.
+ */
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("isFormSubmittable() returns false when a known formSubmit tag is requested in a non-HTML namespace")
+    void test_TC06() throws Exception {
+        // Given: a known HTML-only submittable tag name "input" and a non-HTML namespace
+        String tagName = "input";
+        String normalName = ParseSettings.normalName(tagName);
+        String wrongNs = "http://example.org/custom";
+        ParseSettings settings = ParseSettings.preserveCase;
+        
+        // Use reflection to invoke the package-private Tag.valueOf(String, String, String, ParseSettings)
+        Method valueOf4 = Tag.class.getDeclaredMethod(
+            "valueOf", String.class, String.class, String.class, ParseSettings.class);
+        valueOf4.setAccessible(true);
+        Tag tag = (Tag) valueOf4.invoke(null, tagName, normalName, wrongNs, settings);
+        
+        // When: checking if the tag is form submittable
+        // Then: should be false because formSubmit flags are only set for HTML namespace during setup
+        assertFalse(tag.isFormSubmittable(), 
+            "Expected isFormSubmittable to be false for 'input' in custom namespace");
+        
+        // Inline comment: The static initializer only sets formSubmit=true for tags in Parser.NamespaceHtml.
+        // By using a wrong namespace, we ensure that the formSubmit flag remains false on the new Tag instance.
+    }
+}

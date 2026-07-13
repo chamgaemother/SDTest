@@ -1,0 +1,54 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("load() with missing .env file and ignoreIfMissing() returns empty Dotenv without exception (tests throwIfMissing=false branch)")
+    public void test_TC10() throws IOException {
+        // Arrange: create a temp directory without any .env file -> triggers throwIfMissing=false and skips systemProperties branch
+        Path tempDir = Files.createTempDirectory("dotenv_test_TC10_");
+        tempDir.toFile().deleteOnExit();
+        DotenvBuilder builder = Dotenv.configure()
+            .directory(tempDir.toString())
+            .ignoreIfMissing();
+
+        // Act: no exception should be thrown when loading missing .env
+        Dotenv dotenv = assertDoesNotThrow(builder::load);
+
+        // Assert: entries with a non-null filter should return only file-based entries, which is empty here
+        Set<DotenvEntry> entries = dotenv.entries(e -> true);
+        assertTrue(entries.isEmpty(), "Expected no entries when .env file is missing and ignoreIfMissing is set");
+    }
+
+    @Test
+    @DisplayName("get(key, defaultValue) returns default when key absent in both system and file")
+    public void test_TC11() throws IOException {
+        // Arrange: create a temp directory with an empty .env file -> no entries in file; no relevant env var or system prop
+        Path tempDir = Files.createTempDirectory("dotenv_test_TC11_");
+        tempDir.toFile().deleteOnExit();
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, new byte[0], StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+        envFile.toFile().deleteOnExit();
+
+        DotenvBuilder builder = Dotenv.configure()
+            .directory(tempDir.toString());
+        Dotenv dotenv = builder.load();
+
+        // Act: attempt to get a missing key with default
+        String result = dotenv.get("MISSING", "DEF");
+
+        // Assert: since key is absent both in system/env and file, default should be returned
+        assertEquals("DEF", result, "Expected default value when key is absent in both environment and file");
+    }
+}

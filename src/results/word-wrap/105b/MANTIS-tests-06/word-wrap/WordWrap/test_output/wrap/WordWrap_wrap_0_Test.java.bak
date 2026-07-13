@@ -1,0 +1,137 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("wrap() on empty input produces empty string (loop zero iterations)")
+    public void test_TC01() {
+        // empty input causes immediate EOF, loop zero iterations
+        WordWrap.Builder b = WordWrap.from(new StringReader(""));
+        String result = b.wrap();
+        assertEquals("", result);
+    }
+
+    @Test
+    @DisplayName("wrap() with single short word shorter than maxWidth stays on one line (branch false tooLong)")
+    public void test_TC02() {
+        // "hello" length 5 <= default maxWidth 80, tooLong branch false
+        WordWrap.Builder b = WordWrap.from(new StringReader("hello"));
+        String result = b.wrap();
+        assertEquals("hello", result);
+    }
+
+    @Test
+    @DisplayName("wrap() with word exactly at maxWidth boundary does not break (boundary tooLong false)")
+    public void test_TC03() {
+        // "abcdefghij" length 10 == maxWidth 10, tooLong should be false
+        WordWrap.Builder b = WordWrap.from(new StringReader("abcdefghij")).maxWidth(10);
+        String result = b.wrap();
+        assertEquals("abcdefghij", result);
+    }
+
+    @Test
+    @DisplayName("wrap() with long word exceeding maxWidth breaks word with hyphens (branch-true breakWords true insertHyphens true)")
+    public void test_TC04() {
+        // long word length 16 > maxWidth 5, breakWords true, insertHyphens true
+        WordWrap.Builder b = WordWrap.from(new StringReader("abcdefghijklmnop")).maxWidth(5);
+        String result = b.wrap();
+        String expected = "abc-\n" +
+                          "de-\n" +
+                          "fgh-\n" +
+                          "ij-\n" +
+                          "kl-\n" +
+                          "mn-\n" +
+                          "op";
+        assertEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("wrap() with long word exceeding maxWidth without breaking words leaves word unbroken (branch-true breakWords false)")
+    public void test_TC05() {
+        // long word length 11 > maxWidth 5, breakWords false => word remains intact
+        WordWrap.Builder b = WordWrap.from(new StringReader("abcdefghijk")).maxWidth(5).breakWords(false);
+        String result = b.wrap();
+        assertEquals("abcdefghijk", result);
+    }
+
+    @Test
+    @DisplayName("wrap() preserves existing newline and resets line buffer (branch newline handling)")
+    public void test_TC06() {
+        // existing newline causes flush of "ab" then writes "cd"
+        WordWrap.Builder b = WordWrap.from(new StringReader("ab\ncd"));
+        String result = b.wrap();
+        assertEquals("ab\ncd", result);
+    }
+
+    @Test
+    @DisplayName("wrapToList() collects lines into List<String> path via LineConsumer")
+    public void test_TC07() {
+        // maxWidth 4 forces splits: "one","two","thr","ee"
+        WordWrap.Builder b = WordWrap.from(new StringReader("one two three")).maxWidth(4);
+        List<String> lines = b.wrapToList();
+        List<String> expected = Arrays.asList("one", "two", "thr", "ee");
+        assertEquals(expected, lines);
+    }
+
+    @Test
+    @DisplayName("wrap(Writer) with writer throwing IOException is wrapped into IORuntimeException")
+    public void test_TC08() {
+        // stub writer throws IOException on first write
+        WordWrap.Builder b = WordWrap.from(new StringReader("x"));
+        Writer w = new Writer() {
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("write failure");
+            }
+            @Override public void flush() throws IOException {}
+            @Override public void close() throws IOException {}
+        };
+        assertThrows(IORuntimeException.class, () -> b.wrap(w));
+    }
+
+    @Test
+    @DisplayName("wrap(File,Charset) throws IORuntimeException when file not found (exception path)")
+    public void test_TC09() {
+        // non-existent file triggers FileNotFoundException wrapped as IORuntimeException
+        File f = new File("no-such-file-12345.txt");
+        assertThrows(IORuntimeException.class, () -> WordWrap.from(f, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("wrap() with custom stringWidth causing early break (branch true on tooLong custom width)")
+    public void test_TC10() {
+        // custom width function always returns 10 > maxWidth 3, first word fits but triggers writeLine
+        Function<CharSequence, Number> fw = s -> 10;
+        WordWrap.Builder b = WordWrap.from(new StringReader("abcde")).maxWidth(3).stringWidth(fw);
+        String result = b.wrap();
+        // despite forced break condition, full word should remain intact
+        assertEquals("abcde", result);
+    }
+
+    @Test
+    @DisplayName("wrap() with extraWordChars excludes punctuation so punctuation splits words (branch punctuation detection)")
+    public void test_TC11() {
+        // remove '.' from extraWordChars so dot is punctuation and splits
+        WordWrap.Builder b = WordWrap.from(new StringReader("a.b")).excludeExtraWordChars(".");
+        String result = b.wrap();
+        assertEquals("a.b", result);
+    }
+}

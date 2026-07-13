@@ -1,0 +1,117 @@
+[
+  {
+    "clazz": "io.github.cdimascio.dotenv.internal.DotenvParser",
+    "methodName": "parse",
+    "signature": "java.util.List parse()",
+    "visibility": "public",
+    "body": "{\n    final var lines \u003d lines();\n    final var entries \u003d new ArrayList\u003cDotenvEntry\u003e(lines.size());\n    for (final var line : lines) {\n        addNewEntry(entries, line.trim());\n    }\n    return entries;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B1 : If($z0 \u003d\u003d 0) -\u003e B2 | else -\u003e B3"
+    ],
+    "blockList": [
+      "B0 {\n  DotenvParser\n  $r1 \u003d r0.lines()\n  $r2 \u003d ArrayList\n  $i0 \u003d $r1.size()\n  new ArrayList($i0)\n  $r3 \u003d $r1.iterator()\n}",
+      "B1 {\n  $z0 \u003d $r3.hasNext()\n  if ($z0 \u003d\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $r4 \u003d $r3.next()\n  r5 \u003d String) $r4\n  $r6 \u003d r5.trim()\n  r0.addNewEntry($r2, $r6)\n  goto B1\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B1",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "DotenvParser#lines(...0)",
+        "body": "{\n    try {\n        return reader.read();\n    } catch (DotenvException e) {\n        if (throwIfMissing)\n            throw e;\n        return emptyList();\n    } catch (IOException e) {\n        throw new DotenvException(e);\n    }\n}"
+      },
+      {
+        "name": "DotenvParser#addNewEntry(...2)",
+        "body": "{\n    if (isWhiteSpace.test(line) || isComment.test(line) || isBlank(line))\n        return;\n    final var entry \u003d parseLine.apply(line);\n    if (entry \u003d\u003d null) {\n        if (throwIfMalformed)\n            throw new DotenvException(\"Malformed entry \" + line);\n        return;\n    }\n    if (!QuotedStringValidator.isValid(entry.getValue())) {\n        if (throwIfMalformed)\n            throw new DotenvException(\"Malformed entry, unmatched quotes \" + line);\n        return;\n    }\n    final var key \u003d entry.getKey();\n    final var value \u003d QuotedStringValidator.stripQuotes(entry.getValue());\n    entries.add(new DotenvEntry(key, value));\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "io.github.cdimascio.dotenv.internal.DotenvReader",
+    "methodName": "read",
+    "signature": "java.util.List read()",
+    "visibility": "public",
+    "body": "{\n    String dir \u003d directory.replaceAll(\"\\\\\\\\\", \"/\").replaceFirst(\"\\\\.env$\", \"\").replaceFirst(\"/$\", \"\");\n    String location \u003d dir + \"/\" + filename;\n    String lowerLocation \u003d location.toLowerCase();\n    Path path \u003d (lowerLocation.startsWith(\"file:\") || lowerLocation.startsWith(\"android.resource:\") || lowerLocation.startsWith(\"jimfs:\")) ? Paths.get(URI.create(location)) : Paths.get(location);\n    if (Files.exists(path)) {\n        return Files.readAllLines(path);\n    }\n    try {\n        return ClasspathHelper.loadFileFromClasspath(location.replaceFirst(\"^\\\\./\", \"/\")).collect(Collectors.toList());\n    } catch (DotenvException e) {\n        Path cwd \u003d FileSystems.getDefault().getPath(\".\").toAbsolutePath().normalize();\n        String cwdMessage \u003d !path.isAbsolute() ? \"(working directory: \" + cwd + \")\" : \"\";\n        e.addSuppressed(new DotenvException(\"Could not find \" + path + \" on the file system \" + cwdMessage));\n        throw e;\n    }\n}",
+    "nodes": 12,
+    "edges": 14,
+    "cc": 4,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B3",
+      "B1 : If($z2 !\u003d 0) -\u003e B2 | else -\u003e B3",
+      "B2 : If($z3 \u003d\u003d 0) -\u003e B3 | else -\u003e B4",
+      "B5 : If($z1 \u003d\u003d 0) -\u003e B6 | else -\u003e B7",
+      "B8 : If($z4 !\u003d 0) -\u003e B9 | else -\u003e B10"
+    ],
+    "blockList": [
+      "B0 {\n  DotenvReader\n  $r1 \u003d String directory\u003e\n  $r2 \u003d $r1.replaceAll(\"\\\\\\\\\", \"/\")\n  $r3 \u003d $r2.replaceFirst(\"\\\\.env$\", \"\")\n  $r4 \u003d $r3.replaceFirst(\"/$\", \"\")\n  $r5 \u003d String filename\u003e\n  $r6 \u003d dynInvoke makeConcatWithConstants($r4, $r5)\n  $r7 \u003d $r6.toLowerCase()\n  $z0 \u003d $r7.startsWith(\"file:\")\n  if ($z0 !\u003d 0) goto B1 else B3\n}",
+      "B1 {\n  $z2 \u003d $r7.startsWith(\"android.resource:\")\n  if ($z2 !\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $z3 \u003d $r7.startsWith(\"jimfs:\")\n  if ($z3 \u003d\u003d 0) goto B3 else B4\n}",
+      "B3 {\n  $r27 \u003d URI.create($r6)\n  $r28 \u003d Paths.get($r27)\n  goto B5\n}",
+      "B4 {\n  $r16 \u003d String)[0]\n  $r28 \u003d Paths.get($r6, $r16)\n}",
+      "B5 {\n  r8 \u003d $r28\n  $r9 \u003d LinkOption)[0]\n  $z1 \u003d Files.exists($r28, $r9)\n  if ($z1 \u003d\u003d 0) goto B6 else B7\n}",
+      "B6 {\n  $r15 \u003d Files.readAllLines($r28)\n  return\n}",
+      "B7 {\n  $r10 \u003d $r6.replaceFirst(\"^\\\\./\", \"/\")\n  $r11 \u003d ClasspathHelper.loadFileFromClasspath($r10)\n  $r12 \u003d Collectors.toList()\n  $r13 \u003d $r11.collect($r12)\n  $r14 \u003d List) $r13\n  return\n}",
+      "B8 {\n  $r17 :\u003d @caughtexception\n  $r18 \u003d FileSystems.getDefault()\n  $r19 \u003d String)[0]\n  $r20 \u003d $r18.getPath(\".\", $r19)\n  $r21 \u003d $r20.toAbsolutePath()\n  $r22 \u003d $r21.normalize()\n  $z4 \u003d r8.isAbsolute()\n  if ($z4 !\u003d 0) goto B9 else B10\n}",
+      "B9 {\n  $r26 \u003d String.valueOf($r22)\n  $r29 \u003d dynInvoke makeConcatWithConstants($r26)\n  goto B11\n}",
+      "B10 {\n  $r29 \u003d \"\"\n}",
+      "B11 {\n  $r23 \u003d DotenvException\n  $r24 \u003d String.valueOf(r8)\n  $r25 \u003d dynInvoke makeConcatWithConstants($r24, $r29)\n  new DotenvException($r25)\n  $r17.addSuppressed($r23)\n  throw $r17\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B3",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B5",
+      "B4 --\u003e B5",
+      "B5 --\u003e B6",
+      "B5 --\u003e B7",
+      "B6 --\u003e [EXIT]",
+      "B7 --\u003e [EXIT]",
+      "B8 --\u003e B9",
+      "B8 --\u003e B10",
+      "B9 --\u003e B11",
+      "B10 --\u003e B11",
+      "B11 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "io.github.cdimascio.dotenv.DotenvBuilder",
+    "methodName": "load",
+    "signature": "io.github.cdimascio.dotenv.Dotenv load()",
+    "visibility": "public",
+    "body": "{\n    final var reader \u003d new DotenvParser(new DotenvReader(directoryPath, filename), throwIfMissing, throwIfMalformed);\n    final List\u003cDotenvEntry\u003e env \u003d reader.parse();\n    if (systemProperties) {\n        env.forEach(it -\u003e System.setProperty(it.getKey(), it.getValue()));\n    }\n    return new DotenvImpl(env);\n}",
+    "nodes": 3,
+    "edges": 3,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($z2 \u003d\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  DotenvBuilder\n  $r0 \u003d DotenvParser\n  $r1 \u003d DotenvReader\n  $r4 \u003d String directoryPath\u003e\n  $r3 \u003d String filename\u003e\n  new DotenvReader($r4, $r3)\n  $z1 \u003d DotenvBuilder: boolean throwIfMissing\u003e\n  $z0 \u003d DotenvBuilder: boolean throwIfMalformed\u003e\n  new DotenvParser($r1, $z1, $z0)\n  $r5 \u003d $r0.parse()\n  $z2 \u003d DotenvBuilder: boolean systemProperties\u003e\n  if ($z2 \u003d\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $r7 \u003d DotenvBuilder$lambda_load_0__1.bootstrap$()\n  $r5.forEach($r7)\n}",
+      "B2 {\n  $r6 \u003d DotenvBuilder$DotenvImpl\n  new DotenvBuilder$DotenvImpl($r5)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  }
+]

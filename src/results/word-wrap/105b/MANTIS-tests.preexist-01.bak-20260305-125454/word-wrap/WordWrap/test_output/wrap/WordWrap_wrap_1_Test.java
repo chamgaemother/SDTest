@@ -1,0 +1,133 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+public class WordWrap_wrap_1_Test {
+
+    @Test
+    @DisplayName("TC10: fromClasspathUtf8 on missing resource throws NullPointerException due to null InputStream")
+    void test_TC10() {
+        // GIVEN a non-existent classpath resource
+        String resource = "/no-such.txt";
+        // WHEN & THEN: NPE occurs because getResourceAsStream returns null for InputStreamReader
+        assertThrows(NullPointerException.class, () -> {
+            WordWrap.fromClasspathUtf8(resource).wrap();
+        });
+    }
+
+    @Test
+    @DisplayName("TC11: wrap(File,Charset) writes using specified charset to file and reads back correctly")
+    void test_TC11() throws IOException {
+        // GIVEN text with Unicode character and a temp file
+        String text = "Ünicode";
+        File tmp = File.createTempFile("wordwrap", ".txt");
+        tmp.deleteOnExit();
+        // WHEN writing with UTF-16 charset
+        WordWrap.from(text).wrap(tmp, StandardCharsets.UTF_16);
+        // THEN reading back yields same text
+        byte[] bytes = java.nio.file.Files.readAllBytes(tmp.toPath());
+        String result = new String(bytes, StandardCharsets.UTF_16);
+        assertEquals(text, result);
+    }
+
+    @Test
+    @DisplayName("TC12: wrap() uses custom stringWidth function causing early wrap when width*2>maxWidth")
+    void test_TC12() {
+        // GIVEN text "abcd efgh" and width function half-length causing early line breaks
+        String text = "abcd efgh";
+        Function<CharSequence, Number> width = s -> s.length() / 2;
+        // WHEN wrapping with maxWidth=2
+        String result = WordWrap.from(text)
+                .stringWidth(width)
+                .maxWidth(2)
+                .wrap();
+        // THEN result contains split segments of two characters each
+        assertAll(
+            () -> assertTrue(result.contains("ab"), "should contain 'ab'"),
+            () -> assertTrue(result.contains("cd"), "should contain 'cd'"),
+            () -> assertTrue(result.contains("ef"), "should contain 'ef'"),
+            () -> assertTrue(result.contains("gh"), "should contain 'gh'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC13: wrap() breaks word without hyphens when insertHyphens=false and word exceeds maxWidth")
+    void test_TC13() {
+        // GIVEN a single long word and settings to break words without hyphens at width 2
+        String text = "ABCDE";
+        // WHEN wrapping
+        String result = WordWrap.from(text)
+                .maxWidth(2)
+                .insertHyphens(false)
+                .breakWords(true)
+                .wrap();
+        // THEN lines are broken without hyphens exactly
+        assertEquals("AB\nCD\nE", result);
+    }
+
+    @Test
+    @DisplayName("TC14: wrap() ignores '\r' characters and wraps on '\n' only")
+    void test_TC14() {
+        // GIVEN text with CRLF sequence
+        String text = "line1\r\nline2";
+        // WHEN wrapping to list
+        List<String> lines = WordWrap.from(text).wrapToList();
+        // THEN only newline splits lines and CR dropped
+        assertEquals(Arrays.asList("line1", "line2"), lines);
+    }
+
+    @Test
+    @DisplayName("TC15: wrap() throws IORuntimeException when reader.close() fails in finally")
+    void test_TC15() throws Exception {
+        // GIVEN a Reader stub that throws IOException on close
+        Reader reader = new StringReader("data") {
+            @Override
+            public void close() throws IOException {
+                throw new IOException("close failure");
+            }
+        };
+        // Use reflection to call the package-private from(Reader, boolean) to get closeReader=true
+        Method fromMethod = WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);
+        fromMethod.setAccessible(true);
+        Object builder = fromMethod.invoke(null, reader, true);
+        // Prepare StringWriter as output
+        Writer out = new StringWriter();
+        // WHEN wrap is called -> THEN IORuntimeException with cause IOException
+        Exception ex = assertThrows(RuntimeException.class, () -> {
+            try {
+                Method wrapMethod = builder.getClass().getMethod("wrap", Writer.class);
+                wrapMethod.invoke(builder, out);
+            } catch (InvocationTargetException ite) {
+                // unwrap
+                throw ite.getCause();
+            }
+        });
+        assertTrue(ex.getClass().getSimpleName().equals("IORuntimeException"),
+                "Expected IORuntimeException but got " + ex.getClass());
+        assertNotNull(ex.getCause());
+        assertTrue(ex.getCause() instanceof IOException,
+                "Cause should be IOException");
+        assertEquals("close failure", ex.getCause().getMessage());
+    }
+}

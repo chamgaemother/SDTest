@@ -1,0 +1,258 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document instance with identical baseUri and empty childNodes for a new Document",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // no children or settings modified",
+      "expectedResult": "cloned != original; cloned.baseUri() == \"http://example.com\"; cloned.childNodes().isEmpty()",
+      "tags": [
+        "functionality",
+        "identity",
+        "shallow-children",
+        "deep-settings",
+        "branch-none"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone preserves baseUri and emptiness",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone != original;",
+        "    assert clone.baseUri().equals(\"http://example.com\");",
+        "    assert clone.childNodes().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() deep clones OutputSettings so modifying original.settings.charset does not affect clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); // default outputSettings with UTF-8",
+      "expectedResult": "clone.outputSettings().charset() == UTF-8; after original.charset(ISO_8859_1), clone.charset() remains UTF-8",
+      "tags": [
+        "functionality",
+        "deep-settings",
+        "outputSettings",
+        "branch-none"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone deep-copies OutputSettings.charset",
+        "  GIVEN",
+        "    Document original = new Document(\"u\");",
+        "    Charset newCs = Charset.forName(\"ISO-8859-1\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    original.charset(newCs);",
+        "  THEN",
+        "    assert clone.charset().equals(StandardCharsets.UTF_8);"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() deep clones Parser so setting original.parser().setTrackErrors(...) does not affect clone.parser()",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"base\"); Parser p = Parser.htmlParser(); // default parser",
+      "expectedResult": "clone.parser() != original.parser(); modifications on original.parser() are absent on clone.parser()",
+      "tags": [
+        "functionality",
+        "deep-settings",
+        "parser",
+        "branch-none"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone deep-copies Parser",
+        "  GIVEN",
+        "    Document original = new Document(\"base\");",
+        "    Parser originalParser = original.parser();",
+        "    originalParser.setTrackErrors(10);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.parser() != originalParser;",
+        "    assert clone.parser().getErrors().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() retains connection==null so connection() on clone returns newSession, not original's",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); // connection field null",
+      "expectedResult": "clone.connection() != original.connection(); both return non-null session",
+      "tags": [
+        "functionality",
+        "connection",
+        "branch-none"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone retains null connection",
+        "  GIVEN",
+        "    Document original = new Document(\"u\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.connection() != original.connection();",
+        "    assert clone.connection() instanceof Connection;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() copies quirksMode so modifications on original do not affect clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"uri\"); doc.quirksMode(Document.QuirksMode.quirks);",
+      "expectedResult": "clone.quirksMode() == Document.QuirksMode.quirks; after original.quirksMode(limitedQuirks), clone.quirksMode() remains quirks",
+      "tags": [
+        "functionality",
+        "quirksMode",
+        "branch-none"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone copies quirksMode field",
+        "  GIVEN",
+        "    Document original = new Document(\"uri\");",
+        "    original.quirksMode(Document.QuirksMode.quirks);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    original.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  THEN",
+        "    assert clone.quirksMode() == Document.QuirksMode.quirks;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() clones attribute set so adding attribute to original does not appear in clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"x\"); doc.attr(\"a\",\"1\");",
+      "expectedResult": "clone.hasAttr(\"a\") == false; original.hasAttr(\"a\") == true",
+      "tags": [
+        "functionality",
+        "attributes",
+        "deep-copy",
+        "branch-none"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone deep-copies attributes",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"x\");",
+        "    original.attr(\"a\",\"1\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert !clone.hasAttr(\"a\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() clones childNodes so adding child to clone does not affect original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"b\");",
+      "expectedResult": "after clone.appendElement(\"div\"), original.select(\"div\").isEmpty()",
+      "tags": [
+        "functionality",
+        "childNodes",
+        "deep-copy",
+        "branch-none"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 modifications on clone do not affect original",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"b\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    clone.appendElement(\"div\");",
+        "  THEN",
+        "    assert original.select(\"div\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() supports round-trip outerHtml equivalence for simple content",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"u\"); doc.body().text(\"hello\");",
+      "expectedResult": "clone.outerHtml().contains(\"hello\"); clone.outerHtml().equals(original.outerHtml())",
+      "tags": [
+        "functionality",
+        "html-output",
+        "branch-none"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone preserves rendered HTML",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"u\");",
+        "    original.body().text(\"hello\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.outerHtml().equals(original.outerHtml());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() returns clone whose title matches original title after title() set",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"x\"); doc.title(\"T\");",
+      "expectedResult": "clone.title().equals(\"T\"); modifying original.title(\"U\") leaves clone.title()==\"T\"",
+      "tags": [
+        "functionality",
+        "title",
+        "branch-none"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 clone preserves title element",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"x\");",
+        "    original.title(\"T\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    original.title(\"U\");",
+        "  THEN",
+        "    assert clone.title().equals(\"T\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() supports chaining: modifying clone.outputSettings() does not affect original.outputSettings()",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\");",
+      "expectedResult": "after clone.outputSettings().prettyPrint(false), original.outputSettings().prettyPrint()==true",
+      "tags": [
+        "functionality",
+        "chaining",
+        "outputSettings",
+        "branch-none"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 clone supports independent chaining on settings",
+        "  GIVEN",
+        "    Document original = new Document(\"u\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    clone.outputSettings().prettyPrint(false);",
+        "  THEN",
+        "    assert original.outputSettings().prettyPrint();"
+      ]
+    }
+  ]
+}

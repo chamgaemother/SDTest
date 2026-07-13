@@ -1,0 +1,86 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+public class MiniMaxAlgorithm_setScores_Test {
+
+    @Test
+    @DisplayName("TC01: setScores accepts array of length 1 (power of two) and updates scores and height (branch-false)")
+    void test_TC01() {
+        // Given a new MiniMaxAlgorithm instance with default scores/height
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        // Use an array of length 1 => 1 is a power of two, so branch (length % 1 == 0) is false
+        int[] newScores = {42};
+
+        // When
+        alg.setScores(newScores);
+
+        // Then
+        // The scores should be updated to the new array
+        assertArrayEquals(new int[]{42}, alg.getScores(), 
+            "Expected scores to be updated to [42]");
+        // Height should equal log2(1) == 0
+        assertEquals(0, alg.getHeight(), 
+            "Expected height to be 0 for single-element array");
+    }
+
+    @Test
+    @DisplayName("TC02: setScores accepts array of length 8 (power of two) and updates scores and height (branch-false)")
+    void test_TC02() {
+        // Given a new MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        // Use an array of length 8 => 8 is a power of two, so branch (length % 1 == 0) is false
+        int[] newScores = {1,2,3,4,5,6,7,8};
+
+        // When
+        alg.setScores(newScores);
+
+        // Then
+        // The scores should be updated to the new array of length 8
+        assertArrayEquals(new int[]{1,2,3,4,5,6,7,8}, alg.getScores(), 
+            "Expected scores to be updated to [1,2,3,4,5,6,7,8]");
+        // Height should equal log2(8) == 3
+        assertEquals(3, alg.getHeight(), 
+            "Expected height to be 3 for array of length 8");
+    }
+
+    @Test
+    @DisplayName("TC03: setScores rejects array of length 3 (not power of two) and leaves state unchanged (branch-true)")
+    void test_TC03() {
+        // Given a new MiniMaxAlgorithm instance with initial state captured
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] originalScores = alg.getScores();
+        int originalHeight = alg.getHeight();
+        // Use an array of length 3 => 3 is not a power of two, so branch (length % 1 != 0) is true
+        int[] invalidScores = {5,6,7};
+
+        // Capture System.out
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+
+        try {
+            // When
+            alg.setScores(invalidScores);
+        } finally {
+            // Restore System.out
+            System.setOut(originalOut);
+        }
+
+        // Then
+        // Scores and height should remain unchanged
+        assertArrayEquals(originalScores, alg.getScores(), 
+            "Expected scores to remain unchanged on invalid input");
+        assertEquals(originalHeight, alg.getHeight(), 
+            "Expected height to remain unchanged on invalid input");
+        // And the warning message should be printed
+        String output = outContent.toString();
+        assertTrue(output.contains("The number of scores must be a power of 2."),
+            "Expected output to contain the power-of-2 warning");
+    }
+}

@@ -1,0 +1,147 @@
+{
+  "method": "setScores",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Valid power-of-2 length=1 sets scores and updates height to 0 (length%1==0 branch)",
+      "path": "B0→B1→B3",
+      "precondition": "using real array of length 1; no mocks needed",
+      "expectedResult": "scores array reference updated to provided array; height == 0",
+      "tags": [
+        "branch-false",
+        "valid",
+        "boundary-length-1",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 setScores power-of-2 length-1",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] newScores = new int[]{42};",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assert alg.getScores() == newScores;",
+        "    assert alg.getHeight() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Valid power-of-2 length=8 sets scores and updates height to 3",
+      "path": "B0→B1→B3",
+      "precondition": "using real array of length 8; no mocks needed",
+      "expectedResult": "scores array reference updated to provided array; height == 3",
+      "tags": [
+        "branch-false",
+        "valid",
+        "length-8",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 setScores power-of-2 length-8",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] newScores = new int[8];",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assert alg.getScores() == newScores;",
+        "    assert alg.getHeight() == 3;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Invalid non-power-of-2 length=3 rejects update and retains original scores (length%1!=0 branch)",
+      "path": "B0→B2→B3",
+      "precondition": "redirect System.out to ByteArrayOutputStream to capture printed message; stub for PrintStream",
+      "expectedResult": "scores remains unchanged from initial state; height unchanged; printed output contains \"must be a power of 2\"",
+      "tags": [
+        "branch-true",
+        "invalid",
+        "length-3",
+        "exception-output"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 setScores invalid-length-3",
+        "  GIVEN",
+        "    ByteArrayOutputStream out = new ByteArrayOutputStream();",
+        "    System.setOut(new PrintStream(out));",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] original = alg.getScores().clone();",
+        "    int[] newScores = new int[3];",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assert Arrays.equals(alg.getScores(), original);",
+        "    assert alg.getHeight() == log2(original.length);",
+        "    assert out.toString().contains(\"must be a power of 2\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Invalid non-power-of-2 length=5 rejects update and retains original scores",
+      "path": "B0→B2→B3",
+      "precondition": "redirect System.out to ByteArrayOutputStream to capture printed message; stub for PrintStream",
+      "expectedResult": "scores remains unchanged; height unchanged; printed output contains \"must be a power of 2\"",
+      "tags": [
+        "branch-true",
+        "invalid",
+        "length-5",
+        "exception-output"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 setScores invalid-length-5",
+        "  GIVEN",
+        "    ByteArrayOutputStream out = new ByteArrayOutputStream();",
+        "    System.setOut(new PrintStream(out));",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] original = alg.getScores().clone();",
+        "    int[] newScores = new int[5];",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assert Arrays.equals(alg.getScores(), original);",
+        "    assert alg.getHeight() == log2(original.length);",
+        "    assert out.toString().contains(\"must be a power of 2\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Invalid zero-length array rejects update and retains original scores",
+      "path": "B0→B2→B3",
+      "precondition": "redirect System.out to ByteArrayOutputStream to capture printed message; stub for PrintStream",
+      "expectedResult": "scores remains unchanged; height unchanged; printed output contains \"must be a power of 2\"",
+      "tags": [
+        "branch-true",
+        "invalid",
+        "length-0",
+        "exception-output"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 setScores invalid-length-0",
+        "  GIVEN",
+        "    ByteArrayOutputStream out = new ByteArrayOutputStream();",
+        "    System.setOut(new PrintStream(out));",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] original = alg.getScores().clone();",
+        "    int[] newScores = new int[0];",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assert Arrays.equals(alg.getScores(), original);",
+        "    assert alg.getHeight() == log2(original.length);",
+        "    assert out.toString().contains(\"must be a power of 2\");"
+      ]
+    }
+  ]
+}

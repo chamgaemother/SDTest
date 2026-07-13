@@ -1,0 +1,110 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("charset(null) throws IllegalArgumentException when charset argument is null")
+    public void test_TC01() {
+        // GIVEN a new shell document
+        Document doc = Document.createShell("http://example.com");
+        // WHEN & THEN: passing null should cause IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> doc.charset(null));
+        // AND updateMetaCharsetElement remains false
+        assertFalse(doc.updateMetaCharsetElement());
+        // AND no meta[charset] element is added to head
+        assertTrue(doc.head().select("meta[charset]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("charset when syntax is html and no existing meta[charset] appends new meta charset element")
+    public void test_TC02() {
+        // GIVEN a new shell document with HTML syntax and no existing meta[charset]
+        Document doc = Document.createShell("base");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.html); // html path
+        // WHEN setting charset to UTF-16
+        doc.charset(Charset.forName("UTF-16"));
+        // THEN a new meta[charset] element is appended with correct charset attribute
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta);
+        assertEquals(Charset.forName("UTF-16").displayName(), meta.attr("charset"));
+        // AND no obsolete meta[name=charset] elements remain
+        assertTrue(doc.head().select("meta[name=charset]").isEmpty());
+    }
+
+    @Test
+    @DisplayName("charset when syntax is html and existing meta[charset] updates charset attribute")
+    public void test_TC03() {
+        // GIVEN a shell document with HTML syntax and an existing meta[charset]
+        Document doc = Document.createShell("base");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.html); // html path
+        // Prepend a meta[charset] with old value
+        doc.head().appendElement("meta").attr("charset", "OLD");
+        // WHEN setting charset to ISO-8859-1
+        doc.charset(Charset.forName("ISO-8859-1"));
+        // THEN the existing meta[charset] element is updated to new charset
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta);
+        assertEquals(Charset.forName("ISO-8859-1").displayName(), meta.attr("charset"));
+    }
+
+    @Test
+    @DisplayName("charset when syntax is xml and first child is XmlDeclaration named xml updates encoding and version")
+    public void test_TC04() throws Exception {
+        // GIVEN a shell document with XML syntax and stubbed first child as XmlDeclaration("xml")
+        Document doc = Document.createShell("base");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        // Stub childNodes to simulate existing XmlDeclaration at position 0
+        Field childNodesField = Node.class.getDeclaredField("childNodes");
+        childNodesField.setAccessible(true);
+        List<Node> stubList = new ArrayList<>();
+        XmlDeclaration existing = new XmlDeclaration("xml", false);
+        existing.attr("version", "0.9"); // initial version
+        existing.attr("encoding", "OLD");
+        stubList.add(existing);
+        childNodesField.set(doc, stubList);
+        // WHEN setting charset to UTF-8
+        doc.charset(Charset.forName("UTF-8"));
+        // THEN the existing XmlDeclaration is updated with encoding and version 1.0
+        XmlDeclaration decl = (XmlDeclaration) stubList.get(0);
+        assertEquals(Charset.forName("UTF-8").displayName(), decl.attr("encoding"));
+        assertEquals("1.0", decl.attr("version"));
+    }
+
+    @Test
+    @DisplayName("charset when syntax is xml and no XmlDeclaration prepends new declaration")
+    public void test_TC05() throws Exception {
+        // GIVEN a shell document with XML syntax and stubbed first child as non-XmlDeclaration
+        Document doc = Document.createShell("base");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        // Stub childNodes to simulate first element not being XmlDeclaration
+        Field childNodesField = Node.class.getDeclaredField("childNodes");
+        childNodesField.setAccessible(true);
+        List<Node> stubList = new ArrayList<>();
+        stubList.add(new TextNode("text", doc.baseUri()));
+        childNodesField.set(doc, stubList);
+        // WHEN setting charset to US-ASCII
+        doc.charset(Charset.forName("US-ASCII"));
+        // THEN a new XmlDeclaration is prepended with correct encoding and version
+        List<Node> nodes = stubList;
+        assertTrue(nodes.get(0) instanceof XmlDeclaration);
+        XmlDeclaration decl = (XmlDeclaration) nodes.get(0);
+        assertEquals(Charset.forName("US-ASCII").displayName(), decl.attr("encoding"));
+        assertEquals("1.0", decl.attr("version"));
+    }
+}

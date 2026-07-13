@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, baseUri) propagates RuntimeException from custom TreeBuilder.parse",
+      "path": "B0→B2→B3→B5",
+      "precondition": "Parser constructed with TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-treebuilder"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 propagate-runtime-exception",
+        "  GIVEN",
+        "    // Arrange a TreeBuilder stub that on parse throws IllegalStateException",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public Parser newInstance() { return this; }",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"boom\");",
+        "      }",
+        "      public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {",
+        "        return null;",
+        "      }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<p>irrelevant</p>\");",
+        "  WHEN",
+        "    // Act",
+        "    parser.parseInput(reader, \"http://example.com\");",
+        "  THEN",
+        "    // Assert",
+        "    throws IllegalStateException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String, baseUri) with null baseUri throws NullPointerException in TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "Parser with default HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "null-argument"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null-baseUri-string-overload",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"<p>X</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(-1) on element with multiple Element children and cached shadowChildrenRef throws IndexOutOfBoundsException")
+    public void test_TC10() {
+        // GIVEN: parent with two element children, and cache populated by a prior child(0) call
+        Element parent = new Element("div");               // empty parent
+        Element e1 = new Element("p");
+        Element e2 = new Element("span");
+        parent.appendChild(e1);                             // add first child
+        parent.appendChild(e2);                             // add second child
+        Element first = parent.child(0);                    // populate shadowChildrenRef cache
+
+        // sanity: ensure cache hit scenario (first child is e1)
+        assertSame(e1, first, "Precondition: child(0) should return the first child and populate cache");
+
+        // WHEN/THEN: calling child(-1) should throw IndexOutOfBoundsException due to negative index
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            parent.child(-1);
+        }, "Negative index should throw IndexOutOfBoundsException even when cache is present");
+    }
+
+    @Test
+    @DisplayName("child(index) after appendChild invalidates cache and returns newly added child")
+    public void test_TC11() {
+        // GIVEN: parent with two element children, and cache populated by a prior child(0) call
+        Element parent = new Element("div");
+        Element e1 = new Element("p");
+        Element e2 = new Element("span");
+        parent.appendChild(e1);
+        parent.appendChild(e2);
+        Element first = parent.child(0);                    // build and cache child list
+        assertSame(e1, first, "Precondition: child(0) should return the first child and build cache");
+
+        // WHEN: append a third element, which should invalidate the previous shadowChildrenRef cache
+        Element e3 = new Element("a");
+        parent.appendChild(e3);                             // cache-invalidation on mutation
+
+        // THEN: child(2) should reflect the new state and return the newly added third element
+        Element result = parent.child(2);
+        assertSame(e3, result, "After cache invalidation by appendChild, child(2) should return the newly added element");
+    }
+}

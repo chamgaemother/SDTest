@@ -1,0 +1,245 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "wrap(Writer) with empty input triggers zero-loop and writes nothing",
+      "path": "B0→B1→B2→B9",
+      "precondition": "Reader over empty string, Writer=StringWriter; no stubs",
+      "expectedResult": "output StringWriter.toString() is empty string",
+      "tags": [
+        "loop-0",
+        "branch-EOF",
+        "positive",
+        "overload:Writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 wrap empty-input",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"\");",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "wrap(Writer) with single short word uses branch isWordCharacter=true and no wrapping",
+      "path": "B0→B1→B2→B3(loop×1)→B5→B9",
+      "precondition": "Reader over \"Hello\"|; Writer=StringWriter",
+      "expectedResult": "output is \"Hello\"",
+      "tags": [
+        "loop-1",
+        "branch-isWordCharacter-true",
+        "positive",
+        "overload:Writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 wrap single-word",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"Hello\");",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "wrap(Writer) with newline character flushes line branch ch=='\\n'",
+      "path": "B0→B1→B2→B3(loop×1)→B4→B6→B9",
+      "precondition": "Reader over \"Hi\\nThere\"; Writer=StringWriter",
+      "expectedResult": "output is \"Hi\\nThere\"",
+      "tags": [
+        "loop-N",
+        "branch-newline",
+        "positive",
+        "overload:Writer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 wrap with-newline",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"Hi\\nThere\");",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"Hi\\nThere\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "wrap(Writer) breaks long word with hyphens when breakWords=true and insertHyphens=true",
+      "path": "B0→B1→B2→B3(loop×1)→B5→B7→B8→B9",
+      "precondition": "Reader over long word 'abcdefghijk'; Writer=StringWriter; maxWidth=5",
+      "expectedResult": "output is \"abcd-\\nejijk\"",
+      "tags": [
+        "branch-tooLong-true",
+        "breakWords-true",
+        "insertHyphens-true",
+        "overload:Writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 wrap hyphenated-break",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"abcdefghijk\").maxWidth(5);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"abcd-\\nejijk\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "wrap(Writer) with breakWords=false leaves word unbroken and flags broken=true",
+      "path": "B0→B1→B2→B3(loop×1)→B5→B7→B10→B9",
+      "precondition": "Reader over 'abcdefgh'; Writer=StringWriter; maxWidth=5; breakWords(false)",
+      "expectedResult": "output is \"abcdefgh\"",
+      "tags": [
+        "branch-tooLong-true",
+        "breakWords-false",
+        "overload:Writer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrap unbroken-word",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"abcdefgh\").maxWidth(5).breakWords(false);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"abcdefgh\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "wrapToList returns list of lines for multi-line input including trailing word",
+      "path": "B0→B1→B11→B12→B13",
+      "precondition": "Reader over 'one two three'; maxWidth=4",
+      "expectedResult": "returned list is [\"one\",\"two\",\"three\"]",
+      "tags": [
+        "loop-N",
+        "overload:wrapToList",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 wrapToList multi-word",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"one two three\").maxWidth(4);",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"one\",\"two\",\"three\"));"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "wrap() returns concatenated String equivalent to wrap(Writer)",
+      "path": "B0→B1→B11→B14→B9",
+      "precondition": "Reader over 'alpha beta'; default settings",
+      "expectedResult": "returned String is \"alpha beta\"",
+      "tags": [
+        "overload:wrap()",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrap returns String",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"alpha beta\");",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"alpha beta\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "wrap(File, Charset) throws IORuntimeException when output file cannot be written",
+      "path": "B0→B1→B15→B16→exception",
+      "precondition": "Reader over 'data'; File in unwritable directory; stub OutputStreamWriter to throw IOException to simulate write failure",
+      "expectedResult": "throws IORuntimeException; no file created",
+      "tags": [
+        "exception",
+        "overload:File,Charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 wrap file-write-failure",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"data\");",
+        "    File unwritable = new File(\"/root/protected.txt\");",
+        "    // stub OutputStreamWriter constructor to throw IOException",
+        "  WHEN",
+        "    call builder.wrap(unwritable, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "wrapUtf8(String) writes UTF-8 file via wrap(File,Charset)",
+      "path": "B0→B1→B15→B16→B17→B18",
+      "precondition": "Reader over 'тест'; temp filename; no mocks",
+      "expectedResult": "output file content UTF-8 equals 'тест'",
+      "tags": [
+        "overload:String",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 wrapUtf8 filename",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"тест\");",
+        "    String filename = \"tmp_test.txt\";",
+        "  WHEN",
+        "    builder.wrapUtf8(filename);",
+        "  THEN",
+        "    assert new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8).equals(\"тест\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "wrap(LineConsumer) with consumer writes each new line via writeNewLine branch",
+      "path": "B0→B1→B19→B2→B3(loop×2)→B6→B9",
+      "precondition": "Reader over \"a b\\na\"; custom LineConsumer recording calls",
+      "expectedResult": "LineConsumer.writeNewLine called twice; recorded segments [\"a b\",\"a\"]",
+      "tags": [
+        "loop-N",
+        "branch-writeNewLine",
+        "overload:LineConsumer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 wrap with-LineConsumer",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"a b\\na\");",
+        "    TestConsumer consumer = new TestConsumer();",
+        "  WHEN",
+        "    builder.wrap(consumer);",
+        "  THEN",
+        "    assert consumer.lines.equals(Arrays.asList(\"a b\",\"a\"));"
+      ]
+    }
+  ]
+}

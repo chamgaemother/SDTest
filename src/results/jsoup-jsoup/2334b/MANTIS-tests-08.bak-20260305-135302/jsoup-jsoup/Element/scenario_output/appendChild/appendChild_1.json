@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild(Element) invalidates cached shadowChildrenRef via nodelistChanged",
+      "path": "B0→B3(ensureChildNodes)→B4(add)→B5(nodelistChanged)→B6(return)",
+      "precondition": "parent has one existing Element child and its shadowChildrenRef populated",
+      "expectedResult": "shadowChildrenRef is null and children() reflects updated list including new child",
+      "tags": [
+        "positive",
+        "shadow-cache",
+        "invalidation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild invalidates shadow cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = parent.appendElement(\"p\");",
+        "    // populate cache",
+        "    parent.children();",
+        "    assertNotNull(getShadowRef(parent));",
+        "  WHEN",
+        "    Element second = new Element(\"span\");",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    // cache cleared and new child visible",
+        "    assertNull(getShadowRef(parent));",
+        "    assertEquals(2, parent.children().size());"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild(Comment) appends a Comment node and sets correct siblingIndex",
+      "path": "B0→B3(ensureChildNodes)→B4(add)→B6(return)",
+      "precondition": "parent is new Element with no children",
+      "expectedResult": "Comment child added at index 0 with siblingIndex 0",
+      "tags": [
+        "positive",
+        "subclass-node",
+        "sibling-index"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild comment node",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Comment comment = new Comment(\"cmt\");",
+        "  WHEN",
+        "    parent.appendChild(comment);",
+        "  THEN",
+        "    assertEquals(1, parent.childNodeSize());",
+        "    assertSame(parent, comment.parent());",
+        "    assertEquals(0, comment.siblingIndex());"
+      ]
+    }
+  ]
+}

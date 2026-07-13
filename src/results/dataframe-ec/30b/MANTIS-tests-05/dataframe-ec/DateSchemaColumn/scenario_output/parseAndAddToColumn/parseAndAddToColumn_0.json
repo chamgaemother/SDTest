@@ -1,0 +1,138 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when input string is null (aString == null)",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Use a simple stub DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubColumn.getLastAdded() == null",
+      "tags": [
+        "branch-true aString-null",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = null and stubColumn initialized",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN stubColumn.getLastAdded() == null"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when input string is empty after trim (trimmed.isEmpty() == true)",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Use a simple stub DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubColumn.getLastAdded() == null",
+      "tags": [
+        "branch-false aString-null",
+        "branch-true trimmed-empty"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"\" and stubColumn initialized",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN stubColumn.getLastAdded() == null"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn adds null when input string contains only whitespace (trimmed.isEmpty() == true)",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Use a simple stub DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubColumn.getLastAdded() == null",
+      "tags": [
+        "branch-false aString-null",
+        "branch-true trimmed-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"   \" and stubColumn initialized",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN stubColumn.getLastAdded() == null"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn parses and adds LocalDate when input matches default pattern uuuu-M-d",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Instantiate DateSchemaColumn with null pattern to use default; use stubColumn",
+      "expectedResult": "stubColumn.getLastAdded().equals(LocalDate.of(2021,12,31))",
+      "tags": [
+        "branch-false aString-null",
+        "branch-false trimmed-empty",
+        "branch-valid-parse",
+        "default-pattern"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"2021-12-31\" and default-pattern DateSchemaColumn and stubColumn",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN stubColumn.getLastAdded().equals(LocalDate.of(2021,12,31))"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn parses and adds LocalDate when input matches custom pattern dd/MM/uuuu",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Instantiate DateSchemaColumn with pattern \"dd/MM/uuuu\"; use stubColumn",
+      "expectedResult": "stubColumn.getLastAdded().equals(LocalDate.of(2021,12,31))",
+      "tags": [
+        "branch-false aString-null",
+        "branch-false trimmed-empty",
+        "branch-valid-parse",
+        "custom-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"31/12/2021\" and custom-pattern DateSchemaColumn(\"dd/MM/uuuu\") and stubColumn",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN stubColumn.getLastAdded().equals(LocalDate.of(2021,12,31))"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn throws DateTimeParseException when input does not match pattern",
+      "path": "B0→B1→B3→B4→B6",
+      "precondition": "Instantiate DateSchemaColumn with default pattern; use stubColumn",
+      "expectedResult": "throws java.time.format.DateTimeParseException; stubColumn unchanged",
+      "tags": [
+        "branch-false aString-null",
+        "branch-false trimmed-empty",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"12-31-2021\" and default-pattern DateSchemaColumn and stubColumn",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN throws DateTimeParseException"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn throws DateTimeParseException for invalid date under strict resolver",
+      "path": "B0→B1→B3→B4→B6",
+      "precondition": "Instantiate DateSchemaColumn with default pattern; use stubColumn",
+      "expectedResult": "throws java.time.format.DateTimeParseException; stubColumn unchanged",
+      "tags": [
+        "branch-false aString-null",
+        "branch-false trimmed-empty",
+        "exception",
+        "strict-resolver"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN aString = \"2021-02-29\" and default-pattern DateSchemaColumn and stubColumn",
+        "WHEN parseAndAddToColumn(aString, stubColumn) is called",
+        "THEN throws DateTimeParseException"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,289 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "childNodeSize == 0 returns empty Elements (loop-0)",
+      "path": "B0→B1→B4",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "empty",
+        "P0",
+        "Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "childNodes contain only TextNode => children returns empty (filter none)",
+      "path": "B0→B1→B2(loop×1)→B4",
+      "precondition": "Element el = new Element(\"p\"); el.appendChild(new TextNode(\"text\"));",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-false",
+        "loop-1-filter",
+        "empty",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children no-element-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "single child Element returns list of size 1 (loop-1-match)",
+      "path": "B0→B1→B2(loop×1)→B3→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new Element(\"span\"));",
+      "expectedResult": "returned Elements.size() == 1 and result.get(0).tagName().equals(\"span\")",
+      "tags": [
+        "branch-false",
+        "loop-1-match",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0) == child;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "multiple child Elements returns all in order (loop-N-match)",
+      "path": "B0→B1→B2(loop×3)→B3→B4",
+      "precondition": "Element el = new Element(\"ul\"); el.appendChild(new Element(\"li\")); el.appendChild(new Element(\"li\")); el.appendChild(new Element(\"li\"));",
+      "expectedResult": "returned Elements.size() == 3 and tags are [\"li\",\"li\",\"li\"] in order",
+      "tags": [
+        "branch-false",
+        "loop-N-match",
+        "N=3",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children multiple-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 3; assert result.eachTag().equals([\"li\",\"li\",\"li\"]);"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "mixed child nodes filters non-Element and Element correctly (loop-N-filter)",
+      "path": "B0→B1→B2(loop×4)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"t\")); el.appendChild(new Element(\"a\")); el.appendChild(new Comment(\"c\")); el.appendChild(new Element(\"b\"));",
+      "expectedResult": "returned Elements.size() == 2 and tags are [\"a\",\"b\"] in order",
+      "tags": [
+        "branch-false",
+        "loop-N-filter",
+        "mixed",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children mixed-node-types",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"t\"));",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Comment(\"c\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2; assert result.get(0).tagName().equals(\"a\"); assert result.get(1).tagName().equals(\"b\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "caching path: cachedChildren returns pre-cached list (cache-hit)",
+      "path": "B0→B1→B2→B3(cache)→B4",
+      "precondition": "// simulate attributes.userData cache hit\nElement el = new Element(\"div\"); el.appendChild(new Element(\"span\")); Map<String,Object> ud = el.attributes().userData(); List<Element> cached = Collections.unmodifiableList(Arrays.asList(el.child(0))); ud.put(\"jsoup.childEls\", new java.lang.ref.WeakReference<>(cached)); ud.put(\"jsoup.childElsMod\", el.childNodes.modCount());",
+      "expectedResult": "returned result == cached reference",
+      "tags": [
+        "branch-false",
+        "cache-hit",
+        "loop-1",
+        "P3",
+        "Java 8"
+      ],
+      "priority": "P3",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache-hit",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    Map<String,Object> ud = el.attributes().userData();",
+        "    List<Element> cached = Collections.unmodifiableList(Arrays.asList(child));",
+        "    ud.put(\"jsoup.childEls\", new WeakReference<>(cached));",
+        "    ud.put(\"jsoup.childElsMod\", el.childNodes.modCount());",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.unwrap() == cached;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "cache-miss due to missing userData reference results in fresh list",
+      "path": "B0→B1→B2(cache-miss-ref-null)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"p\")); Map<String,Object> ud = el.attributes().userData(); ud.put(\"jsoup.childEls\", new WeakReference<List<Element>>(null)); ud.put(\"jsoup.childElsMod\", el.childNodes.modCount());",
+      "expectedResult": "returned Elements.size() == 1 and not using cached reference",
+      "tags": [
+        "branch-false",
+        "cache-miss",
+        "loop-1",
+        "P3",
+        "Java 8"
+      ],
+      "priority": "P3",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children cache-miss-ref-null",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c = new Element(\"p\");",
+        "    el.appendChild(c);",
+        "    Map<String,Object> ud = el.attributes().userData();",
+        "    ud.put(\"jsoup.childEls\", new WeakReference<>(null));",
+        "    ud.put(\"jsoup.childElsMod\", el.childNodes.modCount());",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0) == c;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "cache-miss due to modCount mismatch refreshes list",
+      "path": "B0→B1→B2(cache-miss-mod)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"span\")); Map<String,Object> ud = el.attributes().userData(); List<Element> cached = Collections.unmodifiableList(Arrays.asList(el.child(0))); ud.put(\"jsoup.childEls\", new WeakReference<>(cached)); ud.put(\"jsoup.childElsMod\", el.childNodes.modCount()+1);",
+      "expectedResult": "returned Elements.size() == 1 and new list instance",
+      "tags": [
+        "branch-false",
+        "cache-miss",
+        "loop-1",
+        "P3",
+        "Java 8"
+      ],
+      "priority": "P3",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children cache-miss-modcount",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c = new Element(\"span\");",
+        "    el.appendChild(c);",
+        "    Map<String,Object> ud = el.attributes().userData();",
+        "    List<Element> cached = Collections.unmodifiableList(Arrays.asList(c));",
+        "    ud.put(\"jsoup.childEls\", new WeakReference<>(cached));",
+        "    ud.put(\"jsoup.childElsMod\", el.childNodes.modCount()+1);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.unwrap() != cached;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "large number of children N=10 performance path (loop-N-large)",
+      "path": "B0→B1→B2(loop×10)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); for i in 1..10 el.appendChild(new Element(\"i\"+i));",
+      "expectedResult": "returned Elements.size() == 10 and all tags correct",
+      "tags": [
+        "branch-false",
+        "loop-N-large",
+        "N=10",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children ten-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    for (int i=0;i<10;i++) el.appendChild(new Element(\"i\"+i));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 10;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "concurrent modification invalidates cache and refreshes (loop-2)",
+      "path": "B0→B1→B2(cache-miss-after-invalid)-→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"a\")); // prime cache\nMap<String,Object> ud = el.attributes().userData(); List<Element> cached = Collections.unmodifiableList(Arrays.asList(el.child(0))); ud.put(\"jsoup.childEls\", new java.lang.ref.WeakReference<>(cached)); ud.put(\"jsoup.childElsMod\", el.childNodes.modCount()); // then modify childNodes\nel.appendChild(new Element(\"b\"));",
+      "expectedResult": "returned Elements.size() == 2 and fresh list contains both",
+      "tags": [
+        "branch-false",
+        "cache-miss",
+        "loop-2",
+        "concurrent",
+        "P3",
+        "Java 8"
+      ],
+      "priority": "P3",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 children cache-invalidated-on-modify",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element a = new Element(\"a\"); el.appendChild(a);",
+        "    Map<String,Object> ud = el.attributes().userData();",
+        "    List<Element> cached = Collections.unmodifiableList(Arrays.asList(a));",
+        "    ud.put(\"jsoup.childEls\", new WeakReference<>(cached));",
+        "    ud.put(\"jsoup.childElsMod\", el.childNodes.modCount());",
+        "    el.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2; assert result.eachTag().equals([\"a\",\"b\"]);"
+      ]
+    }
+  ]
+}

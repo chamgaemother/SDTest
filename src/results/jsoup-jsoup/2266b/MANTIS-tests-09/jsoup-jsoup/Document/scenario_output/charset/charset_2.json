@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "charset(Charset) with updateMetaCharset=false and xml syntax should not add or modify any XmlDeclaration",
+      "path": "B0→B1(updateMetaCharset=false)→return",
+      "precondition": "Document.createShell, outputSettings.syntax set to xml, updateMetaCharsetElement(false)",
+      "expectedResult": "No XmlDeclaration prepended; childNodes unchanged except shell defaults",
+      "tags": [
+        "negative",
+        "xml",
+        "update-disabled"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 charset does nothing when xml syntax and updates disabled",
+        "  GIVEN",
+        "    Charset cs = StandardCharsets.UTF_16;",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assertTrue(doc.childNodes().stream().noneMatch(n -> n instanceof XmlDeclaration));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "charset(Charset) with updateMetaCharset=true and xml syntax, existing non-xml XmlDeclaration should be replaced by new xml declaration",
+      "path": "B0→B1(true)→B5(xml)→B5a(existing non-xml)→replace→return",
+      "precondition": "Document.createShell, updateMetaCharsetElement(true), outputSettings.syntax xml, prependChild(dummy non-xml XmlDeclaration)",
+      "expectedResult": "First child is new XmlDeclaration named \"xml\" with encoding and version",
+      "tags": [
+        "positive",
+        "xml",
+        "replacement"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 non-xml XmlDeclaration is replaced",
+        "  GIVEN",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration dummy = new XmlDeclaration(\"notxml\", false).attr(\"foo\",\"bar\");",
+        "    doc.prependChild(dummy);",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    Node first = doc.childNodes().get(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration xd = (XmlDeclaration) first;",
+        "    assertEquals(\"xml\", xd.name());",
+        "    assertEquals(cs.displayName(), xd.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", xd.attr(\"version\"));"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "charset(Charset) with updateMetaCharset=true and xml syntax, existing xml XmlDeclaration without version should update encoding only and not add version",
+      "path": "B0→B1(true)→B5(xml)→B5b(existing xml,no version)→set encoding→return",
+      "precondition": "Document.createShell, updateMetaCharsetElement(true), outputSettings.syntax xml, prependChild(XmlDeclaration name=xml without version attr)",
+      "expectedResult": "Same XmlDeclaration has updated encoding attr but no version attr is added",
+      "tags": [
+        "positive",
+        "xml",
+        "update-only"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 existing xml XmlDeclaration without version gets only encoding updated",
+        "  GIVEN",
+        "    Charset cs = StandardCharsets.US_ASCII;",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration existing = new XmlDeclaration(\"xml\", false);",
+        "    doc.prependChild(existing);",
+        "    assertFalse(existing.hasAttr(\"version\"));",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    XmlDeclaration xd = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assertEquals(\"xml\", xd.name());",
+        "    assertEquals(cs.displayName(), xd.attr(\"encoding\"));",
+        "    assertFalse(xd.hasAttr(\"version\"));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "children() after interleaved prependElement and appendElement returns correct ordered list",
+      "path": "B0→B3(loop×2)→B6",
+      "precondition": "none",
+      "expectedResult": "Elements list has first <span> then <p>",
+      "tags": [
+        "positive",
+        "ordering",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 interleaved prepend and append maintains order",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    Element p = parent.appendElement(\"p\");",
+        "    Element span = parent.prependElement(\"span\");",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).tagName().equals(\"span\");",
+        "    assert result.get(1).tagName().equals(\"p\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() after bulk appendChildren and prependChildren returns only Element children in correct sequence",
+      "path": "B0→B3(loop×3)→B6",
+      "precondition": "none",
+      "expectedResult": "Elements list has <b>,<i>,<u> in prepend order then <p>,<em> in append order",
+      "tags": [
+        "positive",
+        "bulk",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 bulk insert before and after retains element sequence",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    List<Node> before = Arrays.asList(new TextNode(\"t\"), new Element(Tag.valueOf(\"b\", Parser.NamespaceHtml, ParseSettings.preserveCase), null));",
+        "    List<Node> after = Arrays.asList(new Element(Tag.valueOf(\"p\", Parser.NamespaceHtml, ParseSettings.preserveCase), null), new TextNode(\"x\"), new Element(Tag.valueOf(\"em\", Parser.NamespaceHtml, ParseSettings.preserveCase), null));",
+        "  WHEN",
+        "    parent.prependChildren(before);",
+        "    parent.appendChildren(after);",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.get(0).tagName().equals(\"b\");",
+        "    assert result.get(1).tagName().equals(\"p\");",
+        "    assert result.get(2).tagName().equals(\"em\");",
+        "END"
+      ]
+    }
+  ]
+}

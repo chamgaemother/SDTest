@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "child(1) returns the second element on repeated calls without modifying children (cache hit branch)",
+      "path": "B0→B1→B3(first build)→B4→B1→B2(cached)→B4",
+      "precondition": "Element parent with two child elements appended",
+      "expectedResult": "Returns the same second Element instance on both first and second child(1) calls",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child uses cached childElementsList",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"span\");",
+        "    Element second = parent.appendElement(\"em\");",
+        "  WHEN",
+        "    Element firstCall = parent.child(1);",
+        "    Element secondCall = parent.child(1);",
+        "  THEN",
+        "    assertSame(second, firstCall);",
+        "    assertSame(second, secondCall);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(0) rebuilds and returns the new first element after a list modification (cache invalidation branch)",
+      "path": "B0→B1→B3(first build)→B6(modification)→B1→B3(rebuild)→B4",
+      "precondition": "Element parent with one child element appended",
+      "expectedResult": "After appending a new element, child(0) returns the original first element, demonstrating rebuild",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 child rebuilds after modifying childNodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    // Prime the cache",
+        "    Element initial = parent.child(0);",
+        "  WHEN",
+        "    // Modify children, invalidating cache",
+        "    parent.appendElement(\"li\");",
+        "    Element afterMod = parent.child(0);",
+        "  THEN",
+        "    assertSame(first, initial);",
+        "    assertSame(first, afterMod);",
+        "END"
+      ]
+    }
+  ]
+}

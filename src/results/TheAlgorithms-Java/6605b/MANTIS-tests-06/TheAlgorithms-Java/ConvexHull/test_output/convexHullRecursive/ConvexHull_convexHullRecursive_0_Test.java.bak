@@ -1,0 +1,146 @@
+package com.thealgorithms.geometry;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class ConvexHull_convexHullRecursive_Test {
+
+    @Test
+    @DisplayName("null input throws NullPointerException at entry")
+    void test_TC01() {
+        // GIVEN a null list of points
+        List<Point> points = null;
+        // WHEN & THEN invoking with null should throw NPE immediately (B0)
+        assertThrows(NullPointerException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("empty list input throws IndexOutOfBoundsException when accessing first element")
+    void test_TC02() {
+        // GIVEN an empty list
+        List<Point> points = new ArrayList<>();
+        // WHEN & THEN accessing first element causes IndexOutOfBoundsException (B0→B7)
+        assertThrows(IndexOutOfBoundsException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("single-point list returns the same one point")
+    void test_TC03() {
+        // GIVEN a single point list → loop zero iterations (B0→B7→B6)
+        Point p0 = new Point(0, 0);
+        List<Point> points = new ArrayList<>(List.of(p0));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN result should contain exactly that point
+        assertEquals(List.of(p0), result);
+    }
+
+    @Test
+    @DisplayName("two-point list returns both points sorted")
+    void test_TC04() {
+        // GIVEN two points unsorted → no loop body, returns sorted endpoints (B0→B7→B6)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 1);
+        List<Point> points = new ArrayList<>(List.of(p1, p0));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN sorted order [p0, p1]
+        assertEquals(List.of(p0, p1), result);
+    }
+
+    @Test
+    @DisplayName("three collinear points returns only endpoints")
+    void test_TC05() {
+        // GIVEN three collinear points → middle has det==0 so excluded, only endpoints remain (B1→B3→B5)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(2, 2);
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN only endpoints sorted [p0, p2]
+        assertEquals(List.of(p0, p2), result);
+    }
+
+    @Test
+    @DisplayName("three non-collinear triangle returns all three points")
+    void test_TC06() {
+        // GIVEN triangle points → all det>0 or <0 include in hull (B1→B2)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 0);
+        Point p2 = new Point(0, 1);
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN all three points sorted
+        assertEquals(List.of(p0, p1, p2), result);
+    }
+
+    @Test
+    @DisplayName("four-point convex quadrilateral returns all four points sorted")
+    void test_TC07() {
+        // GIVEN convex quadrilateral → all points on hull (two passes of loop) (B1→B2 twice)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 0);
+        Point p2 = new Point(1, 1);
+        Point p3 = new Point(0, 1);
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2, p3));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN sorted quadrilateral
+        assertEquals(Arrays.asList(p0, p1, p2, p3), result);
+    }
+
+    @Test
+    @DisplayName("five-point set with concave point tests both upper and lower hull recursion")
+    void test_TC08() {
+        // GIVEN a concave set → middle point concave, should be excluded by recursive hull (B1→B2 and B3→B4 recursion)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(2, 0);
+        Point p2 = new Point(2, 2);
+        Point p3 = new Point(0, 2);
+        Point p4 = new Point(1, 1); // concave
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2, p3, p4));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN concave point excluded, endpoints in sorted order
+        assertEquals(Arrays.asList(p0, p1, p2, p3), result);
+    }
+
+    @Test
+    @DisplayName("four-point set with one point below baseline tests lowerHull branch det<0")
+    void test_TC09() {
+        // GIVEN a point below baseline → goes to lowerHull branch (det<0, B3→B4)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(2, 0);
+        Point p2 = new Point(1, -1);
+        Point p3 = new Point(3, 0);
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2, p3));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN result should contain lower hull: p0, p2, p3
+        assertTrue(result.containsAll(List.of(p0, p2, p3)));
+        assertEquals(3, result.size());
+    }
+
+    @Test
+    @DisplayName("four-point set with one point above baseline tests upperHull branch det>0")
+    void test_TC10() {
+        // GIVEN a point above baseline → goes to upperHull branch (det>0, B1→B2)
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(2, 0);
+        Point p2 = new Point(1, 1);
+        Point p3 = new Point(3, 0);
+        List<Point> points = new ArrayList<>(List.of(p0, p1, p2, p3));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN all four should be returned
+        assertEquals(Arrays.asList(p0, p1, p2, p3), result);
+    }
+}

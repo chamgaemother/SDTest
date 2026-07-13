@@ -1,0 +1,72 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC06: parseInput(String,String) with real HtmlTreeBuilder returns Document with parsed elements")
+    public void test_TC06() {
+        // Scenario: positive path B1→B2→B4→B5 through parseInput(String, String) → parseInput(Reader, String) → HtmlTreeBuilder.parse
+        String html = "<p>ok</p>";
+        String baseUri = "http://example.com";
+        Parser parser = Parser.htmlParser(); // precondition: HTML parser
+
+        Document doc = parser.parseInput(html, baseUri);
+
+        // Verify that a <p> element was parsed with correct text and baseUri
+        assertNotNull(doc, "Document should not be null");
+        Element p = doc.selectFirst("p");
+        assertNotNull(p, "Expected one <p> element");
+        assertEquals("ok", p.text(), "<p> element text should be 'ok'");
+        assertEquals(baseUri, doc.baseUri(), "Document baseUri should match the provided baseUri");
+    }
+
+    @Test
+    @DisplayName("TC07: parseInput(String,String) with real XmlTreeBuilder returns Document with root element")
+    public void test_TC07() {
+        // Scenario: positive path B1→B2→B4→B5 through parseInput(String, String) → parseInput(Reader, String) → XmlTreeBuilder.parse
+        String xml = "<root><child>value</child></root>";
+        String baseUri = ""; // precondition: empty baseUri
+        Parser parser = Parser.xmlParser(); // precondition: XML parser
+
+        Document doc = parser.parseInput(xml, baseUri);
+
+        // Verify that root and child elements are present, and value is correctly parsed
+        assertNotNull(doc, "Document should not be null");
+        // childNodeSize > 0 indicates content under document
+        assertTrue(doc.childNodeSize() > 0, "Document should have at least one child node");
+        Element child = doc.selectFirst("child");
+        assertNotNull(child, "Expected a <child> element");
+        assertEquals("value", child.text(), "<child> element text should be 'value'");
+        assertEquals(baseUri, doc.baseUri(), "Document baseUri should match the provided (empty) baseUri");
+    }
+
+    @Test
+    @DisplayName("TC08: parseInput(Reader,String) with real HtmlTreeBuilder and null baseUri returns Document without exception")
+    public void test_TC08() {
+        // Scenario: positive path B4→B5 through parseInput(Reader, String) → HtmlTreeBuilder.parse, with null baseUri
+        Reader reader = new StringReader("<div>text</div>");
+        String baseUri = null; // precondition: null baseUri
+        Parser parser = Parser.htmlParser(); // HTML parser
+
+        Document doc = parser.parseInput(reader, baseUri);
+
+        // Verify that a <div> element was parsed and baseUri remains null
+        assertNotNull(doc, "Document should not be null");
+        Element div = doc.selectFirst("div");
+        assertNotNull(div, "Expected a <div> element");
+        assertEquals("text", div.text(), "<div> element text should be 'text'");
+        assertNull(doc.baseUri(), "Document baseUri should be null when input baseUri is null");
+    }
+}

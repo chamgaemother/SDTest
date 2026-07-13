@@ -1,0 +1,102 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class MiniMaxAlgorithm_setScores_0_Test {
+
+    @Test
+    @DisplayName("TC01: setScores assigns a single-element array (length=1) and computes height=0 (branch: scores length power-of-two)")
+    void test_TC01() {
+        // GIVEN: a MiniMaxAlgorithm instance with initial random scores and height
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+
+        // WHEN: setting scores to a single-element array triggers B0->B1 path (length %1 == 0)
+        int[] newScores = new int[] {5};
+        instance.setScores(newScores);
+
+        // THEN: the internal scores should be replaced by [5] and height computed as log2(1)=0
+        assertAll(
+            () -> assertArrayEquals(new int[]{5}, instance.getScores(), 
+                "Scores should be replaced with the provided single-element array"),
+            () -> assertEquals(0, instance.getHeight(), 
+                "Height of a single-element (power-of-two) array must be 0")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02: setScores assigns a 4-element array (length=4) and computes height=2 (branch: scores length power-of-two)")
+    void test_TC02() {
+        // GIVEN: a MiniMaxAlgorithm instance
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+
+        // WHEN: setting scores to a 4-element array triggers B0->B1 path (4 is power-of-two)
+        int[] newScores = new int[] {1, 2, 3, 4};
+        instance.setScores(newScores);
+
+        // THEN: scores replaced and height = log2(4) = 2
+        assertAll(
+            () -> assertArrayEquals(new int[]{1, 2, 3, 4}, instance.getScores(), 
+                "Scores should be replaced with the provided 4-element array"),
+            () -> assertEquals(2, instance.getHeight(), 
+                "Height of 4-element (power-of-two) array must be 2")
+        );
+    }
+
+    @Test
+    @DisplayName("TC03: setScores assigns an 8-element array (length=8) and computes height=3 (branch: scores length power-of-two)")
+    void test_TC03() {
+        // GIVEN: a MiniMaxAlgorithm instance
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+
+        // WHEN: setting scores to an 8-element array triggers B0->B1 path (8 is power-of-two)
+        int[] newScores = new int[] {10,20,30,40,50,60,70,80};
+        instance.setScores(newScores);
+
+        // THEN: scores replaced and height = log2(8) = 3
+        assertAll(
+            () -> assertArrayEquals(new int[]{10,20,30,40,50,60,70,80}, instance.getScores(), 
+                "Scores should be replaced with the provided 8-element array"),
+            () -> assertEquals(3, instance.getHeight(), 
+                "Height of 8-element (power-of-two) array must be 3")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: setScores rejects a 3-element array (length=3 not power-of-two) leaving scores and height unchanged")
+    void test_TC04() {
+        // GIVEN: a MiniMaxAlgorithm instance and capture original state
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+        int[] originalScores = Arrays.copyOf(instance.getScores(), instance.getScores().length);
+        int originalHeight = instance.getHeight();
+
+        // Capture console output to verify rejection message
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+
+        try {
+            // WHEN: setting scores to a 3-element array triggers B0->B2 path (3 is not power-of-two)
+            int[] invalidScores = new int[] {1, 2, 3};
+            instance.setScores(invalidScores);
+
+            // THEN: scores and height remain unchanged and console contains error message
+            assertAll(
+                () -> assertArrayEquals(originalScores, instance.getScores(), 
+                    "Scores should remain unchanged when non-power-of-two array is provided"),
+                () -> assertEquals(originalHeight, instance.getHeight(), 
+                    "Height should remain unchanged when non-power-of-two array is provided"),
+                () -> assertTrue(outContent.toString().contains("The number of scores must be a power of 2."), 
+                    "Console should print rejection message for non-power-of-two array")
+            );
+        } finally {
+            // Restore original System.out
+            System.setOut(originalOut);
+        }
+    }
+}

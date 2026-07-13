@@ -1,0 +1,35 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "HTML syntax with only obsolete <meta name=charset> appends new <meta charset> and removes obsolete",
+      "path": "B0→B1(html)→B2(no selectFirst)→B3(append)→B4(remove)",
+      "precondition": "Document.createShell(\"http://example.com\") and head().appendElement(\"meta\").attr(\"name\",\"charset\")",
+      "expectedResult": "New <meta charset> element added and existing <meta name=charset> removed; doc.charset() updated",
+      "tags": [
+        "positive",
+        "html",
+        "obsolete-removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 html obsolete-only",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    // add only obsolete element",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"ISO-8859-5\"));",
+        "  THEN",
+        "    // new charset element must exist",
+        "    Element newMeta = doc.head().selectFirst(\"meta[charset]\");",
+        "    assert newMeta != null;",
+        "    assert newMeta.attr(\"charset\").equals(\"ISO-8859-5\");",
+        "    // obsolete elements removed",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

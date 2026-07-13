@@ -1,0 +1,99 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search(term) returns empty list when term not in index (B0 branch-false)",
+      "path": "B0→B1",
+      "precondition": "BM25InvertedIndex instance with no added movies",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "WHEN\n  List<SearchResult> results = idx.search(\"unknown\");",
+        "THEN\n  assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search(term) returns single result when one document contains term (B0 branch-true, loop-1, movie!=null)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex idx with one movie added containing term \"apple\"",
+      "expectedResult": "returned list size is 1 and result.docId equals the added movie's id",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "movie-notNull"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  BM25InvertedIndex idx = new BM25InvertedIndex();\n  idx.addMovie(1,\"ApplePie\",8.0,2020,\"apple fruit\");",
+        "WHEN\n  List<SearchResult> results = idx.search(\"apple\");",
+        "THEN\n  assert results.size() == 1 && results.get(0).getDocId() == 1;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search(term) skips index entries when movie missing in movies map (B0 branch-true, loop-1, movie==null)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "BM25InvertedIndex idx; manually insert index entry idx.index.put(\"ghost\",Map.of(99,1)); ensure idx.movies does not contain key 99",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "movie-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  BM25InvertedIndex idx = new BM25InvertedIndex();\n  // stub: direct index manipulation to simulate missing movie\n  idx.index.put(\"ghost\", new HashMap<>(){{put(99,1);}});",
+        "WHEN\n  List<SearchResult> results = idx.search(\"ghost\");",
+        "THEN\n  assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search(term) returns sorted results for multiple documents (B0 branch-true, loop-N>1, movie!=null)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex idx with two movies added: doc1 frequency 2, doc2 frequency 1 for term \"star\"",
+      "expectedResult": "returned list size is 2 and results.get(0).getRelevanceScore() >= results.get(1).getRelevanceScore();",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "movie-notNull",
+        "sorting"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  BM25InvertedIndex idx = new BM25InvertedIndex();\n  idx.addMovie(1,\"Star Wars\",\"\",0,\"star star\");\n  idx.addMovie(2,\"Star Trek\",\"\",0,\"star\");",
+        "WHEN\n  List<SearchResult> results = idx.search(\"star\");",
+        "THEN\n  assert results.size() == 2 && results.get(0).getRelevanceScore() >= results.get(1).getRelevanceScore();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search(null) throws NullPointerException due to term.toLowerCase()",
+      "path": "B0",
+      "precondition": "BM25InvertedIndex idx with or without movies",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN\n  BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "WHEN\n  calling idx.search(null);",
+        "THEN\n  throws NullPointerException;"
+      ]
+    }
+  ]
+}

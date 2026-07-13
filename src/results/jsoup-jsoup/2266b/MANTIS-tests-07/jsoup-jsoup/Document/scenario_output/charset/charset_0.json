@@ -1,0 +1,130 @@
+{
+  "method": "charset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "charset(Charset) with no existing <meta charset> and default html syntax creates a new meta charset element",
+      "path": "B1→B2→B3(html)→B4(no meta[charset])→B5→B6",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); // head exists with no meta charset; updateMetaCharset default false",
+      "expectedResult": "doc.updateMetaCharsetElement() == true; doc.outputSettings().charset() is set to provided Charset; doc.head().selectFirst(\"meta[charset]\").attr(\"charset\") equals provided Charset.displayName(); no elements matching \"meta[name=charset]\" remain",
+      "tags": [
+        "branch-true",
+        "html-syntax",
+        "meta-missing",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 charset creates meta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    Charset cs = StandardCharsets.ISO_8859_1;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assert doc.updateMetaCharsetElement() == true;",
+        "    assert doc.charset().equals(cs);",
+        "    assert doc.head().selectFirst(\"meta[charset]\").attr(\"charset\").equals(cs.displayName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "charset(Charset) with existing <meta charset> and default html syntax updates existing element",
+      "path": "B1→B2→B3(html)→B4(meta[charset] present)→B7",
+      "precondition": "Document doc = Document.createShell(\"base\"); doc.head().appendElement(\"meta\").attr(\"charset\",\"Old\"); // simulate existing meta charset",
+      "expectedResult": "doc.updateMetaCharsetElement() == true; doc.outputSettings().charset() is set; doc.head().selectFirst(\"meta[charset]\").attr(\"charset\") equals provided Charset.displayName()",
+      "tags": [
+        "branch-true",
+        "html-syntax",
+        "meta-present",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 charset updates existing meta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\",\"UTF-8\");",
+        "    Charset cs = StandardCharsets.US_ASCII;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assert doc.updateMetaCharsetElement() == true;",
+        "    assert doc.charset().equals(cs);",
+        "    assert doc.head().selectFirst(\"meta[charset]\").attr(\"charset\").equals(cs.displayName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "charset(Charset) with xml syntax and no existing XmlDeclaration prepends a new xml declaration",
+      "path": "B1→B2→B3(xml)→B8(no XmlDeclaration)→B10",
+      "precondition": "Document doc = new Document(\"http://u\"); doc.updateMetaCharsetElement(false); doc.outputSettings().syntax(OutputSettings.Syntax.xml); // no XmlDeclaration child",
+      "expectedResult": "doc.updateMetaCharsetElement() == true; doc.outputSettings().charset() equals provided; first child is XmlDeclaration with name \"xml\", attr(\"encoding\")==provided.displayName(), attr(\"version\")==\"1.0\"",
+      "tags": [
+        "branch-true",
+        "xml-syntax",
+        "declaration-missing"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 charset xml creates declaration",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    Charset cs = StandardCharsets.UTF_16;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assert doc.updateMetaCharsetElement() == true;",
+        "    assert doc.charset().equals(cs);",
+        "    Node n = doc.childNodes().get(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    assert ((XmlDeclaration)n).name().equals(\"xml\");",
+        "    assert ((XmlDeclaration)n).attr(\"encoding\").equals(cs.displayName());",
+        "    assert ((XmlDeclaration)n).attr(\"version\").equals(\"1.0\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "charset(Charset) with xml syntax and existing xml declaration updates attributes when name is xml",
+      "path": "B1→B2→B3(xml)→B8(existing XmlDeclaration)→B9(name xml)→B10",
+      "precondition": "Document doc = new Document(\"u\"); XmlDeclaration decl = new XmlDeclaration(\"xml\", false); decl.attr(\"version\",\"2.0\"); decl.attr(\"encoding\",\"Old\"); doc.prependChild(decl); doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+      "expectedResult": "doc.updateMetaCharsetElement() == true; doc.outputSettings().charset() equals provided; doc.childNodes().get(0) is same XmlDeclaration; its attr(\"encoding\")==provided.displayName(), attr(\"version\")==\"1.0\"",
+      "tags": [
+        "branch-true",
+        "xml-syntax",
+        "declaration-present",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 charset xml updates declaration",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://ex\");",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    decl.attr(\"version\",\"0.5\");",
+        "    decl.attr(\"encoding\",\"X\");",
+        "    doc.prependChild(decl);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assert doc.updateMetaCharsetElement() == true;",
+        "    assert doc.charset().equals(cs);",
+        "    XmlDeclaration out = (XmlDeclaration)doc.childNodes().get(0);",
+        "    assert out.attr(\"encoding\").equals(cs.displayName());",
+        "    assert out.attr(\"version\").equals(\"1.0\");",
+        "END"
+      ]
+    }
+  ]
+}

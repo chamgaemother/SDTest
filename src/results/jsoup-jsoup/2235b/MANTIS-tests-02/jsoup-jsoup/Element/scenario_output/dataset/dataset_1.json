@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "dataset().clear() removes all data- attributes from element (clear loop removes multiple entries)",
+      "path": "B0→B1(loop×N)→B2",
+      "precondition": "Element with multiple data-* attributes and some non-data attributes",
+      "expectedResult": "After clear(), no data-* attributes remain (attributes.remove called for each), dataset view empty",
+      "tags": [
+        "positive",
+        "side-effect",
+        "loop",
+        "clear"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 dataset clear removes all",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\",\"1\");",
+        "    el.attr(\"data-b\",\"2\");",
+        "    el.attr(\"id\",\"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-a\"));",
+        "    assertFalse(el.hasAttr(\"data-b\"));",
+        "    assertTrue(el.hasAttr(\"id\"));",
+        "    assertTrue(ds.isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "dataset().put(\"a\",\"new\") overrides existing data-* attribute (put path update existing)",
+      "path": "B0→B3",
+      "precondition": "Element with existing data-a=old",
+      "expectedResult": "After put(\"a\",\"new\"), element.attr(data-a) == \"new\" and dataset.get(\"a\") == \"new\"",
+      "tags": [
+        "positive",
+        "side-effect",
+        "override"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset put overrides existing",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"old\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"a\",\"new\");",
+        "  THEN",
+        "    assertEquals(\"new\", el.attr(\"data-a\"));",
+        "    assertEquals(\"new\", ds.get(\"a\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "dataset().put(null, \"v\") throws NullPointerException due to null key",
+      "path": "B0→B4(exception)",
+      "precondition": "new Element",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 dataset put null-key",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(null, \"v\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset() handles attribute named exactly \"data-\" producing empty-string key",
+      "path": "B0→B1(loop×1)→B5",
+      "precondition": "Element with attribute data- = \"x\"",
+      "expectedResult": "dataset contains key \"\" mapping to \"x\"",
+      "tags": [
+        "boundary",
+        "positive",
+        "filter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 dataset key-empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-\",\"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"\"));",
+        "    assertEquals(\"x\", ds.get(\"\"));",
+        "END"
+      ]
+    }
+  ]
+}

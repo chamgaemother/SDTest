@@ -1,0 +1,97 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) delegates to Reader overload with non-empty HTML",
+      "path": "B0→B1",
+      "precondition": "Parser parser = Parser.htmlParser(); // real HtmlTreeBuilder",
+      "expectedResult": "return Document whose text() is \"Hello\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-delegate"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput String overload",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = \"<p>Hello</p>\"; String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, base);",
+        "  THEN",
+        "    assert doc.text().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader, String) returns Document for empty input",
+      "path": "B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); // real HtmlTreeBuilder",
+      "expectedResult": "return Document whose body().text() is empty string",
+      "tags": [
+        "overload:Reader,String",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput Reader overload empty",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader rdr = new StringReader(\"\"); String base = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(rdr, base);",
+        "  THEN",
+        "    assert doc.body().text().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) throws NullPointerException when html is null",
+      "path": "B0",
+      "precondition": "Parser parser = Parser.htmlParser();",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = null; String base = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) propagates exception from TreeBuilder.parse",
+      "path": "B2",
+      "precondition": "Parser parser = new Parser(new StubTreeBuilder()); // stub throws IllegalStateException in parse",
+      "expectedResult": "throws IllegalStateException; no state mutated",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "stub-TreeBuilder"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput Reader propagates",
+        "  GIVEN",
+        "    class StubTreeBuilder extends TreeBuilder { StubTreeBuilder(){super(null);} public Document parse(Reader in, String uri, Parser p){throw new IllegalStateException(\"fail\");} } Parser parser = new Parser(new StubTreeBuilder()); Reader rdr = new StringReader(\"x\"); String base=\"u\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws IllegalStateException;"
+      ]
+    }
+  ]
+}

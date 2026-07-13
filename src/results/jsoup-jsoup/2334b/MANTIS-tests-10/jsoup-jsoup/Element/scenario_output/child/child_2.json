@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "After caching childElementsList, empty() invalidates cache and child(0) throws IndexOutOfBoundsException",
+      "path": "B0→B3→B5(cache store)→nodelistChanged→B3(empty childNodes)→B0→B6(exception)",
+      "precondition": "Element parent with one Element child, child(0) invoked once to populate cache",
+      "expectedResult": "IndexOutOfBoundsException thrown on second child(0) after empty()",
+      "tags": [
+        "cache-invalidation",
+        "exception",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 cache invalidation on empty",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"p\");",
+        "    parent.child(0); // build cache",
+        "  WHEN",
+        "    parent.empty();",
+        "    parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(1) filters only Element nodes among mixed children and returns second Element",
+      "path": "B0→B3(loop×4)→B5→return",
+      "precondition": "Element container with sequence: TextNode, Element a, TextNode, Element b",
+      "expectedResult": "child(1) returns the second Element b",
+      "tags": [
+        "positive",
+        "filtering",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 mixed nodes filter",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendText(\"t1\");",
+        "    Element a = el.appendElement(\"a\");",
+        "    el.appendText(\"t2\");",
+        "    Element b = el.appendElement(\"b\");",
+        "  WHEN",
+        "    Element result = el.child(1);",
+        "  THEN",
+        "    assert result == b;",
+        "END"
+      ]
+    }
+  ]
+}

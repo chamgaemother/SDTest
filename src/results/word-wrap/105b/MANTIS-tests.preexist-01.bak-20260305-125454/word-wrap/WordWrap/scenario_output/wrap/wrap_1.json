@@ -1,0 +1,161 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "fromClasspathUtf8 on missing resource throws NullPointerException due to null InputStream",
+      "path": "B0→B3(new Builder)→wrap()→wordWrap→in.read() fail",
+      "precondition": "no resource '/no-such.txt' on classpath",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "classpath",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 fromClasspathUtf8 missing-resource",
+        "  GIVEN",
+        "    String resource = \"/no-such.txt\"; // not on classpath",
+        "  WHEN",
+        "    call WordWrap.fromClasspathUtf8(resource).wrap();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "wrap(File,Charset) writes using specified charset to file and reads back correctly",
+      "path": "B0→...→wrap(File,Charset)→wrap(writer)→wordWrap→write→close",
+      "precondition": "temp file created and deleted on exit",
+      "expectedResult": "file content equals original text",
+      "tags": [
+        "positive",
+        "file",
+        "charset"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 wrap to file with custom charset",
+        "  GIVEN",
+        "    String text = \"Ünicode\";",
+        "    File tmp = createTempFile();",
+        "  WHEN",
+        "    WordWrap.from(text).wrap(tmp, StandardCharsets.UTF_16);",
+        "    String result = readFile(tmp, StandardCharsets.UTF_16);",
+        "  THEN",
+        "    assert result.equals(text);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap() uses custom stringWidth function causing early wrap when width*2>maxWidth",
+      "path": "B0→Builder.stringWidth→wordWrap→tooLong→writeLine→writeNewLine→final write",
+      "precondition": "custom width = half char count",
+      "expectedResult": "text is split into multiple lines based on custom width",
+      "tags": [
+        "positive",
+        "custom-function",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 wrap with custom stringWidth",
+        "  GIVEN",
+        "    String text = \"abcd efgh\";",
+        "    Function width = s -> s.length() / 2;",
+        "  WHEN",
+        "    String result = WordWrap.from(text)",
+        "                      .stringWidth(width)",
+        "                      .maxWidth(2)",
+        "                      .wrap();",
+        "  THEN",
+        "    assert result.contains(\"ab\");",
+        "    assert result.contains(\"cd\");",
+        "    assert result.contains(\"ef\");",
+        "    assert result.contains(\"gh\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap() breaks word without hyphens when insertHyphens=false and word exceeds maxWidth",
+      "path": "B0→...→tooLong(lineAndWord)→breakWords→writeBrokenWord else-branch→writeNewLine",
+      "precondition": "insertHyphens=false, breakWords=true, maxWidth small",
+      "expectedResult": "long word broken into lines without hyphens",
+      "tags": [
+        "positive",
+        "break",
+        "no-hyphen"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 breakWords without hyphens",
+        "  GIVEN",
+        "    String text = \"ABCDE\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text)",
+        "                      .maxWidth(2)",
+        "                      .insertHyphens(false)",
+        "                      .breakWords(true)",
+        "                      .wrap();",
+        "  THEN",
+        "    assert result.equals(\"AB\\nCD\\nE\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap() ignores '\\r' characters and wraps on '\\n' only",
+      "path": "B0→wordWrap→ch=='\\r' branch→skip→ch=='\\n' branch→writeNewLine",
+      "precondition": "text contains carriage return and newline",
+      "expectedResult": "lines split only at newline, carriage returns dropped",
+      "tags": [
+        "positive",
+        "control-char"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 CRLF handling",
+        "  GIVEN",
+        "    String text = \"line1\\r\\nline2\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"line1\",\"line2\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap() throws IORuntimeException when reader.close() fails in finally",
+      "path": "B0→wrap(writer)→wordWrap→finally→close(reader)→IOException→IORuntimeException",
+      "precondition": "Reader stub that throws IOException on close",
+      "expectedResult": "IORuntimeException is thrown with cause IOException",
+      "tags": [
+        "exception",
+        "cleanup"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 reader close failure",
+        "  GIVEN",
+        "    Reader reader = stubReaderWithCloseException(\"data\");",
+        "    Builder b = WordWrap.from(reader, true);",
+        "    Writer out = new StringWriter();",
+        "  WHEN",
+        "    call b.wrap(out);",
+        "  THEN",
+        "    throws IORuntimeException with cause IOException;",
+        "END"
+      ]
+    }
+  ]
+}

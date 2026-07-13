@@ -1,0 +1,42 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(\" 1.2.3-alpha.4+build.5 \") trims input and returns Semver covering non-null branch with pre-release and build")
+    void test_TC04() {
+        // GIVEN a version string with leading/trailing whitespace, pre-release and build metadata
+        String version = " 1.2.3-alpha.4+build.5 ";
+        // WHEN parsing the version (should trim and succeed, covering B0→B1(false)→B3→B4 path)
+        Semver result = Semver.parse(version);
+        // THEN a non-null Semver is returned with expected components
+        assertNotNull(result, "Expected non-null Semver instance after trimming valid input");
+        assertEquals("1.2.3-alpha.4+build.5", result.getVersion(), "Version string should match trimmed input without extra spaces");
+        List<String> expectedPre = Arrays.asList("alpha", "4");
+        List<String> expectedBuild = Arrays.asList("build", "5");
+        assertEquals(expectedPre, result.getPreRelease(), "Pre-release identifiers should be parsed correctly");
+        assertEquals(expectedBuild, result.getBuild(), "Build metadata identifiers should be parsed correctly");
+        // Also verify numeric parts
+        assertEquals(1, result.getMajor(), "Major version should be parsed as 1");
+        assertEquals(2, result.getMinor(), "Minor version should be parsed as 2");
+        assertEquals(3, result.getPatch(), "Patch version should be parsed as 3");
+    }
+
+    @Test
+    @DisplayName("parse(\"\") returns null covering exception path when StrictParser.parse throws on empty string after trim")
+    void test_TC05() {
+        // GIVEN an empty version string (after trim remains empty) to trigger parse failure
+        String version = "";
+        // WHEN parsing the empty string (should catch exception and return null, covering B0→B1(false)→B3→B5 path)
+        Semver result = Semver.parse(version);
+        // THEN the result should be null
+        assertNull(result, "Expected null when parsing an empty version string");
+    }
+}

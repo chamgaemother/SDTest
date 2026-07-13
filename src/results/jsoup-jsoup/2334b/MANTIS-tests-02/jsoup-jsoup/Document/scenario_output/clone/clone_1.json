@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "clone() copies a non-null connection field so that clone.connection() returns the same Connection instance",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document has a custom Connection set via connection(Connection)",
+      "expectedResult": "clone.connection() returns the same Connection instance that was on the original",
+      "tags": [
+        "positive",
+        "field-copy",
+        "connection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 clone preserves connection field",
+        "  GIVEN",
+        "    // Arrange",
+        "    Document doc = new Document(\"http://test\");",
+        "    Connection conn = Jsoup.connect(\"http://example.com\");",
+        "    doc.connection(conn);",
+        "  WHEN",
+        "    // Act",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    // Assert",
+        "    assertSame(conn, cloned.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "clone() copies attributes on the Document root element via the attribute-copy loop",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Document root has one attribute set",
+      "expectedResult": "clone().attr(\"data-key\") equals the original value and clone is distinct",
+      "tags": [
+        "positive",
+        "iteration",
+        "attribute-copy"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 clone copies root attributes",
+        "  GIVEN",
+        "    // Arrange",
+        "    Document doc = new Document(\"http://test\");",
+        "    doc.attr(\"data-key\", \"data-val\");",
+        "  WHEN",
+        "    // Act",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    // Assert",
+        "    assertEquals(\"data-val\", cloned.attr(\"data-key\"));",
+        "    assertNotSame(doc, cloned);",
+        "END"
+      ]
+    }
+  ]
+}

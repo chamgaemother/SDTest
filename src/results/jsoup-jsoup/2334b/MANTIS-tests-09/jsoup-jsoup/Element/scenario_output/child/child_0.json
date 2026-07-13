@@ -1,0 +1,180 @@
+{
+  "method": "child",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "child(0) on element with no children should throw IndexOutOfBoundsException (childNodeSize == 0 branch)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element parent = new Element(\"div\"); // no children",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 child on empty children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "child(-1) on element with one child should throw IndexOutOfBoundsException (negative index boundary)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new Element(\"span\"));",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "boundary",
+        "loop-1",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 child negative index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    call parent.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "child(0) returns only element child when childNodes contains mixed node types (filters out non-Element)",
+      "path": "B0→B1→B2(loop×3)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"text\")); parent.appendChild(new Element(\"p\")); parent.appendChild(new Comment(\"c\"));",
+      "expectedResult": "return value is the <p> element instance",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "filter",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 child with mixed children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"text\"));",
+        "    parent.appendChild(new Element(\"p\"));",
+        "    parent.appendChild(new Comment(\"c\"));",
+        "  WHEN",
+        "    Element child = parent.child(0);",
+        "  THEN",
+        "    assert child.tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "child(0) returns first element when exactly one element child present",
+      "path": "B0→B1→B2(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendChild(new Element(\"li\"));",
+      "expectedResult": "return value is the <li> element instance",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 child single element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    parent.appendChild(li);",
+        "  WHEN",
+        "    Element child = parent.child(0);",
+        "  THEN",
+        "    assert child == li;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "child(1) returns second element when multiple element children present",
+      "path": "B0→B1→B2(loop×2)→B4",
+      "precondition": "Element parent = new Element(\"ol\"); parent.appendChild(new Element(\"li\")); Element second = parent.appendElement(\"li\");",
+      "expectedResult": "return value is the second <li> element instance",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 child multiple elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"ol\");",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    Element second = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element child = parent.child(1);",
+        "  THEN",
+        "    assert child == second;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "child(2) with index equal to filtered element count should throw IndexOutOfBoundsException (upper bound)",
+      "path": "B0→B1→B2(loop×2)→B3",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new Element(\"span\")); parent.appendChild(new Element(\"a\"));",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "boundary",
+        "loop-N",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child index at size",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"span\"));",
+        "    parent.appendChild(new Element(\"a\"));",
+        "  WHEN",
+        "    call parent.child(2);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "child(0) after caching ensures shadowChildrenRef is reused on subsequent calls",
+      "path": "B0→B1→B2(loop×1)→B4→B5→B2(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\"); // first builds cache",
+      "expectedResult": "first and second calls return same instance; shadowChildrenRef populated",
+      "tags": [
+        "cache",
+        "loop-1",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 child cache reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element span = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Element first = parent.child(0);",
+        "    Element second = parent.child(0);",
+        "  THEN",
+        "    assert first == second;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Normal infix expression with no implicit multiplication yields token list and normal return",
+      "path": "B0→B1→B6(loop×3)→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "List of tokens [NUMBER_LITERAL(\"1\"), INFIX_OPERATOR(\"+\"), NUMBER_LITERAL(\"2\")], no exception",
+      "tags": [
+        "positive",
+        "infix",
+        "normal-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 normal infix parse",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"1+2\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(1).getType() == INFIX_OPERATOR;",
+        "    assert tokens.get(2).getType() == NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Undefined operator character throws ParseException from parseOperator",
+      "path": "B0→B1→B6(loop×1)→B1",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "ParseException with message \"Undefined operator '@'\"",
+      "tags": [
+        "negative",
+        "operator",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 undefined operator",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"@\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing \"Undefined operator '@'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Decimal literal with two decimal points throws ParseException",
+      "path": "B0→B1→B6(loop×1)→B1",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "ParseException with message \"Number contains more than one decimal point\"",
+      "tags": [
+        "negative",
+        "number",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 multi-decimal-point error",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"1.2.3\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Number contains more than one decimal point\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Illegal scientific notation format throws ParseException",
+      "path": "B0→B1→B6(loop×1)→B1",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "ParseException with message \"Illegal scientific format\"",
+      "tags": [
+        "negative",
+        "number",
+        "exception",
+        "scientific"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 illegal scientific format",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"1e+\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Illegal scientific format\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Hexadecimal literal is parsed as single NUMBER_LITERAL",
+      "path": "B0→B1→B6(loop×1)→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "List of tokens [NUMBER_LITERAL(\"0x1Af\")], no exception",
+      "tags": [
+        "positive",
+        "number",
+        "hex"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse hex literal",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"0x1Af\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getValue().equals(\"0x1Af\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Unterminated string literal throws ParseException",
+      "path": "B0→B1→B6(loop×1)→B1",
+      "precondition": "default ExpressionConfiguration with single-quote disabled",
+      "expectedResult": "ParseException with message \"Closing quote not found\"",
+      "tags": [
+        "negative",
+        "string",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 unterminated string literal",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"\\\"hello\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Closing quote not found\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Unknown escape character in string literal throws ParseException",
+      "path": "B0→B1→B6(loop×1)→B1",
+      "precondition": "default ExpressionConfiguration with single-quote allowed",
+      "expectedResult": "ParseException with message \"Unknown escape character\"",
+      "tags": [
+        "negative",
+        "string",
+        "exception",
+        "escape"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 unknown escape in string",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"'\\\\q'\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing \"Unknown escape character\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Prefix operator at start is recognized as PREFIX_OPERATOR",
+      "path": "B0→B1→B6(loop×2)→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "List of tokens [PREFIX_OPERATOR(\"-\"), NUMBER_LITERAL(\"5\")], no exception",
+      "tags": [
+        "positive",
+        "operator",
+        "prefix"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 prefix operator parse",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"-5\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 2;",
+        "    assert tokens.get(0).getType() == PREFIX_OPERATOR;",
+        "    assert tokens.get(1).getType() == NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Implicit multiplication insertion branch B4 when disallowed and possible false",
+      "path": "B0→B1→B6(loop×1)→B2→B3→B4→B6(loop×2)→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with implicitMultiplicationAllowed=false",
+      "expectedResult": "'*' INFIX_OPERATOR token inserted before '(', full token list [\"*\",\"(\",\"x\",\")\"]",
+      "tags": [
+        "positive",
+        "implicit",
+        "branch-B4"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 implicit multiplication B4 path",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setImplicitMultiplicationAllowed(false);",
+        "    Tokenizer tokenizer = new Tokenizer(\"(x)\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == INFIX_OPERATOR;",
+        "    assert tokens.get(0).getValue().equals(\"*\");",
+        "    assert tokens.get(1).getType() == BRACE_OPEN;",
+        "    assert tokens.get(2).getValue().equals(\"x\");",
+        "    assert tokens.get(3).getType() == BRACE_CLOSE;",
+        "END"
+      ]
+    }
+  ]
+}

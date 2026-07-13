@@ -1,0 +1,104 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "tagSet returns lowercase tags when settings provide mixed-case names",
+      "path": "B0→B1(loop×2)→B2→B3→B5",
+      "precondition": "Parser htmlParser with custom ParseSettings returning [\"Div\",\"SPAN\"] and trackPosition=false",
+      "expectedResult": "Set contains [\"div\",\"span\"]",
+      "tags": [
+        "positive",
+        "case-normalization",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 tagSet lowercase-normalization",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    // override settings to return [\"Div\",\"SPAN\"]",
+        "    parser.settings(new ParseSettings(List.of(\"Div\",\"SPAN\"), Locale.ROOT));",
+        "  WHEN",
+        "    Set<String> result = parser.tagSet();",
+        "  THEN",
+        "    assert result.containsAll(Set.of(\"div\",\"span\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "tagSet skips null entries when trackPosition is false",
+      "path": "B0→B1(loop×2)→B2(null)→B4(skip)→B5",
+      "precondition": "Parser htmlParser with settings returning [\"p\",null] and default trackPosition=false",
+      "expectedResult": "Set contains only [\"p\"] and no exception thrown",
+      "tags": [
+        "boundary",
+        "null-handling"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 tagSet skips-null-default",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    parser.settings(new ParseSettings(List.of(\"p\", null), Locale.ROOT));",
+        "  WHEN",
+        "    Set<String> result = parser.tagSet();",
+        "  THEN",
+        "    assert result.equals(Set.of(\"p\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "tagSet throws IllegalArgumentException on null tag when trackPosition is enabled",
+      "path": "B0→B1(loop×1)→B2(null)→B3(exception)",
+      "precondition": "Parser htmlParser with settings returning [null] and trackPosition=true",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-handling"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 tagSet exception-on-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true);",
+        "    parser.settings(new ParseSettings(List.of((String)null), Locale.ROOT));",
+        "  WHEN",
+        "    call parser.tagSet();",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "tagSet returns empty set when settings has no tags",
+      "path": "B0→B1(no-loop)→B5",
+      "precondition": "Parser htmlParser with settings returning empty list",
+      "expectedResult": "result is empty Set",
+      "tags": [
+        "positive",
+        "empty",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 tagSet empty-settings",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    parser.settings(new ParseSettings(List.of(), Locale.ROOT));",
+        "  WHEN",
+        "    Set<String> result = parser.tagSet();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

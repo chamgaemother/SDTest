@@ -1,0 +1,77 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_0_Test {
+
+    @Test
+    @DisplayName("TC01: child(0) on element with no children throws IndexOutOfBoundsException (empty childElementsList branch)")
+    void test_TC01() {
+        // GIVEN an element with no children, childElementsList() is empty
+        Element el = new Element("div");
+        // WHEN/THEN calling child(0) must throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02: child(0) returns only child when exactly one child Element present (single iteration in filter loop)")
+    void test_TC02() {
+        // GIVEN an element with exactly one Element child
+        Element parent = new Element("ul");
+        Element child = parent.appendElement("li"); // produces one element in childElementsList()
+        // WHEN retrieving that only child
+        Element result = parent.child(0);
+        // THEN the returned object is the same appended element
+        assertEquals(child, result);
+    }
+
+    @Test
+    @DisplayName("TC03: child(1) returns second Element when multiple Element children present (multiple iterations filter includes only Elements)")
+    void test_TC03() {
+        // GIVEN an element with two Element children
+        Element parent = new Element("ol");
+        parent.appendElement("li"); // first element
+        Element second = parent.appendElement("li"); // second element
+        // WHEN retrieving child at index 1
+        Element result = parent.child(1);
+        // THEN the returned object is the second appended element
+        assertEquals(second, result);
+    }
+
+    @Test
+    @DisplayName("TC04: child(index) skips non-Element nodes and returns correct Element (filter loop skips TextNode)")
+    void test_TC04() {
+        // GIVEN an element with a TextNode then an Element child
+        Element parent = new Element("p");
+        parent.appendText("text"); // adds a non-Element node
+        Element span = parent.appendElement("span"); // adds an Element node
+        // childElementsList() will only include the span at index 0
+        Element result = parent.child(0);
+        // THEN the returned object is the span element
+        assertEquals(span, result);
+    }
+
+    @Test
+    @DisplayName("TC05: child(-1) on non-empty children list throws IndexOutOfBoundsException (negative index boundary)")
+    void test_TC05() {
+        // GIVEN an element with one Element child
+        Element parent = new Element("div");
+        parent.appendElement("a");
+        // WHEN calling child(-1), index is out of bounds (negative)
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC06: child(size) equals count throws IndexOutOfBoundsException (upper boundary)")
+    void test_TC06() {
+        // GIVEN an element with two Element children
+        Element el = new Element("div");
+        el.appendElement("span");
+        el.appendElement("br");
+        // size of childElementsList() is 2, so index 2 is out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(2));
+    }
+}

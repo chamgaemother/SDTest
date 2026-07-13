@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseAndAddToColumn parses and adds LocalDate for default pattern with zero-padded month and day",
+      "path": "B2(false)→B3(false)→parse→addObject",
+      "precondition": "DateSchemaColumn instantiated with null pattern",
+      "expectedResult": "added LocalDate.of(2021,1,2)",
+      "tags": [
+        "positive",
+        "default-pattern",
+        "zero-padded",
+        "trim-not-needed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 default pattern zero-padded date",
+        "  GIVEN",
+        "    String aString = \"2021-01-02\";",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", null);",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2021, 1, 2));"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseAndAddToColumn parses and adds LocalDate for default pattern valid leap-day",
+      "path": "B2(false)→B3(false)→parse→addObject",
+      "precondition": "DateSchemaColumn instantiated with null pattern",
+      "expectedResult": "added LocalDate.of(2020,2,29)",
+      "tags": [
+        "positive",
+        "default-pattern",
+        "leap-day"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 default pattern valid leap-day",
+        "  GIVEN",
+        "    String aString = \"2020-02-29\";",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", null);",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2020, 2, 29));"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseAndAddToColumn trims and adds LocalDate for custom pattern dd/MM/uuuu",
+      "path": "B2(false)→B3(false)→parse→addObject",
+      "precondition": "DateSchemaColumn instantiated with pattern \"dd/MM/uuuu\"",
+      "expectedResult": "added LocalDate.of(2021,12,31)",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "trim",
+        "dd/MM/uuuu"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 custom pattern dd/MM/uuuu with whitespace",
+        "  GIVEN",
+        "    String aString = \" 31/12/2021 \";",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"dd/MM/uuuu\");",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2021, 12, 31));"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseAndAddToColumn parses and adds LocalDate for custom pattern dd.MM.uuuu without trimming",
+      "path": "B2(false)→B3(false)→parse→addObject",
+      "precondition": "DateSchemaColumn instantiated with pattern \"dd.MM.uuuu\"",
+      "expectedResult": "added LocalDate.of(2022,5,6)",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "dd.MM.uuuu"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 custom pattern dd.MM.uuuu valid",
+        "  GIVEN",
+        "    String aString = \"06.05.2022\";",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"dd.MM.uuuu\");",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2022, 5, 6));"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseAndAddToColumn throws DateTimeParseException for custom pattern dd.MM.uuuu invalid date",
+      "path": "B2(false)→B3(false)→parse(exception)",
+      "precondition": "DateSchemaColumn instantiated with pattern \"dd.MM.uuuu\"",
+      "expectedResult": "DateTimeParseException thrown, no addObject call",
+      "tags": [
+        "negative",
+        "custom-pattern",
+        "exception",
+        "invalid-date"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 custom pattern dd.MM.uuuu invalid date",
+        "  GIVEN",
+        "    String aString = \"29.02.2021\";",
+        "    DfColumn stubColumn = Mockito.mock(DfColumn.class);",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"dd.MM.uuuu\");",
+        "  WHEN",
+        "    call schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    verify(stubColumn, never()).addObject(any());"
+      ]
+    }
+  ]
+}

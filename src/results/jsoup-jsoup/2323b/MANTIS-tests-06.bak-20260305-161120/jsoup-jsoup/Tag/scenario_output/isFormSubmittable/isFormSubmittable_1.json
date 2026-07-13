@@ -1,0 +1,107 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Known submittable tag 'input' in wrong namespace returns false for formSubmit flag",
+      "path": "B0→B1→B2(false)→B3→B4→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "new Tag created with formSubmit=false; isFormSubmittable() returns false",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "clone-path-not-taken"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 valueOf wrong-namespace",
+        "  GIVEN",
+        "    // use a known formSubmit tag name but wrong namespace",
+        "    String tagName = \"input\";",
+        "    String namespace = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Uppercase 'INPUT' with preserveCase triggers clone path and returns true for formSubmit flag",
+      "path": "B0→B1→B2(false)→B3→B4→B5→B6→B7→B8",
+      "precondition": "none",
+      "expectedResult": "clone path executed; cloned Tag has formSubmit=true; isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "preserve-case",
+        "clone-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 valueOf uppercase-preserve-case",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;",
+        "    assert tag.getName().equals(\"INPUT\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Calling valueOf with null tagName throws IllegalArgumentException",
+      "path": "B0→B1(exception)",
+      "precondition": "none",
+      "expectedResult": "Validate.notNull triggers IllegalArgumentException",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 valueOf null-tagName",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String normalName = \"x\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Calling valueOf with empty tagName throws IllegalArgumentException",
+      "path": "B0→B1→B2(exception)",
+      "precondition": "none",
+      "expectedResult": "Validate.notEmpty triggers IllegalArgumentException after trimming",
+      "tags": [
+        "negative",
+        "exception",
+        "empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 valueOf empty-tagName",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String normalName = \"n\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

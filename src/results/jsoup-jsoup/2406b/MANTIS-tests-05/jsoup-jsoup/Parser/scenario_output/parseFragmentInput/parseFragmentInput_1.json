@@ -1,0 +1,140 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseFragmentInput(Reader, context non-null, baseUri empty) returns nodes for empty baseUri branch",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser.htmlParser(), Reader prepared, context non-null, baseUri = \"\"",
+      "expectedResult": "returns list of Nodes matching fragment content without error",
+      "tags": [
+        "positive",
+        "boundary",
+        "reader",
+        "empty-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseFragmentInput Reader empty-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader fragment = new StringReader(\"<b>bold</b>\");",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0) instanceof Element;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseFragmentInput holds and releases lock on successful parse (TreeBuilder stub)",
+      "path": "B0→B1(lock)→B2→B3(lock release)",
+      "precondition": "Parser created with custom TreeBuilder stub recording lock state",
+      "expectedResult": "lock held during parseFragment call and released afterwards",
+      "tags": [
+        "positive",
+        "lock",
+        "stub",
+        "integration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput lock held and released on success",
+        "  GIVEN",
+        "    AtomicBoolean lockHeldDuring = new AtomicBoolean(false);",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { return null; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {",
+        "        Field f = Parser.class.getDeclaredField(\"lock\"); f.setAccessible(true);",
+        "        ReentrantLock lock = (ReentrantLock)f.get(p);",
+        "        lockHeldDuring.set(lock.isHeldByCurrentThread());",
+        "        return Collections.emptyList();",
+        "      }",
+        "      @Override public void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader fragment = new StringReader(\"<i/>\");",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, new Element(\"div\"), \"uri\");",
+        "  THEN",
+        "    assert lockHeldDuring.get();",
+        "    Field f2 = Parser.class.getDeclaredField(\"lock\"); f2.setAccessible(true);",
+        "    ReentrantLock lockAfter = (ReentrantLock)f2.get(parser);",
+        "    assertFalse(lockAfter.isLocked());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseFragmentInput releases lock when treeBuilder.parseFragment throws RuntimeException",
+      "path": "B0→B1(lock)→B2 exception→B3(lock release)",
+      "precondition": "Parser created with TreeBuilder stub that throws RuntimeException",
+      "expectedResult": "RuntimeException propagates and lock is not held afterwards",
+      "tags": [
+        "negative",
+        "lock",
+        "exception",
+        "stub"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseFragmentInput lock release on exception",
+        "  GIVEN",
+        "    TreeBuilder stubErr = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { return null; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {",
+        "        throw new RuntimeException(\"parse failure\");",
+        "      }",
+        "      @Override public void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stubErr);",
+        "    Reader fragment = new StringReader(\"x\");",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    throws RuntimeException with message \"parse failure\";",
+        "    Field f = Parser.class.getDeclaredField(\"lock\"); f.setAccessible(true);",
+        "    ReentrantLock lockAfter = (ReentrantLock)f.get(parser);",
+        "    assertFalse(lockAfter.isLocked());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "xmlParser.parseFragmentInput(String, null, baseUri) returns text node via XmlTreeBuilder",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser.xmlParser(), fragment contains XML text, context null",
+      "expectedResult": "returns list of Nodes parsed by XmlTreeBuilder",
+      "tags": [
+        "positive",
+        "xml",
+        "reader",
+        "null-context"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 xmlParser parseFragmentInput XML fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String fragment = \"<tag attr=\\\"v\\\">val</tag>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    Node n = nodes.get(0);",
+        "    assert n.outerHtml().equals(\"<tag attr=\\\"v\\\">val</tag>\");",
+        "END"
+      ]
+    }
+  ]
+}

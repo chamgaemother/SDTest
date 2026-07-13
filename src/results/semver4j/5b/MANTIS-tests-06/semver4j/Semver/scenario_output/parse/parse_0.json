@@ -1,0 +1,102 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse returns null when input version string is null (r0 == null)",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "returns null",
+      "tags": [
+        "branch-null-input",
+        "exception-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse null-input",
+        "  GIVEN",
+        "    String version = null;",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse returns Semver when input is valid without extra whitespace (new Semver path)",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returns non-null Semver with getVersion() == \"1.2.3\" and getMajor()==1, getMinor()==2, getPatch()==3",
+      "tags": [
+        "branch-valid-input",
+        "no-exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse valid-version",
+        "  GIVEN",
+        "    String version = \"1.2.3\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"1.2.3\");",
+        "    assert result.getMajor() == 1;",
+        "    assert result.getMinor() == 2;",
+        "    assert result.getPatch() == 3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse returns Semver when input has leading/trailing whitespace and valid content (trim path)",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returns non-null Semver with getVersion() == \"2.0.0\"",
+      "tags": [
+        "branch-valid-input",
+        "trim-case"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse valid-version-with-spaces",
+        "  GIVEN",
+        "    String version = \" 2.0.0 \";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"2.0.0\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse returns null when input is invalid semantic version (StrictParser throws)",
+      "path": "B0→B2→B6",
+      "precondition": "none",
+      "expectedResult": "returns null",
+      "tags": [
+        "branch-invalid-input",
+        "exception-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse invalid-version",
+        "  GIVEN",
+        "    String version = \"invalid.version\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    }
+  ]
+}

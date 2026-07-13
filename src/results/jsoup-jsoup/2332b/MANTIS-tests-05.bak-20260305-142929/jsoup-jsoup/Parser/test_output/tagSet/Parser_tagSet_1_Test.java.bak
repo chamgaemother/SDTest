@@ -1,0 +1,111 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("TC01: htmlParser() default Parser.tagSet returns non-empty set of lowercase HTML tag names (case-insensitive branch)")
+    public void test_TC01() {
+        // GIVEN a default HTML parser (branch B0→B1→B3→B5: HTML parser path, case-insensitive default settings)
+        Parser parser = Parser.htmlParser();
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: must be non-empty and contain known lowercase HTML tags
+        assertNotNull(tags, "tagSet should not return null");
+        assertFalse(tags.isEmpty(), "Default HTML parser should support some tags");
+        assertTrue(tags.contains("div"), "Should contain lowercase 'div'");
+        assertTrue(tags.contains("span"), "Should contain lowercase 'span'");
+    }
+
+    @Test
+    @DisplayName("TC02: xmlParser() default Parser.tagSet returns empty set (XML parser branch)")
+    public void test_TC02() {
+        // GIVEN a default XML parser (branch B0→B1→B4→B5: XML parser path leads to no HTML tags)
+        Parser parser = Parser.xmlParser();
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: for XML parser, tagSet should be empty (no predefined HTML tags)
+        assertNotNull(tags, "tagSet should not return null");
+        assertTrue(tags.isEmpty(), "XML parser should support no HTML tags by default");
+    }
+
+    @Test
+    @DisplayName("TC03: Custom TreeBuilder stub supplies mixed-case tags; tagSet respects case when settings preserveCase=true")
+    public void test_TC03() throws Exception {
+        // GIVEN a stub TreeBuilder that reports mixed-case tags (branch B0→B2→B3→B5: custom builder, case-sensitive path)
+        TreeBuilder mixedCaseStub = new TreeBuilder() {
+            // supply supported tags with mixed case
+            @Override
+            public Set<String> getSupportedTags() {
+                return Set.of("AbC", "XyZ");
+            }
+            @Override
+            public ParseSettings defaultSettings() { return new ParseSettings(false, true); }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) { return null; }
+            @Override
+            public List<Node> parseFragment(Reader in, @Nullable Element context, String baseUri, Parser parser) { return Collections.emptyList(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+            @Override
+            public void initialiseParse(Reader reader, String baseUri, Parser parser) {}
+        };
+        Parser parser = new Parser(mixedCaseStub)
+                .settings(new ParseSettings(true, true)); // preserve tag case = true
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: must match exactly the stub's original casing set
+        assertEquals(Set.of("AbC", "XyZ"), tags, "With preserveCase=true, tagSet should return original-cased tags");
+    }
+
+    @Test
+    @DisplayName("TC04: Custom TreeBuilder stub with no supported tags leads to empty set despite case-insensitive settings")
+    public void test_TC04() throws Exception {
+        // GIVEN a stub TreeBuilder with no supported tags (branch B0→B2→B4→B5: custom builder, no tags, case-insensitive path)
+        TreeBuilder emptyStub = new TreeBuilder() {
+            @Override
+            public Set<String> getSupportedTags() {
+                return Collections.emptySet();
+            }
+            @Override
+            public ParseSettings defaultSettings() { return new ParseSettings(true, false); }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) { return null; }
+            @Override
+            public List<Node> parseFragment(Reader in, @Nullable Element context, String baseUri, Parser parser) { return Collections.emptyList(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+            @Override
+            public void initialiseParse(Reader reader, String baseUri, Parser parser) {}
+        };
+        Parser parser = new Parser(emptyStub)
+                .settings(new ParseSettings(false, false)); // preserveCase=false but no tags anyway
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: empty stub yields empty set
+        assertNotNull(tags, "tagSet should not return null even if no tags supported");
+        assertTrue(tags.isEmpty(), "Custom stub with no tags should produce empty tagSet");
+    }
+}

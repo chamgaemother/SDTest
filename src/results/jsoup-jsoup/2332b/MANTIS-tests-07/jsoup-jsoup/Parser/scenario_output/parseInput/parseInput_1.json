@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(String, String) returns null when TreeBuilder.parse returns null",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "FakeTreeBuilder configured to return null Document",
+      "expectedResult": "return value is null",
+      "tags": [
+        "positive",
+        "null-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput returns-null",
+        "  GIVEN",
+        "    // Arrange: stub tree builder that returns null",
+        "    FakeTreeBuilder stub = new FakeTreeBuilder((Document) null);",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<p>empty</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    // Act",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    // Assert",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(Reader, String) propagates UncheckedIOException when Reader.read fails",
+      "path": "B0→B2→B3(ex)→B5",
+      "precondition": "Custom Reader that throws IOException on first read; wrapped in UncheckedIOException",
+      "expectedResult": "UncheckedIOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io-failure"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseInput Reader IOException",
+        "  GIVEN",
+        "    // Arrange: reader that fails",
+        "    Reader broken = new Reader() {",
+        "      @Override public int read(char[] cbuf, int off, int len) throws IOException {",
+        "        throw new IOException(\"read error\");",
+        "      }",
+        "      @Override public void close() throws IOException { }",
+        "    };",
+        "    FakeTreeBuilder stub = new FakeTreeBuilder(new Document(\"u\"));",
+        "    Parser parser = new Parser(stub);",
+        "    String baseUri = \"http://u\";",
+        "  WHEN",
+        "    // Act & Assert",
+        "    assertThrows(UncheckedIOException.class, () -> parser.parseInput(broken, baseUri));",
+        "END"
+      ]
+    }
+  ]
+}

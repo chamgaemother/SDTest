@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "clone() on a Document with a custom Connection preserves the connection reference in the clone",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document.connection set to a non-null Connection instance",
+      "expectedResult": "clone().connection() returns the same Connection instance as original.connection()",
+      "tags": [
+        "positive",
+        "connection",
+        "branch-connection-null-check"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone preserves connection reference",
+        "  GIVEN",
+        "    Connection conn = Jsoup.connect(\"http://example.com\");",
+        "    Document original = new Document(\"http://example.com\");",
+        "    original.connection(conn);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertSame(conn, clone.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() on a Document with a modified OutputSettings.indentAmount triggers deep copy of settings",
+      "path": "B0→B1→B2→B3",
+      "precondition": "original.outputSettings.indentAmount set to 5",
+      "expectedResult": "clone.outputSettings.indentAmount() == 5 and settings instances differ",
+      "tags": [
+        "positive",
+        "outputSettings",
+        "indent-boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone deep-copies outputSettings with custom indent",
+        "  GIVEN",
+        "    Document original = new Document(\"uri\");",
+        "    original.outputSettings().indentAmount(5);",
+        "    assertEquals(5, original.outputSettings().indentAmount());",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertNotSame(original.outputSettings(), clone.outputSettings());",
+        "    assertEquals(5, clone.outputSettings().indentAmount());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() on a Document with parser having custom settings yields independent parser clones",
+      "path": "B0→B1→B2→B3",
+      "precondition": "original.parser configured with xmlParser() then maxSelfClosingTags changed",
+      "expectedResult": "clone.parser() is a distinct object but has same settings",
+      "tags": [
+        "positive",
+        "parser",
+        "deep-copy"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone deep-copies parser",
+        "  GIVEN",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "    Document original = new Document(\"uri\");",
+        "    original.parser(xmlParser);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertNotSame(original.parser(), clone.parser());",
+        "    assertEquals(original.parser().settings(), clone.parser().settings());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() on a Document with existing child FormElements retains the correct child structure",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document contains two <form> elements with inputs",
+      "expectedResult": "clone().forms().size() == 2 and each FormElement is a distinct instance",
+      "tags": [
+        "positive",
+        "forms",
+        "child-nodes"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone retains form elements structure",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"uri\");",
+        "    original.body().append(\"<form id=one><input /></form>\");",
+        "    original.body().append(\"<form id=two><input /></form>\");",
+        "    assertEquals(2, original.forms().size());",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertEquals(2, clone.forms().size());",
+        "    for (int i = 0; i < 2; i++)",
+        "      assertNotSame(original.forms().get(i), clone.forms().get(i));",
+        "END"
+      ]
+    }
+  ]
+}

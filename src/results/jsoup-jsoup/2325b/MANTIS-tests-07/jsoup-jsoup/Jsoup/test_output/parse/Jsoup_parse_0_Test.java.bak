@@ -1,0 +1,125 @@
+package org.jsoup;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC01: parse(html,baseUri) with non-empty html and valid baseUri returns parsed Document via Parser.parse")
+    void test_TC01() {
+        // html is non-empty (branch-false(htmlEmpty)), baseUri non-empty (branch-false(baseUriEmpty))
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        // body should contain exactly the input fragment
+        assertEquals("<p>Test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02: parse(html,baseUri) with empty html returns empty Document body")
+    void test_TC02() {
+        // html empty (branch-true(htmlEmpty)), baseUri non-empty (branch-false(baseUriEmpty))
+        String html = "";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        // empty html yields empty body
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03: parse(html,baseUri) with null html throws NullPointerException at entry")
+    void test_TC03() {
+        // html null leads to immediate NullPointerException (no Document returned)
+        String baseUri = "http://example.com";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(null, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04: parse(html,baseUri) with empty baseUri returns Document and baseUri preserved as empty")
+    void test_TC04() {
+        // html non-empty (branch-false(htmlEmpty)), baseUri empty (branch-true(baseUriEmpty))
+        String html = "<div/>";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        // baseUri should be preserved as empty
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC05_O1: parse(html,baseUri,parser) with custom Parser stub is invoked correctly")
+    void test_TC05_O1() {
+        // html non-empty (branch-false(htmlEmpty)), use stub parser
+        String html = "<x/>";
+        String baseUri = "b";
+        Document dummy = new Document("dummy");
+        Parser stubParser = new Parser() {
+            @Override
+            public Document parseInput(String inHtml, String inBaseUri) {
+                // ensure stub receives our inputs
+                assertEquals(html, inHtml);
+                assertEquals(baseUri, inBaseUri);
+                return dummy;
+            }
+        };
+        Document result = Jsoup.parse(html, baseUri, stubParser);
+        // the stub's return Document must be returned directly
+        assertSame(dummy, result);
+    }
+
+    @Test
+    @DisplayName("TC06_O1: parse(html,baseUri,parser) with null parser throws NullPointerException")
+    void test_TC06_O1() {
+        // html non-null, parser null -> NPE at entry
+        String html = "<a/>";
+        String baseUri = "u";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, null));
+    }
+
+    @Test
+    @DisplayName("TC07_O2: parse(html,parser) with non-empty html and valid parser returns Document via parser.parseInput")
+    void test_TC07_O2() {
+        // html non-empty (branch-false(htmlEmpty)) overload String,Parser
+        String html = "<b/>";
+        Document stubDoc = new Document("stub");
+        Parser stubParser = new Parser() {
+            @Override
+            public Document parseInput(String inHtml, String inBaseUri) {
+                assertEquals(html, inHtml);
+                assertEquals("", inBaseUri); // empty baseUri passed for this overload
+                return stubDoc;
+            }
+        };
+        Document result = Jsoup.parse(html, stubParser);
+        assertSame(stubDoc, result);
+    }
+
+    @Test
+    @DisplayName("TC08: parse(html) with non-empty html returns Document via Parser.parse with empty baseUri")
+    void test_TC08() {
+        // html non-empty (branch-false(htmlEmpty)) overload String
+        String html = "<i/>";
+        Document doc = Jsoup.parse(html);
+        // baseUri for this overload is always empty
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC09: parse(html) with empty html returns Document with empty body")
+    void test_TC09() {
+        // html empty (boundary) overload String
+        String html = "";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.body().html());
+    }
+}

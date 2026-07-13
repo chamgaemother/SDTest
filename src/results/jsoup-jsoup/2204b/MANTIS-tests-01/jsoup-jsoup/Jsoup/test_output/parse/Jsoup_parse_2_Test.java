@@ -1,0 +1,123 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.HttpStatusException;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("parseBodyFragment(String html, String baseUri) returns Document with fragment in body and respects provided baseUri")
+    void test_TC21() {
+        // Setup: fragment and explicit baseUri to enter parseBodyFragment(html, baseUri) path
+        String fragment = "<span>Example</span>";
+        String base = "http://fragment.example/";
+        // Exercise
+        Document doc = Jsoup.parseBodyFragment(fragment, base);
+        // Verify body content matches fragment and baseUri is respected
+        assertEquals(fragment, doc.body().html(), "Body HTML should match the input fragment");
+        assertEquals(base, doc.baseUri(), "Document baseUri should be set to provided baseUri");
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String html) returns Document with fragment and empty baseUri")
+    void test_TC22() {
+        // Setup: fragment only to use overload without baseUri (default empty baseUri)
+        String fragment = "<div>Test</div>";
+        // Exercise
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Verify body content matches fragment and baseUri is empty
+        assertEquals(fragment, doc.body().html(), "Body HTML should match the input fragment");
+        assertEquals("", doc.baseUri(), "Default baseUri should be empty string");
+    }
+
+    @Test
+    @DisplayName("parse(File file, String charsetName) uses explicit charset and file absolute path as baseUri")
+    void test_TC23() throws IOException {
+        // Setup: create a temporary HTML file encoded in UTF-16 to trigger charset handling
+        String html = "<p>UTF16</p>";
+        File tempFile = File.createTempFile("jsoup-test", ".html");
+        tempFile.deleteOnExit();
+        Files.write(tempFile.toPath(), html.getBytes(Charset.forName("UTF-16")));
+        String charset = "UTF-16";
+        // Exercise: parse with explicit charset overload
+        Document doc = Jsoup.parse(tempFile, charset);
+        // Verify that the body contains the UTF-16 content and baseUri equals the file path
+        assertTrue(doc.body().html().contains(html), "Parsed body should contain the UTF-16 content");
+        assertEquals(tempFile.getAbsolutePath(), doc.baseUri(), "BaseUri should be the file's absolute path");
+    }
+
+    @Test
+    @DisplayName("parse(URL url, int timeout) throws HttpStatusException on non-OK HTTP response")
+    void test_TC24() throws Exception {
+        // Setup: start an HTTP server that always returns 404
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                exchange.sendResponseHeaders(404, -1);
+                exchange.close();
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://localhost:" + port + "/");
+        int timeout = 1000;
+        // Exercise & Verify: expect HttpStatusException for 404
+        assertThrows(HttpStatusException.class, () -> Jsoup.parse(url, timeout),
+                "Should throw HttpStatusException when server returns 404");
+        server.stop(0);
+    }
+
+    @Test
+    @DisplayName("parse(URL url, int timeout) throws SocketTimeoutException when read times out")
+    void test_TC25() throws Exception {
+        // Setup: start an HTTP server that delays response beyond client timeout
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                try {
+                    // Delay longer than client timeout to trigger timeout exception
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                String resp = "<html><body>delayed</body></html>";
+                exchange.sendResponseHeaders(200, resp.length());
+                OutputStream os = exchange.getResponseBody();
+                os.write(resp.getBytes());
+                os.close();
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://localhost:" + port + "/");
+        int timeout = 500; // less than handler sleep to force timeout
+        // Exercise & Verify: expect SocketTimeoutException due to read delay
+        assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, timeout),
+                "Should throw SocketTimeoutException when response is delayed beyond timeout");
+        server.stop(0);
+    }
+}

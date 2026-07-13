@@ -1,0 +1,166 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with empty .env file and default systemProperties=false processes zero entries and returns DotenvImpl",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary directory with an empty .env file; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose entries(filter null) contains only current system environment variables and no file entries",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "default-settings"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load empty file default",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries(null).stream().noneMatch(e -> e.getSource()==Dotenv.EntrySource.FILE);"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with one valid entry in .env and default systemProperties=false processes one entry",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary .env file containing a single line KEY=VALUE; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose get(\"KEY\") returns \"VALUE\" and entries(filter non-null) contains exactly one file entry",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "default-settings"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load single entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"KEY\").equals(\"VALUE\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with multiple entries in .env and default systemProperties=false processes multiple entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary .env file with three valid key-value lines; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose entries(filter non-null).size() == 3 and each key maps to its value",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "default-settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load multiple entries",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries(null).stream().filter(e->e.getSource()==Dotenv.EntrySource.FILE).count() == 3;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true skips setting System properties in builder and returns normally",
+      "path": "B0→B2",
+      "precondition": "Create a temporary .env file with KEY=VAL; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose get(\"KEY\") returns \"VAL\" and System.getProperty(\"KEY\") remains null",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "systemProperties:true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load with systemProperties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\").systemProperties();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"KEY\").equals(\"VAL\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() with missing .env file and default throwIfMissing=true throws DotenvException",
+      "path": "B0",
+      "precondition": "Use a directory without a .env file present; no stubs or mocks",
+      "expectedResult": "throws DotenvException; no Dotenv instance returned",
+      "tags": [
+        "exception",
+        "throwIfMissing:true",
+        "branch-entry"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load missing file exception",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(emptyDir).filename(\".env\");",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load() with missing .env file and ignoreIfMissing() suppresses exception and returns empty Dotenv",
+      "path": "B0→B1→B2",
+      "precondition": "Use a directory without .env; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose entries(filter null) contains only system environment variables",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "ignoreIfMissing"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 load ignore missing",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(emptyDir).filename(\".env\").ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries(null).stream().noneMatch(e->e.getSource()==Dotenv.EntrySource.FILE);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() with malformed line in .env and ignoreIfMalformed() suppresses exception and skips malformed entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env containing one valid KV and one malformed line; no stubs or mocks",
+      "expectedResult": "return value is a DotenvImpl whose entries(filter non-null).size() == 1 and get(validKey)==validValue",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "ignoreIfMalformed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 load ignore malformed",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\").ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries(null).stream().anyMatch(e->e.getKey().equals(\"VALID\"));"
+      ]
+    }
+  ]
+}

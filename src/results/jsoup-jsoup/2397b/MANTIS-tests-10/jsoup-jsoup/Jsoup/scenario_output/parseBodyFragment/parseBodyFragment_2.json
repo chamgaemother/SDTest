@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "clean(html, empty baseUri, safelist that preserves relative links) uses DummyUri placeholder",
+      "path": "B0→B1(true)→B2→B3→B4",
+      "precondition": "Safelist.relaxed().preserveRelativeLinks(true)",
+      "expectedResult": "returns cleaned fragment with preserved relative URLs via DummyUri resolution",
+      "tags": [
+        "clean",
+        "branch",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 clean empty-baseUri with preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"img.png\\\">pic</a>\";",
+        "    Safelist list = Safelist.relaxed();",
+        "    list.preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, list);",
+        "  THEN",
+        "    assert out.contains(\"<a href=\\\"\" + SharedConstants.DummyUri + \"/img.png\\\">pic</a>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "clean(html, empty baseUri, safelist that does not preserve relative links) removes relative URLs",
+      "path": "B0→B1(false)→B3→B4",
+      "precondition": "Safelist.none().preserveRelativeLinks(false)",
+      "expectedResult": "returns cleaned fragment with href attribute removed or empty",
+      "tags": [
+        "clean",
+        "branch",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 clean empty-baseUri without preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"x.html\\\">link</a>\";",
+        "    Safelist list = Safelist.none();",
+        "    list.preserveRelativeLinks(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, list);",
+        "  THEN",
+        "    assertTrue(out.contains(\"<a\">\") || out.contains(\"<a href=\\\"\\\">\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "clean(html, non-empty baseUri, safelist that preserves relative links) skips DummyUri assignment",
+      "path": "B0→B1(false by baseUri non-empty)→B3→B4",
+      "precondition": "baseUri = \"http://ex.com/\", Safelist.relaxed().preserveRelativeLinks(true)",
+      "expectedResult": "relative URLs resolved correctly against provided baseUri",
+      "tags": [
+        "clean",
+        "branch",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 clean non-empty-baseUri with preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<img src=\\\"pic.png\\\">\";",
+        "    String baseUri = \"http://ex.com/dir/\";",
+        "    Safelist list = Safelist.relaxed();",
+        "    list.preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, list);",
+        "  THEN",
+        "    assertTrue(out.contains(\"<img src=\\\"http://ex.com/dir/pic.png\\\"\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "clean(html, baseUri, safelist, with custom OutputSettings applies settings without altering cleaning",
+      "path": "B0→B1(false)→B3→B5→B6",
+      "precondition": "non-empty baseUri, Safelist.simpleText(), custom OutputSettings prettyPrint=false",
+      "expectedResult": "returns cleaned fragment matching safelist rules and outputSettings applied",
+      "tags": [
+        "clean",
+        "overload",
+        "outputSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 clean with outputSettings",
+        "  GIVEN",
+        "    String html = \"<b>Bold</b><script>alert(1)</script>\";",
+        "    String baseUri = \"\";",
+        "    Safelist list = Safelist.simpleText();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, list, os);",
+        "  THEN",
+        "    assertEquals(\"Bold\", out);",
+        "END"
+      ]
+    }
+  ]
+}

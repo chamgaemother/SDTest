@@ -1,0 +1,161 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on an empty Document creates a new Document instance with same baseUri and independent OutputSettings and Parser",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // empty document",
+      "expectedResult": "returned Document is not the same instance as original; returned.baseUri() equals \"http://example.com\"; returned.outputSettings() is a distinct object equal in all fields; returned.parser() is a distinct object equal to original.parser()",
+      "tags": [
+        "nominal",
+        "deep-clone",
+        "distinct-instances"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone empty-document",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone != doc;",
+        "    assert clone.baseUri().equals(doc.baseUri());",
+        "    assert clone.outputSettings() != doc.outputSettings();",
+        "    assert clone.parser() != doc.parser();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() preserves custom OutputSettings modifications in the clone without linking to original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"http://a\"); doc.outputSettings().prettyPrint(false).indentAmount(5);",
+      "expectedResult": "clone.outputSettings().prettyPrint() is false; clone.outputSettings().indentAmount() is 5; and modifications to clone.outputSettings() do not affect doc.outputSettings()",
+      "tags": [
+        "deep-clone",
+        "outputSettings",
+        "mutability-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone with-modified-outputSettings",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://a\");",
+        "    doc.outputSettings().prettyPrint(false).indentAmount(5);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.outputSettings().prettyPrint() == false;",
+        "    assert clone.outputSettings().indentAmount() == 5;",
+        "    clone.outputSettings().prettyPrint(true);",
+        "    assert doc.outputSettings().prettyPrint() == false;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() preserves custom Parser settings in the clone without linking to original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser p = Parser.xmlParser().setTrackErrors(10); Document doc = new Document(\"http://b\"); doc.parser(p);",
+      "expectedResult": "clone.parser().getTrackErrors() equals 10; changing clone.parser().setTrackErrors(0) does not affect doc.parser().getTrackErrors() which remains 10",
+      "tags": [
+        "deep-clone",
+        "parser",
+        "mutability-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone with-modified-parser",
+        "  GIVEN",
+        "    Parser p = Parser.xmlParser().setTrackErrors(10);",
+        "    Document doc = new Document(\"http://b\").parser(p);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.parser().getTrackErrors() == 10;",
+        "    clone.parser().setTrackErrors(0);",
+        "    assert doc.parser().getTrackErrors() == 10;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() duplicates child nodes so modifications to clone children do not affect original children",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"u\"); doc.body().appendElement(\"p\").text(\"hello\");",
+      "expectedResult": "clone.body().select(\"p\").text() equals [\"hello\"]; removing clone.body().child(0) does not remove original body child",
+      "tags": [
+        "deep-clone",
+        "childNodes",
+        "isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone with-child-nodes",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    doc.body().appendElement(\"p\").text(\"hello\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.body().select(\"p\").text().equals(\"hello\");",
+        "    clone.body().child(0).remove();",
+        "    assert doc.body().select(\"p\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() copies quirksMode value from original and remains independent on change",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"x\"); doc.quirksMode(Document.QuirksMode.limitedQuirks);",
+      "expectedResult": "clone.quirksMode() equals limitedQuirks; setting clone.quirksMode(quirks) does not change doc.quirksMode()",
+      "tags": [
+        "deep-clone",
+        "quirksMode",
+        "mutability-isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone with-custom-quirksMode",
+        "  GIVEN",
+        "    Document doc = new Document(\"x\").quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.quirksMode() == Document.QuirksMode.limitedQuirks;",
+        "    clone.quirksMode(Document.QuirksMode.quirks);",
+        "    assert doc.quirksMode() == Document.QuirksMode.limitedQuirks;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() duplicates connection session so original connection remains unaffected when modifying clone only",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Connection c = Jsoup.connect(\"http://c\"); Document doc = new Document(\"c\").connection(c);",
+      "expectedResult": "clone.connection() returns a Connection equal in settings to original; modifying clone.connection().timeout(1000) does not affect original connection timeout",
+      "tags": [
+        "deep-clone",
+        "connection",
+        "mutability-isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone with-connection",
+        "  GIVEN",
+        "    Connection c = Jsoup.connect(\"http://c\");",
+        "    Document doc = new Document(\"c\").connection(c);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.connection() != null;",
+        "    clone.connection().timeout(1000);",
+        "    assert doc.connection().timeout() != 1000;"
+      ]
+    }
+  ]
+}

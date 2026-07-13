@@ -1,0 +1,241 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "wrap() with short text under default maxWidth does not insert newlines (maxWidth boundary false)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned string equals \"Hello world\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "loop-0",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 wrap no wrap under maxWidth",
+        "  GIVEN",
+        "    WordWrap.from(\"Hello world\").newLine(\"\\n\");",
+        "  WHEN",
+        "    String result = WordWrap.from(\"Hello world\").wrap();",
+        "  THEN",
+        "    assert result.equals(\"Hello world\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "wrap() with text length exactly equal to maxWidth does not split (maxWidth boundary equal)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned string equals 5 characters of 'a' (\"aaaaa\")",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "loop-0",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 wrap exact maxWidth",
+        "  GIVEN",
+        "    String fiveA = \"aaaaa\";",
+        "  WHEN",
+        "    String result = WordWrap.from(fiveA).maxWidth(5).wrap();",
+        "  THEN",
+        "    assert result.equals(\"aaaaa\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "wrap() with embedded newline resets line accumulation (ch=='\\n' branch)",
+      "path": "B0→B1→B2→B3→B5→B6",
+      "precondition": "none",
+      "expectedResult": "returned string equals \"foo\\nbar\"",
+      "tags": [
+        "branch-true",
+        "newline",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 wrap embedded newline",
+        "  GIVEN",
+        "    String text = \"foo\\nbar\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"foo\\nbar\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "wrap() breaks long word with hyphens when breakWords=true and insertHyphens=true (tooLong true path)",
+      "path": "B0→B1→B2→B7→B8→B9→B10",
+      "precondition": "none",
+      "expectedResult": "result lines start with hyphenated split of 'abcdefghijkl' into segments not exceeding width",
+      "tags": [
+        "branch-true",
+        "breakWords-true",
+        "insertHyphens-true",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 wrap hyphenate long word",
+        "  GIVEN",
+        "    String longWord = \"abcdefghij\" + \"kl\";",
+        "  WHEN",
+        "    String result = WordWrap.from(longWord).maxWidth(5).wrap();",
+        "  THEN",
+        "    assert result.startsWith(\"abc-\") && result.contains(\"-\\n\")"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "wrap() with breakWords=false does not insert hyphens and preserves overflow (breakWords false path)",
+      "path": "B0→B1→B2→B7→B11→B12",
+      "precondition": "none",
+      "expectedResult": "returned string contains the full long word on first line without hyphen",
+      "tags": [
+        "branch-true",
+        "breakWords-false",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrap no hyphen overflow",
+        "  GIVEN",
+        "    String longWord = \"abcdefghijk\";",
+        "  WHEN",
+        "    String result = WordWrap.from(longWord).maxWidth(5).breakWords(false).wrap();",
+        "  THEN",
+        "    assert result.contains(\"abcdefghijk\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "wrap() treats punctuation as word char when in extraWordChars (extraWordChars true path)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned string equals \"foo.bar baz\"",
+      "tags": [
+        "branch-false",
+        "extraWordChars",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 wrap include punctuation",
+        "  GIVEN",
+        "    Set<Character> extras = new HashSet<>(); extras.add('.');",
+        "  WHEN",
+        "    String result = WordWrap.from(\"foo.bar baz\").extraWordChars(extras).maxWidth(7).wrap();",
+        "  THEN",
+        "    assert result.equals(\"foo.bar baz\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "wrap() with custom newLine delimiter uses \"<NL>\" instead of \"\\n\" (newLine path)",
+      "path": "B0→B1→B2→B3→B5→B6",
+      "precondition": "none",
+      "expectedResult": "returned string equals \"one<NL>two\"",
+      "tags": [
+        "branch-true",
+        "custom-newLine",
+        "overload:wrap()"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrap custom newLine",
+        "  GIVEN",
+        "    String text = \"one\\ntwo\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).newLine(\"<NL>\").wrap();",
+        "  THEN",
+        "    assert result.equals(\"one<NL>two\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "wrap() returns empty string for empty input reader (loop zero iterations and empty final)",
+      "path": "B0→B1→B13→B14",
+      "precondition": "none",
+      "expectedResult": "returned string equals \"\"",
+      "tags": [
+        "loop-0",
+        "empty",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 wrap empty input",
+        "  GIVEN",
+        "    String text = \"\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "wrap() throws IllegalArgumentException if maxWidth <=0 (precondition exception)",
+      "path": "B0→B1→B2_pre→B2_exception",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no output produced",
+      "tags": [
+        "exception",
+        "branch-precondition",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 wrap invalid maxWidth throws",
+        "  GIVEN",
+        "    WordWrap.Builder b = WordWrap.from(\"any\");",
+        "  WHEN",
+        "    call b.maxWidth(0).wrap();",
+        "  THEN",
+        "    throws IllegalArgumentException"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "wrap() supports wrapToList returning lines list (overload wrapToList path)",
+      "path": "B0→B1→B15→B16",
+      "precondition": "none",
+      "expectedResult": "returned list equals [\"aa\",\"bb\"] for input \"aa bb\" with maxWidth=2",
+      "tags": [
+        "overload:wrapToList",
+        "list-output",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 wrapToList returns list of lines",
+        "  GIVEN",
+        "    String text = \"aa bb\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).maxWidth(2).wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"aa\",\"bb\"));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader,baseUri) propagates RuntimeException thrown by TreeBuilder.parse",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Parser constructed with a TreeBuilder stub whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "runtime",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 propagate-runtime-exception",
+        "  GIVEN",
+        "    // Arrange a stub TreeBuilder that throws on parse",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"oops\"); }",
+        "      @Override public void process(Token token) {}",
+        "      @Override public Document parseFragment(Reader in, Element context, String uri) { return null; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public org.jsoup.nodes.TagSet defaultTagSet() { return null; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<a/>\");",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException(\"oops\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(String,baseUri) on XmlTreeBuilder returns Document preserving XML namespace",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "root element namespaceUri equals Parser.NamespaceXml",
+      "tags": [
+        "positive",
+        "xml",
+        "namespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 xml-namespace-preservation",
+        "  GIVEN",
+        "    String xml = \"<root xmlns='http://ns'></root>\";",
+        "    String baseUri = \"http://x\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    Node root = doc.childNode(0);",
+        "    assert root.namespaceUri().equals(Parser.NamespaceXml);",
+        "END"
+      ]
+    }
+  ]
+}

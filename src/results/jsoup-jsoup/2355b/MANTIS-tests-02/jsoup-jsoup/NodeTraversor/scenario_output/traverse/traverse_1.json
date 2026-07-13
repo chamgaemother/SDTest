@@ -1,0 +1,150 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "two-level tree: root with one child exercises descend (B11→B12) and ascend loop (B16→B20)",
+      "path": "B0→B1→B5→B11→B12→B23→B1(loop)→B16→B20→B21→B24",
+      "precondition": "Element root with one child appended",
+      "expectedResult": "visitor.head and tail invoked on root then child then tail on root",
+      "tags": [
+        "positive",
+        "iteration",
+        "two-level"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 two-level-tree traversal",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    root.appendChild(child);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() { head(node, d)->calls.add(\"H:\"+node.nodeName()+\":\"+d); tail(node, d)->calls.add(\"T:\"+node.nodeName()+\":\"+d); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.equals(List.of(\"H:div:0\",\"H:p:1\",\"T:p:1\",\"T:div:0\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "deep nested tree (N>2) exercises multiple descents and ascents through loops",
+      "path": "B0→B1→B5→B11→B12(loop×2)→B23→...→B16→B20→B21→B24",
+      "precondition": "Element root with two-level nested child (root→a→b)",
+      "expectedResult": "visitor HEAD/TAIL called at depths 0,1,2 in correct order",
+      "tags": [
+        "positive",
+        "iteration",
+        "deep-tree"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 deep-nested-tree traversal",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    root.appendChild(a); a.appendChild(b);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() { head(n,d)->calls.add(\"H:\"+n.nodeName()+\":\"+d); tail(n,d)->calls.add(\"T:\"+n.nodeName()+\":\"+d); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.equals(List.of(\"H:div:0\",\"H:a:1\",\"H:b:2\",\"T:b:2\",\"T:a:1\",\"T:div:0\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "visitor replaces node in head triggers replaced branch (B6→B7→B8) and continues traversal",
+      "path": "B0→B1→B5→B6→B7→B8→B11→B12→...→B20→B22→B23→...→B24",
+      "precondition": "Element root with one child; visitor replaces child with <span> on head",
+      "expectedResult": "visitor.head called on div,p,span; tail on span and div",
+      "tags": [
+        "positive",
+        "mutation",
+        "replace"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 replace-node-in-head",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    root.appendChild(child);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(n,d)-> { calls.add(\"head:\"+n.nodeName()+\":\"+d); if (\"p\".equals(n.nodeName())) n.replaceWith(new Element(\"span\")); },",
+        "      tail(n,d)->calls.add(\"tail:\"+n.nodeName()+\":\"+d);",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.equals(List.of(",
+        "      \"head:div:0\",\"head:p:1\",\"head:span:1\",\"tail:span:1\",\"tail:div:0\"",
+        "    ));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "elements overload with single element invokes one-node traversal via first overload",
+      "path": "B0→B1→B2→(calls traverse on element)→B3",
+      "precondition": "Elements containing exactly one Element",
+      "expectedResult": "visitor.head and tail invoked once on that element",
+      "tags": [
+        "positive",
+        "overload",
+        "elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 elements-single executes traverse(NodeVisitor,Elements)",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Elements elements = new Elements(el);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() { head(n,d)->calls.add(\"H:\"+n.nodeName()+\":\"+d); tail(n,d)->calls.add(\"T:\"+n.nodeName()+\":\"+d); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    assert calls.equals(List.of(\"H:div:0\",\"T:div:0\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "elements overload with multiple elements invokes traversal for each until completion",
+      "path": "B0→B1→B2(x2)→B3",
+      "precondition": "Elements containing two siblings",
+      "expectedResult": "visitor invoked head/tail on first then second element sequentially",
+      "tags": [
+        "positive",
+        "overload",
+        "elements",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 elements-multiple executes traverse(NodeVisitor,Elements)",
+        "  GIVEN",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    Elements elements = new Elements(a, b);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() { head(n,d)->calls.add(\"H:\"+n.nodeName()+\":\"+d); tail(n,d)->calls.add(\"T:\"+n.nodeName()+\":\"+d); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    assert calls.equals(List.of(\"H:a:0\",\"T:a:0\",\"H:b:0\",\"T:b:0\"));",
+        "END"
+      ]
+    }
+  ]
+}

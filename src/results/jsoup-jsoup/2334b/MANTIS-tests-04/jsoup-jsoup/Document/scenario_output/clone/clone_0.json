@@ -1,0 +1,54 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document instance with identical content and baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); // default empty shell",
+      "expectedResult": "returned Document is not the same instance as original; returned.baseUri() == \"http://example.com\"; returned.html().equals(doc.html()) == true",
+      "tags": [
+        "branch-normal",
+        "no-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone returns deep copy",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "  THEN",
+        "    assert copy != doc;",
+        "    assert copy.baseUri().equals(\"http://example.com\");",
+        "    assert copy.html().equals(doc.html());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() produces independent outputSettings and parser clones such that modifying original does not affect clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"/base\"); // default settings; then modify outputSettings and parser clones",
+      "expectedResult": "after clone, changing doc.outputSettings().charset to UTF-16 and parser().setTrackErrors(10) does not change copy.outputSettings().charset (remains default UTF-8) and copy.parser().getTrackErrors() == 0",
+      "tags": [
+        "branch-normal",
+        "state-independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone independence of mutable fields",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "    Document copy = doc.clone();",
+        "  WHEN",
+        "    doc.outputSettings().charset(Charset.forName(\"UTF-16\"));",
+        "    doc.parser().setTrackErrors(10);",
+        "  THEN",
+        "    assert copy.outputSettings().charset().name().equals(\"UTF-8\");",
+        "    assert copy.parser().getTrackErrors() == 0;"
+      ]
+    }
+  ]
+}

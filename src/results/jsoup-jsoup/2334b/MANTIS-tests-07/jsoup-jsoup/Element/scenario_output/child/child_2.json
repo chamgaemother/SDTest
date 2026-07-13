@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "child(-1) on element with multiple Element children and cached shadowChildrenRef throws IndexOutOfBoundsException",
+      "path": "B3→B4→B5",
+      "precondition": "parent with three Element children and cache populated by a prior child(0) call",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "exception",
+        "cache-hit",
+        "negative-index"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 child negative-index after cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"p\");",
+        "    Element e2 = new Element(\"span\");",
+        "    parent.appendChild(e1);",
+        "    parent.appendChild(e2);",
+        "    parent.child(0); // populate shadowChildrenRef",
+        "  WHEN",
+        "    call parent.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "child(index) after appendChild invalidates cache and returns newly added child",
+      "path": "B3→B3→B6",
+      "precondition": "parent with two Element children and cache populated by a prior child(0) call",
+      "expectedResult": "returns the newly appended third Element",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "dynamic-rebuild"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 cache invalidation on mutation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"p\");",
+        "    Element e2 = new Element(\"span\");",
+        "    parent.appendChild(e1);",
+        "    parent.appendChild(e2);",
+        "    parent.child(0); // build and cache child list",
+        "  WHEN",
+        "    Element e3 = new Element(\"a\");",
+        "    parent.appendChild(e3);",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assertSame(e3, result);",
+        "END"
+      ]
+    }
+  ]
+}

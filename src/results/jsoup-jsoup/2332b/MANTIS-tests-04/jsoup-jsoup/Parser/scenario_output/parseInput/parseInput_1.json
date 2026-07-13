@@ -1,0 +1,120 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) propagates exception from custom TreeBuilder.parse",
+      "path": "B0→B2→Exception",
+      "precondition": "Parser initialized with stub TreeBuilder that throws IllegalStateException on parse",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "stub",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput reader-throws",
+        "  GIVEN",
+        "    // Arrange a parser with a stub TreeBuilder that throws",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"fail\"); }",
+        "      public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }",
+        "      public ParseSettings defaultSettings() { return ParseSettings.preserveCase; }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public boolean isContentForTagData(String n) { return false; }",
+        "      public String defaultNamespace() { return \"\"; }",
+        "      public void initialiseParse(Reader in, String uri, Parser p) {}",
+        "      public void process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()).setTreeBuilder(stub);",
+        "    Reader reader = new StringReader(\"x\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"http://base/\");",
+        "  THEN",
+        "    throws IllegalStateException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(String, String) via XML parser handles self-closing tags",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser obtained from Parser.xmlParser()",
+      "expectedResult": "Document.documentElement tagName is 'div'",
+      "tags": [
+        "positive",
+        "xml-parser",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseInput xml-parser self-closing",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"http://xml/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.child(0).nodeName().equals(\"div\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String, String) with tracked errors collects up to maxErrors on malformed HTML",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser setTrackErrors(2)",
+      "expectedResult": "getErrors().size() ≤ 2 and isTrackErrors() == true",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput tracks errors",
+        "  GIVEN",
+        "    String html = \"<div><span></div>\"; // malformed nesting",
+        "    String baseUri = \"http://example/\";",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()).setTrackErrors(2);",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert parser.isTrackErrors();",
+        "    assert parser.getErrors().size() <= 2;",
+        "    assert doc != null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B2→Exception",
+      "precondition": "Parser initialized with HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "null-baseUri",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>text</p>\";",
+        "    String baseUri = null;",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    }
+  ]
+}

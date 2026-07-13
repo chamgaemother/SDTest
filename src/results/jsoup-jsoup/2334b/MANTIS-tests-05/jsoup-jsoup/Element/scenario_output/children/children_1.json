@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() reuses cached shadowChildrenRef on second call when no structural change",
+      "path": "B0→B3→B5(cached)→B6",
+      "precondition": "Element has two Element children and no intervening mutation",
+      "expectedResult": "Second children() call returns a list reflecting the two children, from cache",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children cache reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"span\");",
+        "    parent.appendElement(\"em\");",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertEquals(2, first.size());",
+        "    assertEquals(2, second.size());",
+        "    // Underlying List from shadowChildrenRef should be reused",
+        "    assertSame(first.list(), second.list());",
+        "END"
+      ]
+    }
+  ]
+}

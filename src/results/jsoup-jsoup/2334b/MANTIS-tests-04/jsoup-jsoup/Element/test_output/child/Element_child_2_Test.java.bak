@@ -1,0 +1,34 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.DataNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * JUnit 5 tests for Element.child(int) method covering scenarios where no Element children exist.
+ */
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(0) on element whose childNodes are non-empty but contain no Element nodes throws IndexOutOfBoundsException (filter loop runs but finds no Elements)")
+    void test_TC09() {
+        // Arrange an Element with text and data children but no Element children
+        Element parent = new Element("div");
+        // appendText creates a TextNode child, which is not an Element
+        parent.appendText("text1");
+        // appendChild with DataNode adds another non-Element node to childNodes
+        parent.appendChild(new DataNode("data1"));
+        
+        // The filter loop in childElementsList() will run (childNodeSize > 0)
+        // but find zero Element instances, so childElementsList().get(0) should throw
+        assertThrows(IndexOutOfBoundsException.class,
+            () -> {
+                // Act: attempt to get first Element child when none exist
+                parent.child(0);
+            }
+        );
+    }
+}

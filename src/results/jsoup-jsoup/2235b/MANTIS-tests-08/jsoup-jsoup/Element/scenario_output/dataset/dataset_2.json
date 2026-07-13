@@ -1,0 +1,78 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "dataset().remove(\"\") removes the underlying 'data-' attribute for empty key",
+      "path": "B0→B1→B2(remove)→B3",
+      "precondition": "Element el has attribute 'data-'='e'",
+      "expectedResult": "attribute 'data-' is removed from el",
+      "tags": [
+        "live-view",
+        "remove",
+        "empty-key"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 dataset remove empty-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes().put(\"data-\", \"e\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.remove(\"\");",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-\"));"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "dataset().put(\"\",…) creates an underlying 'data-' attribute for the empty string key",
+      "path": "B0→B1→B2(put)→B4",
+      "precondition": "fresh Element el with no attributes",
+      "expectedResult": "el.attr('data-') == 'v'",
+      "tags": [
+        "live-view",
+        "put",
+        "empty-key"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 dataset put empty-key",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"\", \"v\");",
+        "  THEN",
+        "    assertEquals(\"v\", el.attr(\"data-\"));"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "dataset().put(camelCaseKey,…) converts camelCase key to hyphenated data- attribute name",
+      "path": "B0→B1→B2(put)→B5",
+      "precondition": "fresh Element el",
+      "expectedResult": "el.hasAttr('data-userName') is false and el.hasAttr('data-user-name') == true",
+      "tags": [
+        "live-view",
+        "put",
+        "camelCase"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 dataset put camelCase-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"userName\", \"jane\");",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-userName\"));",
+        "    assertEquals(\"jane\", el.attr(\"data-user-name\"));"
+      ]
+    }
+  ]
+}

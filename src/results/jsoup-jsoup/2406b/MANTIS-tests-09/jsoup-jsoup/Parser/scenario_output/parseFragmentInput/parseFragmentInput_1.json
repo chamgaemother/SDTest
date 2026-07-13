@@ -1,0 +1,232 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "String-overload: non-null fragment, non-null context, non-null baseUri returns parsed nodes",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub returns a single TextNode",
+      "expectedResult": "list with one TextNode with text 'hello'",
+      "tags": [
+        "positive",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput String positive",
+        "  GIVEN",
+        "    TreeBuilder stub that returns List.of(new TextNode(\"hello\"));",
+        "    Parser parser = new Parser(stub);",
+        "    String frag = \"<p>test</p>\";",
+        "    Element ctx = new Element(\"div\");",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert ((TextNode) result.get(0)).text().equals(\"hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "String-overload: null context is forwarded to TreeBuilder.parseFragment",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub asserts context is null and returns empty list",
+      "expectedResult": "empty list returned",
+      "tags": [
+        "positive",
+        "null-context",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseFragmentInput String null-context",
+        "  GIVEN",
+        "    TreeBuilder stub that asserts context==null and returns Collections.emptyList();",
+        "    Parser parser = new Parser(stub);",
+        "    String frag = \"<b/>\";",
+        "    Element ctx = null;",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "String-overload: null baseUri is forwarded to TreeBuilder.parseFragment",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub records baseUri and returns empty list",
+      "expectedResult": "empty list returned and stub.lastBaseUri is null",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseFragmentInput String null-baseUri",
+        "  GIVEN",
+        "    class RecBuilder extends TreeBuilder { String last; @Override List<Node> parseFragment(...) { last = baseUri; return Collections.emptyList(); } ... }",
+        "    RecBuilder stub = new RecBuilder();",
+        "    Parser parser = new Parser(stub);",
+        "    String frag = \"<i/>\";",
+        "    Element ctx = new Element(\"i\");",
+        "    String uri = null;",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "    assert stub.last == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "String-overload: TreeBuilder.parseFragment throws IOException, propagates UncheckedIOException",
+      "path": "B1→B2(ex)",
+      "precondition": "TreeBuilder stub reads reader and throws UncheckedIOException",
+      "expectedResult": "UncheckedIOException is thrown with cause IOException",
+      "tags": [
+        "exception",
+        "io",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parseFragmentInput String io-exception",
+        "  GIVEN",
+        "    TreeBuilder ioStub that on parseFragment(reader,...) does reader.read() then wraps IOException in UncheckedIOException;",
+        "    Parser parser = new Parser(ioStub);",
+        "    String frag = \"err\";",
+        "    Element ctx = new Element(\"p\");",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    throws UncheckedIOException with cause instanceof IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Reader-overload: non-null Reader, non-null context, non-null baseUri returns parsed nodes",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub returns a Comment node",
+      "expectedResult": "list with one Comment containing 'cmt'",
+      "tags": [
+        "positive",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parseFragmentInput Reader positive",
+        "  GIVEN",
+        "    TreeBuilder stub that returns List.of(new Comment(\"cmt\"));",
+        "    Parser parser = new Parser(stub);",
+        "    Reader r = new StringReader(\"<--->\");",
+        "    Element ctx = new Element(\"span\");",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert ((Comment) result.get(0)).getData().equals(\"cmt\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Reader-overload: null context is forwarded to TreeBuilder.parseFragment",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub asserts context is null and returns empty list",
+      "expectedResult": "empty list returned",
+      "tags": [
+        "positive",
+        "null-context",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parseFragmentInput Reader null-context",
+        "  GIVEN",
+        "    TreeBuilder stub that asserts context==null and returns Collections.emptyList();",
+        "    Parser parser = new Parser(stub);",
+        "    Reader r = new StringReader(\"<tag/>\");",
+        "    Element ctx = null;",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Reader-overload: null baseUri is forwarded to TreeBuilder.parseFragment",
+      "path": "B1→B2→B3",
+      "precondition": "TreeBuilder stub records baseUri and returns empty list",
+      "expectedResult": "empty list returned and stub.lastBaseUri is null",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parseFragmentInput Reader null-baseUri",
+        "  GIVEN",
+        "    class RecBuilder extends TreeBuilder { String last; @Override List<Node> parseFragment(...) { last = baseUri; return Collections.emptyList(); } ... }",
+        "    RecBuilder stub = new RecBuilder();",
+        "    Parser parser = new Parser(stub);",
+        "    Reader r = new StringReader(\"data\");",
+        "    Element ctx = new Element(\"div\");",
+        "    String uri = null;",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "    assert stub.last == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Reader-overload: TreeBuilder.parseFragment throws IOException, propagates UncheckedIOException",
+      "path": "B1→B2(ex)",
+      "precondition": "TreeBuilder stub reads reader and throws UncheckedIOException",
+      "expectedResult": "UncheckedIOException is thrown with cause IOException",
+      "tags": [
+        "exception",
+        "io",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parseFragmentInput Reader io-exception",
+        "  GIVEN",
+        "    TreeBuilder ioStub that on parseFragment(reader,...) does reader.read() then wraps IOException in UncheckedIOException;",
+        "    Parser parser = new Parser(ioStub);",
+        "    Reader r = new StringReader(\"err\");",
+        "    Element ctx = new Element(\"p\");",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    throws UncheckedIOException with cause instanceof IOException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,121 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "attr(String key, String value) throws IllegalArgumentException when key is null",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "throws IllegalArgumentException; no attribute added",
+      "tags": [
+        "exception",
+        "branch-throw",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 attr null-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); String key = null; String value = \"val\";",
+        "  WHEN",
+        "    call el.attr(key, value);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "attr(String key, String value) adds attribute when key non-null and value non-null",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Element el = new Element(\"p\");",
+      "expectedResult": "el.attributes().get(\"data\") == \"123\"",
+      "tags": [
+        "positive",
+        "branch-true",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 attr add-new",
+        "  GIVEN",
+        "    Element el = new Element(\"p\"); String key = \"data\"; String value = \"123\";",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.attributes().get(\"data\").equals(\"123\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "attr(String key, String value) overrides existing attribute value",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"title\",\"old\");",
+      "expectedResult": "el.attributes().get(\"title\") == \"new\"",
+      "tags": [
+        "positive",
+        "branch-true",
+        "override",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 attr override",
+        "  GIVEN",
+        "    Element el = new Element(\"span\"); el.attr(\"title\",\"old\");",
+        "  WHEN",
+        "    el.attr(\"title\",\"new\");",
+        "  THEN",
+        "    assert el.attributes().get(\"title\").equals(\"new\");"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "attr(String key, boolean value) adds boolean attribute when value is true",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "el.hasAttr(\"hidden\") == true and el.attributes().getIgnoreCase(\"hidden\").equals(\"\")",
+      "tags": [
+        "positive",
+        "branch-true",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 attr boolean-true",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); String key = \"hidden\"; boolean value = true;",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.hasAttr(\"hidden\"); assert el.attributes().getIgnoreCase(\"hidden\").equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "attr(String key, boolean value) removes existing boolean attribute when value is false",
+      "path": "B0→B1→B2→B6",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"selected\", true);",
+      "expectedResult": "el.hasAttr(\"selected\") == false",
+      "tags": [
+        "positive",
+        "branch-false",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 attr boolean-false",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.attr(\"selected\", true);",
+        "  WHEN",
+        "    el.attr(\"selected\", false);",
+        "  THEN",
+        "    assert !el.hasAttr(\"selected\");"
+      ]
+    }
+  ]
+}

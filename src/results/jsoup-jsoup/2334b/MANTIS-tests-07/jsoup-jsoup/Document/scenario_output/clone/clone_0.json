@@ -1,0 +1,71 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() produces a new Document with identical state but independent outputSettings and parser",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document != original; returned.baseUri == original.baseUri; returned.location() == original.location(); returned.outputSettings() equals original.outputSettings() but returned.outputSettings() != original.outputSettings(); returned.parser() equals original.parser() but returned.parser() != original.parser();",
+      "tags": [
+        "no-branches",
+        "loop-0",
+        "deep-copy",
+        "equality",
+        "independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone deep-copy",
+        "  GIVEN",
+        "    Document original = new Document(\"html\",\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assert copy != original;",
+        "    assert copy.baseUri().equals(original.baseUri());",
+        "    assert copy.location().equals(original.location());",
+        "    assert copy.outputSettings().equals(original.outputSettings());",
+        "    assert copy.outputSettings() != original.outputSettings();",
+        "    assert copy.parser().equals(original.parser());",
+        "    assert copy.parser() != original.parser();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() retains original modifications and ensures subsequent changes to clone do not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after original.outputSettings().indentAmount(5) and original.parser().settings modified, clone reflects those modifications at clone-time; then clone.outputSettings().indentAmount changed to 2 does not change original.outputSettings().indentAmount (remains 5); clone.parser modifications do not propagate to original.parser",
+      "tags": [
+        "no-branches",
+        "loop-0",
+        "independence",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone independence after mutation",
+        "  GIVEN",
+        "    Document original = new Document(\"html\",\"http://example.com\");",
+        "    original.outputSettings().indentAmount(5);",
+        "    Parser customParser = original.parser().clone();",
+        "    customParser.settings(new ParseSettings(true));",
+        "    original.parser(customParser);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    copy.outputSettings().indentAmount(2);",
+        "    copy.parser().settings(new ParseSettings(false));",
+        "  THEN",
+        "    assert original.outputSettings().indentAmount() == 5;",
+        "    assert copy.outputSettings().indentAmount() == 2;",
+        "    assert original.parser().settings().preserveCase() == true;",
+        "    assert copy.parser().settings().preserveCase() == false;",
+        "END"
+      ]
+    }
+  ]
+}

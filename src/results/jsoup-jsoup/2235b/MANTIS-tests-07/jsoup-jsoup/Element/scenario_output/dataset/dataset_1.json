@@ -1,0 +1,83 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "dataset() transforms dashed data- attribute names to camelCase keys",
+      "path": "B0→B1(attributes!=null)→B3(loop×1)→B5",
+      "precondition": "Element has attribute \"data-pkg-name\"=\"jsoup-lib\"",
+      "expectedResult": "returned map contains one entry with key \"pkgName\" mapping to \"jsoup-lib\"",
+      "tags": [
+        "positive",
+        "transformation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset camelCase key conversion",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-pkg-name\", \"jsoup-lib\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"pkgName\");",
+        "    assert ds.get(\"pkgName\").equals(\"jsoup-lib\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Removing an entry from dataset() view removes the underlying data- attribute",
+      "path": "B0→B1(attributes!=null)→B3(loop×1)→B6(remove)→B7",
+      "precondition": "Element has data-key=\"value\" and non-data attr foo=\"bar\"",
+      "expectedResult": "after ds.remove(\"key\"), el.hasAttr(\"data-key\") is false and foo remains",
+      "tags": [
+        "positive",
+        "mutation",
+        "remove"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset remove reflects to attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-key\", \"value\");",
+        "    el.attr(\"foo\", \"bar\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.remove(\"key\");",
+        "  THEN",
+        "    assert !el.hasAttr(\"data-key\");",
+        "    assert el.attr(\"foo\").equals(\"bar\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Calling dataset().put(null, \"x\") throws NullPointerException",
+      "path": "B0→B1(attributes!=null)→B2(datasetView.put)→E1",
+      "precondition": "fresh Element without preconditions",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 dataset put-null-key exception",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(null, \"x\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

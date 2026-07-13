@@ -1,0 +1,136 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(File, String charsetName, String baseUri) with null charsetName falls back to meta or UTF-8 and returns correct content and baseUri")
+    public void test_TC11() throws IOException {
+        // Scenario TC11: null charset triggers fallback to meta or UTF-8 branch
+        Path tmp = Files.createTempFile("tc11", ".html");
+        String html = "<html><head><meta charset=\"UTF-8\"></head><body><p>hello</p></body></html>";
+        Files.write(tmp, html.getBytes("UTF-8"));
+        File file = tmp.toFile();
+        // call with null charsetName
+        Document doc = Jsoup.parse(file, null, "http://base/");
+        // verify we parsed body fragment and charset fallback honored meta tag, and baseUri overridden to file path
+        assertTrue(doc.body().html().contains("<p>hello</p>"),
+                "Expected HTML body to contain paragraph text");
+        assertEquals(file.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri to equal the file absolute path");
+        file.delete();
+    }
+
+    @Test
+    @DisplayName("parse(File, String charsetName) with explicit charsetName returns content and baseUri as file path")
+    public void test_TC12() throws IOException {
+        // Scenario TC12: explicit charset path→B5 branch
+        Path tmp = Files.createTempFile("tc12", ".html");
+        String html = "<html><body><p>hello</p></body></html>";
+        Files.write(tmp, html.getBytes("UTF-8"));
+        File file = tmp.toFile();
+        Document doc = Jsoup.parse(file, "UTF-8");
+        assertEquals("hello", doc.select("p").first().text(),
+                "Expected <p> text to be 'hello'");
+        assertEquals(file.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri to equal the file absolute path");
+        file.delete();
+    }
+
+    @Test
+    @DisplayName("parse(File) with no charsetName uses null and returns content and baseUri as file path")
+    public void test_TC13() throws IOException {
+        // Scenario TC13: no-charset overload triggers B5 branch using null charset
+        Path tmp = Files.createTempFile("tc13", ".html");
+        String html = "<html><body><p>hello</p></body></html>";
+        Files.write(tmp, html.getBytes("UTF-8"));
+        File file = tmp.toFile();
+        Document doc = Jsoup.parse(file);
+        assertTrue(doc.body().html().contains("<p>hello</p>"),
+                "Expected body HTML to contain <p>hello</p>");
+        assertEquals(file.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri to equal the file absolute path");
+        file.delete();
+    }
+
+    @Test
+    @DisplayName("parse(File, String charsetName, String baseUri, Parser parser) with XML parser preserves XML structure")
+    public void test_TC14() throws IOException {
+        // Scenario TC14: parser-overload branch B6 using xmlParser()
+        Path tmp = Files.createTempFile("tc14", ".xml");
+        String xml = "<root><child/></root>";
+        Files.write(tmp, xml.getBytes("UTF-8"));
+        File file = tmp.toFile();
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(file, "UTF-8", "", parser);
+        // xmlParser should preserve tags as elements accessible under body
+        assertEquals(1, doc.select("root").size(),
+                "Expected one <root> element when using XML parser");
+        assertEquals("", doc.baseUri(),
+                "Expected baseUri to equal the provided empty string");
+        file.delete();
+    }
+
+    @Test
+    @DisplayName("parse(Path, String charsetName, String baseUri) with invalid charsetName throws IOException")
+    public void test_TC15() throws IOException {
+        // Scenario TC15: invalid charsetName triggers IOException branch B7
+        Path tmp = Files.createTempFile("tc15", ".html");
+        String html = "<html><body><p>hello</p></body></html>";
+        Files.write(tmp, html.getBytes("UTF-8"));
+        Path path = tmp;
+        assertThrows(IOException.class, () -> {
+            Jsoup.parse(path, "BAD-CHARSET", "");
+        }, "Expected IOException for invalid charsetName");
+        tmp.toFile().delete();
+    }
+
+    @Test
+    @DisplayName("parse(Path) fallback loads file content and sets baseUri to absolute path")
+    public void test_TC16() throws IOException {
+        // Scenario TC16: no-charset Path overload branch B8 with null charset fallback
+        Path tmp = Files.createTempFile("tc16", ".html");
+        String html = "<html><body><p>hello</p></body></html>";
+        Files.write(tmp, html.getBytes("UTF-8"));
+        Path path = tmp;
+        Document doc = Jsoup.parse(path);
+        assertTrue(doc.body().html().contains("<p>hello</p>"),
+                "Expected body HTML to contain <p>hello</p>");
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri(),
+                "Expected baseUri to equal the path's absolute string");
+        tmp.toFile().delete();
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, String charsetName, String baseUri, Parser parser) with XML parser reads and parses correctly")
+    public void test_TC17() throws IOException {
+        // Scenario TC17: stream parser-overload branch B9 with xmlParser()
+        String input = "<item>1</item>";
+        InputStream in = new ByteArrayInputStream(input.getBytes("UTF-8"));
+        Document doc = Jsoup.parse(in, "UTF-8", "http://stream/", Parser.xmlParser());
+        assertEquals("1", doc.select("item").first().text(),
+                "Expected <item> text to equal '1'");
+        assertEquals("http://stream/", doc.baseUri(),
+                "Expected baseUri to equal the provided URL");
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String) with fragment and no baseUri returns correct body HTML")
+    public void test_TC18() {
+        // Scenario TC18: parseBodyFragment no-baseUri branch B10
+        String fragment = "<div>abc</div>";
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        assertEquals("<div>abc</div>", doc.body().html(),
+                "Expected body.html() to exactly match the fragment markup");
+    }
+}

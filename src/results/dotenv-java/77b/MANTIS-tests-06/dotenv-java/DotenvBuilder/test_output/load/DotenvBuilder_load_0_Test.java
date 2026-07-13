@@ -1,0 +1,156 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.Map;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class DotenvBuilder_load_0_Test {
+
+    @Test
+    @DisplayName("TC01: load() with default settings and empty .env results in only system env entries (branch systemProperties=false, loop-0)")
+    void test_TC01() throws IOException {
+        // branch systemProperties=false so B0->B1->B2, loop-0 because no entries in file
+        Path tempDir = Files.createTempDirectory("tc01");
+        // create empty .env
+        Files.createFile(tempDir.resolve(".env"));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+        Dotenv dotenv = builder.load();
+
+        // entries() should contain exactly all system env as DotenvEntry
+        Set<DotenvEntry> entries = dotenv.entries();
+        for (Map.Entry<String, String> sys : System.getenv().entrySet()) {
+            assertTrue(entries.contains(new DotenvEntry(sys.getKey(), sys.getValue())),
+                       "Expected entry for system var " + sys.getKey());
+        }
+        assertEquals(System.getenv().size(), entries.size());
+        // entries(null) should return same as entries()
+        assertEquals(entries, dotenv.entries(null));
+    }
+
+    @Test
+    @DisplayName("TC02: load() with systemProperties=true and no entries (branch systemProperties=true, loop-0)")
+    void test_TC02() throws IOException {
+        // branch systemProperties=true so B0->B2, loop-0 since empty file
+        Path tempDir = Files.createTempDirectory("tc02");
+        Files.createFile(tempDir.resolve(".env"));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).systemProperties();
+        Dotenv dotenv = builder.load();
+
+        // no new system property should be set; only existing env entries in Dotenv
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertEquals(System.getenv().size(), entries.size());
+        // ensure at least one known env var, e.g., PATH, is present
+        String pathVal = System.getenv("PATH");
+        if (pathVal != null) {
+            assertTrue(entries.contains(new DotenvEntry("PATH", pathVal)));
+        }
+    }
+
+    @Test
+    @DisplayName("TC03: load() with systemProperties=true and single entry sets one system property (branch systemProperties=true, loop-1)")
+    void test_TC03() throws IOException {
+        // branch systemProperties=true so B0->B2, loop-1 because one entry in .env
+        Path tempDir = Files.createTempDirectory("tc03");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "key=VAL".getBytes(StandardCharsets.UTF_8));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).systemProperties();
+        Dotenv dotenv = builder.load();
+
+        // Check that the system property was set
+        assertEquals("VAL", System.getProperty("key"));
+        // And dotenv.get("key") should also return "VAL"
+        assertEquals("VAL", dotenv.get("key"));
+    }
+
+    @Test
+    @DisplayName("TC04: load() with systemProperties=true and multiple entries sets all properties (branch systemProperties=true, loop-N)")
+    void test_TC04() throws IOException {
+        // branch systemProperties=true so B0->B2, loop-N for three entries
+        Path tempDir = Files.createTempDirectory("tc04");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, String.join("\n", "k1=V1", "k2=V2", "k3=V3").getBytes(StandardCharsets.UTF_8));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).systemProperties();
+        Dotenv dotenv = builder.load();
+
+        // Each key should be set as a system property
+        assertEquals("V1", System.getProperty("k1"));
+        assertEquals("V2", System.getProperty("k2"));
+        assertEquals("V3", System.getProperty("k3"));
+        // And dotenv.get returns same
+        assertEquals("V1", dotenv.get("k1"));
+        assertEquals("V2", dotenv.get("k2"));
+        assertEquals("V3", dotenv.get("k3"));
+    }
+
+    @Test
+    @DisplayName("TC05: load() without ignoreIfMissing on missing file throws DotenvException (exception path)")
+    void test_TC05() throws IOException {
+        // missing file and throwIfMissing=true => exception at B0 before B1
+        Path tempDir = Files.createTempDirectory("tc05");
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+        assertThrows(DotenvException.class, builder::load);
+        // ensure no system property was altered by this call
+        // (we can't enumerate, but failure to load => no new "key" should be present)
+        assertNull(System.getProperty("nonexistent_test_key"));
+    }
+
+    @Test
+    @DisplayName("TC06: load() with ignoreIfMissing on missing file returns only system env entries (branch systemProperties=false, loop-0)")
+    void test_TC06() throws IOException {
+        // ignoreIfMissing=true so B0->B1->B2, loop-0 since no file
+        Path tempDir = Files.createTempDirectory("tc06");
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).ignoreIfMissing();
+        Dotenv dotenv = builder.load();
+
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertEquals(System.getenv().size(), entries.size());
+        // check one known env var present
+        String home = System.getenv("HOME");
+        if (home != null) {
+            assertTrue(entries.contains(new DotenvEntry("HOME", home)));
+        }
+    }
+
+    @Test
+    @DisplayName("TC07: load() without ignoreIfMalformed on malformed file throws DotenvException (exception path)")
+    void test_TC07() throws IOException {
+        // malformed line and throwIfMalformed=true => exception at reader.parse()
+        Path tempDir = Files.createTempDirectory("tc07");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "BADLINE".getBytes(StandardCharsets.UTF_8));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+        assertThrows(DotenvException.class, builder::load);
+        // no property "BADLINE" should exist
+        assertNull(System.getProperty("BADLINE"));
+    }
+
+    @Test
+    @DisplayName("TC08: load() with ignoreIfMalformed on malformed file skips bad lines (branch systemProperties=false, loop-0)")
+    void test_TC08() throws IOException {
+        // ignoreIfMalformed=true so B0->B1->B2, malformed line ignored, loop-0 over valid entries list (only KEY=VAL valid)
+        Path tempDir = Files.createTempDirectory("tc08");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, String.join("\n", "KEY=VAL", "X").getBytes(StandardCharsets.UTF_8));
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).ignoreIfMalformed();
+        Dotenv dotenv = builder.load();
+
+        // Only the valid line should be retained
+        assertEquals("VAL", dotenv.get("KEY"));
+        assertNull(dotenv.get("X"));
+    }
+}

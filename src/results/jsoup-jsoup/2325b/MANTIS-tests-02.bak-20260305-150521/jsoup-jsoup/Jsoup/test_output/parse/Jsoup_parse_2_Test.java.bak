@@ -1,0 +1,74 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(String, String, Parser) with XML parser returns elements preserved and retains provided baseUri")
+    public void test_TC19() {
+        // Using XML parser branch: Parser.xmlParser() will preserve self-closing tags and children structure as-is
+        String html = "<root><child>OK</child></root>";
+        String baseUri = "http://example.org/";
+        Parser xmlParser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, xmlParser);
+        // The xml parser should not normalize tag names or structure; the <child> element and its text should remain
+        assertEquals("OK", doc.select("child").first().text(), "The XML parser should preserve the <child> element text");
+        // Base URI should remain exactly what was provided
+        assertEquals(baseUri, doc.baseUri(), "The document baseUri should match the provided baseUri");
+    }
+
+    @Test
+    @DisplayName("parse(String, Parser) with HTML parser returns normalized HTML and default empty baseUri")
+    public void test_TC20() {
+        // HTML parser branch without baseUri: default empty string, HTML parser will normalize self-closing <div/> to <div></div>
+        String html = "<div/>";
+        Parser htmlParser = Parser.htmlParser();
+        Document doc = Jsoup.parse(html, htmlParser);
+        // HTML parser always returns a <body> tag containing normalized HTML
+        assertEquals("<div></div>", doc.body().html(), "HTML parser should normalize <div/> to <div></div>");
+        // No baseUri parameter means it defaults to ""
+        assertEquals("", doc.baseUri(), "Base URI should default to empty string when not provided");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, String charsetName, String baseUri) with valid charset reads stream and sets baseUri")
+    public void test_TC21() throws Exception {
+        // Stream load branch without explicit parser: DataUtil.load(InputStream, charset, baseUri)
+        String inputHtml = "<p>ok</p>";
+        byte[] bytes = inputHtml.getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(bytes);
+        String charset = "UTF-8";
+        String baseUri = "http://stream.example/";
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        // After parsing, the <p> tag should be present with its text preserved
+        assertEquals("ok", doc.select("p").first().text(), "The <p> element text should be parsed correctly from stream");
+        // The baseUri should be what was passed
+        assertEquals(baseUri, doc.baseUri(), "The baseUri should be set to the provided URI");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, String charsetName, String baseUri, Parser) with HTML parser reads and normalizes fragment")
+    public void test_TC22() throws Exception {
+        // Stream load branch with explicit parser: DataUtil.load(InputStream, charset, baseUri, parser)
+        String inputHtml = "<span/>";
+        byte[] bytes = inputHtml.getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(bytes);
+        String charset = "UTF-8";
+        String baseUri = "http://stream2.example/";
+        Parser htmlParser = Parser.htmlParser();
+        Document doc = Jsoup.parse(in, charset, baseUri, htmlParser);
+        // HTML parser will normalize the self-closing <span/> to <span></span> inside the body
+        assertEquals("<span></span>", doc.body().html(), "HTML parser should normalize <span/> to <span></span> in stream parse");
+        // The baseUri should be carried through
+        assertEquals(baseUri, doc.baseUri(), "Stream parse with parser should set baseUri to the provided URI");
+    }
+}

@@ -1,0 +1,54 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "clone() preserves and shares a non-null Connection field so connection() returns the same instance",
+      "path": "B0→B1→B2→return→connection() branch non-null",
+      "precondition": "Document has a connection set via Jsoup.connect",
+      "expectedResult": "clone.connection() == original.connection()",
+      "tags": [
+        "positive",
+        "branch",
+        "connection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone preserves non-null connection",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://ex\");",
+        "    Connection conn = Jsoup.connect(\"http://ex\");",
+        "    doc.connection(conn);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertSame(doc.connection(), clone.connection());"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() copies quirksMode so setting a non-default QuirksMode is preserved in clone",
+      "path": "B0→B1→B2→return",
+      "precondition": "Document quirksMode set to limitedQuirks",
+      "expectedResult": "clone.quirksMode() == QuirksMode.limitedQuirks and independent enum access",
+      "tags": [
+        "positive",
+        "branch",
+        "quirksMode"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone preserves quirksMode",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://base\");",
+        "    doc.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, clone.quirksMode());",
+        "    assertEquals(doc.quirksMode(), clone.quirksMode());"
+      ]
+    }
+  ]
+}

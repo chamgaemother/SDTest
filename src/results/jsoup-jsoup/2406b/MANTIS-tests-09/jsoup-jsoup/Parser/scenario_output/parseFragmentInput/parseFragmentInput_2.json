@@ -1,0 +1,104 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "String-overload: real HtmlTreeBuilder parses non-empty fragment with context and returns Element/TextNode list",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser created via Parser.htmlParser(), real TreeBuilder",
+      "expectedResult": "List contains one TextNode with text 'hello' inside a <span> context element",
+      "tags": [
+        "positive",
+        "integration",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 real-htmlParser parseFragmentInput returns correct nodes",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Element ctx = new Element(\"span\");",
+        "    String frag = \"<b>hello</b>\";",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, ctx, base);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    Node n = nodes.get(0);",
+        "    assert n instanceof Element;",
+        "    assert ((Element) n).tagName().equals(\"b\");",
+        "    assert ((Element) n).text().equals(\"hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Reader-overload: real HtmlTreeBuilder parses fragment reader without context into Comment/TextNode list",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser created via Parser.htmlParser(), real TreeBuilder",
+      "expectedResult": "List contains a Comment node with data 'cmt' and a TextNode 'end'",
+      "tags": [
+        "positive",
+        "integration",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 real-htmlParser reader-overload parseFragmentInput returns mixed nodes",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader r = new StringReader(\"<!--cmt-->end\");",
+        "    Element ctx = new Element(\"div\");",
+        "    String base = \"baseUri\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(r, ctx, base);",
+        "  THEN",
+        "    assert nodes.size() == 2;",
+        "    assert nodes.get(0) instanceof Comment && ((Comment)nodes.get(0)).getData().equals(\"cmt\");",
+        "    assert nodes.get(1) instanceof TextNode && ((TextNode)nodes.get(1)).text().equals(\"end\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "Reader-overload: builder throws RuntimeException on first call then returns on second, verifying lock unlock in finally",
+      "path": "B0→B1→B2(ex)→B3→B4→B1→B2→B3→B4",
+      "precondition": "Custom TreeBuilder stub that throws on first parseFragment, then returns empty list",
+      "expectedResult": "First call throws IllegalStateException, second call returns empty list without deadlock",
+      "tags": [
+        "exception",
+        "concurrency",
+        "finally"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 lock unlocked after exception allows subsequent parse",
+        "  GIVEN",
+        "    AtomicInteger count = new AtomicInteger(0);",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(true,true); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {",
+        "        if (count.getAndIncrement() == 0) throw new IllegalStateException(\"fail first\");",
+        "        return Collections.emptyList();",
+        "      }",
+        "      @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }",
+        "      @Override public void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader r = new StringReader(\"x\");",
+        "    Element ctx = new Element(\"p\");",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    assertThrows(IllegalStateException.class, () -> parser.parseFragmentInput(r, ctx, base));",
+        "    List<Node> result = parser.parseFragmentInput(r, ctx, base);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

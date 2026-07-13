@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Invoking private tagSet(\"div\") returns true for known HTML tag",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser.htmlParser() available; method tagSet(String) is private",
+      "expectedResult": "returns true",
+      "tags": [
+        "positive",
+        "reflection",
+        "private"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 tagSet-known-html-tag",
+        "  GIVEN",
+        "    // use reflection to access private tagSet",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    m.setAccessible(true);",
+        "    String tag = \"div\";",
+        "  WHEN",
+        "    boolean result = (boolean) m.invoke(parser, tag);",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Invoking private tagSet(\"unknownTag\") returns false for unrecognized tag",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Parser.htmlParser() available; method tagSet(String) is private",
+      "expectedResult": "returns false",
+      "tags": [
+        "negative",
+        "reflection",
+        "private"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 tagSet-unknown-tag",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    m.setAccessible(true);",
+        "    String tag = \"unknownTag\";",
+        "  WHEN",
+        "    boolean result = (boolean) m.invoke(parser, tag);",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Invoking private tagSet(null) throws NullPointerException",
+      "path": "B0→B1→B2→B7",
+      "precondition": "Parser.xmlParser() available; method tagSet(String) is private",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "reflection",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 tagSet-null-input",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    call m.invoke(parser, (Object) null);",
+        "  THEN",
+        "    throws InvocationTargetException with cause NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("tagSet with a non-empty tag set updates settings and returns the same Parser instance")
+    public void test_TC04() throws Exception {
+        // GIVEN a new HTML parser to go through the non-empty branch (B2) and then setter return (B4)
+        Parser parser = Parser.htmlParser();
+        Set<String> tags = new HashSet<>(Arrays.asList("div", "span", "p"));
+        // Use reflection to access private or package-private method tagSet(Set<String>)
+        Method method = Parser.class.getDeclaredMethod("tagSet", Set.class);
+        method.setAccessible(true);
+        
+        // WHEN invoking tagSet with a non-empty set
+        Object result = method.invoke(parser, tags);
+        
+        // THEN: should return the same parser instance and the parser's settings should include exactly the provided tags
+        assertSame(parser, result, "Expected tagSet to return the same Parser instance");
+        // Inline comment: non-empty set triggers settings.tagNames update instead of clear
+        Set<String> actualTagNames = parser.settings().tagNames();
+        assertEquals(tags, actualTagNames, "Expected parser.settings().tagNames() to match the provided non-empty set");
+    }
+
+    @Test
+    @DisplayName("tagSet with an empty tag set clears settings tagNames and returns the same Parser instance")
+    public void test_TC05() throws Exception {
+        // GIVEN a new XML parser to go through the empty branch (B3) and then setter return (B4)
+        Parser parser = Parser.xmlParser();
+        Set<String> tags = Collections.emptySet();
+        // Use reflection to access private or package-private method tagSet(Set<String>)
+        Method method = Parser.class.getDeclaredMethod("tagSet", Set.class);
+        method.setAccessible(true);
+        
+        // WHEN invoking tagSet with an empty set
+        Object result = method.invoke(parser, tags);
+        
+        // THEN: should return the same parser instance and the parser's settings should have no tag names
+        assertSame(parser, result, "Expected tagSet to return the same Parser instance");
+        // Inline comment: empty set triggers clearing of settings.tagNames
+        Set<String> actualTagNames = parser.settings().tagNames();
+        assertTrue(actualTagNames.isEmpty(), "Expected parser.settings().tagNames() to be empty after passing an empty set");
+    }
+}

@@ -1,0 +1,122 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with valid HTML delegates to treeBuilder.parse and returns a non-null Document (baseUri applied)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose baseUri() equals the provided baseUri and whose body contains a <p> element with text \"hello\"",
+      "tags": [
+        "positive",
+        "overload:String,String",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput valid HTML",
+        "  GIVEN",
+        "    String html = \"<p>hello</p>\"; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null; assert doc.baseUri().equals(baseUri); assert doc.body().select(\"p\").text().equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) with empty HTML returns a Document with empty body",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose body has no child elements",
+      "tags": [
+        "boundary",
+        "empty-input",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput empty HTML",
+        "  GIVEN",
+        "    String html = \"\"; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().children().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null html throws NullPointerException when creating StringReader",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-input",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null HTML",
+        "  GIVEN",
+        "    String html = null; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) with stub TreeBuilder that throws at parse invokes exception path",
+      "path": "B0→B3",
+      "precondition": "Parser uses a custom TreeBuilder stub whose parse(Reader,String,Parser) throws IllegalStateException to simulate parse failure",
+      "expectedResult": "throws IllegalStateException; no Document returned",
+      "tags": [
+        "exception",
+        "overload:Reader,String",
+        "branch-exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput Reader parse throws",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    TreeBuilder stub = new TreeBuilder() { override parse(r,u,p){ throw new IllegalStateException(\"fail\"); } /* other methods stubbed */ };",
+        "    parser.setTreeBuilder(stub); Reader reader = new StringReader(\"x\"); String baseUri = \"http://a/\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException;"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) with valid Reader returns Document matching input",
+      "path": "B0→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose body contains a <div> with text \"test\"",
+      "tags": [
+        "positive",
+        "overload:Reader,String",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput Reader valid input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<div>test</div>\"); String baseUri = \"http://example.org/\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"div\").text().equals(\"test\");"
+      ]
+    }
+  ]
+}

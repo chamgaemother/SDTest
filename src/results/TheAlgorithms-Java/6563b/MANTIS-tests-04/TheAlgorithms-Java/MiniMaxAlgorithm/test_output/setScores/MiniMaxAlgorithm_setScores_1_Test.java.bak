@@ -1,0 +1,45 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MiniMaxAlgorithm_setScores_Test {
+
+    @Test
+    @DisplayName("setScores with length=2 (2^1) sets scores and height=1 via B1 path")
+    void test_TC05() {
+        // GIVEN a new MiniMaxAlgorithm and a power-of-two array of length 2
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        int[] newScores = new int[2];
+        // WHEN setScores is called with length 2, it should take the else branch of B0 (length%1 == 0)
+        algo.setScores(newScores);
+        // THEN the internal scores reference should be updated, and height computed as log2(2)=1
+        assertSame(newScores, algo.getScores(), "Expected scores field to reference the provided array");
+        assertEquals(1, algo.getHeight(), "Expected height to be log2(2) = 1");
+    }
+
+    @Test
+    @DisplayName("setScores with length=4 (2^2) sets scores and height=2 via B1 path")
+    void test_TC06() {
+        // GIVEN a new MiniMaxAlgorithm and a power-of-two array of length 4
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        int[] newScores = new int[4];
+        // WHEN setScores is called with length 4, it should take the else branch of B0 (length%1 == 0)
+        algo.setScores(newScores);
+        // THEN the internal scores reference should be updated, and height computed as log2(4)=2
+        assertSame(newScores, algo.getScores(), "Expected scores field to reference the provided array");
+        assertEquals(2, algo.getHeight(), "Expected height to be log2(4) = 2");
+    }
+
+    @Test
+    @DisplayName("setScores with length=0 triggers infinite log2 recursion and throws StackOverflowError")
+    void test_TC07() {
+        // GIVEN a new MiniMaxAlgorithm and an empty array (length 0)
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        int[] newScores = new int[0];
+        // WHEN setScores is called with length 0, log2(0) recurses infinitely => StackOverflowError
+        assertThrows(StackOverflowError.class, () -> algo.setScores(newScores),
+                "Expected StackOverflowError due to infinite recursion in log2(0)");
+    }
+}

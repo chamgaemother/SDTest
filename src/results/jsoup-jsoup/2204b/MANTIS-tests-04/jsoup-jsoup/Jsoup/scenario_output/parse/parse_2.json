@@ -1,0 +1,165 @@
+{
+  "scenarios": [
+    {
+      "id": "TC23",
+      "description": "parse(String html, String baseUri, Parser parser) with null html throws NullPointerException",
+      "path": "B0→B1→B2→B6",
+      "precondition": "parser = Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse null-html with parser",
+        "  GIVEN",
+        "    String html = null;",
+        "    String baseUri = \"http://x\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) returns document fragment with resolved baseUri",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document with body.html() = \"<a href='r'>r</a>\" and baseUri = \"http://b/\"",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String bodyHtml = \"<a href='r'>r</a>\";",
+        "    String baseUri = \"http://b/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<a href='r'>r</a>\");",
+        "    assert doc.baseUri().equals(\"http://b/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parseBodyFragment(String bodyHtml) returns document fragment with empty baseUri",
+      "path": "B0→B1→B2→B5",
+      "precondition": "none",
+      "expectedResult": "Document with body.html() = \"<span/>\" and baseUri = \"\"",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 parseBodyFragment default-baseUri",
+        "  GIVEN",
+        "    String bodyHtml = \"<span/>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span/>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser parser) with XML parser preserves unbalanced tags",
+      "path": "B0→B1→B4→B5",
+      "precondition": "path points to temp file containing \"<x>y\"; parser = Parser.xmlParser()",
+      "expectedResult": "Document body.html() = \"<x>y</x>\" and baseUri = custom baseUri",
+      "tags": [
+        "positive",
+        "file",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse(Path,charset,baseUri,parser) xml preserves unbalanced",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoup\", \".xml\");",
+        "    Files.write(path, \"<x>y\".getBytes(UTF_8));",
+        "    String charset = null;",
+        "    String baseUri = \"custom\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<x>y</x>\");",
+        "    assert doc.baseUri().equals(\"custom\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "parse(Path path, String charsetName, String baseUri) throws IOException for non-existent path",
+      "path": "B0→B1→B2→B6",
+      "precondition": "path = Paths.get(\"no-such-file.html\")",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 parse non-existent Path throws IOException",
+        "  GIVEN",
+        "    Path path = Paths.get(\"no-such-file.html\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "parse(Path path, String charsetName) with null charset uses path as baseUri",
+      "path": "B0→B1→B3→B5",
+      "precondition": "path points to temp HTML file with content",
+      "expectedResult": "Document body.html() matches and baseUri = path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC28 parse(Path, null) auto-baseUri",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoup\", \".html\");",
+        "    Files.write(path, \"<p>z</p>\".getBytes(UTF_8));",
+        "    String charset = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>z</p>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    }
+  ]
+}

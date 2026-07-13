@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "child(1) on element with two element children twice uses cached shadowChildrenRef on second call",
+      "path": "B0→B1[F]→B2(loop×2)→B3→B4→B2[cached]→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returns second child element both times; second call uses cached list",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child caching behavior",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child1 = new Element(\"li\");",
+        "    Element child2 = new Element(\"li\");",
+        "    parent.appendChild(child1);",
+        "    parent.appendChild(child2);",
+        "  WHEN",
+        "    Element firstCall = parent.child(1);",
+        "    Element secondCall = parent.child(1);",
+        "  THEN",
+        "    assert firstCall == child2;",
+        "    assert secondCall == child2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "child(0) throws IndexOutOfBoundsException when only non-element children exist (childNodeSize>0, filtered list empty)",
+      "path": "B0→B1[F]→B2(loop×n non-element)→B3(empty)→B5(exception)",
+      "precondition": "none",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "filter"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 non-element-only children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"text1\"));",
+        "    el.appendChild(new Comment(\"c\"));",
+        "  WHEN",
+        "    call el.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "child(-1) throws IndexOutOfBoundsException when negative index with element children",
+      "path": "B0→B1[F]→B2(loop×1)→B3→B5(exception)",
+      "precondition": "none",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 negative index with elements",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    call el.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    }
+  ]
+}

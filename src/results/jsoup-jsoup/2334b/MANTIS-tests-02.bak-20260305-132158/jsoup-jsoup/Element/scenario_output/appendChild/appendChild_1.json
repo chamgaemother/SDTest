@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "appendChild(reparenting) moves a child from an existing parent to a new parent, removing it from the old and resetting siblingIndex",
+      "path": "B0→B1→B2(reparent)→B3(ensureChildNodes existing)→B4(add)→B5(return)",
+      "precondition": "child is already appended to oldParent",
+      "expectedResult": "child is removed from oldParent.childNodes, added to newParent.childNodes at end, and siblingIndex updated to newParent.childNodeSize()-1",
+      "tags": [
+        "positive",
+        "reparenting",
+        "mutation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparenting",
+        "    GIVEN",
+        "      Element oldParent = new Element(\"div\");",
+        "      Element newParent = new Element(\"section\");",
+        "      TextNode child = new TextNode(\"hello\");",
+        "      oldParent.appendChild(child);",
+        "      int oldSizeBefore = oldParent.childNodeSize();",
+        "    WHEN",
+        "      Element returned = newParent.appendChild(child);",
+        "    THEN",
+        "      assert oldParent.childNodeSize() == oldSizeBefore - 1;",
+        "      assert newParent.childNodeSize() == 1;",
+        "      assert child.siblingIndex() == 0;",
+        "      assert returned == newParent;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "appendChild(self-chaining) returns the same parent element to allow method chaining",
+      "path": "B0→B1→B2(reparent none)→B3(ensureChildNodes new)→B4(add)→B5(return)",
+      "precondition": "parent with no children",
+      "expectedResult": "method returns exactly the parent instance passed in",
+      "tags": [
+        "positive",
+        "chaining",
+        "return-value"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild chaining",
+        "    GIVEN",
+        "      Element parent = new Element(\"ul\");",
+        "      TextNode child = new TextNode(\"item\");",
+        "    WHEN",
+        "      Element result = parent.appendChild(child);",
+        "    THEN",
+        "      assert result == parent;",
+        "      assert parent.childNodeSize() == 1;",
+        "END"
+      ]
+    }
+  ]
+}

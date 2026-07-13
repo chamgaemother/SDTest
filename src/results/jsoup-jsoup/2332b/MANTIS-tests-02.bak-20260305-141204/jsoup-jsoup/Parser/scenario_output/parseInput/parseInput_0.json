@@ -1,0 +1,161 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with normal HTML and non-empty baseUri delegates to TreeBuilder.parse and returns Document",
+      "path": "B0→B1→B4",
+      "precondition": "Use a real Parser with a stub TreeBuilder that returns a sentinel Document when parse is called; no mocks required",
+      "expectedResult": "return value is the sentinel Document returned by stub TreeBuilder.parse",
+      "tags": [
+        "overload:String,BaseUri",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput(String,baseUri) normal-delegation",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    String html = \"<p>Text</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == stubTreeBuilderReturningDocDocument;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) with empty HTML string still delegates and returns Document",
+      "path": "B0→B1→B4",
+      "precondition": "Use the same stub TreeBuilder; no mocks",
+      "expectedResult": "return value is the sentinel Document returned by stub TreeBuilder.parse",
+      "tags": [
+        "overload:String,BaseUri",
+        "branch-empty-html",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput(String,baseUri) empty-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == stubTreeBuilderReturningDocDocument;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null HTML throws NullPointerException at StringReader constructor",
+      "path": "B0→B1(exception)",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "overload:String,BaseUri",
+        "branch-null-html",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput(String,baseUri) null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) with valid Reader and baseUri delegates to TreeBuilder.parse and returns Document",
+      "path": "B0→B1→B4",
+      "precondition": "Use a real Parser with stub TreeBuilder; Reader provides controlled input",
+      "expectedResult": "return value is the sentinel Document returned by stub TreeBuilder.parse",
+      "tags": [
+        "overload:Reader,BaseUri",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput(Reader,baseUri) normal-delegation",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    Reader reader = new StringReader(\"<div>Hi</div>\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert result == stubTreeBuilderReturningDocDocument;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) with null Reader triggers stub TreeBuilder.parse to throw IllegalArgumentException",
+      "path": "B0→B1(exception)",
+      "precondition": "Use stub TreeBuilder configured to throw IllegalArgumentException when inputHtml is null; stub explains why mocking is necessary: to simulate builder behavior on null input",
+      "expectedResult": "throws IllegalArgumentException; no Document returned",
+      "tags": [
+        "overload:Reader,BaseUri",
+        "branch-null-reader",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput(Reader,baseUri) null-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderThrowOnNull);",
+        "    Reader reader = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) with Reader containing empty content still delegates and returns Document",
+      "path": "B0→B1→B4",
+      "precondition": "Use stub TreeBuilder; Reader = new StringReader(\"\"); no mocks beyond stub",
+      "expectedResult": "return value is the sentinel Document returned by stub TreeBuilder.parse",
+      "tags": [
+        "overload:Reader,BaseUri",
+        "branch-empty-reader-content",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseInput(Reader,baseUri) empty-content",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    Reader reader = new StringReader(\"\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert result == stubTreeBuilderReturningDocDocument;",
+        "END"
+      ]
+    }
+  ]
+}

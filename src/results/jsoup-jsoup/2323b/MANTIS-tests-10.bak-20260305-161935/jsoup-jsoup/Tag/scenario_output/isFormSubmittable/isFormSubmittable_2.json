@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "valueOf(null, namespace, settings) throws IllegalArgumentException for null tagName",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "validation",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 valueOf null-tagName",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf(  \"   \", namespace, settings) throws IllegalArgumentException for empty/blank tagName after trim",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "validation",
+        "empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf blank-tagName",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(\"INPUT\", default namespace, non-preserve settings) returns known tag without clone and formSubmit==true",
+      "path": "B0→B1→B7→B8→B10",
+      "precondition": "ParseSettings where preserveTagCase() returns false",
+      "expectedResult": "returned Tag.tagName equals \"input\" and isFormSubmittable() is true",
+      "tags": [
+        "positive",
+        "case-normalization",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 valueOf uppercase with ignore-case",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.lowerCase; // preserveTagCase=false",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assert tag.getName().equals(\"input\");",
+        "    assert tag.isFormSubmittable();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "valueOf(String, ParseSettings) overload for known form-submit tag returns true",
+      "path": "B0→B1→B7→B8→B10",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() is true for tagName=\"option\" using overload",
+      "tags": [
+        "positive",
+        "overload",
+        "form-submit"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 overload-valueOf returns form-submit",
+        "  GIVEN",
+        "    String tagName = \"option\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

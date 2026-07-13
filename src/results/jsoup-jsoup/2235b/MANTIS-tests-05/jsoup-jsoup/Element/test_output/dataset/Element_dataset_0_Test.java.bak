@@ -1,0 +1,89 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("dataset() on element without any attributes returns empty map (attributes initially null)")
+    public void test_TC01() {
+        // GIVEN an element with no attributes: attributes==null triggers branch B1 then empty dataset (loop-0)
+        Element e = new Element("div");
+        // WHEN
+        Map<String, String> data = e.dataset();
+        // THEN returned map is empty
+        assertTrue(data.isEmpty(), "Expected empty map when no attributes present");
+    }
+
+    @Test
+    @DisplayName("dataset() on element with non-data attributes returns empty map (iterate zero data entries)")
+    public void test_TC02() {
+        // GIVEN an element with only non-data attribute: loop zero times, branch false in data filter
+        Element e = new Element("p");
+        e.attr("id", "header");
+        // WHEN
+        Map<String, String> data = e.dataset();
+        // THEN returned map is empty
+        assertTrue(data.isEmpty(), "Expected empty map when only non-data attributes present");
+    }
+
+    @Test
+    @DisplayName("dataset() on element with a single data- attribute returns map with one entry")
+    public void test_TC03() {
+        // GIVEN an element with one data- attribute: loop executes once, branch true for 'data-lang'
+        Element e = new Element("span");
+        e.attr("data-lang", "Java");
+        // WHEN
+        Map<String, String> data = e.dataset();
+        // THEN map contains exactly one entry 'lang' -> 'Java'
+        assertEquals(1, data.size(), "Expected one data entry");
+        assertEquals("Java", data.get("lang"), "Expected value 'Java' for key 'lang'");
+    }
+
+    @Test
+    @DisplayName("dataset() on element with multiple data- attributes returns all entries")
+    public void test_TC04() {
+        // GIVEN an element with three data- attributes: loop executes thrice, branch true for each
+        Element e = new Element("div");
+        e.attr("data-one", "1");
+        e.attr("data-two", "2");
+        e.attr("data-three", "3");
+        // WHEN
+        Map<String, String> data = e.dataset();
+        // THEN map contains all three entries (order-insensitive)
+        assertEquals(3, data.size(), "Expected three data entries");
+        assertEquals("1", data.get("one"), "Expected '1' for key 'one'");
+        assertEquals("2", data.get("two"), "Expected '2' for key 'two'");
+        assertEquals("3", data.get("three"), "Expected '3' for key 'three'");
+    }
+
+    @Test
+    @DisplayName("dataset() returns live view: modifying map updates underlying attributes")
+    public void test_TC05() {
+        // GIVEN an empty dataset live view: initial dataset empty, but backing attributes map exists
+        Element e = new Element("p");
+        Map<String, String> data = e.dataset();
+        assertTrue(data.isEmpty(), "Precondition: data map should start empty");
+        // WHEN putting a new entry into the view: should update underlying attributes
+        data.put("new", "x");
+        // THEN attribute 'data-new' is set and view reflects it
+        assertEquals("x", e.attr("data-new"), "Expected e.attr('data-new') to be 'x'");
+        assertEquals("x", data.get("new"), "Expected data.get('new') to be 'x'");
+    }
+
+    @Test
+    @DisplayName("dataset() on element with data- prefix but empty value returns entry with empty string")
+    public void test_TC06() {
+        // GIVEN an element with a data- attribute whose value is empty: loop once, branch true, value empty
+        Element e = new Element("div");
+        e.attr("data-empty", "");
+        // WHEN
+        Map<String, String> data = e.dataset();
+        // THEN map size is 1 and value is empty string
+        assertEquals(1, data.size(), "Expected one entry for empty-value data attribute");
+        assertEquals("", data.get("empty"), "Expected empty string for key 'empty'");
+    }
+}

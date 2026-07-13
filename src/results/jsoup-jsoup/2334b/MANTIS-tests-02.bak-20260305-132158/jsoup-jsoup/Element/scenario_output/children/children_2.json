@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() reconstructs shadow cache when existing WeakReference referent has been cleared (shadowChildrenRef!=null and referent==null branch)",
+      "path": "B0→B1→B8→B9→B1→B8→B9",
+      "precondition": "Element with one child and existing shadowChildrenRef built, then referent manually cleared via reflection",
+      "expectedResult": "children() returns a fresh Elements list with the single child after cache miss",
+      "tags": [
+        "cache",
+        "weakref",
+        "iteration",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children cache-rebuild on null referent",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "    // build initial cache",
+        "    Elements firstCall = parent.children();",
+        "    // clear referent: set shadowChildrenRef to new WeakReference<>(null)",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<?> emptyRef = new WeakReference<>(null);",
+        "    refField.set(parent, emptyRef);",
+        "  WHEN",
+        "    Elements secondCall = parent.children();",
+        "  THEN",
+        "    assert secondCall.size() == 1;",
+        "    assert secondCall.get(0) == child;"
+      ]
+    }
+  ]
+}

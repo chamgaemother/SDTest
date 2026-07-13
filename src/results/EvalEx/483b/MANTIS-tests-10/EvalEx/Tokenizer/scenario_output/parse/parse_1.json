@@ -1,0 +1,176 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "Valid structure separator between variable and variable when structures allowed",
+      "path": "B0→B1→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration structuresAllowed=true",
+      "expectedResult": "Tokens: VARIABLE_OR_CONSTANT 'a', STRUCTURE_SEPARATOR '.', VARIABLE_OR_CONSTANT 'b'",
+      "tags": [
+        "positive",
+        "structure",
+        "separator"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 structure-separator-valid",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setStructuresAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"a.b\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(1).getType() == STRUCTURE_SEPARATOR;"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Unexpected closing array without opening throws \"Unexpected closing array\"",
+      "path": "B0→B1→B6→B1→B6→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration arraysAllowed=true",
+      "expectedResult": "ParseException with message \"Unexpected closing array\"",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 unexpected-closing-array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"]\", config);",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, tokenizer::parse, \"Unexpected closing array\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Hexadecimal number literal \"0x1A\" parsed as single NUMBER_LITERAL token",
+      "path": "B0→B1→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "One NUMBER_LITERAL token with value \"0x1A\"",
+      "tags": [
+        "positive",
+        "number",
+        "hex"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 hex-number-literal",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"0x1A\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assertEquals(1, tokens.size());",
+        "    assertEquals(\"0x1A\", tokens.get(0).getTokenValue());"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Undefined function name before '(' throws \"Undefined function 'foo'\"",
+      "path": "B0→B1→B6→B1→B6→B1→B6→B1→B2→B6→B1",
+      "precondition": "ExpressionConfiguration default, functionDictionary.hasFunction('foo')==false",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": [
+        "negative",
+        "function",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 undefined-function",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"foo(1)\", config);",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, tokenizer::parse, \"Undefined function 'foo'\");"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Unknown escape in single-quoted string throws \"Unknown escape character\"",
+      "path": "B0→B1→B6→B1→B6→B1→B6→B1→B2→B6→B1",
+      "precondition": "ExpressionConfiguration singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "ParseException with message \"Unknown escape character\"",
+      "tags": [
+        "negative",
+        "string",
+        "exception",
+        "escape"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 unknown-escape-character",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"'\\q'\", config);",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, tokenizer::parse, \"Unknown escape character\");"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Balanced array open and close returns ARRAY_OPEN and ARRAY_CLOSE tokens",
+      "path": "B0→B1→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration arraysAllowed=true",
+      "expectedResult": "Tokens: ARRAY_OPEN '[', NUMBER_LITERAL '1', ARRAY_CLOSE ']'",
+      "tags": [
+        "positive",
+        "array",
+        "balance"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 balanced-array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"[1]\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assertEquals(3, tokens.size());",
+        "    assertEquals(ARRAY_OPEN, tokens.get(0).getType());",
+        "    assertEquals(ARRAY_CLOSE, tokens.get(2).getType());"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Implicit multiplication between NUMBER_LITERAL and BRACE_OPEN when allowed (1(2))",
+      "path": "B0→B1→B6→B1→B2→B4→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration implicitMultiplicationAllowed=true",
+      "expectedResult": "Tokens: NUMBER_LITERAL '1', INFIX_OPERATOR '*', BRACE_OPEN '(', NUMBER_LITERAL '2', BRACE_CLOSE ')'",
+      "tags": [
+        "positive",
+        "implicit",
+        "multiplication"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 implicit-mulitp-number-brace",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setImplicitMultiplicationAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"1(2)\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assertEquals(\"*\", tokens.get(1).getTokenValue());"
+      ]
+    }
+  ]
+}

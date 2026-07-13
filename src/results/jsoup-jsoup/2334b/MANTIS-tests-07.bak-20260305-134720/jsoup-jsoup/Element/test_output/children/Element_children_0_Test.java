@@ -1,0 +1,108 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() on an Element with no child nodes returns an empty Elements list (loop-0)")
+    public void test_TC01() {
+        // GIVEN: a standalone element with no children (childNodes is still the empty sentinel)
+        Element el = new Element("div");
+        // WHEN: calling children()
+        Elements result = el.children();
+        // THEN: the returned Elements list is empty
+        assertEquals(0, result.size(), "Expected no child elements when none have been added");
+    }
+
+    @Test
+    @DisplayName("TC02: children() on an Element with one child Element returns a single-element list (loop-1)")
+    public void test_TC02() {
+        // GIVEN: a parent with exactly one Element child
+        Element parent = new Element("ul");
+        Element li = new Element("li");
+        parent.appendChild(li); // ensures the filtered list loop runs once and includes li
+        // WHEN: calling children()
+        Elements result = parent.children();
+        // THEN: exactly one element, and it's the same instance appended
+        assertEquals(1, result.size(), "Expected one child element in the list");
+        assertSame(li, result.get(0), "Expected the returned element to be the exact instance appended");
+    }
+
+    @Test
+    @DisplayName("TC03: children() filters out non-Element nodes and returns only Element children (mixed-node filtering)")
+    public void test_TC03() {
+        // GIVEN: a parent with mixed nodes: a TextNode and an Element
+        Element parent = new Element("p");
+        parent.appendText("text"); // a TextNode child, should be filtered out
+        Element span = new Element("span");
+        parent.appendChild(span); // an Element child, should be included
+        // WHEN: calling children()
+        Elements result = parent.children();
+        // THEN: only the span appears
+        assertEquals(1, result.size(), "Expected only one element child after filtering out text nodes");
+        assertSame(span, result.get(0), "Expected the span element to be returned");
+    }
+
+    @Test
+    @DisplayName("TC04: children() caches the filtered list on first call and reuses it on second call without recomputation (cache-hit)")
+    public void test_TC04() throws Exception {
+        // GIVEN: a parent with two Element children to populate the cache
+        Element parent = new Element("div");
+        Element a = new Element("a");
+        Element b = new Element("b");
+        parent.appendChild(a);
+        parent.appendChild(b);
+        // WHEN: first call to children() sets private shadowChildrenRef
+        parent.children();
+        // Reflectively get shadowChildrenRef after first call
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> firstWeak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> firstList = firstWeak.get();
+        // Second call should reuse same cached filtered list (same List instance)
+        parent.children();
+        WeakReference<List<Element>> secondWeak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> secondList = secondWeak.get();
+        // THEN: the underlying cached list is the same object
+        assertNotNull(firstList, "Cache should have been populated after first children() call");
+        assertSame(firstList, secondList, "Expected the cached filtered list to be reused on second call");
+        // Also confirm contents haven't changed
+        assertEquals(2, firstList.size(), "Cache should contain both children");
+        assertTrue(firstList.contains(a) && firstList.contains(b), "Cache should include the correct child elements");
+    }
+
+    @Test
+    @DisplayName("TC05: children() invalidates cache after childNodes change via nodelistChanged (cache-invalidation)")
+    public void test_TC05() throws Exception {
+        // GIVEN: a parent with two Element children, and a cached list obtained
+        Element parent = new Element("div");
+        parent.appendElement("p");
+        parent.appendElement("span");
+        Elements initial = parent.children(); // populates cache
+        // Reflectively capture the WeakReference before modification
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> initialWeak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> initialList = initialWeak.get();
+        assertNotNull(initialList, "Cache should be populated initially");
+        // WHEN: modify the childNodes via empty(), which triggers nodelistChanged, invalidating cache
+        parent.empty();
+        // After invalidation, shadowChildrenRef should be null
+        WeakReference<List<Element>> afterWeak = (WeakReference<List<Element>>) refField.get(parent);
+        // THEN: the cache reference has been cleared
+        assertNull(afterWeak, "Cache should be invalidated (set to null) after childNodes change");
+        // And a fresh children() call returns an empty list
+        Elements afterEmpty = parent.children();
+        assertEquals(0, afterEmpty.size(), "Expected no children after empty()");
+    }
+}

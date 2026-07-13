@@ -1,0 +1,57 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * JUnit 5 tests for Jsoup.parseBodyFragment methods.
+ * Each test is independent and self-contained, covering different branches.
+ */
+public class Jsoup_parseBodyFragment_2_Test {
+
+    @Test
+    @DisplayName("parseBodyFragment(String, String) honors an in‐fragment <base href> over the explicit baseUri for relative link resolution")
+    public void test_TC09() {
+        // Scenario TC09: inline <base> should override supplied baseUri for resolution (path B0→B1→B2→B3→B4)
+
+        // GIVEN: a base tag pointing to a CDN and a relative <a> link
+        String bodyHtml = "<base href='https://cdn.example.com/' /><a href='img.png'>img</a>";
+        String baseUri = "http://ignored.example.com/"; // explicit baseUri should be ignored in favor of inline base href
+
+        // WHEN: parsing body fragment with explicit baseUri
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+
+        // THEN: the <a> element's absUrl should be resolved against the inline base href
+        Element link = doc.selectFirst("a");
+        assertEquals(
+            "https://cdn.example.com/img.png",
+            link.absUrl("href"),
+            "Expected the href to be resolved against the inline <base> tag, not the supplied baseUri"
+        );
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String) correctly decodes HTML entities in a body fragment")
+    public void test_TC10() {
+        // Scenario TC10: HTML entities in body fragments should be decoded (path B0→B1→B2→B3)
+
+        // GIVEN: a paragraph with an em dash entity
+        String bodyHtml = "<p>Foo &mdash; Bar</p>";
+
+        // WHEN: parsing body fragment without explicit baseUri
+        Document doc = Jsoup.parseBodyFragment(bodyHtml);
+
+        // THEN: the output fragment should contain the decoded em dash character
+        String outputHtml = doc.body().html();
+        assertTrue(
+            outputHtml.contains("—"),
+            "Expected the HTML entity &mdash; to be decoded to an actual em dash in the output"
+        );
+    }
+}

@@ -1,0 +1,160 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with valid HTML and baseUri returns parsed Document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); real HtmlTreeBuilder used for HTML5 parsing",
+      "expectedResult": "returned Document has baseUri equal to \"http://example.com\" and contains a <p> element with text \"Test\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput with valid HTML string",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"<p>Test</p>\";",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, base);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"http://example.com\");",
+        "    assert doc.selectFirst(\"p\").text().equals(\"Test\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) with empty HTML returns empty body Document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); real HtmlTreeBuilder used",
+      "expectedResult": "returned Document has empty body and baseUri \"base\"",
+      "tags": [
+        "overload:String,String",
+        "boundary-empty",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput with empty HTML",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"\";",
+        "    String base = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, base);",
+        "  THEN",
+        "    assert doc.body().children().isEmpty();",
+        "    assert doc.baseUri().equals(\"base\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null HTML throws NullPointerException",
+      "path": "B0→B1→exception",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-html"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput with null html",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = null;",
+        "    String base = \"b\";",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseInput(String, String) with null baseUri throws IllegalArgumentException",
+      "path": "B0→B1→B2→exception",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "throws IllegalArgumentException; message contains \"baseUri\"",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 parseInput with null baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"<div/>\";",
+        "    String base = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws IllegalArgumentException; assert exception.getMessage().contains(\"baseUri\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) with valid Reader returns parsed Document",
+      "path": "B0→B1→B3",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); real HtmlTreeBuilder used",
+      "expectedResult": "returned Document has a <span> element with text \"R\" and baseUri \"u\"",
+      "tags": [
+        "overload:Reader,String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput with valid Reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    Reader rdr = new StringReader(\"<span>R</span>\");",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(rdr, base);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"u\");",
+        "    assert doc.selectFirst(\"span\").text().equals(\"R\");"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) when TreeBuilder.parse throws IOException wraps in RuntimeException",
+      "path": "B0→B1→B3→exception",
+      "precondition": "Parser parser = new Parser(customBuilder); // stub builder newInstance returns itself; stub parse throws IOException",
+      "expectedResult": "throws RuntimeException; cause is IOException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-io-error"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseInput reader IO error",
+        "  GIVEN",
+        "    TreeBuilder customBuilder = stub TreeBuilder.newInstance();",
+        "    stub customBuilder.parse(...) throws IOException(\"io fail\");",
+        "    Parser parser = new Parser(customBuilder);",
+        "    Reader rdr = new StringReader(\"x\");",
+        "    String base = \"b\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws RuntimeException; assert exception.getCause() instanceof IOException;"
+      ]
+    }
+  ]
+}

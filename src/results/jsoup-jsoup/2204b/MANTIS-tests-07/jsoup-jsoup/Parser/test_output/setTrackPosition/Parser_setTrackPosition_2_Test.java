@@ -1,0 +1,48 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_setTrackPosition_2_Test {
+
+    @Test
+    @DisplayName("TC05: Chained setTrackPosition calls flip state from true to false on same instance")
+    public void test_TC05() {
+        // GIVEN: a new HTML parser which by default has trackPosition = false
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start false");
+
+        // WHEN: we enable position tracking and then disable it on the same instance (fluent API)
+        Parser first = parser.setTrackPosition(true);
+        // Inline comment: first.setTrackPosition(true) takes B0→B1→B2 path enabling tracking
+        Parser second = first.setTrackPosition(false);
+        // Inline comment: chaining back to false follows B1→B2 again toggling the flag
+
+        // THEN: verify that the same instance was returned each time and final state is false
+        assertSame(parser, first, "setTrackPosition should return the same parser instance for chaining");
+        assertSame(first, second, "Chained call should still return the same instance");
+        assertFalse(parser.isTrackPosition(), "After toggling on then off, trackPosition should be false");
+    }
+
+    @Test
+    @DisplayName("TC06: Change trackPosition on a copy does not affect original parser’s state")
+    public void test_TC06() {
+        // GIVEN: an original HTML parser with default trackPosition = false
+        Parser original = Parser.htmlParser();
+        assertFalse(original.isTrackPosition(), "Original parser should start with trackPosition = false");
+
+        // WHEN: create a deep copy and enable position tracking on the copy
+        Parser copy = original.newInstance();
+        // Inline comment: newInstance uses private copy constructor, following path to B4 to isolate state
+        Parser changedCopy = copy.setTrackPosition(true);
+        // Inline comment: setTrackPosition(true) on copy flips only the copy's flag
+
+        // THEN: original remains unaffected, copy is modified, and instances relationship is correct
+        assertFalse(original.isTrackPosition(), "Original parser should remain with trackPosition = false");
+        assertTrue(changedCopy.isTrackPosition(), "Copy should have trackPosition = true after change");
+        assertNotSame(original, copy, "newInstance should produce a different parser object");
+        assertSame(copy, changedCopy, "setTrackPosition should return the same copy instance for chaining");
+    }
+}

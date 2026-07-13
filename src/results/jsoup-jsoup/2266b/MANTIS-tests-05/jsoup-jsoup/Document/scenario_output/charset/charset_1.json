@@ -1,0 +1,146 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "HTML doc with existing <meta charset> and obsolete <meta name=charset> updates charset attribute and removes obsolete",
+      "path": "B0→ensureMetaCharsetElement(html)→metaCharset!=null→update attr→remove obsolete",
+      "precondition": "Document.createShell, head has <meta charset='ISO-8859-1'> and <meta name='charset'>",
+      "expectedResult": "existing meta[charset] attr updated to US-ASCII, obsolete meta[name=charset] removed",
+      "tags": [
+        "positive",
+        "html",
+        "update-existing",
+        "obsolete-removal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 update existing html meta and remove obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://x\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\", \"ISO-8859-1\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assertEquals(Charset.forName(\"US-ASCII\"), doc.outputSettings().charset());",
+        "    Element meta = doc.selectFirst(\"head meta[charset]\");",
+        "    assertEquals(\"US-ASCII\", meta.attr(\"charset\"));",
+        "    assertNull(doc.selectFirst(\"head meta[name=charset]\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "XML doc with no existing XmlDeclaration prepends new <?xml encoding?> and version",
+      "path": "B0→ensureMetaCharsetElement(xml)→syntax==xml→first node not XmlDeclaration→create+prepend",
+      "precondition": "Document.createShell, outputSettings.syntax(XML), no xml decl child",
+      "expectedResult": "new XmlDeclaration prepended with encoding UTF-16 and version 1.0",
+      "tags": [
+        "positive",
+        "xml",
+        "prepend-new"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 xml prepend when no declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    assertEquals(Charset.forName(\"UTF-16\"), doc.outputSettings().charset());",
+        "    Node first = doc.childNodes().get(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration decl = (XmlDeclaration) first;",
+        "    assertEquals(\"UTF-16\", decl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", decl.attr(\"version\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "XML doc with existing non-xml XmlDeclaration prepends new <?xml encoding?> and version over wrong-name decl",
+      "path": "B0→ensureMetaCharsetElement(xml)→syntax==xml→first node is XmlDeclaration but name!=xml→create+prepend",
+      "precondition": "Document.createShell, syntax XML, prepend XmlDeclaration named 'wrong'",
+      "expectedResult": "new XmlDeclaration for 'xml' inserted with correct encoding and version",
+      "tags": [
+        "positive",
+        "xml",
+        "replace-wrong-name"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 xml replace wrong-name declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"v\");",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration wrong = new XmlDeclaration(\"wrong\", false);",
+        "    wrong.attr(\"foo\",\"bar\");",
+        "    doc.prependChild(wrong);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    Node first = doc.childNodes().get(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration decl = (XmlDeclaration) first;",
+        "    assertEquals(\"UTF-8\", decl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", decl.attr(\"version\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Calling charset(null) on Document throws NullPointerException and leaves charset unchanged",
+      "path": "B0→updateMetaCharsetElement(true)→outputSettings.charset(null)→NullPointerException",
+      "precondition": "Document.createShell",
+      "expectedResult": "NullPointerException thrown, outputSettings.charset unchanged",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 null throws NPE",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"n\");",
+        "    Charset before = doc.outputSettings().charset();",
+        "  WHEN/THEN",
+        "    assertThrows(NullPointerException.class, () -> doc.charset(null));",
+        "    assertEquals(before, doc.outputSettings().charset());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "HTML doc with updateMetaCharsetElement disabled does not insert or update <meta charset>",
+      "path": "B0→updateMetaCharsetElement(false)→ensureMetaCharsetElement skipped",
+      "precondition": "Document.createShell, doc.updateMetaCharsetElement(false)",
+      "expectedResult": "charset set in outputSettings but no <meta charset> present",
+      "tags": [
+        "negative",
+        "html",
+        "no-side-effect"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 no-side-effect when update disabled",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"z\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    assertEquals(Charset.forName(\"UTF-8\"), doc.outputSettings().charset());",
+        "    assertNull(doc.selectFirst(\"meta[charset]\"));",
+        "END"
+      ]
+    }
+  ]
+}

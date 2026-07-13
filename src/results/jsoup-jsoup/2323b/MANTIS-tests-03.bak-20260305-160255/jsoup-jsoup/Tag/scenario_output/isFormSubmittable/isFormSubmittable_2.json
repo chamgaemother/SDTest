@@ -1,0 +1,117 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "valueOf(String) overload with non-submittable known tag 'textarea' returns false",
+      "path": "B0→B3→B5→B8→B9",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false for <textarea>",
+      "tags": [
+        "positive",
+        "overload",
+        "known-tag",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 valueOf-oneArg-nonSubmittable",
+        "  GIVEN",
+        "    // default HTML namespace and preserveCase",
+        "    String tagName = \"textarea\";",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf(String) overload with submittable known tag 'option' returns true",
+      "path": "B0→B3→B5→B8→B10",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns true for <option>",
+      "tags": [
+        "positive",
+        "overload",
+        "known-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf-oneArg-submittable",
+        "  GIVEN",
+        "    String tagName = \"option\";",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(String,ParseSettings) with uppercase 'SELECT' and preserveCase triggers clone and retains submittable flag",
+      "path": "B0→B1→B2→B4→B6→B7→B10",
+      "precondition": "none",
+      "expectedResult": "cloned Tag named 'SELECT', isFormSubmittable() returns true, != static instance",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "iteration",
+        "known-tag"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 valueOf-twoArg-clone-submittable",
+        "  GIVEN",
+        "    // uppercase SELECT differs from normalized 'select'",
+        "    String raw = \"SELECT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(raw, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag.getName().equals(\"SELECT\");",
+        "    assert result == true;",
+        "    assert tag != Tag.valueOf(\"select\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "valueOf(String,namespace,ParseSettings) with uppercase 'Br' clone-branch produces non-submittable empty tag",
+      "path": "B0→B1→B2→B4→B6→B7→B8→B9",
+      "precondition": "none",
+      "expectedResult": "cloned Tag named 'Br', isEmpty()==true, isFormSubmittable()==false",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "empty-tag",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 valueOf-threeArg-clone-empty",
+        "  GIVEN",
+        "    String raw = \"Br\";",
+        "    String norm = ParseSettings.normalName(raw);",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(raw, norm, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag.getName().equals(\"Br\");",
+        "    assert tag.isEmpty() == true;",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

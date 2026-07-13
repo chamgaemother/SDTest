@@ -1,0 +1,41 @@
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.jsoup.nodes.Range.AttributeRange;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("when parent is null (branch parent==null) returns UntrackedAttr constant")
+    public void test_TC01() {
+        // The Attribute is constructed with a null parent, so the sourceRange() method should take the branch where parent == null.
+        Attribute attr = new Attribute("key", "val", null);
+        AttributeRange result = attr.sourceRange();
+        // Expect the constant UntrackedAttr when no parent is present.
+        assertSame(Range.AttributeRange.UntrackedAttr, result);
+    }
+
+    @Test
+    @DisplayName("when parent is non-null (branch parent!=null) delegates to parent.sourceRange(key)")
+    public void test_TC02() {
+        // Create a dummy range to be returned by the stub parent.
+        AttributeRange DUMMY_RANGE = new AttributeRange(1, 2, 3, 4);
+        // Stub Attributes to override sourceRange(String)
+        Attributes stubParent = new Attributes() {
+            @Override
+            public AttributeRange sourceRange(String key) {
+                // Regardless of key, always return our dummy range.
+                return DUMMY_RANGE;
+            }
+        };
+        // Construct Attribute with the stub parent so branch parent != null is taken.
+        Attribute attr = new Attribute("key", "val", stubParent);
+        AttributeRange result = attr.sourceRange();
+        // Expect the exact instance returned from the stub's override.
+        assertSame(DUMMY_RANGE, result);
+    }
+}

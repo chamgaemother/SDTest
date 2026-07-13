@@ -1,0 +1,130 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "ignores carriage return characters (ch=='\\r') and wraps on newline only",
+      "path": "B0→B3(loop read 'a')→B11(read '\\r')→B3(loop read '\\n')→B5→B8→B20→B27",
+      "precondition": "none",
+      "expectedResult": "\"a\\nb\" when input is \"a\\r\\nb\" with maxWidth=10",
+      "tags": [
+        "positive",
+        "branch-carriage-return",
+        "newline"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"a\\r\\nb\"));",
+        "    Writer out = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(r, true).maxWidth(10).wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "does not break words when breakWords=false even if word exceeds maxWidth",
+      "path": "B0→B3(loop read 'x')→B7(tooLong on word)→B17(breakWords false path)→B20→end",
+      "precondition": "none",
+      "expectedResult": "single unbroken word \"abcdef\" when maxWidth=3 and breakWords=false",
+      "tags": [
+        "negative",
+        "branch-breakWords",
+        "word-splitting"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 no-word-breaking",
+        "  GIVEN",
+        "    String input = \"abcdef\";",
+        "    Writer out = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(input).maxWidth(3).insertHyphens(true).breakWords(false).wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"abcdef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "treats punctuation as non-word and triggers punctuation branch when extraWordChars excludes punctuation",
+      "path": "B0→B3(loop read '!')→B9(isWordCharacter false)→B10(append word)→B11(tooLong false)→continue→read 'a'→B4(word append)→end",
+      "precondition": "none",
+      "expectedResult": "\"!a\" without splitting or trimming",
+      "tags": [
+        "positive",
+        "branch-punctuation",
+        "extraWordChars"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 punctuation-handling",
+        "  GIVEN",
+        "    Set<Character> extras = new HashSet<>(); // no punctuation",
+        "    String seq = \"!a\";",
+        "    Writer out = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(seq).extraWordChars(extras).wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"!a\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "from(File,Charset) throws IORuntimeException when input file not found",
+      "path": "B0→B1(FileInputStream throws FileNotFoundException)→exception",
+      "precondition": "file does not exist",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload-fromFile"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 missing-input-file",
+        "  GIVEN",
+        "    File f = new File(\"does_not_exist.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "custom stringWidth function suppresses wrapping when tooLong always false",
+      "path": "B0→B3(loop construct line)→tooLong always false→no-wrap→normal exit",
+      "precondition": "none",
+      "expectedResult": "\"longword here\" unchanged when stringWidth returns 0 always",
+      "tags": [
+        "positive",
+        "custom-function",
+        "branch-tooLong"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 custom-stringWidth-no-wrap",
+        "  GIVEN",
+        "    String input = \"longword here\";",
+        "    Function<CharSequence,Number> zeroWidth = s -> 0;",
+        "    Writer out = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(input).stringWidth(zeroWidth).maxWidth(1).wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"longword here\");",
+        "END"
+      ]
+    }
+  ]
+}

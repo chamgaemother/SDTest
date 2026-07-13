@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Known form-submit tag \"option\" in default HTML namespace returns true",
+      "path": "B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "known",
+        "formSubmit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 option default-namespace submit",
+        "  GIVEN",
+        "    // Arrange: use default html namespace and default settings",
+        "    String tagName = \"option\";",
+        "  WHEN",
+        "    // Act",
+        "    Tag tag = Tag.valueOf(tagName);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: option is in SharedConstants.FormSubmitTags",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Known form-submit tag \"option\" in non-HTML namespace returns false",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "namespace",
+        "formSubmit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 option non-html-namespace no-submit",
+        "  GIVEN",
+        "    String tagName = \"option\";",
+        "    String namespace = Parser.NamespaceSvg; // not html",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false; // namespace mismatch yields new generic tag formSubmit==false",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Known form-submit tag with case-preserve settings and uppercase name triggers clone branch and returns true",
+      "path": "B0→B1(null)→B4→B5(clone)→B3",
+      "precondition": "none",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "clone",
+        "preserveCase",
+        "formSubmit"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 uppercase INPUT with preserveCase clone-path",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true; // clone of existing input tag preserves formSubmit",
+        "END"
+      ]
+    }
+  ]
+}

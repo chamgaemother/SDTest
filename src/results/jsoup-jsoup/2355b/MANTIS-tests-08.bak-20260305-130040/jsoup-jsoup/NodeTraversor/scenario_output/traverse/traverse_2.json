@@ -1,0 +1,123 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "filter.head returns STOP at root causes immediate return without tail",
+      "path": "B0→B1(head STOP)→return",
+      "precondition": "NodeFilter whose head() returns FilterResult.STOP",
+      "expectedResult": "filter(...) returns STOP immediately",
+      "tags": [
+        "negative",
+        "filter",
+        "exception-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 filter stops on head",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    NodeFilter filter = new NodeFilter() {",
+        "      head(n,d) => STOP",
+        "      tail(n,d) => CONTINUE",
+        "    };",
+        "  WHEN",
+        "    FilterResult res = NodeTraversor.filter(filter, (Node) root);",
+        "  THEN",
+        "    assert res == FilterResult.STOP;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "filter.head returns SKIP_CHILDREN skips descent but still tails and returns CONTINUE at root",
+      "path": "B0→B1(head SKIP_CHILDREN)→no descend→tail→return",
+      "precondition": "NodeFilter whose head() returns SKIP_CHILDREN and tail() returns CONTINUE",
+      "expectedResult": "filter(...) returns CONTINUE after visiting root tail",
+      "tags": [
+        "positive",
+        "filter",
+        "skip-children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 filter skips children",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    root.appendChild(new Element(\"span\")); // has child but skipped",
+        "    NodeFilter filter = new NodeFilter() {",
+        "      head(n,d) => SKIP_CHILDREN",
+        "      tail(n,d) => CONTINUE",
+        "    };",
+        "  WHEN",
+        "    FilterResult res = NodeTraversor.filter(filter, (Node) root);",
+        "  THEN",
+        "    assert res == FilterResult.CONTINUE;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "filter.tail returns STOP during ascent interrupts traversal",
+      "path": "B0→B1(head CONTINUE)→descend→...→tail STOP→return",
+      "precondition": "NodeFilter with head() CONTINUE, tail() returns STOP at leaf",
+      "expectedResult": "filter(...) returns STOP when tail() yields STOP",
+      "tags": [
+        "negative",
+        "filter",
+        "tail-stop"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 filter stops on tail",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    root.appendChild(child);",
+        "    NodeFilter filter = new NodeFilter() {",
+        "      head(n,d) => CONTINUE;",
+        "      tail(n,d) => d==1 ? STOP : CONTINUE;",
+        "    };",
+        "  WHEN",
+        "    FilterResult res = NodeTraversor.filter(filter, (Node) root);",
+        "  THEN",
+        "    assert res == FilterResult.STOP;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "filter.REMOVE removes leaf and continues traversal to siblings then returns CONTINUE",
+      "path": "B0→B1(head CONTINUE)→descend→...→tail CONTINUE→remove in ascent→sibling→return",
+      "precondition": "NodeFilter that returns REMOVE at tail of leaf",
+      "expectedResult": "filter(...) prunes leaf then CONTINUE ends at root",
+      "tags": [
+        "positive",
+        "filter",
+        "remove"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 filter removes leaf",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element item1 = new Element(\"li\");",
+        "    Element item2 = new Element(\"li\");",
+        "    root.appendChild(item1); root.appendChild(item2);",
+        "    NodeFilter filter = new NodeFilter() {",
+        "      head(n,d) => CONTINUE;",
+        "      tail(n,d) => n==item1 ? REMOVE : CONTINUE;",
+        "    };",
+        "  WHEN",
+        "    FilterResult res = NodeTraversor.filter(filter, (Node) root);",
+        "  THEN",
+        "    assert !root.childNodes().contains(item1);",
+        "    assert res == CONTINUE;",
+        "END"
+      ]
+    }
+  ]
+}

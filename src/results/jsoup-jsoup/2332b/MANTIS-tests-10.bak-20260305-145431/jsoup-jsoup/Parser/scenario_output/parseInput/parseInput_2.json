@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) using real HtmlTreeBuilder returns a Document with expected <div> element",
+      "path": "B0→B3→B4→B5",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "Document contains a single <div> element with text 'Hi'",
+      "tags": [
+        "positive",
+        "overload",
+        "integration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput Reader overload with real builder",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<div>Hi</div>\");",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    List<Element> divs = doc.select(\"div\");",
+        "    assert divs.size() == 1;",
+        "    assert divs.get(0).text().equals(\"Hi\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) using real XmlTreeBuilder via xmlParser() preserves tag case",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "Document contains a root element named 'Item' (case preserved)",
+      "tags": [
+        "positive",
+        "overload",
+        "xml",
+        "integration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput String overload with XmlTreeBuilder",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<Item>Value</Item>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    Element root = doc.child(0);",
+        "    assert root.tagName().equals(\"Item\");",
+        "    assert root.text().equals(\"Value\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(Reader, String) propagates runtime exception from custom TreeBuilder.parse",
+      "path": "B0→B3→B6",
+      "precondition": "Parser created with stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown and propagates",
+      "tags": [
+        "negative",
+        "exception",
+        "delegation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput Reader overload exception propagation",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "        @Override public Document parse(Reader in, String uri, Parser p) {",
+        "          throw new IllegalStateException(\"fail\");",
+        "        }",
+        "        @Override public Document parse(Reader in, String uri) { return null; }",
+        "        @Override protected void initialiseParse(Reader in, String uri, Parser p) { }",
+        "        @Override public TreeBuilder newInstance() { return this; }",
+        "        @Override public boolean process(Token t) { return false; }",
+        "        @Override public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }",
+        "      };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<p/>\");",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message 'fail';"
+      ]
+    }
+  ]
+}

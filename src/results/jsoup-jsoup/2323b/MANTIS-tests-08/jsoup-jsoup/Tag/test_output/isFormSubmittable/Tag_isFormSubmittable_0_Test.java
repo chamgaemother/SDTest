@@ -1,0 +1,46 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * JUnit 5 tests for org.jsoup.parser.Tag.isFormSubmittable()
+ */
+public class Tag_isFormSubmittable_0_Test {
+
+    @Test
+    @DisplayName("isFormSubmittable() returns true for a known form-submittable tag 'input'")
+    public void test_TC01() {
+        // GIVEN a known HTML tag 'input' registered as form-submittable (formSubmit=true)
+        Tag tag = Tag.valueOf("input");
+        // WHEN checking if it is submittable
+        boolean result = tag.isFormSubmittable();
+        // THEN should return true because 'input' is in the formSubmitTags list
+        assertTrue(result, "Expected 'input' tag to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("isFormSubmittable() returns false for a known non-submittable tag 'div'")
+    public void test_TC02() {
+        // GIVEN a known HTML tag 'div' registered with formSubmit=false
+        Tag tag = Tag.valueOf("div");
+        // WHEN checking if it is submittable
+        boolean result = tag.isFormSubmittable();
+        // THEN should return false because 'div' is not in the formSubmitTags list
+        assertFalse(result, "Expected 'div' tag to not be form-submittable");
+    }
+
+    @Test
+    @DisplayName("isFormSubmittable() returns false for an unknown tag 'customTag'")
+    public void test_TC03() {
+        // GIVEN an unknown tag 'customTag' not registered in Tags map
+        Tag tag = Tag.valueOf("customTag");
+        // WHEN checking if it is submittable
+        boolean result = tag.isFormSubmittable();
+        // THEN should return false because unknown tags default formSubmit=false
+        assertFalse(result, "Expected unknown 'customTag' to not be form-submittable");
+    }
+}

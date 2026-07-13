@@ -1,0 +1,108 @@
+package org.jsoup;
+
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("TC20: parseBodyFragment(String bodyHtml, String baseUri) returns a Document with body fragment and correct baseUri")
+    public void test_TC20() {
+        // Given a simple HTML fragment and a non-empty baseUri
+        String fragment = "<p>Frag</p>";
+        String baseUri = "http://frag.com";
+        // When: parsing body fragment with explicit baseUri -> coverage B0->B1->B2->B3->B5
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // Then: body HTML equals input fragment, baseUri matches provided
+        assertEquals(fragment, doc.body().html(), "Body HTML should equal the input fragment");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match provided URI");
+    }
+
+    @Test
+    @DisplayName("TC21: parseBodyFragment(String bodyHtml) uses empty baseUri and returns Document with fragment")
+    public void test_TC21() {
+        // Given a simple HTML fragment and default baseUri
+        String fragment = "<div>X</div>";
+        // When: parsing body fragment without baseUri -> coverage B0->B1->B2->B4->B5
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then: body HTML equals input fragment, baseUri is empty
+        assertEquals(fragment, doc.body().html(), "Body HTML should equal the input fragment");
+        assertEquals("", doc.baseUri(), "Base URI should be empty string when none provided");
+    }
+
+    @Test
+    @DisplayName("TC22: parse(Path path, String charsetName, String baseUri) loads HTML from Path with explicit charset")
+    public void test_TC22() throws IOException {
+        // Given a temp file with HTML content <h1>Head</h1> in UTF-8 and a baseUri
+        Path tempFile = Files.createTempFile("jsoup-test", ".html");
+        String html = "<h1>Head</h1>";
+        Files.write(tempFile, html.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String baseUri = "http://path/";
+        // When: parsing the file via Path overload -> coverage B0->B1->B2->B3->B6
+        Document doc = Jsoup.parse(tempFile, charset, baseUri);
+        // Then: the <h1> text matches, and baseUri matches provided
+        assertEquals("Head", doc.select("h1").text(), "Should extract text from <h1> element");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match provided URI");
+        // Clean up
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    @DisplayName("TC23: parse(Path path, String charsetName, String baseUri, Parser parser) uses custom parser on Path")
+    public void test_TC23() throws IOException {
+        // Given a temp file with XML content <item>9</item>, UTF-8 charset, custom XML parser, and baseUri
+        Path tempFile = Files.createTempFile("jsoup-test-xml", ".xml");
+        String xml = "<item>9</item>";
+        Files.write(tempFile, xml.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String baseUri = "http://xml/";
+        Parser xmlParser = Parser.xmlParser();
+        // When: parsing the Path with parser overload -> coverage B0->B1->B2->B4->B7
+        Document doc = Jsoup.parse(tempFile, charset, baseUri, xmlParser);
+        // Then: the <item> text matches, and baseUri matches provided
+        assertEquals("9", doc.select("item").text(), "Should extract text from <item> element using XML parser");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match provided URI");
+        // Clean up
+        Files.deleteIfExists(tempFile);
+    }
+
+    @Test
+    @DisplayName("TC24: parse(URL url, int timeoutMillis) returns Document for successful HTTP GET")
+    public void test_TC24() throws Exception {
+        // Given a URL and a mocked HttpConnection that returns a known Document
+        URL url = new URL("http://ok.com");
+        org.jsoup.Connection mockConn = mock(org.jsoup.Connection.class);
+        // Prepare a Document with known body content
+        Document stubDoc = Parser.parse("<span>Y</span>", "");
+        // Stub static HttpConnection.connect(url) -> returns mockConn
+        try (MockedStatic<HttpConnection> mocked = mockStatic(HttpConnection.class)) {
+            mocked.when(() -> HttpConnection.connect(url)).thenReturn((HttpConnection) mockConn);
+            // When timeout is set, return same connection -> coverage B0->B1->B2->B8
+            when(mockConn.timeout(500)).thenReturn(mockConn);
+            // When get() is called, return stubDoc -> coverage B9
+            when(mockConn.get()).thenReturn(stubDoc);
+            
+            // When: parsing URL with timeout
+            Document doc = Jsoup.parse(url, 500);
+            
+            // Then: body HTML equals the mocked content
+            assertEquals("<span>Y</span>", doc.body().html(), "Body HTML should match the mocked HTML content");
+        }
+    }
+}

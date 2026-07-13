@@ -1,0 +1,42 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "child(0) with non-null shadowChildrenRef whose referent has been cleared triggers rebuild and returns element",
+      "path": "B0→B3→B4→B5",
+      "precondition": "Element has one Element child and private shadowChildrenRef set to a cleared WeakReference",
+      "expectedResult": "returns the child element and shadowChildrenRef is reset to a new non-null referent",
+      "tags": [
+        "positive",
+        "cache-rebuild",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 child rebuilds cache when weakref referent is null",
+        "  GIVEN",
+        "    // Arrange: create parent and one child, build initial cache",
+        "    Element parent = new Element(\"div\");",
+        "    Element childEl = new Element(\"span\");",
+        "    parent.appendChild(childEl);",
+        "    parent.childElementsList();",
+        "    // Reflectively clear the referent of shadowChildrenRef",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    WeakReference<List<Element>> wr = (WeakReference<List<Element>>) refField.get(parent);",
+        "    wr.clear();",
+        "  WHEN",
+        "    // Act: call child(0), should rebuild the cache",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    // Assert: returned element is the original child and cache referent is non-null",
+        "    assertSame(childEl, result);",
+        "    WeakReference<?> newRef = (WeakReference<?>) refField.get(parent);",
+        "    assertNotNull(newRef.get());",
+        "END"
+      ]
+    }
+  ]
+}

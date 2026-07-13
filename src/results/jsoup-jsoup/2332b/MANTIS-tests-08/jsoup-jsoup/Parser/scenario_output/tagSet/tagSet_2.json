@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "HTML parser recognizes known tag regardless of input case and surrounding whitespace",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser parser = Parser.htmlParser();",
+      "expectedResult": "returns true for mixed-case and trimmed tag",
+      "tags": [
+        "positive",
+        "case-insensitive",
+        "whitespace",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 htmlParser tagSet mixed-case-and-whitespace",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    tagSet.setAccessible(true);",
+        "    String tag = \"  DiV  \";",
+        "  WHEN",
+        "    boolean result = (boolean) tagSet.invoke(parser, tag);",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "HTML parser with case-sensitive settings rejects tag with case mismatch",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Parser parser = Parser.htmlParser().settings(new ParseSettings(true, true));",
+      "expectedResult": "returns false since PascalCase 'Div' not matched under case-sensitive mode",
+      "tags": [
+        "negative",
+        "case-sensitive",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 htmlParser tagSet case-sensitive-fails",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().settings(new ParseSettings(true, true));",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    tagSet.setAccessible(true);",
+        "    String tag = \"Div\";",
+        "  WHEN",
+        "    boolean result = (boolean) tagSet.invoke(parser, tag);",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "XML parser accepts any tag name, known or unknown",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser parser = Parser.xmlParser();",
+      "expectedResult": "returns true for arbitrary tag under XML mode",
+      "tags": [
+        "positive",
+        "xml",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 xmlParser tagSet always-true",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", String.class);",
+        "    tagSet.setAccessible(true);",
+        "    String tag = \"randomTagName\";",
+        "  WHEN",
+        "    boolean result = (boolean) tagSet.invoke(parser, tag);",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

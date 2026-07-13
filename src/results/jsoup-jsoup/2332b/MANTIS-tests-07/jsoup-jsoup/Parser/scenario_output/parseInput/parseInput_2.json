@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11_O2_nullReturn",
+      "description": "parseInput(Reader, String) returns null when TreeBuilder.parse returns null",
+      "path": "B0→B2→B3→B4",
+      "precondition": "FakeTreeBuilder.parse(Reader, baseUri, parser) returns null",
+      "expectedResult": "result is null",
+      "tags": [
+        "negative",
+        "null-return",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11_O2_nullReturn parseInput Reader-null-return",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<p>foo</p>\");",
+        "    FakeTreeBuilder stub = new FakeTreeBuilder((Document) null) {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, \"http://base/\");",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12_O2_uncheckedIO",
+      "description": "parseInput(Reader, String) propagates UncheckedIOException when Reader.read fails",
+      "path": "B0→B2→B3(ex)→B5",
+      "precondition": "FakeTreeBuilder.parse reads from broken Reader and wraps IOException in UncheckedIOException",
+      "expectedResult": "UncheckedIOException is thrown with cause IOException",
+      "tags": [
+        "exception",
+        "unchecked-io",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12_O2_uncheckedIO parseInput Reader throws UncheckedIOException",
+        "  GIVEN",
+        "    Reader broken = new Reader() {",
+        "      @Override public int read(char[] c, int off, int len) throws IOException { throw new IOException(\"read error\"); }",
+        "      @Override public void close() throws IOException { }",
+        "    };",
+        "    FakeTreeBuilder stub = new FakeTreeBuilder(new Document(\"u\")) {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        try { in.read(new char[1], 0, 1); } catch (IOException e) { throw new UncheckedIOException(e); }",
+        "        return super.parse(in, uri, p);",
+        "      }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "  WHEN",
+        "    call parser.parseInput(broken, \"http://u\");",
+        "  THEN",
+        "    throws UncheckedIOException with cause message \"read error\";",
+        "END"
+      ]
+    }
+  ]
+}

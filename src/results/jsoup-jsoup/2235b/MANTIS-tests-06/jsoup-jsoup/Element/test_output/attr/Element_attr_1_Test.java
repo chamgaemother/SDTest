@@ -1,0 +1,54 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_attr_1_Test {
+
+    @Test
+    @DisplayName("attr(String,boolean) true overrides an existing non-boolean attribute value and marks it boolean")
+    void test_TC11() {
+        // GIVEN: an Element with a non-boolean attribute "data" set to "initial"
+        Element el = new Element("div");
+        el.attr("data", "initial"); // path B0→B2: existing normal attr
+        // WHEN: calling attr with boolean true should override and mark boolean
+        el.attr("data", true); // path B3: boolean true branch
+        // THEN: attribute "data" remains but value is empty string for boolean
+        Attributes attrs = el.attributes();
+        assertTrue(attrs.hasKey("data"), "Expected boolean attribute 'data' to be present");
+        assertEquals("", attrs.get("data"), "Expected boolean attribute 'data' to have empty value");
+    }
+
+    @Test
+    @DisplayName("attr(String,String) is chainable and returns the same Element instance")
+    void test_TC12() {
+        // GIVEN: a fresh Element
+        Element el = new Element("span"); // path B0→B1 for string attr
+        // WHEN: chain two attr calls
+        Element result = el.attr("a", "1").attr("b", "2"); // path B4: chainable return
+        // THEN: same instance returned and both attributes set
+        assertSame(el, result, "Expected attr chaining to return same Element instance");
+        Attributes attrs = el.attributes();
+        assertEquals("1", attrs.get("a"), "Expected attribute 'a' to be '1'");
+        assertEquals("2", attrs.get("b"), "Expected attribute 'b' to be '2'");
+    }
+
+    @Test
+    @DisplayName("attr(String,boolean) false removes only the boolean attribute and leaves other attributes intact")
+    void test_TC13() {
+        // GIVEN: an Element with a boolean attr and a normal attr
+        Element el = new Element("input");
+        el.attr("checked", true); // path B2: set boolean
+        el.attr("title", "T");  // other attr
+        // WHEN: calling attr with false should remove only the boolean attribute
+        el.attr("checked", false); // path B5: boolean false branch
+        // THEN: "checked" removed, "title" remains
+        Attributes attrs = el.attributes();
+        assertFalse(attrs.hasKey("checked"), "Expected boolean attribute 'checked' to be removed");
+        assertTrue(attrs.hasKey("title"), "Expected other attribute 'title' to remain");
+        assertEquals("T", attrs.get("title"), "Expected attribute 'title' to retain its value 'T'");
+    }
+}

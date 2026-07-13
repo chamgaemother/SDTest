@@ -1,0 +1,35 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "child(n) after mutating children invalidates and rebuilds cached shadowChildrenRef (nodelistChanged branch)",
+      "path": "B0→B2→B3→B4→B6→nodelistChanged→B2→B3→B4→B6",
+      "precondition": "Element with two initial Element children, then one new Element appended",
+      "expectedResult": "child(2) returns the newly appended third child after cache invalidation",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "shadowChildrenRef"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 child cache invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = parent.appendElement(\"p\");",
+        "    Element second = parent.appendElement(\"span\");",
+        "    // build initial cache",
+        "    Element result0 = parent.child(1);",
+        "  WHEN",
+        "    // mutating children triggers nodelistChanged and clears cache",
+        "    Element third = parent.appendElement(\"a\");",
+        "    // on second access, childElementsList should rebuild",
+        "    Element result1 = parent.child(2);",
+        "  THEN",
+        "    assertSame(third, result1);",
+        "END"
+      ]
+    }
+  ]
+}

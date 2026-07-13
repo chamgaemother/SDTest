@@ -1,0 +1,108 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_1_Test {
+
+    // Custom runtime exception for stubbing TreeBuilder.parse failures
+    static class CustomRuntimeException extends RuntimeException {
+        CustomRuntimeException(String msg) { super(msg); }
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) with non-null html but null baseUri throws NullPointerException")
+    public void test_TC05() {
+        // GIVEN a non-null HTML string and a null baseUri
+        String html = "<p>Test</p>";
+        String baseUri = null;
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // WHEN & THEN expect NullPointerException because baseUri is required for resolving URLs
+        assertThrows(NullPointerException.class, () -> {
+            parser.parseInput(html, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with non-null Reader but null baseUri throws NullPointerException")
+    public void test_TC06() {
+        // GIVEN a valid Reader but null baseUri
+        Reader rdr = new StringReader("<span>Hi</span>");
+        String baseUri = null;
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // WHEN & THEN expect NullPointerException because baseUri parameter must be non-null
+        assertThrows(NullPointerException.class, () -> {
+            parser.parseInput(rdr, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) propagates RuntimeException from a custom TreeBuilder.parse")
+    public void test_TC07() {
+        // GIVEN a stub TreeBuilder that always throws a CustomRuntimeException on parse(...)
+        TreeBuilder failing = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseErrorList.noErrors()); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) {
+                // stub always fails
+                throw new CustomRuntimeException("fail");
+            }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public boolean isContentForTagData(String name) { return false; }
+            @Override public String defaultNamespace() { return Parser.NamespaceHtml; }
+            @Override public void process(Token token) { }
+        };
+        Parser parser = new Parser(failing);
+        String html = "<div/>";
+        String baseUri = "http://test";
+        // WHEN & THEN expect our stub exception to propagate unchanged
+        CustomRuntimeException ex = assertThrows(CustomRuntimeException.class, () -> {
+            parser.parseInput(html, baseUri);
+        });
+        assertEquals("fail", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) propagates RuntimeException from a custom TreeBuilder.parse")
+    public void test_TC08() {
+        // GIVEN a stub TreeBuilder that always throws a CustomRuntimeException on parse(...)
+        TreeBuilder failing = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseErrorList.noErrors()); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) {
+                // stub always fails with a different message
+                throw new CustomRuntimeException("fail-reader");
+            }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public boolean isContentForTagData(String name) { return false; }
+            @Override public String defaultNamespace() { return Parser.NamespaceHtml; }
+            @Override public void process(Token token) { }
+        };
+        Parser parser = new Parser(failing);
+        Reader rdr = new StringReader("<img/>"); // Fixed unclosed string literal
+        String baseUri = "base";
+        // WHEN & THEN expect our stub exception to propagate unchanged
+        CustomRuntimeException ex = assertThrows(CustomRuntimeException.class, () -> {
+            parser.parseInput(rdr, baseUri);
+        });
+        assertEquals("fail-reader", ex.getMessage());
+    }
+}

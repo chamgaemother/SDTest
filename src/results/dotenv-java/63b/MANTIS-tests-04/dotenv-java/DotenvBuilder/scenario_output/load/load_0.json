@@ -1,0 +1,167 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with no env entries and systemProperties disabled exercises empty list loop (loop-0, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Ensure directoryPath contains a valid .env file that parses to an empty List<DotenvEntry>; using real DotenvParser and DotenvReader",
+      "expectedResult": "returns Dotenv instance whose entries() is empty and no System properties set",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load empty-env no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(validEmptyEnvDir);",
+        "  WHEN",
+        "    Dotenv d = b.load();",
+        "  THEN",
+        "    assert d.entries().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with one env entry and systemProperties disabled exercises single-element loop (loop-1, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Directory contains .env with one valid KEY=VALUE line",
+      "expectedResult": "returns Dotenv where entries() contains exactly one entry {KEY=VALUE} and no System property for KEY",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load single-entry no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(singleEntryEnvDir);",
+        "  WHEN",
+        "    Dotenv d = b.load();",
+        "  THEN",
+        "    assert d.entries().size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with multiple env entries and systemProperties disabled exercises multi-element loop (loop-N, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Directory contains .env with multiple valid KEYn=VALUEn lines",
+      "expectedResult": "returns Dotenv where entries() contains all file entries and no System properties set",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load multiple-entries no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(multiEntryEnvDir);",
+        "  WHEN",
+        "    Dotenv d = b.load();",
+        "  THEN",
+        "    assert d.entries().size() == expectedCount;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with no env entries and systemProperties enabled skips loop (loop-0, branch-false)",
+      "path": "B0→B2",
+      "precondition": "Ensure directoryPath contains a valid .env file that parses to an empty list; call systemProperties()",
+      "expectedResult": "returns Dotenv instance whose entries() is empty and no new System property set",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load empty-env with-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(validEmptyEnvDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv d = b.load();",
+        "  THEN",
+        "    assert d.entries().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() with multiple env entries and systemProperties enabled skips loop but uses system env override (branch-false, loop skipped)",
+      "path": "B0→B2",
+      "precondition": "Directory contains .env with multiple KEY=VALUE; set one matching KEY in System.getenv; call systemProperties()",
+      "expectedResult": "returns Dotenv where get(KEY) returns System.getenv KEY and entries() unmodified from file+system",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "systemProperties"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load multiple-entries with-system-properties",
+        "  GIVEN",
+        "    set env KEYx to SYSVAL; DotenvBuilder b = Dotenv.configure().directory(multiEntryEnvDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv d = b.load();",
+        "  THEN",
+        "    assert d.get(\"KEYx\").equals(System.getenv(\"KEYx\"));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load() with missing .env and default throwIfMissing=true throws DotenvException (exception)",
+      "path": "B0",
+      "precondition": "DirectoryPath points to non-existent directory; default throwIfMissing",
+      "expectedResult": "throws DotenvException; no System properties modified",
+      "tags": [
+        "exception",
+        "throwIfMissing",
+        "missing-file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 load missing-file throws",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(nonExistentDir);",
+        "  WHEN",
+        "    call b.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() with malformed .env and default throwIfMalformed=true throws DotenvException (exception)",
+      "path": "B0",
+      "precondition": "Directory contains .env with invalid format (no '='), default throwIfMalformed",
+      "expectedResult": "throws DotenvException; no System properties modified",
+      "tags": [
+        "exception",
+        "throwIfMalformed",
+        "malformed-file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 load malformed-file throws",
+        "  GIVEN",
+        "    DotenvBuilder b = Dotenv.configure().directory(malformedEnvDir);",
+        "  WHEN",
+        "    call b.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    }
+  ]
+}

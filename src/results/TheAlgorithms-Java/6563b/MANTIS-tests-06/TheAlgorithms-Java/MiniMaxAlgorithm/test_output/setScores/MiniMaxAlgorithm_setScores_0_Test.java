@@ -1,0 +1,70 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class MiniMaxAlgorithm_setScores_0_Test {
+
+    @Test
+    @DisplayName("TC01: setScores updates scores and height when given a valid power-of-two array of length 8 (branch: valid length)")
+    void test_TC01() {
+        // GIVEN a MiniMaxAlgorithm instance with default scores length 8
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = {1, 2, 3, 4, 5, 6, 7, 8};
+        // WHEN setting a valid power-of-two length array (8 % 1 == 0 yields branch B0->B1)
+        alg.setScores(newScores);
+        // THEN scores are updated and height computed as log2(8) = 3
+        assertArrayEquals(newScores, alg.getScores(),
+            "Scores should be updated to the provided array");
+        assertEquals(3, alg.getHeight(),
+            "Height should be log2 of length 8, which is 3");
+    }
+
+    @Test
+    @DisplayName("TC02: setScores updates scores and height when given the minimum valid array of length 1 (branch: valid length boundary)")
+    void test_TC02() {
+        // GIVEN a MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = {42};
+        // WHEN setting the smallest valid power-of-two array (1 % 1 == 0 triggers B1)
+        alg.setScores(newScores);
+        // THEN scores updated and height is log2(1) = 0
+        assertArrayEquals(newScores, alg.getScores(),
+            "Scores should be updated to the single-element array");
+        assertEquals(0, alg.getHeight(),
+            "Height should be log2 of length 1, which is 0");
+    }
+
+    @Test
+    @DisplayName("TC03: setScores rejects non–power-of-two length array and prints error (branch: invalid length)")
+    void test_TC03() {
+        // GIVEN a MiniMaxAlgorithm instance and a non-power-of-two array length 5 (5 % 1 == 0 yields remainder 0 but intended to simulate invalid check bug)
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] originalScores = alg.getScores().clone();
+        int originalHeight = alg.getHeight();
+        int[] newScores = {1, 2, 3, 4, 5};
+        // Capture System.out
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+        try {
+            // WHEN setting invalid length array (to drive B0->B2)
+            alg.setScores(newScores);
+        } finally {
+            // Restore original System.out
+            System.setOut(originalOut);
+        }
+        // THEN scores and height remain unchanged, and error message is printed
+        assertArrayEquals(originalScores, alg.getScores(),
+            "Scores should remain unchanged when provided array length is not a power of two");
+        assertEquals(originalHeight, alg.getHeight(),
+            "Height should remain unchanged for invalid input");
+        assertEquals("The number of scores must be a power of 2." + System.lineSeparator(),
+            outContent.toString(),
+            "Should print the power-of-two requirement message");
+    }
+}

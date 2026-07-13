@@ -1,0 +1,87 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.Reader;
+import java.io.StringReader;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_2_Test {
+
+    @Test
+    @DisplayName("TC08: parseInput(Reader, String) using real HtmlTreeBuilder returns a Document with expected <div> element")
+    void test_TC08() {
+        // GIVEN a real HTML parser and input containing a single <div>Hi</div>
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("<div>Hi</div>");
+        String baseUri = "http://example.com/";
+        // WHEN parsing through Reader overload (covers B0→B3→B4→B5 path in parseInput)
+        Document doc = parser.parseInput(reader, baseUri);
+        // THEN the document should contain exactly one <div> element with text "Hi"
+        Elements divs = doc.select("div");
+        // verify branch B4 (delegation to treeBuilder.parse) succeeded
+        assertAll(
+            () -> assertEquals(1, divs.size(), "Expected exactly one <div> element"),
+            () -> assertEquals("Hi", divs.get(0).text(), "Expected <div> text to be 'Hi'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: parseInput(String, String) using real XmlTreeBuilder via xmlParser() preserves tag case")
+    void test_TC09() {
+        // GIVEN an XML parser and a simple XML string with mixed-case tag <Item>Value</Item>
+        Parser parser = Parser.xmlParser();
+        String xml = "<Item>Value</Item>";
+        String baseUri = "";
+        // WHEN parsing through String overload (covers B0→B1→B2→B4→B5 path)
+        Document doc = parser.parseInput(xml, baseUri);
+        // THEN the root element (first child) should have tagName "Item" (case preserved) and text "Value"
+        // inline comment: xmlParser uses XmlTreeBuilder which does not lowercase tag names
+        Element root = doc.child(0);
+        assertAll(
+            () -> assertEquals("Item", root.tagName(), "Expected tag name preserved as 'Item'"),
+            () -> assertEquals("Value", root.text(), "Expected element text to be 'Value'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: parseInput(Reader, String) propagates runtime exception from custom TreeBuilder.parse")
+    void test_TC10() {
+        // GIVEN a stub TreeBuilder whose parse(Reader,String,Parser) throws IllegalStateException("fail")
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String uri, Parser p) {
+                // simulate failure in branch B6
+                throw new IllegalStateException("fail");
+            }
+            @Override
+            public Document parse(FragmentReader in, String uri) { return null; }
+            @Override
+            protected void initialiseParse(Reader in, String uri, Parser p) { }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public boolean process(Token t) { return false; }
+            @Override
+            public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }
+            @Override
+            public void completeParseFragment() { /* implementation */ } // Implemented required method
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<p/>");  // Fixed unclosed string literal
+        String baseUri = "http://x/";
+        // WHEN invoking parseInput, the stub's parse should throw IllegalStateException
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(reader, baseUri),
+            "Expected IllegalStateException to propagate from stub TreeBuilder"
+        );
+        // THEN confirm the exception message is as thrown by stub
+        assertEquals("fail", ex.getMessage(), "Expected exception message 'fail'");
+    }
+}

@@ -1,0 +1,143 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String overload, non-null fragment and non-null context returns parsed nodes",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(...) returns List.of(nodeA); using fakeTreeBuilder to isolate parsing",
+      "expectedResult": "return list exactly [nodeA]",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-context-nonnull",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput String overload with context",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); String fragment = \"<p>test</p>\"; Element ctx = new Element(\"div\"); String base = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, ctx, base);",
+        "  THEN",
+        "    assert result.equals(List.of(nodeA));"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String overload with null fragment throws NullPointerException at StringReader constructor",
+      "path": "B0→B1→Exception",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "branch-fragment-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput String overload null-fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String fragment = null; Element ctx = new Element(\"div\"); String base = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, ctx, base);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "String overload with empty fragment and null context returns empty list",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(...) returns emptyList();",
+      "expectedResult": "return empty list",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-fragment-empty",
+        "branch-context-null"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseFragmentInput String overload empty-fragment",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); String fragment = \"\"; Element ctx = null; String base = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, ctx, base);",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "Reader overload, non-null context returns parsed nodes",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(...) returns List.of(nodeB); using fakeTreeBuilder to isolate parsing",
+      "expectedResult": "return list exactly [nodeB]",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-context-nonnull",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseFragmentInput Reader overload with context",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"<span>ok</span>\"); Element ctx = new Element(\"span\"); String base = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, ctx, base);",
+        "  THEN",
+        "    assert result.equals(List.of(nodeB));"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "Reader overload with null context returns parsed nodes",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(...) returns List.of(nodeC); using fakeTreeBuilder to isolate parsing",
+      "expectedResult": "return list exactly [nodeC]",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-context-null",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseFragmentInput Reader overload null context",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"<br>\"); Element ctx = null; String base = \"base\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, ctx, base);",
+        "  THEN",
+        "    assert result.equals(List.of(nodeC));"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "Reader overload when Reader throws IOException wraps into UncheckedIOException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Reader throwingReader = stub Reader that throws IOException on read;",
+      "expectedResult": "throws UncheckedIOException",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "branch-reader-ioerror"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseFragmentInput Reader overload io-exception",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = throwingReader; Element ctx = new Element(\"p\"); String base = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, ctx, base);",
+        "  THEN",
+        "    throws java.io.UncheckedIOException;"
+      ]
+    }
+  ]
+}

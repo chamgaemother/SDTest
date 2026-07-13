@@ -1,0 +1,54 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class Tag_valueOf_Test {
+
+    @Test
+    @DisplayName("valueOf(null, namespace, settings) throws NullPointerException on null tagName")
+    void test_TC03() {
+        // null tagName triggers Validate.notNull -> NullPointerException (B0→B1)
+        String tagName = null;
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        assertThrows(NullPointerException.class, () -> Tag.valueOf(tagName, namespace, settings));
+    }
+
+    @Test
+    @DisplayName("valueOf(\"  \", namespace, settings) throws IllegalArgumentException on empty tagName after trim")
+    void test_TC04() {
+        // blank tagName trimmed to empty triggers Validate.notEmpty -> IllegalArgumentException (B0→B1→B2→B3)
+        String tagName = "  ";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        assertThrows(IllegalArgumentException.class, () -> Tag.valueOf(tagName, namespace, settings));
+    }
+
+    @Test
+    @DisplayName("Unknown custom tag returns non-submittable Tag instance with formSubmit false")
+    void test_TC05() {
+        // custom unknown tag not in static map goes creation path -> formSubmit default false (B0→B1→B2→B4→B7)
+        String tagName = "customTag";
+        String namespace = "http://example.com/ns";
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(tagName, namespace, settings);
+        // New unknown tags should not be form-submittable by default
+        assertFalse(tag.isFormSubmittable());
+    }
+
+    @Test
+    @DisplayName("Known form-submittable tag with preserved case triggers clone path and returns true")
+    void test_TC06() {
+        // existing 'input' tag in static map with formSubmit true, preserveCase and uppercase input triggers clone branch (B0→B1→B2→B5→B6→B7)
+        String tagName = "INPUT";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(tagName, namespace, settings);
+        // After clone and tagName update, formSubmit flag should be carried over (true)
+        assertTrue(tag.isFormSubmittable());
+        // Also ensure the clone has the preserved uppercase name
+        assertEquals("INPUT", tag.getName());
+    }
+}

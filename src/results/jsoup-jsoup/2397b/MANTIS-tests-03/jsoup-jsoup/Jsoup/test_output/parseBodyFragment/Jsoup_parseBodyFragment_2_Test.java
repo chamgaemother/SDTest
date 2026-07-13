@@ -1,0 +1,45 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class Jsoup_parseBodyFragment_2_Test {
+
+    @Test
+    @DisplayName("TC07: parseBodyFragment one-arg overload with empty bodyHtml returns empty body without error")
+    public void test_TC07() {
+        // Branch path B0→B3→B5: one-arg overload chosen, empty input triggers no content in body
+        String bodyHtml = "";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml);
+        // Expect empty body html
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC08: parseBodyFragment two-arg overload with empty baseUri preserves relative href attribute")
+    public void test_TC08() {
+        // Branch path B0→B2→B5: two-arg overload chosen, baseUri is empty, so relative links should remain unchanged
+        String bodyHtml = "<a href=\"/a\">link</a>";
+        String baseUri = "";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        Element a = doc.selectFirst("a");
+        // Expect the original href '/a' to be preserved when baseUri is empty
+        assertEquals("/a", a.attr("href"));
+    }
+
+    @Test
+    @DisplayName("TC09: parseBodyFragment two-arg overload resolves relative href to absolute URL when baseUri provided")
+    public void test_TC09() {
+        // Branch path B0→B2→B5: two-arg overload chosen, baseUri non-empty triggers URL resolution logic
+        String bodyHtml = "<a href=\"/a\">x</a>";
+        String baseUri = "https://ex.com";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        Element a = doc.selectFirst("a");
+        // Expect absUrl to resolve '/a' against baseUri 'https://ex.com'
+        assertEquals("https://ex.com/a", a.absUrl("href"));
+    }
+}

@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Parser.xmlParser.parseInput correctly parses XML with case-sensitive tags",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document contains a <root> element with a <child> child node and preserves case",
+      "tags": [
+        "positive",
+        "xml",
+        "case-sensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 xmlParser preserves tag case",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<root><Child/></root>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assertEquals(1, doc.getElementsByTag(\"Child\").size());",
+        "    assertNull(doc.getElementsByTag(\"child\").first());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Parser.htmlParser.parseInput with null baseUri yields empty baseUri without exception",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document.baseUri() is empty string and no exception thrown",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "html"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 htmlParser handles null baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>test</p>\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, null);",
+        "  THEN",
+        "    assertEquals(\"\", doc.baseUri());",
+        "    assertEquals(1, doc.select(\"p\").size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput on a cloned Parser instance uses deep-copied TreeBuilder and preserves trackPosition flag",
+      "path": "B0→B1→B2",
+      "precondition": "Parser created with trackPosition=true",
+      "expectedResult": "Cloned parser parses like original and retains trackPosition=true",
+      "tags": [
+        "positive",
+        "clone",
+        "trackPosition"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseInput on cloned parser",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser().setTrackPosition(true);",
+        "    Parser clone = original.newInstance();",
+        "    String html = \"<div id=xyz></div>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = clone.parseInput(html, baseUri);",
+        "  THEN",
+        "    assertTrue(clone.isTrackPosition());",
+        "    assertEquals(1, doc.select(\"div#xyz\").size());",
+        "END"
+      ]
+    }
+  ]
+}

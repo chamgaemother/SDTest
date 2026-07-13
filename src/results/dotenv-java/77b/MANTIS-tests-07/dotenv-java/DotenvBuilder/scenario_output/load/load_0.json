@@ -1,0 +1,127 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() returns DotenvImpl when systemProperties is false and no entries are returned (branch-false, loop-0)",
+      "path": "B0→B2",
+      "precondition": "Mock DotenvParser.parse() to return an empty list; mocking necessary because parser is constructed internally",
+      "expectedResult": "returned Dotenv instance is DotenvImpl; entries() returns only system environment variables; no new system properties are set",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "normal-return"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load without systemProperties and empty entries",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(new DotenvBuilder());",
+        "    doReturn(new DotenvParserStub(Collections.emptyList())).when(builder).createParser();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result instanceof DotenvBuilder.DotenvImpl;",
+        "    assert result.entries().containsAll(System.getenv().entrySet().stream().map(e->new DotenvEntry(e.getKey(),e.getValue())).collect(toSet()));"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() sets system properties when systemProperties is true but no entries (branch-true, loop-0)",
+      "path": "B0→B1→B2",
+      "precondition": "Mock DotenvParser.parse() to return an empty list; builder.systemProperties() enabled",
+      "expectedResult": "returned Dotenv instance is DotenvImpl; entries() still contains only system environment variables; no extra system properties set beyond existing",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load with systemProperties and empty entries",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(new DotenvBuilder()).systemProperties();",
+        "    doReturn(new DotenvParserStub(Collections.emptyList())).when(builder).createParser();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result instanceof DotenvBuilder.DotenvImpl;",
+        "    assert result.entries().stream().allMatch(e->System.getProperty(e.getKey()).equals(e.getValue()));"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() sets one system property when systemProperties is true and parser returns one entry (branch-true, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "Mock DotenvParser.parse() to return a single-entry list; builder.systemProperties() enabled",
+      "expectedResult": "System.getProperty(\"KEY1\") equals \"VALUE1\"; returned DotenvImpl.entries() contains that entry plus system env",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load with systemProperties and single entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(new DotenvBuilder()).systemProperties();",
+        "    doReturn(new DotenvParserStub(List.of(new DotenvEntry(\"KEY1\",\"VALUE1\")))).when(builder).createParser();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"KEY1\").equals(\"VALUE1\");",
+        "    assert result.entries().contains(new DotenvEntry(\"KEY1\",\"VALUE1\"));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() sets multiple system properties when systemProperties is true and parser returns multiple entries (branch-true, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "Mock DotenvParser.parse() to return multiple entries; builder.systemProperties() enabled",
+      "expectedResult": "All keys \"A\",\"B\",\"C\" have System.getProperty equal to \"1\",\"2\",\"3\" respectively; result.entries() contains all entries",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load with systemProperties and multiple entries",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(new DotenvBuilder()).systemProperties();",
+        "    List<DotenvEntry> list = List.of(new DotenvEntry(\"A\",\"1\"), new DotenvEntry(\"B\",\"2\"), new DotenvEntry(\"C\",\"3\"));",
+        "    doReturn(new DotenvParserStub(list)).when(builder).createParser();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert Stream.of(\"A\",\"B\",\"C\").allMatch(k->System.getProperty(k).equals(result.get(k)));"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() propagates DotenvException when parser.parse() throws (exception)",
+      "path": "B0",
+      "precondition": "Mock DotenvParser.parse() to throw new DotenvException(\"fail\"); mocking needed to simulate parse failure",
+      "expectedResult": "throws DotenvException with message \"fail\"; no system properties set",
+      "tags": [
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load throws DotenvException on parse failure",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(new DotenvBuilder());",
+        "    doReturn(new DotenvParserThrowStub(new DotenvException(\"fail\"))).when(builder).createParser();",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException with message \"fail\";"
+      ]
+    }
+  ]
+}

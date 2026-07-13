@@ -1,0 +1,49 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DataFrame;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.format.DateTimeParseException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class DateSchemaColumn_parseAndAddToColumn_2_Test {
+
+    /**
+     * Stub implementation of DfColumn that only provides addObject and copyTo,
+     * since parseAndAddToColumn will invoke addObject after parsing.
+     */
+    private static class StubDfColumn implements DfColumn {
+        public StubDfColumn() {
+            super();
+        }
+
+        @Override
+        public void addObject(Object o) {
+            // no-op for test
+        }
+
+        @Override
+        public void copyTo(DataFrame df) {
+            // no-op for test
+        }
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for malformed date under custom strict two-digit pattern")
+    public void test_TC08() {
+        // Arrange: create DateSchemaColumn with strict two-digit pattern "MM/dd/uuuu"
+        DateSchemaColumn col = new DateSchemaColumn(null, "date", "MM/dd/uuuu");
+        // Use a stub column; addObject won't be reached if parsing fails
+        DfColumn stubDfColumn = new StubDfColumn();
+        // Input "1/2/2020" lacks leading zeros, so strict pattern parsing should fail (path B0→B3→B4→B6)
+        String malformedDate = "1/2/2020";
+
+        // Act & Assert: expect DateTimeParseException due to strict pattern mismatch
+        assertThrows(DateTimeParseException.class,
+            () -> col.parseAndAddToColumn(malformedDate, stubDfColumn),
+            "Expected parseAndAddToColumn to throw DateTimeParseException for malformed date");
+    }
+}

@@ -1,0 +1,105 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+// A simple error handler that records if any errors occurred
+class RecordingErrorHandler implements CssErrorHandler {
+  boolean errorCalled = false;
+  @Override public void error(CssExceptions.CssException exception) {
+    errorCalled = true;
+  }
+}
+
+// A simple content handler that records callbacks
+class RecordingContentHandler implements CssContentHandler {
+  int selectorsCount = 0;
+  int declarationCount = 0;
+  int startAtRuleCount = 0;
+  int endAtRuleCount = 0;
+  boolean endDocumentCalled = false;
+
+  @Override public void startDocument() {}
+  @Override public void endDocument() { endDocumentCalled = true; }
+
+  @Override public void selectors(List<CssSelector> selectors) { selectorsCount += selectors.size(); }
+  @Override public void endSelectors(List<CssSelector> selectors) {}
+
+  @Override public void declaration(CssDeclaration decl) { declarationCount++; }
+
+  @Override public void startAtRule(CssAtRule atRule) { startAtRuleCount++; }
+  @Override public void endAtRule(String name) { endAtRuleCount++; }
+}
+
+public class CssParser_parse_Test {
+
+  @Test
+  @DisplayName("TC08 parse simple rule-set invokes selectors(), declaration() and endDocument normal-return branch")
+  void test_TC08() throws IOException, CssException {
+    // Input has one ruleset: h1 selector and one declaration
+    Reader reader = new StringReader("h1 { color: red; }");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // Execute parse, entering B0->B1 (hasNext true)->B2 type!=ATKEYWORD->handleRuleSet->loop->end
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    parser.parse(reader, "id", err, doc);
+    assertFalse(err.errorCalled, "No parse errors expected");
+    assertEquals(1, doc.selectorsCount, "One selector group should be reported");
+    assertEquals(1, doc.declarationCount, "One declaration should be reported");
+    assertTrue(doc.endDocumentCalled, "Document end should be signaled");
+  }
+
+  @Test
+  @DisplayName("TC09 parse at-rule without block ('@charset') exercises MATCH_SEMI_OPENBRACE with hasBlock=false")
+  void test_TC09() throws IOException, CssException {
+    // Input is an at-rule without a block: triggers startAtRule and endAtRule once
+    Reader reader = new StringReader("@charset 'utf-8';");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    parser.parse(reader, "id", err, doc);
+    assertFalse(err.errorCalled, "No parse errors expected");
+    assertEquals(1, doc.startAtRuleCount, "One at-rule start should be signaled");
+    assertEquals(1, doc.endAtRuleCount, "One at-rule end should be signaled");
+    assertTrue(doc.endDocumentCalled, "Document end should be signaled");
+  }
+
+  @Test
+  @DisplayName("TC10 parse at-rule with nested rule-set ('@media') exercises hasRuleSet true and recursive handleRuleSet")
+  void test_TC10() throws IOException, CssException {
+    // Nested @media rule containing one inner ruleset h2 with one declaration
+    Reader reader = new StringReader("@media screen { h2 { margin:0; } }");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    parser.parse(reader, "id", err, doc);
+    assertFalse(err.errorCalled, "No parse errors expected");
+    assertEquals(1, doc.startAtRuleCount, "One at-rule start should be signaled");
+    assertEquals(1, doc.selectorsCount, "Inner ruleset 'h2' selector should be counted");
+    assertEquals(1, doc.declarationCount, "One inner declaration should be counted");
+    assertEquals(1, doc.endAtRuleCount, "One at-rule end should be signaled");
+    assertTrue(doc.endDocumentCalled, "Document end should be signaled");
+  }
+
+  @Test
+  @DisplayName("TC11 PrematureEOFException thrown in handleRuleSet breaks loop and still calls endDocument")
+  void test_TC11() throws IOException, CssException {
+    // Provide unterminated ruleset to simulate early EOF in handleRuleSet
+    Reader reader = new StringReader("div { color: blue;");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    // The missing '}' should cause a premature EOF during rule-set handling
+    parser.parse(reader, "id", err, doc);
+    // Even on error, endDocument must be invoked
+    assertTrue(doc.endDocumentCalled, "Document end should be signaled even on premature EOF");
+  }
+}

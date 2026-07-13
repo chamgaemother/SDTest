@@ -1,0 +1,127 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("TC01: charset(html, meta[charset] absent) creates new <meta charset> element")
+    public void test_TC01() {
+        // GIVEN a fresh HTML document shell with no meta[charset]
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true); // enable auto‐insertion/update
+        // WHEN setting charset to UTF-8 triggers ensureMetaCharsetElement(html branch, no existing meta[charset])
+        doc.charset(Charset.forName("UTF-8"));
+        // THEN a new <meta charset> is created with the specified charset
+        String cs = doc.selectFirst("meta[charset]").attr("charset");
+        assertEquals(Charset.forName("UTF-8").displayName(), cs,
+            "Expected new <meta charset> attribute to equal UTF-8");
+    }
+
+    @Test
+    @DisplayName("TC02: charset(html, meta[charset] present) updates existing <meta charset> element")
+    public void test_TC02() {
+        // GIVEN an HTML document shell with a pre-existing meta[charset]="ISO-8859-1"
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.head().appendElement("meta").attr("charset", "ISO-8859-1");
+        // WHEN setting charset to UTF-16 triggers html branch and finds existing meta[charset]
+        doc.charset(Charset.forName("UTF-16"));
+        // THEN the existing <meta charset> is updated to UTF-16
+        String updated = doc.selectFirst("meta[charset]").attr("charset");
+        assertEquals(Charset.forName("UTF-16").displayName(), updated,
+            "Expected existing <meta charset> attribute to be updated to UTF-16");
+    }
+
+    @Test
+    @DisplayName("TC03: charset(html removes obsolete <meta name=charset>) removes <meta name=charset> when present")
+    public void test_TC03() {
+        // GIVEN an HTML document shell with an obsolete meta[name=charset]
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.head().appendElement("meta").attr("name", "charset");
+        // WHEN setting charset to US-ASCII triggers removal of obsolete elements
+        doc.charset(Charset.forName("US-ASCII"));
+        // THEN no <meta name=charset> elements remain
+        List<Element> obsolete = doc.select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "Expected obsolete <meta name=charset> to be removed");
+    }
+
+    @Test
+    @DisplayName("TC04: charset(xml, first child is XmlDeclaration without version) adds declaration with version and encoding")
+    public void test_TC04() {
+        // GIVEN an XML document with an existing XmlDeclaration lacking a version attribute
+        Document doc = new Document("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        doc.prependChild(decl);
+        // WHEN setting charset to UTF-8 triggers xml branch, finds XmlDeclaration, has no version
+        doc.charset(Charset.forName("UTF-8"));
+        // THEN the declaration is updated/adds version and encoding="UTF-8"
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "First child should be XmlDeclaration");
+        XmlDeclaration xd = (XmlDeclaration) first;
+        assertAll("XmlDeclaration attributes",
+            () -> assertEquals("UTF-8", xd.attr("encoding"), "Encoding should be set to UTF-8"),
+            () -> assertEquals("1.0", xd.attr("version"), "Version should be added as 1.0")
+        );
+    }
+
+    @Test
+    @DisplayName("TC05: charset(xml, existing XmlDeclaration with version) updates only encoding")
+    public void test_TC05() {
+        // GIVEN an XML document with XmlDeclaration that already has version="1.0"
+        Document doc = new Document("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        decl.attr("version", "1.0");
+        doc.prependChild(decl);
+        // WHEN setting charset to UTF-16 triggers xml branch, finds XmlDeclaration with version
+        doc.charset(Charset.forName("UTF-16"));
+        // THEN only the encoding is updated, version remains "1.0"
+        XmlDeclaration xd = (XmlDeclaration) doc.childNodes().get(0);
+        assertAll("XmlDeclaration update",
+            () -> assertEquals("UTF-16", xd.attr("encoding"), "Encoding should be updated to UTF-16"),
+            () -> assertEquals("1.0", xd.attr("version"), "Version should remain 1.0")
+        );
+    }
+
+    @Test
+    @DisplayName("TC06: charset(xml, first child not XmlDeclaration) prepends new xml declaration")
+    public void test_TC06() {
+        // GIVEN an XML document with no XmlDeclaration child
+        Document doc = new Document("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        // WHEN setting charset to UTF-8 triggers xml branch, no XmlDeclaration found
+        doc.charset(Charset.forName("UTF-8"));
+        // THEN a new XmlDeclaration is prepended with version="1.0" and encoding="UTF-8"
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected new XmlDeclaration as first child");
+        XmlDeclaration xd = (XmlDeclaration) first;
+        assertAll("New XmlDeclaration",
+            () -> assertEquals("UTF-8", xd.attr("encoding"), "Encoding should be set to UTF-8"),
+            () -> assertEquals("1.0", xd.attr("version"), "Version should be set to 1.0")
+        );
+    }
+
+    @Test
+    @DisplayName("TC07: charset(null) throws NullPointerException when charset is null")
+    public void test_TC07() {
+        // GIVEN an HTML document shell with meta charset updates enabled
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        // WHEN calling charset(null)
+        // THEN a NullPointerException is thrown
+        assertThrows(NullPointerException.class, () -> doc.charset(null),
+            "Expected NullPointerException when charset argument is null");
+    }
+}

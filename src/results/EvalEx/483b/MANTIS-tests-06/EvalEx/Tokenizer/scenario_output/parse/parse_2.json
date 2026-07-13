@@ -1,0 +1,161 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "Valid structure separator between two identifiers when structuresAllowed=true",
+      "path": "B0→B1→B2(false)→B6→...→B1→...→B6→B1→B7→B9→B11",
+      "precondition": "configuration with structuresAllowed=true, arraysAllowed=false, implicitMultiplicationAllowed=false",
+      "expectedResult": "tokens: VARIABLE_OR_CONSTANT, STRUCTURE_SEPARATOR, VARIABLE_OR_CONSTANT",
+      "tags": [
+        "positive",
+        "structure",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse valid structure separator",
+        "  GIVEN",
+        "    String expr = \"x.y\";",
+        "    ExpressionConfiguration cfg = builder().structuresAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(1).getType() == TokenType.STRUCTURE_SEPARATOR;"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "Implicit multiplication inserted between consecutive parenthesis when allowed",
+      "path": "B0→B1→B2(true)→B4→B6→... loop → B7→B9→B11",
+      "precondition": "configuration with implicitMultiplicationAllowed=true, arraysAllowed=false, structuresAllowed=false",
+      "expectedResult": "tokens: BRACE_OPEN, NUMBER_LITERAL, BRACE_CLOSE, INFIX_OPERATOR('*'), BRACE_OPEN, NUMBER_LITERAL, BRACE_CLOSE",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parse implicit multiplication between parentheses",
+        "  GIVEN",
+        "    String expr = \"(1)(2)\";",
+        "    ExpressionConfiguration cfg = builder().implicitMultiplicationAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(3).getText().equals(\"*\");",
+        "    assert tokens.get(3).getType() == TokenType.INFIX_OPERATOR;"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Hex number literal '0xFa' recognized as NUMBER_LITERAL",
+      "path": "B0→B1→B2(false)→B6→...→B1→B7→B9→B11",
+      "precondition": "configuration default (no arrays/structures/implicitMultiplication)",
+      "expectedResult": "single NUMBER_LITERAL token with text '0xFa'",
+      "tags": [
+        "positive",
+        "hex",
+        "number-literal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse hex literal",
+        "  GIVEN",
+        "    String expr = \"0xFa\";",
+        "    ExpressionConfiguration cfg = builder().build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getText().equals(\"0xFa\");",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "Valid string literal with escaped characters parsed into STRING_LITERAL",
+      "path": "B0→B1→B2(false)→B6→...→B1→B7→B9→B11",
+      "precondition": "configuration with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "single STRING_LITERAL token with content containing an escaped \\\" and \\\\",
+      "tags": [
+        "positive",
+        "string-literal",
+        "escape"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse string literal with escapes",
+        "  GIVEN",
+        "    String expr = \"\\\"hello\\\\world\\\"\";",
+        "    ExpressionConfiguration cfg = builder().singleQuoteStringLiteralsAllowed(false).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == TokenType.STRING_LITERAL;",
+        "    assert tokens.get(0).getText().equals(\"hello\\\\world\");"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "Unclosed string literal throws ParseException 'Closing quote not found'",
+      "path": "B0→B1→call getNextToken→isAtStringLiteralStart→parseStringLiteral→exit exception",
+      "precondition": "configuration default with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "ParseException message contains 'Closing quote not found'",
+      "tags": [
+        "negative",
+        "string-literal",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 unclosed string literal",
+        "  GIVEN",
+        "    String expr = \"\\\"abc\";",
+        "    ExpressionConfiguration cfg = builder().singleQuoteStringLiteralsAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing 'Closing quote not found';"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "Unknown escape character throws ParseException in escapeCharacter",
+      "path": "B0→B1→...→parseStringLiteral→consume '\\' → escapeCharacter default → exception",
+      "precondition": "configuration with both quote types allowed",
+      "expectedResult": "ParseException message contains 'Unknown escape character'",
+      "tags": [
+        "negative",
+        "string-literal",
+        "exception",
+        "escape"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 unknown escape in string literal",
+        "  GIVEN",
+        "    String expr = \"\\\"foo\\\\x\\\"\";",
+        "    ExpressionConfiguration cfg = builder().singleQuoteStringLiteralsAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing 'Unknown escape character';"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Locale;
+import java.util.NoSuchElementException;
+
+import org.idpf.epubcheck.util.css.CssExceptions.PrematureEOFException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  // A simple ErrorHandler that counts error calls
+  static class RecordingErrorHandler implements CssErrorHandler {
+    int errorCount = 0;
+    @Override
+    public void error(CssExceptions.CssException e) {
+      errorCount++;
+    }
+  }
+
+  // A simple ContentHandler that records invocation counts and arguments
+  static class RecordingContentHandler implements CssContentHandler {
+    int startDocumentCount = 0;
+    int endDocumentCount = 0;
+    int startAtRuleCount = 0;
+    int endAtRuleCount = 0;
+    String lastAtRuleName = null;
+    int selectorsCount = 0;
+    int endSelectorsCount = 0;
+
+    @Override public void startDocument() { startDocumentCount++; }
+    @Override public void endDocument() { endDocumentCount++; }
+    @Override public void startAtRule(org.idpf.epubcheck.util.css.CssGrammar.CssAtRule rule) {
+      startAtRuleCount++;
+      lastAtRuleName = rule.getName().or(null);
+    }
+    @Override public void endAtRule(String name) {
+      endAtRuleCount++;
+    }
+    @Override public void selectors(java.util.List<org.idpf.epubcheck.util.css.CssGrammar.CssSelector> selectors) {
+      selectorsCount += selectors.size();
+    }
+    @Override public void endSelectors(java.util.List<org.idpf.epubcheck.util.css.CssGrammar.CssSelector> selectors) {
+      endSelectorsCount++;
+    }
+    // Unused for these tests:
+    @Override public void declaration(org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration decl) {}
+  }
+
+  @Test
+  @DisplayName("Empty input yields no iterations so startDocument and endDocument are called without rule handling (iter.hasNext false)")
+  public void test_TC01() throws IOException, org.idpf.epubcheck.util.css.CssExceptions.CssException {
+    // GIVEN empty CSS => scan yields iterator.hasNext() == false
+    Reader reader = new StringReader("");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // WHEN parse is invoked
+    new CssParser().parse(reader, "empty.css", err, doc);
+    // THEN only startDocument and endDocument called once, no rules processed
+    assertEquals(1, doc.startDocumentCount, "startDocument must be called once");
+    assertEquals(1, doc.endDocumentCount, "endDocument must be called once");
+    assertEquals(0, doc.startAtRuleCount, "no at-rules should be started");
+    assertEquals(0, doc.selectorsCount, "no selectors should be processed");
+    assertEquals(0, err.errorCount, "no errors should be reported");
+  }
+
+  @Test
+  @DisplayName("Single at-rule token causes one handleAtRule invocation and then terminates the loop (token.type==ATKEYWORD)")
+  public void test_TC02() throws IOException, org.idpf.epubcheck.util.css.CssException {
+    // GIVEN CSS with one at-rule => "@media {};"
+    Reader reader = new StringReader("@media {};");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // WHEN parse is invoked
+    new CssParser().parse(reader, "media.css", err, doc);
+    // THEN startAtRule and endAtRule should be called, capturing "media"
+    assertEquals(1, doc.startDocumentCount, "startDocument once");
+    assertEquals(1, doc.endDocumentCount, "endDocument once");
+    assertEquals(1, doc.startAtRuleCount, "one at-rule should start");
+    assertEquals(1, doc.endAtRuleCount, "one at-rule should end");
+    assertEquals("media", doc.lastAtRuleName, "at-rule name must be 'media'");
+    assertEquals(0, doc.selectorsCount, "no selectors in at-rule block");
+  }
+
+  @Test
+  @DisplayName("Single rule-set token triggers handleRuleSet once and then terminates (token.type!=ATKEYWORD)")
+  public void test_TC03() throws IOException, org.idpf.epubcheck.util.css.CssException {
+    // GIVEN CSS with one ruleset => "h1{};"
+    Reader reader = new StringReader("h1{};");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // WHEN parse is invoked
+    new CssParser().parse(reader, "rule.css", err, doc);
+    // THEN selectors for "h1" should be recorded once and endSelectors called
+    assertEquals(1, doc.startDocumentCount, "startDocument once");
+    assertEquals(1, doc.endDocumentCount, "endDocument once");
+    // selectorsCount counts total selectors passed; here h1 is single selector
+    assertEquals(1, doc.selectorsCount, "one selector 'h1' should be recorded");
+    assertEquals(1, doc.endSelectorsCount, "endSelectors once");
+    assertEquals(0, doc.startAtRuleCount, "no at-rule should start");
+  }
+
+  @Test
+  @DisplayName("PrematureEOFException in handleRuleSet breaks the loop and calls endDocument (iter.next throws PrematureEOFException)")
+  public void test_TC04() throws IOException, org.idpf.epubcheck.util.css.CssException {
+    // GIVEN a parser stub whose scan() yields iterator that hasNext true then next() throws PrematureEOFException
+    CssParser parser = new CssParser(Locale.ENGLISH) {
+      @Override
+      private CssTokenIterator scan(Reader reader, String systemID, CssErrorHandler err)
+          throws IOException, org.idpf.epubcheck.util.css.CssException {
+        return new CssTokenIterator(null, null) {
+          boolean first = true;
+          @Override public boolean hasNext() { return first; }
+          @Override public boolean hasNext(java.util.function.Predicate<CssToken> f) { return first; }
+          @Override public CssToken next() {
+            first = false;
+            throw new PrematureEOFException();
+          }
+        };
+      }
+    };
+    Reader reader = new StringReader("any");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // WHEN parse is invoked, exception from next() should be caught internally
+    parser.parse(reader, "premature.css", err, doc);
+    // THEN startDocument and endDocument called once, no further processing
+    assertEquals(1, doc.startDocumentCount, "startDocument once");
+    assertEquals(1, doc.endDocumentCount, "endDocument once");
+    assertEquals(0, doc.startAtRuleCount, "no at-rule should start");
+    assertEquals(0, doc.selectorsCount, "no selectors processed");
+  }
+}

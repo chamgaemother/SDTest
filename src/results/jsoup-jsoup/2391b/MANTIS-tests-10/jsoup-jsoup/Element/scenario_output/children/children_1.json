@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "children() with attributes.userData having jsoup.childElsKey but missing jsoup.childElsMod forces fresh list creation",
+      "path": "B0→B3→B4→B7→B8",
+      "precondition": "parent has one Element child, attributes() called to ensure attributes non-null, userData contains only jsoup.childElsKey ref",
+      "expectedResult": "returns Elements list containing the actual child element, stashChildren invoked",
+      "tags": [
+        "positive",
+        "cache-miss",
+        "userData",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 children cache-key-without-modcount",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"span\"));",
+        "    // ensure attributes exist and inject only childElsKey",
+        "    Map<String,Object> ud = parent.attributes().userData();",
+        "    ud.put(\"jsoup.childElsKey\", new WeakReference<>(List.of(new Element(\"fake\"))));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "children() with attributes.userData having stale WeakReference triggers fresh filterNodes path",
+      "path": "B0→B3→B4→B7→B8",
+      "precondition": "parent has two Element children, userData contains jsoup.childElsKey with WeakReference.get() returning null, jsoup.childElsMod matching old modCount",
+      "expectedResult": "returns fresh Elements list of two children, ignoring stale cache",
+      "tags": [
+        "positive",
+        "cache-stale",
+        "userData",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 children stale-cache-ref",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"a\"));",
+        "    parent.appendChild(new Element(\"b\"));",
+        "    // inject stale reference",
+        "    WeakReference<List<Element>> staleRef = new WeakReference<>(null);",
+        "    Map<String,Object> ud = parent.attributes().userData();",
+        "    ud.put(\"jsoup.childElsKey\", staleRef);",
+        "    ud.put(\"jsoup.childElsMod\", parent.childNodeSize());",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).tagName().equals(\"a\");",
+        "    assert result.get(1).tagName().equals(\"b\");",
+        "END"
+      ]
+    }
+  ]
+}

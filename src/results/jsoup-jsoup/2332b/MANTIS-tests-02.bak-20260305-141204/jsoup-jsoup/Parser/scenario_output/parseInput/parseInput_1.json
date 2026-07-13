@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(String, String) with real HtmlTreeBuilder produces a Document with expected element",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().select(\"div\").first() is not null and has tagName \"div\"",
+      "tags": [
+        "positive",
+        "integration",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 real-html-parseInput-string",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<div id=\\\"test\\\">Hello</div>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"div#test\").size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) with real XmlTreeBuilder parses XML root element",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.child(0).nodeName() equals \"root\"",
+      "tags": [
+        "positive",
+        "integration",
+        "reader-overload",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 real-xml-parseInput-reader",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader rdr = new StringReader(\"<root><child/></root>\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(rdr, baseUri);",
+        "  THEN",
+        "    assert \"root\".equals(doc.child(0).nodeName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) propagates RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B3→exception",
+      "precondition": "stub TreeBuilder throws IllegalStateException in parse",
+      "expectedResult": "IllegalStateException with message \"parse failed\" is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 stub-runtime-exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"parse failed\"); }",
+        "      // other TreeBuilder methods no-op or return defaults",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<x/>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"parse failed\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) with null baseUri throws NullPointerException",
+      "path": "B0→B1→B3→exception",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

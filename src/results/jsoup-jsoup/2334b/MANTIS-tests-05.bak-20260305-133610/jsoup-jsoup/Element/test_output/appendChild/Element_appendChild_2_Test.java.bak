@@ -1,0 +1,55 @@
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("Re-appending the same child node to its own parent removes then re-adds, preserving one child and resetting sibling index")
+    void test_TC09() {
+        // GIVEN parent with one TextNode child
+        Element parent = new Element("div");                   // new element, no children yet
+        TextNode child = new TextNode("x");                    // create a text node child
+        parent.appendChild(child);                             // first append adds child at index 0, siblingIndex=0
+
+        // WHEN appending the same child again
+        parent.appendChild(child);                             // reparenting should remove existing and re-add at end
+
+        // THEN only one child remains
+        assertEquals(1, parent.childNodeSize(), 
+            "Re-appending same child should not increase child count");     
+        // verify the child at index 0 is the same instance
+        assertSame(child, parent.childNode(0), 
+            "Child node at index 0 should be the original child instance");
+        // and its sibling index reset to 0
+        assertEquals(0, child.siblingIndex(), 
+            "After re-adding, the child's siblingIndex should be reset to 0");
+    }
+
+    @Test
+    @DisplayName("Appending a DataNode child creates proper childNodes list and sets sibling index")
+    void test_TC10() {
+        // GIVEN a fresh Element parent and a DataNode child
+        Element parent = new Element("div");                   // new element, childNodes empty initially
+        DataNode dataChild = new DataNode("data");            // create a data node for script/style
+
+        // WHEN appending DataNode
+        parent.appendChild(dataChild);                         // should go through ensureChildNodes and add
+
+        // THEN exactly one child node exists
+        assertEquals(1, parent.childNodeSize(), 
+            "Appending a DataNode should result in exactly one child");
+        // and that node is the same dataChild
+        Node got = parent.childNode(0);
+        assertSame(dataChild, got, 
+            "The node at index 0 should be the same DataNode instance appended");
+        // and siblingIndex on dataChild is set to 0
+        assertEquals(0, dataChild.siblingIndex(), 
+            "DataNode's siblingIndex should be 0 after being appended");
+    }
+}

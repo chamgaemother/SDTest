@@ -1,0 +1,101 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Set;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("TC01: load() returns Dotenv with only system and file vars when systemProperties=false and .env empty (branch-false, loop-0)")
+    void test_TC01() throws Exception {
+        // branch-false: systemProperties is false by default, so no system properties set;
+        // loop-0: empty .env file yields no file entries
+        Path tempDir = Files.createTempDirectory("env");
+        Files.createFile(tempDir.resolve(".env"));
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+
+        Dotenv dotenv = builder.load();
+        // entries() should reflect exactly the live environment variables
+        Set<DotenvEntry> entries = dotenv.entries();
+        Map<String, String> sysenv = System.getenv();
+        // Assert sizes match
+        assertEquals(sysenv.size(), entries.size(), "entries() should contain all system environment variables and nothing else");
+        // Assert every system variable is present
+        for (Map.Entry<String, String> e : sysenv.entrySet()) {
+            assertTrue(entries.contains(new DotenvEntry(e.getKey(), e.getValue())),
+                       "Missing system env var: " + e.getKey());
+        }
+        // entries(filter) should return only file entries, here empty
+        Set<DotenvEntry> fileOnly = dotenv.entries(entry -> true);
+        assertTrue(fileOnly.isEmpty(), "File entries should be empty for empty .env");
+    }
+
+    @Test
+    @DisplayName("TC02: load() sets one system property when systemProperties=true and one entry in .env (branch-true, loop-1)")
+    void test_TC02() throws Exception {
+        // branch-true: enable systemProperties, so loop body will set properties
+        // loop-1: one line in .env
+        Path dir = Files.createTempDirectory("env");
+        Files.writeString(dir.resolve(".env"), "KEY=VALUE");
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();
+
+        try {
+            Dotenv dotenv = builder.load();
+            // system property should be set
+            assertEquals("VALUE", System.getProperty("KEY"),
+                         "System property KEY should be set to VALUE");
+            // dotenv.get should also return the value from the file
+            assertEquals("VALUE", dotenv.get("KEY"),
+                         "dotenv.get should return VALUE for KEY");
+        } finally {
+            // clean up for isolation
+            System.clearProperty("KEY");
+        }
+    }
+
+    @Test
+    @DisplayName("TC03: load() sets multiple system properties when systemProperties=true and multiple entries in .env (branch-true, loop-N)")
+    void test_TC03() throws Exception {
+        // branch-true: enable systemProperties
+        // loop-N: multiple entries
+        Path p = Files.createTempDirectory("env");
+        Files.writeString(p.resolve(".env"), "A=1\nB=2\nC=3");
+        DotenvBuilder builder = Dotenv.configure().directory(p.toString()).systemProperties();
+
+        try {
+            Dotenv dotenv = builder.load();
+            // all three properties should be set
+            assertEquals("1", System.getProperty("A"), "Property A should be set to 1");
+            assertEquals("2", System.getProperty("B"), "Property B should be set to 2");
+            assertEquals("3", System.getProperty("C"), "Property C should be set to 3");
+            // and dotenv.get should reflect file values as well
+            assertEquals("1", dotenv.get("A"));
+            assertEquals("2", dotenv.get("B"));
+            assertEquals("3", dotenv.get("C"));
+        } finally {
+            System.clearProperty("A");
+            System.clearProperty("B");
+            System.clearProperty("C");
+        }
+    }
+
+    @Test
+    @DisplayName("TC04: load() throws DotenvException when .env malformed and default throwIfMalformed=true (exception)")
+    void test_TC04() throws Exception {
+        // path B0: malformed line should trigger exception, throwIfMalformed is true by default
+        Path tmp = Files.createTempDirectory("env");
+        Files.writeString(tmp.resolve(".env"), "BADLINE");
+        DotenvBuilder builder = Dotenv.configure().directory(tmp.toString());
+
+        DotenvException ex = assertThrows(DotenvException.class, builder::load,
+            "Expected DotenvException for malformed .env line");
+        // ensure no system property was set for malformed key
+        assertNull(System.getProperty("BADLINE"), "No system property should be set for malformed entry");
+    }
+}

@@ -1,0 +1,214 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, String charsetName, String baseUri) with null charsetName falls back to meta or UTF-8 and returns correct content and baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "temporary HTML file with <meta charset=\"UTF-8\"> in head exists",
+      "expectedResult": "Document.body().html() contains paragraph text; baseUri equals file absolute path",
+      "tags": [
+        "positive",
+        "file",
+        "charset-fallback"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse file null-charset fallback",
+        "  GIVEN",
+        "    // Arrange: create tempFile.html with <meta charset=\"UTF-8\"><p>hello</p>",
+        "    File file = tempFile;",
+        "    String charsetName = null;",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charsetName, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>hello</p>\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File, String charsetName) with explicit charsetName returns content and baseUri as file path",
+      "path": "B0→B1→B2→B5",
+      "precondition": "temporary HTML file encoded UTF-8 exists",
+      "expectedResult": "Document contains expected element and baseUri equals file path",
+      "tags": [
+        "positive",
+        "file",
+        "explicit-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse file explicit-charset",
+        "  GIVEN",
+        "    File file = tempFileWithUTF8;",
+        "    String charsetName = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charsetName);",
+        "  THEN",
+        "    assert doc.select(\"p\").first().text().equals(\"hello\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File) with no charsetName uses null and returns content and baseUri as file path",
+      "path": "B0→B1→B2→B5",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "Paragraph content present; baseUri equals file path",
+      "tags": [
+        "positive",
+        "file",
+        "no-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse file no-charset",
+        "  GIVEN",
+        "    File file = tempFile;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>hello</p>\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(File, String charsetName, String baseUri, Parser parser) with XML parser preserves XML structure",
+      "path": "B0→B1→B2→B6",
+      "precondition": "temporary file contains <root><child/></root>",
+      "expectedResult": "doc.select(\"child\") in body is empty under HTML parser semantics with XML parser? uses parser.parse",
+      "tags": [
+        "positive",
+        "file",
+        "parser-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse file with parser",
+        "  GIVEN",
+        "    File file = tempXmlFile;",
+        "    String charsetName = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charsetName, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"root\").size() == 1;",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path, String charsetName, String baseUri) with invalid charsetName throws IOException",
+      "path": "B0→B1→B2→B7",
+      "precondition": "temporary HTML file on Path exists",
+      "expectedResult": "IOException is thrown for invalid charset",
+      "tags": [
+        "negative",
+        "path",
+        "charset-error",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse path invalid-charset",
+        "  GIVEN",
+        "    Path path = tempFile.toPath();",
+        "    String charsetName = \"BAD-CHARSET\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(path, charsetName, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path) fallback loads file content and sets baseUri to absolute path",
+      "path": "B0→B1→B2→B8",
+      "precondition": "temporary HTML file exists at Path",
+      "expectedResult": "body contains expected text; baseUri equals path.toAbsolutePath()",
+      "tags": [
+        "positive",
+        "path",
+        "no-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse path no-charset",
+        "  GIVEN",
+        "    Path path = tempFile.toPath();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>hello</p>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, String charsetName, String baseUri, Parser parser) with XML parser reads and parses correctly",
+      "path": "B0→B1→B2→B9",
+      "precondition": "ByteArrayInputStream over <item>1</item>",
+      "expectedResult": "doc.select(\"item\").text() equals \"1\"; baseUri set accordingly",
+      "tags": [
+        "positive",
+        "stream",
+        "parser-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse stream with parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<item>1</item>\".getBytes());",
+        "    String charsetName = \"UTF-8\";",
+        "    String baseUri = \"http://stream/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charsetName, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"item\").first().text().equals(\"1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(String) with fragment and no baseUri returns correct body HTML",
+      "path": "B0→B1→B10",
+      "precondition": "none",
+      "expectedResult": "body.html() equals fragment markup",
+      "tags": [
+        "positive",
+        "fragment",
+        "baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment no-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<div>abc</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>abc</div>\");",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.TagSet;
+import org.jsoup.parser.TreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC09: parseInput(Reader, String) accepts null baseUri and passes it through to TreeBuilder.parse")
+    public void test_TC09() {
+        // Setup: record the passed baseUri via AtomicReference; stub TreeBuilder.parse returns a dummy Document
+        AtomicReference<String> rec = new AtomicReference<>();
+        Document DUMMY = new Document("stub://");
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String uri, Parser p) {
+                rec.set(uri);
+                return DUMMY;
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                return null;
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+            @Override
+            public ParseSettings defaultSettings() {
+                return ParseSettings.htmlDefault;
+            }
+            @Override
+            public TagSet defaultTagSet() {
+                return TagSet.html();
+            }
+            @Override
+            public String defaultNamespace() {
+                return "";
+            }
+            @Override
+            public void process(org.jsoup.parser.Token tok) {
+                // no-op
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<x/>");
+        String baseUri = null;
+        // The path B0->B1->B3->B4 means entering reader overload, lock/unlock, parse called with null URI
+        Document result = parser.parseInput(reader, baseUri);
+        // Oracle: returns exactly the stub's Document; recorded baseUri was null
+        assertSame(DUMMY, result, "Expected to get back the stub Document instance");
+        assertNull(rec.get(), "Expected TreeBuilder.parse to receive null baseUri");
+    }
+
+    @Test
+    @DisplayName("TC10: parseInput(String, String) propagates unexpected RuntimeException from TreeBuilder.parse")
+    public void test_TC10() {
+        // Setup: stub TreeBuilder.parse throws IllegalStateException("bad")
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String uri, Parser p) {
+                throw new IllegalStateException("bad");
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                return null;
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+            @Override
+            public ParseSettings defaultSettings() {
+                return ParseSettings.htmlDefault;
+            }
+            @Override
+            public TagSet defaultTagSet() {
+                return TagSet.html();
+            }
+            @Override
+            public String defaultNamespace() {
+                return "";
+            }
+            @Override
+            public void process(org.jsoup.parser.Token tok) {
+                // no-op
+            }
+        };
+        Parser parser = new Parser(stub);
+        String html = "<tag/>";
+        String baseUri = "uri";
+        // The path B0->B1->B2->B3->exception: string-overload delegates to Reader overload which then throws
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(html, baseUri),
+            "Expected IllegalStateException to be propagated");
+        assertEquals("bad", ex.getMessage(), "Expected exception message to match stub throw");
+    }
+}

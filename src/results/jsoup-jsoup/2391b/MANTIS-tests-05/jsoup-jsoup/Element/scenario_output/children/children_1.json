@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() on element with only non-Element child nodes (childNodeSize>0 and no Element in filter)",
+      "path": "B0→B2→B3(sync)→B4(cachedChildren==null)→B5(filterNodes->empty)→B6(stashChildren)->B7(return empty list)",
+      "precondition": "parent element with one TextNode child",
+      "expectedResult": "return Elements of size 0 (empty) after filtering out non-Element nodes",
+      "tags": [
+        "positive",
+        "filter",
+        "no-element",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children only-non-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"just text\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() cache path: second call returns cached list without recomputing",
+      "path": "B0→B2→B3(sync)→B4(cachedChildren==null)→B5(filterNodes->1 child)→B6(stashChildren)→B7(return list) then B0→B2→B3(sync)→B4(cachedChildren!=null)→B8(return cached)",
+      "precondition": "parent element with two Element children, same attributes instance holds cache userdata",
+      "expectedResult": "first call returns list of 2 children; second call returns the same cached list instance",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache-hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"span\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 2;",
+        "    assert second.size() == 2;",
+        "    assert first == second; // same cached instance",
+        "END"
+      ]
+    }
+  ]
+}

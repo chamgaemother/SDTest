@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() returns cached list when userData cache present and modCount matches (cachedChildren non-null, no rebuild)",
+      "path": "B0→B3→B5→B6",
+      "precondition": "an Element with two child Elements, after first children() call to populate cache",
+      "expectedResult": "second children() returns same Elements instance (cache hit) with two items, no rebuild",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache-hit when modCount unchanged",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    parent.appendElement(\"li\");",
+        "    parent.appendElement(\"li\");",
+        "    Elements first = parent.children();            // builds cache with modCount==2",
+        "  WHEN",
+        "    Elements second = parent.children();           // cachedChildren sees userData & matching modCount",
+        "  THEN",
+        "    assertSame(first.unwrap(), second.unwrap());   // underlying list instance identical",
+        "    assertEquals(2, second.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds list when cachedChildren returns stale reference due to forced null ref in userData",
+      "path": "B0→B3→B5→B7→B5",
+      "precondition": "an Element with two child Elements, after cache population, then manual userData clear of childElsKey",
+      "expectedResult": "children() detects null WeakReference and rebuilds a fresh list of two elements",
+      "tags": [
+        "negative",
+        "cache",
+        "stale"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children rebuild when userData cache ref cleared",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"p\");",
+        "    parent.appendElement(\"span\");",
+        "    parent.children();                              // populate cache",
+        "    parent.attributes().userData().put(\"jsoup.childEls\", new WeakReference<>(null)); // force stale ref",
+        "  WHEN",
+        "    Elements afterStale = parent.children();         // sees ref.get()==null, rebuilds list",
+        "  THEN",
+        "    assertEquals(2, afterStale.size());",
+        "    assertNotNull(afterStale.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

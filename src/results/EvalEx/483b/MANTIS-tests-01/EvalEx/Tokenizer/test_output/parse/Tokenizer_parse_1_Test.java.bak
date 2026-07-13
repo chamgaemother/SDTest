@@ -1,0 +1,141 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.parser.Token.TokenType;
+import com.ezylang.evalex.parser.ParseException;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class Tokenizer_parse_Test {
+
+  @Test
+  @DisplayName("Normal infix expression with no implicit multiplication yields token list and normal return")
+  void test_TC07() throws Exception {
+    // GIVEN a default config and an infix expression "1+2"
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1+2", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN we get exactly three tokens: NUMBER_LITERAL, INFIX_OPERATOR, NUMBER_LITERAL
+    assertEquals(3, tokens.size(), "Expected three tokens for '1+2'");
+    assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType(), "First token should be NUMBER_LITERAL");
+    assertEquals("1", tokens.get(0).getValue());
+    assertEquals(TokenType.INFIX_OPERATOR, tokens.get(1).getType(), "Second token should be INFIX_OPERATOR");
+    assertEquals("+", tokens.get(1).getValue());
+    assertEquals(TokenType.NUMBER_LITERAL, tokens.get(2).getType(), "Third token should be NUMBER_LITERAL");
+    assertEquals("2", tokens.get(2).getValue());
+  }
+
+  @Test
+  @DisplayName("Undefined operator character throws ParseException from parseOperator")
+  void test_TC08() {
+    // GIVEN an expression with an undefined operator '@'
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("@", config);
+    // WHEN/THEN parsing should throw ParseException about undefined operator
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Undefined operator '@'"),
+        "Exception message should contain the undefined operator");
+  }
+
+  @Test
+  @DisplayName("Decimal literal with two decimal points throws ParseException")
+  void test_TC09() {
+    // GIVEN an expression "1.2.3" which has two decimal points
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1.2.3", config);
+    // WHEN/THEN parsing should throw a specific ParseException
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Number contains more than one decimal point", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("Illegal scientific notation format throws ParseException")
+  void test_TC10() {
+    // GIVEN an expression "1e+" which is an incomplete scientific literal
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1e+", config);
+    // WHEN/THEN parsing should throw Illegal scientific format exception
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Illegal scientific format", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("Hexadecimal literal is parsed as single NUMBER_LITERAL")
+  void test_TC11() throws Exception {
+    // GIVEN an expression "0x1Af" representing a hex literal
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("0x1Af", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN exactly one NUMBER_LITERAL token with the full hex value
+    assertEquals(1, tokens.size(), "Hex literal should produce exactly one token");
+    assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+    assertEquals("0x1Af", tokens.get(0).getValue());
+  }
+
+  @Test
+  @DisplayName("Unterminated string literal throws ParseException")
+  void test_TC12() {
+    // GIVEN an expression with a starting quote but no closing: "\"hello"
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("\"hello", config);
+    // WHEN/THEN parsing should detect missing closing quote
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing quote not found", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("Unknown escape character in string literal throws ParseException")
+  void test_TC13() {
+    // GIVEN single-quote strings allowed and an unknown escape sequence '\q'
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setSingleQuoteStringLiteralsAllowed(true);
+    Tokenizer tokenizer = new Tokenizer("'\\q'", config);
+    // WHEN/THEN parsing should throw Unknown escape character
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Unknown escape character"),
+        "Exception message should indicate unknown escape");
+  }
+
+  @Test
+  @DisplayName("Prefix operator at start is recognized as PREFIX_OPERATOR")
+  void test_TC14() throws Exception {
+    // GIVEN expression "-5" where '-' at start should be prefix
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("-5", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN two tokens: PREFIX_OPERATOR '-' and NUMBER_LITERAL '5'
+    assertEquals(2, tokens.size(), "Expected prefix operator and number literal");
+    assertEquals(TokenType.PREFIX_OPERATOR, tokens.get(0).getType());
+    assertEquals("-", tokens.get(0).getValue());
+    assertEquals(TokenType.NUMBER_LITERAL, tokens.get(1).getType());
+    assertEquals("5", tokens.get(1).getValue());
+  }
+
+  @Test
+  @DisplayName("Implicit multiplication insertion branch B4 when disallowed and possible false")
+  void test_TC15() throws Exception {
+    // GIVEN implicit multiplication disallowed and expression "2(x)" to trigger implicit before '('
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setImplicitMultiplicationAllowed(false);
+    Tokenizer tokenizer = new Tokenizer("2(x)", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN a '*' INFIX_OPERATOR is inserted before '(', yielding tokens: '2','*','(','x',')'
+    assertEquals(5, tokens.size(), "Expected five tokens including inserted '*'");
+    assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+    assertEquals("2", tokens.get(0).getValue());
+    assertEquals(TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+    assertEquals("*", tokens.get(1).getValue());
+    assertEquals(TokenType.BRACE_OPEN, tokens.get(2).getType());
+    assertEquals("(", tokens.get(2).getValue());
+    assertEquals(TokenType.VARIABLE_OR_CONSTANT, tokens.get(3).getType());
+    assertEquals("x", tokens.get(3).getValue());
+    assertEquals(TokenType.BRACE_CLOSE, tokens.get(4).getType());
+  }
+}

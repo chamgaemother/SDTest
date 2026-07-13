@@ -1,0 +1,131 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Carriage return characters are ignored and Windows line endings produce correct lines",
+      "path": "B0→B3(ch!='\\n'&&ch!='\\r')→B?→…→EOF branch handling line break on '\\n'",
+      "precondition": "none",
+      "expectedResult": "lines [\"A\",\"B\"] are produced for input \"A\\r\\nB\"",
+      "tags": [
+        "positive",
+        "newline",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 carriage-return handling",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"A\\r\\nB\");",
+        "    WordWrap.Builder builder = WordWrap.from(in, true);",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"A\", \"B\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Punctuation suppresses normal word accumulation and attaches to line before next word",
+      "path": "…→isWordCharacter && previousWasPunctuation true→else branch→appendWordToLine",
+      "precondition": "none",
+      "expectedResult": "output \"?hello\" when maxWidth large",
+      "tags": [
+        "positive",
+        "punctuation",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 punctuation boundary",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"?hello\");",
+        "    WordWrap.Builder builder = WordWrap.from(in, true);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"?hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Breaking words without hyphens splits on single char and no hyphen inserted",
+      "path": "…→tooLong→breakWords true&&insertHyphens false→writeBrokenWord no-hyphen path",
+      "precondition": "none",
+      "expectedResult": "for \"abcdef\" and maxWidth=3, output \"ab\\ncd\\nef\"",
+      "tags": [
+        "positive",
+        "break-word",
+        "no-hyphens"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 break-without-hyphens",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"abcdef\");",
+        "    WordWrap.Builder builder = WordWrap.from(in, true).maxWidth(3).insertHyphens(false);",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"ab\",\"cd\",\"ef\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Whitespace-only input produces no output or trailing blank lines",
+      "path": "B0→loop→word accumulation→EOF branch line.length==0&&isWhitespace(word) path",
+      "precondition": "none",
+      "expectedResult": "empty string returned for input \"   \"",
+      "tags": [
+        "boundary",
+        "whitespace",
+        "empty-output"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 whitespace-only suppressed",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"   \");",
+        "    WordWrap.Builder builder = WordWrap.from(in, true);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Custom stringWidth causing right-trim on overflow at explicit newline",
+      "path": "…→ch=='\\n'→tooLong→rightTrim path→writeNewLine",
+      "precondition": "none",
+      "expectedResult": "overlong line trimmed of trailing spaces before newline",
+      "tags": [
+        "positive",
+        "trim",
+        "custom-width"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 custom stringWidth rightTrim",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"abc   \\n\");",
+        "    Function<CharSequence,Number> f = s->3; // forces tooLong",
+        "    WordWrap.Builder builder = WordWrap.from(in, true).stringWidth(f).maxWidth(2);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"abc\\n\");",
+        "END"
+      ]
+    }
+  ]
+}

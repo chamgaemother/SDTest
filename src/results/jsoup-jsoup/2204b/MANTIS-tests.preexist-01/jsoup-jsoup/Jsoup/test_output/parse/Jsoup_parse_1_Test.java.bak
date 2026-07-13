@@ -1,0 +1,107 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(String html) with valid HTML returns a Document parsed with empty baseUri")
+    public void test_TC11() {
+        // Given a simple HTML string, should create body content and empty baseUri
+        String html = "<div>Test</div>";
+        Document doc = Jsoup.parse(html); // single-arg overload, path covers B0->B1->B2->B5
+        assertEquals("<div>Test</div>", doc.body().html());
+        assertTrue(doc.baseUri().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parse(String html) with null html throws NullPointerException")
+    public void test_TC12() {
+        // Given null html, should throw NPE before parsing
+        assertThrows(NullPointerException.class, () -> Jsoup.parse((String) null));
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String bodyHtml) with fragment returns Document with body content and empty baseUri")
+    public void test_TC13() {
+        // parseBodyFragment single-arg: B0->B1->B4->B6
+        String frag = "<span>abc</span>";
+        Document doc = Jsoup.parseBodyFragment(frag);
+        assertEquals("<span>abc</span>", doc.body().html());
+        assertTrue(doc.baseUri().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String bodyHtml, String baseUri) with fragment and baseUri resolves relative links")
+    public void test_TC14() {
+        // parseBodyFragment with baseUri: relative href should resolve
+        String frag = "<a href='/path'>link</a>";
+        String base = "http://host/";
+        Document doc = Jsoup.parseBodyFragment(frag, base);
+        Element a = doc.selectFirst("a");
+        assertNotNull(a);
+        assertEquals("http://host/path", a.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("parse(File file) with valid HTML file returns Document and uses file path as baseUri")
+    public void test_TC15() throws IOException {
+        // parse(File): baseUri from file.getAbsolutePath()
+        Path temp = Files.createTempFile("jsoupTest", ".html");
+        Files.write(temp, "<p>F</p>".getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        File f = temp.toFile();
+        Document doc = Jsoup.parse(f);
+        assertEquals("<p>F</p>", doc.body().html());
+        assertEquals(f.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File file, String charsetName, String baseUri) with invalid charset throws IOException")
+    public void test_TC16() throws IOException {
+        // invalid charsetName should cause IOException in DataUtil.load
+        Path temp = Files.createTempFile("jsoupTest", ".html");
+        Files.write(temp, "<html></html>".getBytes(), StandardOpenOption.TRUNCATE_EXISTING);
+        File f = temp.toFile();
+        String invalidCharset = "no-such-charset";
+        String base = "http://x/";
+        assertThrows(IOException.class, () -> Jsoup.parse(f, invalidCharset, base));
+    }
+
+    @Test
+    @DisplayName("parse(Path path, String charsetName, String baseUri) with valid Path and null charsetName uses BOM or UTF-8 fallback")
+    public void test_TC17() throws IOException {
+        // null charsetName triggers auto-detect or UTF-8 fallback
+        Path temp = Files.createTempFile("jsoupTest", ".html");
+        Files.writeString(temp, "<h1>H</h1>");
+        Document doc = Jsoup.parse(temp, null, "http://u/");
+        assertEquals("<h1>H</h1>", doc.body().html());
+        assertEquals("http://u/", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(URL url, int timeoutMillis) with non-http URL throws MalformedURLException")
+    public void test_TC18() {
+        // Non-http URL should trigger MalformedURLException in HttpConnection.connect
+        assertThrows(MalformedURLException.class, () -> {
+            URL url = new URL("ftp://host/");
+            Jsoup.parse(url, 1000);
+        });
+    }
+}

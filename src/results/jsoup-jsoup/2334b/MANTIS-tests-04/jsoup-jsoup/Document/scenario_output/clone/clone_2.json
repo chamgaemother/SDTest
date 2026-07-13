@@ -1,0 +1,97 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "Modifying original’s outputSettings and parser after clone does not affect the clone (deep copy independence)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document shell created with default settings",
+      "expectedResult": "Clone retains default UTF-8 charset and trackErrors=0 despite original being mutated",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "independence"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone independence from original mutation",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "    Document copy = doc.clone();",
+        "  WHEN",
+        "    doc.outputSettings().charset(Charset.forName(\"UTF-16\"));",
+        "    Parser origParser = doc.parser();",
+        "    origParser.setTrackErrors(5);",
+        "    doc.parser(origParser);",
+        "  THEN",
+        "    assertEquals(\"UTF-8\", copy.outputSettings().charset().name());",
+        "    assertEquals(0, copy.parser().getTrackErrors());",
+        "    assertNotSame(doc.outputSettings(), copy.outputSettings());",
+        "    assertNotSame(doc.parser(), copy.parser());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Modifying clone’s outputSettings and parser after clone does not affect the original (deep copy symmetry)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document shell created with default settings",
+      "expectedResult": "Original retains default HTML syntax and trackErrors=0 after clone is mutated",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "independence"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 original independence from clone mutation",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/doc\");",
+        "    Document copy = doc.clone();",
+        "  WHEN",
+        "    copy.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    Parser copyParser = copy.parser();",
+        "    copyParser.setTrackErrors(7);",
+        "    copy.parser(copyParser);",
+        "  THEN",
+        "    assertEquals(Document.OutputSettings.Syntax.html, doc.outputSettings().syntax());",
+        "    assertEquals(0, doc.parser().getTrackErrors());",
+        "    assertNotSame(doc.outputSettings(), copy.outputSettings());",
+        "    assertNotSame(doc.parser(), copy.parser());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Clone returns distinct parser and outputSettings instances each time (object identity)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document shell created with custom parser and outputSettings",
+      "expectedResult": "clone.parser() != original.parser() and clone.outputSettings() != original.outputSettings()",
+      "tags": [
+        "positive",
+        "identity",
+        "instance-creation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parser and settings identity on clone",
+        "  GIVEN",
+        "    Parser customParser = Parser.htmlParser().setTrackErrors(2);",
+        "    Document doc = Document.createShell(\"/id\").parser(customParser);",
+        "    OutputSettings customSettings = doc.outputSettings().escapeMode(Entities.EscapeMode.extended);",
+        "    doc.outputSettings(customSettings);",
+        "  WHEN",
+        "    Document copy1 = doc.clone();",
+        "    Document copy2 = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc.parser(), copy1.parser());",
+        "    assertNotSame(doc.outputSettings(), copy1.outputSettings());",
+        "    assertNotSame(copy1.parser(), copy2.parser());",
+        "    assertNotSame(copy1.outputSettings(), copy2.outputSettings());",
+        "END"
+      ]
+    }
+  ]
+}

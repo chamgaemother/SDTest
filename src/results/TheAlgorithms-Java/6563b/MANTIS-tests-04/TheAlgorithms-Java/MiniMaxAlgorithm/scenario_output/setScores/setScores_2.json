@@ -1,0 +1,38 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "setScores prints rejection and leaves state unchanged when called with an odd-length array (length % 1 != 0) branch",
+      "path": "B0→B2→B3",
+      "precondition": "MiniMaxAlgorithm instantiated with default random scores and height",
+      "expectedResult": "original scores and height unchanged; prints \"The number of scores must be a power of 2.\" once",
+      "tags": [
+        "negative",
+        "branch-B2",
+        "output-capture"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 setScores odd-length-rejection",
+        "  GIVEN",
+        "    MiniMaxAlgorithm algo = new MiniMaxAlgorithm();",
+        "    int[] beforeScores = algo.getScores();",
+        "    int beforeHeight = algo.getHeight();",
+        "    int[] invalidScores = new int[5];  // 5 % 1 != 0 triggers the B0 true branch",
+        "    // Capture System.out",
+        "    ByteArrayOutputStream outContent = new ByteArrayOutputStream();",
+        "    System.setOut(new PrintStream(outContent));",
+        "  WHEN",
+        "    algo.setScores(invalidScores);",
+        "  THEN",
+        "    assertArrayEquals(beforeScores, algo.getScores());",
+        "    assertEquals(beforeHeight, algo.getHeight());",
+        "    assertTrue(outContent.toString().contains(\"The number of scores must be a power of 2.\"));",
+        "    // Restore System.out",
+        "    System.setOut(System.out);",
+        "END"
+      ]
+    }
+  ]
+}

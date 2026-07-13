@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn with null pattern in constructor uses default format and parses a valid date",
+      "path": "B0→B1(nullPattern)→B2→B4→B5",
+      "precondition": "DateSchemaColumn constructed with newPattern=null",
+      "expectedResult": "adds LocalDate.of(2021,1,1) to the column",
+      "tags": [
+        "positive",
+        "default-pattern",
+        "parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 default-pattern valid-parse",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"2021-1-1\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size() - 1).equals(LocalDate.of(2021, 1, 1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn with custom pattern dd/MM/uuuu parses matching date string",
+      "path": "B0→B1(customPattern)→B2→B4→B5",
+      "precondition": "DateSchemaColumn constructed with newPattern=\"dd/MM/uuuu\"",
+      "expectedResult": "adds LocalDate.of(2022,10,5) to the column",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 custom-pattern valid-parse",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"dd/MM/uuuu\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"05/10/2022\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size() - 1).equals(LocalDate.of(2022, 10, 5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn throws DateTimeParseException for non-leap February 29",
+      "path": "B0→B2→B4→B6(exception)",
+      "precondition": "DateSchemaColumn with pattern \"uuuu-M-d\"",
+      "expectedResult": "DateTimeParseException is thrown and column size unchanged",
+      "tags": [
+        "negative",
+        "exception",
+        "strict-resolver"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 strict-nonleap-exception",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    int initialSize = dfColumn.size();",
+        "    String aString = \"2019-2-29\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert dfColumn.size() == initialSize;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn with custom pattern and leading/trailing whitespace before parse",
+      "path": "B0→B1(customPattern)→B2→B3(trim)→B4→B5",
+      "precondition": "DateSchemaColumn constructed with newPattern=\"MM-dd-uuuu\"",
+      "expectedResult": "adds LocalDate.of(2023,7,4) after trimming and parsing",
+      "tags": [
+        "positive",
+        "trim",
+        "custom-pattern"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 custom-pattern trim-parse",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"MM-dd-uuuu\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \" 07-04-2023 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size() - 1).equals(LocalDate.of(2023, 7, 4));",
+        "END"
+      ]
+    }
+  ]
+}

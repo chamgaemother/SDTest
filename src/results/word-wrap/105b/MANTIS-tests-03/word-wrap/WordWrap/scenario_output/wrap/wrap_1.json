@@ -1,0 +1,160 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "ignore carriage return '\\r' branch then process newline and character",
+      "path": "B0→B3(\\r)→B0→B1(\\n)→B0→B3→B?→B_END",
+      "precondition": "none",
+      "expectedResult": "return 'A' after ignoring '\\r', preserving newline semantics",
+      "tags": [
+        "control-flow",
+        "carriage-return",
+        "newline"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 carriage-return ignored",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\\rA\");",
+        "    WordWrap.Builder b = WordWrap.from(reader, true);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"A\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "punctuation branch marks previousWasPunctuation and invokes non-letter branch",
+      "path": "B0→B4(punctuation)→B0→else→B0→B_END",
+      "precondition": "none",
+      "expectedResult": "commas are retained and output as-is without splitting",
+      "tags": [
+        "branch",
+        "punctuation",
+        "non-word"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 punctuation retained",
+        "  GIVEN",
+        "    CharSequence text = \"word, next\";",
+        "    WordWrap.Builder b = WordWrap.from(text).maxWidth(3);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    // comma is punctuation and should be in its own word fragment or appended",
+        "    assert lines.get(0).contains(\",\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "includeExtraWordChars treats comma as word character, preventing split at comma",
+      "path": "B0→B1(isWordCharacter)→...→B_END",
+      "precondition": "comma added to extraWordChars",
+      "expectedResult": "string 'a,b' remains unbroken despite maxWidth below length",
+      "tags": [
+        "configuration",
+        "extraWordChars",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 include comma as word char",
+        "  GIVEN",
+        "    WordWrap.Builder b = WordWrap.from(\"a,b\").maxWidth(2).includeExtraWordChars(\",\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a,b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "custom stringWidth function is used in tooLong comparison",
+      "path": "B0→tooLong true→writeBrokenWord branch or writeLine branch→B_END",
+      "precondition": "stringWidth always returns 1",
+      "expectedResult": "no wrapping occurs because width 1 ≤ maxWidth, output original",
+      "tags": [
+        "configuration",
+        "stringWidth",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 custom stringWidth no wrap",
+        "  GIVEN",
+        "    Function<CharSequence,Number> fw = s -> 1;",
+        "    WordWrap.Builder b = WordWrap.from(\"longtext\").stringWidth(fw).maxWidth(1);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"longtext\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap(LineConsumer) throws IORuntimeException when consumer.writeNewLine fails",
+      "path": "B0→consumer.writeNewLine IOException→catch→throw IORuntimeException",
+      "precondition": "LineConsumer stub throws IOException on writeNewLine",
+      "expectedResult": "IORuntimeException is thrown wrapping the IOException",
+      "tags": [
+        "exception",
+        "IOError",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 consumer writeNewLine exception",
+        "  GIVEN",
+        "    LineConsumer bad = new LineConsumer(){",
+        "        write(..){}, writeNewLine(){ throw new IOException(\"fail\"); }",
+        "    };",
+        "    Reader r = new StringReader(\"a\\n\");",
+        "    WordWrap.Builder b = WordWrap.from(r, false);",
+        "  WHEN",
+        "    call b.wrap(bad);",
+        "  THEN",
+        "    throws IORuntimeException with cause IOException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "close(reader) throws IORuntimeException when Reader.close throws IOException",
+      "path": "B0→wrap->finally→close->IOException→throw IORuntimeException",
+      "precondition": "Reader stub throws IOException on close()",
+      "expectedResult": "IORuntimeException is thrown wrapping the close IOException",
+      "tags": [
+        "exception",
+        "resource-cleanup",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 reader close exception",
+        "  GIVEN",
+        "    Reader r = new Reader(){",
+        "      int read(){ return -1; }",
+        "      void close() throws IOException{ throw new IOException(\"close fail\"); }",
+        "    };",
+        "    WordWrap.Builder b = WordWrap.from(r, true);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws IORuntimeException with cause IOException",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC23",
+      "description": "clean(html, baseUri empty, safelist.preserveRelativeLinks=true) assigns DummyUri and preserves relative links",
+      "path": "B0→B1(baseUri.empty)&B2(safelist.preserveRelativeLinks)→B4→B5→B6",
+      "precondition": "Safelist with preserveRelativeLinks=true",
+      "expectedResult": "relative href retained with DummyUri prefix",
+      "tags": [
+        "positive",
+        "branch",
+        "clean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 clean with preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<a href='/img.png'>img</a>\";",
+        "    Safelist sl = Safelist.basic().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, \"\", sl);",
+        "  THEN",
+        "    assert out.contains(\"href=\\\"\" + org.jsoup.internal.SharedConstants.DummyUri + \"/img.png\\\"\");"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "clean(html, non-empty baseUri, safelist.default) resolves relative links against provided baseUri",
+      "path": "B0→B1(baseUri.nonEmpty)→B4→B5→B6",
+      "precondition": "Safelist basic with default preserveRelativeLinks=false",
+      "expectedResult": "relative href resolved against given baseUri",
+      "tags": [
+        "positive",
+        "branch",
+        "clean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 clean with non-empty baseUri",
+        "  GIVEN",
+        "    String html = \"<a href='/path'>link</a>\";",
+        "    String base = \"https://site.com\";",
+        "    Safelist sl = Safelist.basic();",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, base, sl);",
+        "  THEN",
+        "    assert out.contains(\"href=\\\"https://site.com/path\\\"\");"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "clean(html, safelist) delegates to clean(html,\"\",safelist) and strips relative links when not preserved",
+      "path": "B0→B1(baseUri.empty)&!B2(safelist.preserveRelativeLinks)→B4→B5→B6",
+      "precondition": "Safelist.none() default preserveRelativeLinks=false",
+      "expectedResult": "relative href removed in output",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 clean(html, safelist) default overload",
+        "  GIVEN",
+        "    String html = \"<a href='/r'>x</a>\";",
+        "    Safelist sl = Safelist.none();",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, sl);",
+        "  THEN",
+        "    assert out.contains(\"href=\\\"\\\"\");"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "clean(html, baseUri, safelist, outputSettings) applies provided Document.OutputSettings",
+      "path": "B0→B4→B5→B7(outputSettings)→B8",
+      "precondition": "Safelist.basic(), non-empty baseUri, custom OutputSettings prettyPrint=false",
+      "expectedResult": "output body html without indentation or newlines",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "outputSettings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 clean with outputSettings",
+        "  GIVEN",
+        "    String html = \"<div><p>a</p><p>b</p></div>\";",
+        "    Safelist sl = Safelist.basic();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, \"http://x/\", sl, os);",
+        "  THEN",
+        "    assert out.equals(\"<p>a</p><p>b</p>\");"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "isValid(html, safelist) returns false when tags not allowed and true when allowed",
+      "path": "B0→B1→B2(isValidBodyHtml)→B3",
+      "precondition": "Safelist.none() and Safelist.basic()",
+      "expectedResult": "false for forbidden tags, true for allowed tags",
+      "tags": [
+        "positive",
+        "negative",
+        "branch",
+        "isValid"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 isValid forbidden and allowed",
+        "  GIVEN",
+        "    String bad = \"<div>x</div>\";",
+        "    String good = \"<p>y</p>\";",
+        "    Safelist none = Safelist.none();",
+        "    Safelist basic = Safelist.basic();",
+        "  WHEN",
+        "    boolean resBad = Jsoup.isValid(bad, none);",
+        "    boolean resGood = Jsoup.isValid(good, basic);",
+        "  THEN",
+        "    assert !resBad;",
+        "    assert resGood;"
+      ]
+    }
+  ]
+}

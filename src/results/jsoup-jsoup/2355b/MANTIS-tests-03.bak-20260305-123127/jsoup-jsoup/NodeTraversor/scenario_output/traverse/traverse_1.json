@@ -1,0 +1,97 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "visitor.head throws RuntimeException to propagate exception immediately",
+      "path": "B0→B1→B2→B5→B6→B7→B8→B11→B12→B23→...→B24",
+      "precondition": "Element root with no children",
+      "expectedResult": "RuntimeException is thrown by traverse",
+      "tags": [
+        "exception",
+        "head-fail"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 head throws runtime exception",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { throw new RuntimeException(\"fail\"); }",
+        "      public void tail(Node n, int d) {}",
+        "    };",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    throws RuntimeException with message \"fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Two-level tree with sibling at depth>0 triggers tail-ascend and nextSibling branches (B16→B17→B18→B20)",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B2→B5→B11→B13→B16→B17→B18→B20→B21",
+      "precondition": "root Element has two child Elements; first child has one nested child",
+      "expectedResult": "head/tail calls in correct order covering deep sibling edges",
+      "tags": [
+        "branch",
+        "iteration",
+        "sibling",
+        "depth"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 deep tree with siblings at non-zero depth",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    Element c1 = new Element(\"c1\");",
+        "    Element c1_1 = new Element(\"c1_1\");",
+        "    Element c2 = new Element(\"c2\");",
+        "    root.appendChild(c1);",
+        "    c1.appendChild(c1_1);",
+        "    root.appendChild(c2);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { events.add(\"H:\" + n.nodeName() + \"/\" + d); }",
+        "      public void tail(Node n, int d) { events.add(\"T:\" + n.nodeName() + \"/\" + d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assert events contains sequence: [\"H:root/0\",\"H:c1/1\",\"H:c1_1/2\",\"T:c1_1/2\",\"T:c1/1\",\"H:c2/1\",\"T:c2/1\",\"T:root/0\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "visitor.head removes intermediate node when nextSibling is null to exercise removed+ascend branch (B9→B10)",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B10→B1→B24",
+      "precondition": "root Element has one child; child has no sibling; head removes the only child",
+      "expectedResult": "traverse completes without tail on removed child and root child count is zero",
+      "tags": [
+        "removed",
+        "branch",
+        "ascend"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 remove only child at depth 1 then ascend",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    root.appendChild(child);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { if (d == 1) n.remove(); },",
+        "      public void tail(Node n, int d) {}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assert root.childNodeSize() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

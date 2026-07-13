@@ -1,0 +1,112 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "wrap(Writer) uses custom stringWidth that forces tooLong on short words and triggers writeLine then broken-word hyphenation path",
+      "path": "B0→B3→B8→B10→B13→B15",
+      "precondition": "none",
+      "expectedResult": "word 'ab' broken with hyphen then 'cd' on new line",
+      "tags": [
+        "positive",
+        "custom-width",
+        "broken-word"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 custom stringWidth triggers early wrap",
+        "  GIVEN",
+        "    CharSequence text = \"ab cd\";",
+        "    Function<CharSequence,Number> width = s -> s.length()*2; // 'ab' width=4>maxWidth",
+        "  WHEN",
+        "    StringWriter w = new StringWriter();",
+        "    WordWrap.from(text)",
+        "      .maxWidth(3)",
+        "      .stringWidth(width)",
+        "      .wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"ab-\\n cd\");"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "wrap(Writer) with includeExtraWordChars treats punctuation '*' as word character and keeps it attached",
+      "path": "B0→B3→B5→B7→B9",
+      "precondition": "none",
+      "expectedResult": "input '*a* b' remains '*a*' on first line and 'b' second",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 includeExtraWordChars for '*'",
+        "  GIVEN",
+        "    String text = \"*a* b\";",
+        "  WHEN",
+        "    StringWriter w = new StringWriter();",
+        "    WordWrap.from(text)",
+        "      .maxWidth(3)",
+        "      .includeExtraWordChars(\"*\")",
+        "      .wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"*a*\\nb\");"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "wrap(Writer) with excludeExtraWordChars treats '.' as separator and exercises punctuation branch resetting previousWasPunctuation",
+      "path": "B0→B3→B6→B11→B14",
+      "precondition": "none",
+      "expectedResult": "input 'a.b' remains 'a.' then 'b' without trimming leading punctuation",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "separator"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 excludeExtraWordChars for '.'",
+        "  GIVEN",
+        "    String text = \"a.b\";",
+        "  WHEN",
+        "    StringWriter w = new StringWriter();",
+        "    WordWrap.from(text)",
+        "      .maxWidth(10)",
+        "      .excludeExtraWordChars(\".\")",
+        "      .wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"a. b\");"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "wrap(Writer) propagates IORuntimeException when Reader.close() throws IOException in finally",
+      "path": "B0→B1→finally→close→exception",
+      "precondition": "Reader that throws on close",
+      "expectedResult": "IORuntimeException is thrown wrapping the close IOException",
+      "tags": [
+        "exception",
+        "close",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 reader.close throws wrapped IORuntimeException",
+        "  GIVEN",
+        "    Reader r = new Reader() {",
+        "      public int read(char[] cbuf, int off, int len) { return -1; }",
+        "      public void close() throws IOException { throw new IOException(\"fail-close\"); }",
+        "    };",
+        "  WHEN",
+        "    Writer w = new StringWriter();",
+        "  THEN",
+        "    assertThrows(IORuntimeException.class, () -> WordWrap.from(r, true).wrap(w));"
+      ]
+    }
+  ]
+}

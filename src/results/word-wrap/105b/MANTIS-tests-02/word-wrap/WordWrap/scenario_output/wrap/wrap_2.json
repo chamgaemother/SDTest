@@ -1,0 +1,154 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "maxWidth(0) throws IllegalArgumentException for non‐positive width",
+      "path": "B0→B1→B2(checkArgument)→B3",
+      "precondition": "Builder created from non‐empty text",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 maxWidth zero throws",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"any\");",
+        "  WHEN",
+        "    call b.maxWidth(0);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "fromClasspathUtf8 of nonexistent resource leads to NullPointerException on wrap",
+      "path": "B0→B1(new Builder)→B2(stream null)→B3(reader)→B4(read)→B5(-1?)→B6(NPE)",
+      "precondition": "no classpath resource named 'missing.txt'",
+      "expectedResult": "NullPointerException is thrown during wrap()",
+      "tags": [
+        "exception",
+        "classpath",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 fromClasspathUtf8 missing resource",
+        "  GIVEN",
+        "    String resource = \"missing.txt\"; // not on classpath",
+        "    Builder b = WordWrap.fromClasspathUtf8(resource);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "wrap(File,Charset) writes wrapped output to file and closes streams",
+      "path": "B0→B1(wrap(File,Charset))→B2(write)→B3(close in finally)",
+      "precondition": "temporary file is writable",
+      "expectedResult": "file content matches expected wrapped text",
+      "tags": [
+        "positive",
+        "file",
+        "IO"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 wrap to file with charset",
+        "  GIVEN",
+        "    File temp = createTempFile();",
+        "    String input = \"one two\";",
+        "  WHEN",
+        "    WordWrap.from(input).maxWidth(3).wrap(temp, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    String content = readFile(temp, UTF_8);",
+        "    assert content.equals(\"one\\n two\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "excludeExtraWordChars(',') treats comma as punctuation and breaks on comma",
+      "path": "B0→B1(extraWordChars remove)→B2(punctuation branch)→B3(writeLine)",
+      "precondition": "default extraWordChars contains ','",
+      "expectedResult": "string breaks at comma: \"hello,\\nworld\"",
+      "tags": [
+        "positive",
+        "configuration",
+        "punctuation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 exclude comma splits at punctuation",
+        "  GIVEN",
+        "    String text = \"hello,world\";",
+        "    Builder b = WordWrap.from(text).maxWidth(6).excludeExtraWordChars(\",\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello,\\nworld\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "broken small word (length==2) triggers writeBrokenWord else‐branch without hyphens",
+      "path": "B0→B1(word append)→B2(tooLong)→B3(breakWords true)→B4(writeBrokenWord else)→B5(writeNewLine)",
+      "precondition": "breakWords=true, insertHyphens=true, maxWidth=1",
+      "expectedResult": "output is \"a\\nb\"",
+      "tags": [
+        "positive",
+        "breakWords",
+        "edge"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 small word broken without hyphen in else branch",
+        "  GIVEN",
+        "    String text = \"ab\";",
+        "    Builder b = WordWrap.from(text).maxWidth(1);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "newLine(\"\\r\\n\") causes CRLF line delimiters in output",
+      "path": "B0→B1(newLine set)→B2(explicit newline)→B3(writeNewLine uses CRLF)",
+      "precondition": "custom newLine is \\r\\n",
+      "expectedResult": "output lines separated by CRLF",
+      "tags": [
+        "positive",
+        "configuration",
+        "newline"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 custom CRLF newLine",
+        "  GIVEN",
+        "    String text = \"a b\";",
+        "    Builder b = WordWrap.from(text).maxWidth(1).newLine(\"\\r\\n\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\r\\nb\");",
+        "END"
+      ]
+    }
+  ]
+}

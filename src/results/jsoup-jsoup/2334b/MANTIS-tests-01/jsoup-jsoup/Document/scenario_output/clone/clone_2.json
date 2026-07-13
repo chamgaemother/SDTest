@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "clone() with no original connection preserves null connection state so clone.connection() returns a fresh session",
+      "path": "B0→super.clone()→B1→B2",
+      "precondition": "orig.connection is null",
+      "expectedResult": "copy.connection().newRequest().timeoutMillis() equals Jsoup.newSession().newRequest().timeoutMillis() but copy.connection() != orig.connection()",
+      "tags": [
+        "positive",
+        "connection",
+        "default",
+        "isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 default-connection-clone",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    // orig.connection null by default",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertNotSame(orig.connection(), copy.connection());",
+        "    assertEquals(Jsoup.newSession().newRequest().timeoutMillis(), copy.connection().newRequest().timeoutMillis());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "clone() preserves XML parser instance and is unaffected by subsequent original parser changes",
+      "path": "B0→super.clone()→B1→parser.clone()",
+      "precondition": "orig.parser is set to Parser.xmlParser()",
+      "expectedResult": "copy.parser().getName() is \"xml\" after orig.parser set back to html",
+      "tags": [
+        "positive",
+        "parser",
+        "xml",
+        "isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 xml-parser-preservation",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.parser(Parser.xmlParser());",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.parser(Parser.htmlParser());",
+        "  THEN",
+        "    assertEquals(\"xml\", copy.parser().getName());",
+        "    assertEquals(\"html\", orig.parser().getName());",
+        "END"
+      ]
+    }
+  ]
+}

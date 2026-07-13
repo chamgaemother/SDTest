@@ -1,0 +1,109 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "Reader overload propagates IllegalArgumentException from treeBuilder.parse",
+      "path": "B0→B3→B6",
+      "precondition": "Parser p with FakeTreeBuilderThrowingIllegalArgument",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput Reader overload throws IllegalArgumentException",
+        "  GIVEN",
+        "    class FakeTreeBuilderThrowingIllegalArgument extends TreeBuilder {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new IllegalArgumentException(\"bad arg\"); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctxt, String baseUri, Parser parser) {}",
+        "      @Override public void process(Token token) {}",
+        "    }",
+        "    Parser p = new Parser(new FakeTreeBuilderThrowingIllegalArgument());",
+        "    Reader in = new StringReader(\"<div>x</div>\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call p.parseInput(in, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException with message \"bad arg\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Reader overload returns null when treeBuilder.parse returns null Document",
+      "path": "B0→B3→B5",
+      "precondition": "Parser p with FakeTreeBuilderReturningNullDocument",
+      "expectedResult": "return value is null",
+      "tags": [
+        "negative",
+        "boundary",
+        "null-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput Reader overload returns null",
+        "  GIVEN",
+        "    class FakeTreeBuilderReturningNullDocument extends TreeBuilder {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) { return null; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctxt, String baseUri, Parser parser) {}",
+        "      @Override public void process(Token token) {}",
+        "    }",
+        "    Parser p = new Parser(new FakeTreeBuilderReturningNullDocument());",
+        "    Reader in = new StringReader(\"<p>test</p>\");",
+        "    String baseUri = \"http://ex\";",
+        "  WHEN",
+        "    Document result = p.parseInput(in, baseUri);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "String overload propagates IOException thrown when reading from Reader in custom TreeBuilder",
+      "path": "B0→B2→B3→B6",
+      "precondition": "Parser p with FakeTreeBuilderReadingInput that reads and uses input.read()",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "exception",
+        "io-error",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput String overload propagates IOException",
+        "  GIVEN",
+        "    class FakeTreeBuilderReadingInput extends TreeBuilder {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) throws IOException {",
+        "        in.read(); // trigger IOException",
+        "        return new Document(baseUri);",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctxt, String baseUri, Parser parser) {}",
+        "      @Override public void process(Token token) {}",
+        "    }",
+        "    Parser p = new Parser(new FakeTreeBuilderReadingInput());",
+        "    String html = \"xyz\";",
+        "    String baseUri = \"uri\";",
+        "    Reader faulty = new Reader() {",
+        "      @Override public int read(char[] cbuf, int off, int len) throws IOException {",
+        "        throw new IOException(\"read failed\"); }",
+        "      @Override public void close() {}",
+        "    };",
+        "  WHEN",
+        "    call p.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IOException with message \"read failed\";",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "dataset() converts dashed data-attribute names to camelCase keys (hyphen-to-camel-case branch)",
+      "path": "B0→B1(loop×1)→B2→B3→B4",
+      "precondition": "Element with attribute data-user-name set",
+      "expectedResult": "dataset map contains key 'userName' with the original value",
+      "tags": [
+        "positive",
+        "hyphen",
+        "camelCase",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 dataset camelCase conversion",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-user-name\", \"alice\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"userName\");",
+        "    assert ds.get(\"userName\").equals(\"alice\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset().put(key, null) removes the data- attribute and returns the previous value (null-value branch)",
+      "path": "B0→B1(loop×1)→B2(putExisting)→B3(remove)→B4",
+      "precondition": "Element with attribute data-x=orig",
+      "expectedResult": "put returns 'orig', element no longer has data-x, dataset view excludes 'x'",
+      "tags": [
+        "negative",
+        "side-effect",
+        "null-value"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 put null removes attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-x\", \"orig\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    String prev = ds.put(\"x\", null);",
+        "  THEN",
+        "    assert prev.equals(\"orig\");",
+        "    assertFalse(el.hasAttr(\"data-x\"));",
+        "    assertFalse(ds.containsKey(\"x\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "dataset().remove(nonexistent) returns null and makes no modifications (remove-nonexistent branch)",
+      "path": "B0→B1(loop×0)→B2(removeNonexistent)→B4",
+      "precondition": "Element with no data- attributes",
+      "expectedResult": "remove returns null, dataset remains empty",
+      "tags": [
+        "negative",
+        "remove",
+        "no-op"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 remove non-existent key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    String result = ds.remove(\"noKey\");",
+        "  THEN",
+        "    assert result == null;",
+        "    assertTrue(ds.isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "dataset().remove(null) throws NullPointerException (remove-null-key exception path)",
+      "path": "B0→B1(loop×0)→B2(removeNull)→B5",
+      "precondition": "Fresh element and dataset view",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-key"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 remove null key throws NPE",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.remove(null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "dataset().clear() on empty dataset does nothing (clear-zero loop path)",
+      "path": "B0→B1(loop×0)→B2(clear)→B4",
+      "precondition": "Element with no data- attributes",
+      "expectedResult": "clear returns void, dataset remains empty without errors",
+      "tags": [
+        "positive",
+        "clear",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 clear empty dataset no-op",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.clear();",
+        "  THEN",
+        "    assertTrue(ds.isEmpty());",
+        "    assertTrue(el.dataset().isEmpty());",
+        "END"
+      ]
+    }
+  ]
+}

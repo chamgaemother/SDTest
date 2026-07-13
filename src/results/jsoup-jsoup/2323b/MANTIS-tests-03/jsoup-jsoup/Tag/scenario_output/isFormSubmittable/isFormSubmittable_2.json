@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "valueOf with preserveTagCase=true and mismatched case triggers clone branch and tagName update",
+      "path": "B0→B1→B4→B5→B7",
+      "precondition": "static Tags initialized with html 'p' in lower-case",
+      "expectedResult": "returns a new Tag clone with tagName 'P' and formSubmit=false",
+      "tags": [
+        "positive",
+        "clone",
+        "preserve-case"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 preserve-case clone path",
+        "  GIVEN",
+        "    String in = \"P\";",
+        "    String normal = ParseSettings.normalName(in); // \"p\"",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(in, normal, ns, settings);",
+        "  THEN",
+        "    assert result != Tag.valueOf(\"p\");",
+        "    assert result.getName().equals(\"P\");",
+        "    assert result.normalName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "valueOf with existing tagName match but namespace mismatch falls through to creation branch",
+      "path": "B0→B1→B2(false)→B4→B5→B6",
+      "precondition": "static Tags contains 'div' in html namespace only",
+      "expectedResult": "returns new Tag for 'div' in custom namespace with formSubmit=false",
+      "tags": [
+        "positive",
+        "namespace",
+        "creation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 existing-name namespace-mismatch",
+        "  GIVEN",
+        "    String in = \"div\";",
+        "    String normal = ParseSettings.normalName(in);",
+        "    String ns = \"http://example.com/custom\";",
+        "    ParseSettings settings = new ParseSettings(false, false);",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(in, normal, ns, settings);",
+        "  THEN",
+        "    assert result.namespace().equals(ns);",
+        "    assert !result.isFormSubmittable();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf returns predefined MathML tag without creation when namespace matches MathML entry",
+      "path": "B0→B1→B2(true)→return",
+      "precondition": "static Tags contains 'math' with namespace MathML",
+      "expectedResult": "returns existing Tag instance for 'math' in MathML namespace",
+      "tags": [
+        "positive",
+        "namespace",
+        "mathml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 predefined MathML namespace",
+        "  GIVEN",
+        "    String in = \"math\";",
+        "    String normal = ParseSettings.normalName(in);",
+        "    String ns = Parser.NamespaceMathml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag first = Tag.valueOf(in, normal, ns, settings);",
+        "    Tag second = Tag.valueOf(in, normal, ns, settings);",
+        "  THEN",
+        "    assert first == second;",
+        "    assert first.namespace().equals(ns);"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf with unknown tagName and default html namespace returns new tag and isFormSubmittable=false",
+      "path": "B0→B1→B4→B5→B6",
+      "precondition": "static Tags does not contain 'newTag'",
+      "expectedResult": "returns new Tag for 'newTag' in html namespace, formSubmit=false",
+      "tags": [
+        "positive",
+        "creation",
+        "unknown"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 unknown default-namespace",
+        "  GIVEN",
+        "    String in = \"newTag\";",
+        "    String normal = ParseSettings.normalName(in);",
+        "    ParseSettings settings = new ParseSettings(false, false);",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(in);",
+        "  THEN",
+        "    assert result.getName().equals(\"newTag\");",
+        "    assert !result.isFormSubmittable();"
+      ]
+    }
+  ]
+}

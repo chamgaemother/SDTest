@@ -1,0 +1,287 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(String, String) delegates to Reader overload and returns a Document with expected title",
+      "path": "B0→B14→B15→B16",
+      "precondition": "HtmlTreeBuilder.treeBuilder default",
+      "expectedResult": "Document contains parsed <p> text",
+      "tags": [
+        "positive",
+        "overload",
+        "parseInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseInput string-overload",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<html><body><p>Hello</p></body></html>\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, \"http://base/\");",
+        "  THEN",
+        "    assert doc.selectFirst(\"p\").text().equals(\"Hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) returns a Document with nested elements",
+      "path": "B0→B14→B15→B16",
+      "precondition": "none",
+      "expectedResult": "Document body contains a nested <div><span>",
+      "tags": [
+        "positive",
+        "reader",
+        "parseInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput reader-overload",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader rdr = new StringReader(\"<div><span>X</span></div>\");",
+        "  WHEN",
+        "    Document doc = parser.parseInput(rdr, \"\");",
+        "  THEN",
+        "    assert doc.selectFirst(\"span\").text().equals(\"X\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseFragmentInput(String, Element, String) returns nodes under provided context",
+      "path": "B0→B17→B18→B19",
+      "precondition": "body Element from a shell Document",
+      "expectedResult": "parsed nodes appended under body context",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput string-overload with context",
+        "  GIVEN",
+        "    Document shell = Document.createShell(\"http://x/\");",
+        "    Element context = shell.body();",
+        "    String frag = \"<b>Bold</b>\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, context, shell.baseUri());",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseFragmentInput(Reader, null, String) returns nodes with no context",
+      "path": "B0→B17→B18→B19",
+      "precondition": "null context",
+      "expectedResult": "parsed text Node returned",
+      "tags": [
+        "positive",
+        "fragment",
+        "null-context"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseFragmentInput reader-overload null-context",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader rdr = new StringReader(\"text\");",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(rdr, null, \"\");",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0).outerHtml().equals(\"text\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "static parse(String, String) returns Document with baseUri resolved links",
+      "path": "B20→B21→B22",
+      "precondition": "none",
+      "expectedResult": "Document <a href> is absolute",
+      "tags": [
+        "positive",
+        "static",
+        "parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 static parse html",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"page.html\\\">link</a>\";",
+        "  WHEN",
+        "    Document doc = Parser.parse(html, \"http://site/\");",
+        "  THEN",
+        "    assert doc.selectFirst(\"a\").absUrl(\"href\").equals(\"http://site/page.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "static parseFragment(String, Element, String) with external error list preserves errors",
+      "path": "B23→B24→B25→B26",
+      "precondition": "ParseErrorList maxSize = 1",
+      "expectedResult": "errorList contains at most one error when malformed fragment",
+      "tags": [
+        "positive",
+        "static",
+        "fragment",
+        "error-list"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 static parseFragment with errorList",
+        "  GIVEN",
+        "    Element ctx = Document.createShell(\"\").body();",
+        "    ParseErrorList errors = ParseErrorList.tracking(1);",
+        "    String frag = \"<unclosed><b>\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragment(frag, ctx, \"\", errors);",
+        "  THEN",
+        "    assert errors.size() <= 1;",
+        "    assert nodes.size() > 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseXmlFragment(String, String) returns XML nodes and no HTML implicit wrapper",
+      "path": "B27→B28→B29",
+      "precondition": "none",
+      "expectedResult": "Element tagName is 'a:tag' for XML fragment",
+      "tags": [
+        "positive",
+        "static",
+        "xmlFragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 static parseXmlFragment",
+        "  GIVEN",
+        "    String xml = \"<a:tag xmlns:a=\\\"urn:a\\\">X</a:tag>\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, \"\");",
+        "  THEN",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"a:tag\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment moves and removes nodes correctly (loops >1)",
+      "path": "B30→B31(loop×n)→B32→B33",
+      "precondition": "input has multiple siblings",
+      "expectedResult": "body contains only first appended node after reverse-removal",
+      "tags": [
+        "positive",
+        "static",
+        "bodyFragment",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 static parseBodyFragment multi-nodes",
+        "  GIVEN",
+        "    String body = \"<div>one</div><div>two</div><div>three</div>\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(body, \"\");",
+        "  THEN",
+        "    List<Node> children = doc.body().childNodes();",
+        "    assert children.size() == 3;",
+        "    assert ((Element)children.get(0)).text().equals(\"one\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "unescapeEntities handles attribute mode (inAttribute=true) and decodes '&amp;lt;' to '&lt;'",
+      "path": "B34→B35→B36",
+      "precondition": "none",
+      "expectedResult": "returned string is '<tag>'",
+      "tags": [
+        "positive",
+        "static",
+        "unescapeEntities",
+        "attribute"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 unescapeEntities attribute-mode",
+        "  GIVEN",
+        "    String escaped = \"&amp;lt;tag&amp;gt;\";",
+        "  WHEN",
+        "    String result = Parser.unescapeEntities(escaped, true);",
+        "  THEN",
+        "    assert result.equals(\"<tag>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "isContentForTagData returns true for script tag and false for div",
+      "path": "B37→B38(true) & B37→B38(false)",
+      "precondition": "HtmlTreeBuilder default",
+      "expectedResult": "script returns true; div returns false",
+      "tags": [
+        "positive",
+        "api",
+        "isContentForTagData"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 isContentForTagData cases",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    boolean scr = parser.isContentForTagData(\"script\");",
+        "    boolean div = parser.isContentForTagData(\"div\");",
+        "  THEN",
+        "    assert scr;",
+        "    assert !div;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "settings(ParseSettings) updates parse-settings and settings() returns new value",
+      "path": "B39→B40→B41",
+      "precondition": "none",
+      "expectedResult": "settings preserves case when ParseSettings.preserveCase provided",
+      "tags": [
+        "positive",
+        "api",
+        "settings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 settings setter and getter",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings ps = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    parser.settings(ps);",
+        "  THEN",
+        "    assert parser.settings() == ps;",
+        "END"
+      ]
+    }
+  ]
+}

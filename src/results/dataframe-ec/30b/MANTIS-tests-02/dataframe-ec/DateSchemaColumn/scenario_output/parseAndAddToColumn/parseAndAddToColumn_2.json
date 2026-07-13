@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn throws NullPointerException when dfColumn is null",
+      "path": "B0→B3→B5",
+      "precondition": "aString is valid non-empty, dfColumn is null",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-target"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseAndAddToColumn with null column",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfColumn column = null;",
+        "    String aString = \"2023-01-01\";",
+        "  WHEN",
+        "    call schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn adds null when input is empty string (trimmed empty)",
+      "path": "B0→B3(true)→B5",
+      "precondition": "none",
+      "expectedResult": "column.getTypedObject(0) returns null",
+      "tags": [
+        "boundary",
+        "empty-string",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseAndAddToColumn with empty input",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"\";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseAndAddToColumn parses February 29 on a leap year correctly",
+      "path": "B0→B3(false)→B5",
+      "precondition": "pattern allows single-digit month/day",
+      "expectedResult": "column.getTypedObject(0) equals LocalDate.of(2020,2,29)",
+      "tags": [
+        "positive",
+        "leap-year",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseAndAddToColumn leap-year date",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"2020-2-29\";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0).equals(LocalDate.of(2020, 2, 29));",
+        "END"
+      ]
+    }
+  ]
+}

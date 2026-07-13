@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseInput(String, String) propagates UncheckedIOException when TreeBuilder.parse throws during String overload",
+      "path": "B0→B1→B2→B3→exception",
+      "precondition": "StubTreeBuilder.parse(StringReader) throws UncheckedIOException",
+      "expectedResult": "UncheckedIOException is thrown and lock is released",
+      "tags": [
+        "exception",
+        "unchecked-io",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput String-propagates-UncheckedIOException",
+        "  GIVEN",
+        "    StubTreeBuilder stubBuilder = new StubTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser p) {",
+        "        throw new UncheckedIOException(new IOException(\"fail\"));",
+        "      }",
+        "      @Override public void process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    String html = \"<tag/>\";",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) propagates RuntimeException when TreeBuilder.parse throws an unchecked error",
+      "path": "B0→B1→B2→B3→exception",
+      "precondition": "StubTreeBuilder.parse(Reader) throws RuntimeException",
+      "expectedResult": "RuntimeException is thrown and lock is released",
+      "tags": [
+        "exception",
+        "runtime",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput Reader-propagates-RuntimeException",
+        "  GIVEN",
+        "    StubTreeBuilder stubBuilder = new StubTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser p) {",
+        "        throw new RuntimeException(\"boom\");",
+        "      }",
+        "      @Override public void process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    Reader input = new StringReader(\"<x/>\");",
+        "    String baseUri = \"any\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws RuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseFragmentInput(String, non-null context) with real HtmlTreeBuilder returns parsed Element nodes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "returns non-empty list of Element nodes corresponding to the fragment",
+      "tags": [
+        "positive",
+        "real-treebuilder",
+        "html"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput real HTML fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String fragment = \"<div><span>hi</span></div>\";",
+        "    Element context = new Element(\"body\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) instanceof Element;",
+        "    assert ((Element) result.get(0)).tagName().equals(\"div\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseFragmentInput(Reader, null context) with real XmlTreeBuilder returns parsed Node list for XML fragment",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "returns non-empty list of Nodes representing XML elements",
+      "tags": [
+        "positive",
+        "real-treebuilder",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseFragmentInput real XML fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader reader = new StringReader(\"<root><child/></root>\");",
+        "    Element context = null;",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).nodeName().equals(\"root\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseFragmentInput(Reader, context) with null Reader throws NullPointerException after lock",
+      "path": "B0→B1→B2(ex)→B3",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput null Reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

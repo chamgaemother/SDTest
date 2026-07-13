@@ -1,0 +1,112 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Nested ATKEYWORD with inner ruleset exercises hasRuleSet==true path",
+      "path": "B0→B1→B2(ATKEYWORD)→handleAtRule→hasRuleSet(true)→nested handleRuleSet→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "ContentHandler events: startDocument, startAtRule(media), selectors, declaration, endSelectors, endAtRule(media), endDocument",
+      "tags": [
+        "positive",
+        "iteration",
+        "nested",
+        "atrule"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 nested-at-rule hasRuleSet-true",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media { h1{color:blue;} }\");",
+        "    CssErrorHandler err = new NoOpErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert events == [\"startDocument\",\"startAtRule(media)\",\"selectors\",\"declaration\",\"endSelectors\",\"endAtRule(media)\",\"endDocument\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Ruleset with unexpected ')' after selector exercises MATCH_CLOSEPAREN branch in handleRuleSet",
+      "path": "B0→B1→B2(non-ATKEYWORD)→handleRuleSet→MATCH_CLOSEPAREN true→return→B8",
+      "precondition": "none",
+      "expectedResult": "CssErrorHandler records GRAMMAR_UNEXPECTED_TOKEN; ContentHandler only startDocument and endDocument",
+      "tags": [
+        "negative",
+        "exception",
+        "ruleset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 ruleset-unexpected-closeparen",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1){color:red;} \");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.last.getErrorCode() == CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN;",
+        "    assert doc.events == [\"startDocument\",\"endDocument\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Ruleset with selector-list error causing selectors==null path in handleRuleSet",
+      "path": "B0→B1→B2(non-ATKEYWORD)→handleRuleSet selectors==null→iter.next(MATCH_CLOSEBRACE)→return→B8",
+      "precondition": "none",
+      "expectedResult": "CssErrorHandler records GRAMMAR_EXPECTING_TOKEN; ContentHandler only startDocument and endDocument",
+      "tags": [
+        "negative",
+        "exception",
+        "ruleset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 ruleset-empty-selector-list",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"{color:red;} \");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.last.getErrorCode() == CssErrorCode.GRAMMAR_EXPECTING_TOKEN;",
+        "    assert doc.events == [\"startDocument\",\"endDocument\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "ATKEYWORD param error exercises param==null branch and skip-to-close logic in handleAtRule",
+      "path": "B0→B1→B2(ATKEYWORD)→handleAtRule param==null→inner skip loop→return→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "CssErrorHandler records GRAMMAR_UNEXPECTED_TOKEN; ContentHandler events: startDocument,startAtRule(foo),endAtRule(foo),endDocument",
+      "tags": [
+        "negative",
+        "exception",
+        "atrule"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 at-rule-invalid-param",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo %invalid;{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.last.getErrorCode() == CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN;",
+        "    assert doc.events == [\"startDocument\",\"startAtRule(foo)\",\"endAtRule(foo)\",\"endDocument\"];",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,139 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "Constructor with null pattern uses default uuuu-M-d and adds LocalDate for valid input",
+      "path": "B0→B1(nullPattern)→B2→B4→B5",
+      "precondition": "CsvSchemaColumn schema is provided; ConcreteDfDateColumn exists",
+      "expectedResult": "DfDateColumn receives LocalDate.of(2021,1,1)",
+      "tags": [
+        "positive",
+        "default-pattern",
+        "real-column"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 default-pattern with real column",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"2021-1-1\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.size() == 1;",
+        "    assert dfColumn.getObjectList().get(0).equals(LocalDate.of(2021,1,1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Custom pattern dd/MM/uuuu parses and adds LocalDate for matching input using real column",
+      "path": "B0→B1(customPattern)→B2→B4→B5",
+      "precondition": "CsvSchemaColumn schema is provided; ConcreteDfDateColumn exists",
+      "expectedResult": "DfDateColumn receives LocalDate.of(2022,10,5)",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "real-column"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 custom-pattern dd/MM/uuuu with real column",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"dd/MM/uuuu\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"05/10/2022\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.size() == 1;",
+        "    assert dfColumn.getObjectList().get(0).equals(LocalDate.of(2022,10,5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Strict default pattern rejects non-leap February 29 and leaves column unchanged",
+      "path": "B0→B1(default)→B2→B4→B6(exception)",
+      "precondition": "CsvSchemaColumn schema is provided; ConcreteDfDateColumn exists",
+      "expectedResult": "DateTimeParseException thrown; dfColumn.size()==0",
+      "tags": [
+        "negative",
+        "exception",
+        "non-leap"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 non-leap February 29 default-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"2019-2-29\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert dfColumn.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Strict two-digit-month pattern MM-dd-uuuu rejects single-digit month and throws exception",
+      "path": "B0→B1(customPattern)→B2→B4→B6(exception)",
+      "precondition": "CsvSchemaColumn schema is provided; ConcreteDfDateColumn exists",
+      "expectedResult": "DateTimeParseException thrown; dfColumn.size()==0",
+      "tags": [
+        "negative",
+        "exception",
+        "pattern-mismatch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 strict-MM requires two-digit month",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"MM-dd-uuuu\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \"7-04-2023\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert dfColumn.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Custom pattern with whitespace trimmed and adds correct LocalDate using real column",
+      "path": "B0→B1(customPattern)→B2→B3(trim)→B4→B5",
+      "precondition": "CsvSchemaColumn schema is provided; ConcreteDfDateColumn exists",
+      "expectedResult": "DfDateColumn receives LocalDate.of(2023,7,4)",
+      "tags": [
+        "positive",
+        "trim",
+        "real-column"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 trim and parse MM-dd-uuuu with real column",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"MM-dd-uuuu\");",
+        "    DfDateColumn dfColumn = new ConcreteDfDateColumn();",
+        "    String aString = \" 07-04-2023 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.size() == 1;",
+        "    assert dfColumn.getObjectList().get(0).equals(LocalDate.of(2023,7,4));",
+        "END"
+      ]
+    }
+  ]
+}

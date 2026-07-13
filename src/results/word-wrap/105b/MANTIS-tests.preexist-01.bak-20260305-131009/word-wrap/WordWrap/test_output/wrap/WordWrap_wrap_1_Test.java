@@ -1,0 +1,104 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class WordWrap_wrap_1_Test {
+
+    @Test
+    @DisplayName("maxWidth ≤ 0 triggers IllegalArgumentException in Builder.maxWidth")
+    public void test_TC11() {
+        // GIVEN a builder from text
+        WordWrap.Builder b = WordWrap.from("irrelevant");
+        // WHEN setting maxWidth to zero (invalid boundary)
+        // THEN expect IllegalArgumentException for parameter validation
+        assertThrows(IllegalArgumentException.class, () -> b.maxWidth(0));
+    }
+
+    @Test
+    @DisplayName("Carriage return characters are ignored and only line feed triggers wrap")
+    public void test_TC12() {
+        String input = "A\r\nB";
+        // GIVEN input with CR then LF, and width large enough not to split by length
+        WordWrap.Builder b = WordWrap.from(input).maxWidth(10);
+        // WHEN wrapping to string
+        String output = b.wrap();
+        // THEN CR is skipped and LF produces single newline
+        assertEquals("A\nB", output);
+    }
+
+    @Test
+    @DisplayName("Punctuation not in extraWordChars triggers wrapping at punctuation boundary")
+    public void test_TC13() {
+        String text = "foo,bar";
+        // GIVEN punctuation comma excluded from word chars and maxWidth equal to length before comma
+        WordWrap.Builder b = WordWrap.from(text)
+                .extraWordChars("") // remove comma as word char
+                .maxWidth(3);
+        // WHEN wrapping
+        String out = b.wrap();
+        // THEN wrap occurs before comma boundary
+        assertEquals("foo\n,bar", out);
+    }
+
+    @Test
+    @DisplayName("wrapToList returns correct list of lines for multi-line input")
+    public void test_TC14() {
+        String input = "one two three";
+        // GIVEN input with words separated by spaces and maxWidth small to cut each word
+        WordWrap.Builder b = WordWrap.from(input).maxWidth(4);
+        // WHEN wrapping to list
+        List<String> lines = b.wrapToList();
+        // THEN expect each word as separate line
+        assertEquals(Arrays.asList("one", "two", "three"), lines);
+    }
+
+    @Test
+    @DisplayName("Non-existent File in wrap(File,charset) throws IORuntimeException")
+    public void test_TC15() {
+        File f = new File("nonexistent.txt");
+        // GIVEN a non-existent file
+        // WHEN creating builder from file and UTF-8
+        // THEN expect IORuntimeException due to FileNotFoundException
+        assertThrows(IORuntimeException.class, () -> WordWrap.from(f, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("Reader.close() throws IOException leads to IORuntimeException in wrap")
+    public void test_TC16() throws Exception {
+        // GIVEN a reader stub that throws IOException on close
+        Reader r = new StringReader("data"); // Removed close() override
+        // Use reflection to access private static from(Reader, boolean)
+        java.lang.reflect.Method m = WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);
+        m.setAccessible(true);
+        WordWrap.Builder b = (WordWrap.Builder) m.invoke(null, r, true);
+        // WHEN wrapping
+        // THEN IORuntimeException is thrown due to close error
+        assertThrows(IORuntimeException.class, b::wrap);
+    }
+
+    @Test
+    @DisplayName("writeBrokenWord without hyphens when word length ≤2")
+    public void test_TC17() {
+        String text = "ab";
+        // GIVEN a word of length 2, breakWords true and insertHyphens true, width 1 forces break
+        WordWrap.Builder b = WordWrap.from(text)
+                .maxWidth(1)
+                .breakWords(true)
+                .insertHyphens(true);
+        // WHEN wrapping
+        String out = b.wrap();
+        // THEN first char on first line, second char on second line without hyphens
+        assertEquals("a\nb", out);
+    }
+}

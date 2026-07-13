@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() preserves child element structure and baseUri")
+    public void test_TC03() {
+        // GIVEN a Document with one child div#test appended
+        Document original = Document.createShell("http://example.com");
+        original.appendElement("div").attr("id", "test");
+        // WHEN clone is invoked
+        Document copy = original.clone();
+        // THEN the clone is a distinct instance
+        assertNotSame(original, copy);
+        // AND baseUri is preserved
+        assertEquals(original.baseUri(), copy.baseUri());
+        // AND the child structure is preserved: one div with id test
+        assertEquals(1, copy.select("div#test").size());
+        // AND the child element instances are distinct (deep copy)
+        assertNotSame(original.selectFirst("div"), copy.selectFirst("div"));
+    }
+
+    @Test
+    @DisplayName("clone() retains an explicitly set non-null connection reference")
+    public void test_TC04() {
+        // GIVEN a Document with a non-null Connection set
+        Connection session = Jsoup.newSession();
+        Document original = Document.createShell("http://example.com").connection(session);
+        // WHEN clone is invoked
+        Document copy = original.clone();
+        // THEN clone is distinct
+        assertNotSame(original, copy);
+        // AND the same connection instance is retained
+        assertSame(session, copy.connection());
+    }
+
+    @Test
+    @DisplayName("clone() preserves a non-default quirksMode setting")
+    public void test_TC05() {
+        // GIVEN a Document with quirksMode set to limitedQuirks
+        Document original = Document.createShell("http://example.com")
+                .quirksMode(Document.QuirksMode.limitedQuirks);
+        // WHEN clone is invoked
+        Document copy = original.clone();
+        // THEN clone is distinct
+        assertNotSame(original, copy);
+        // AND the quirksMode setting is preserved
+        assertEquals(Document.QuirksMode.limitedQuirks, copy.quirksMode());
+    }
+
+    @Test
+    @DisplayName("clone() deep isolates parser and outputSettings when clone is mutated")
+    public void test_TC06() {
+        // GIVEN a default Document
+        Document original = Document.createShell("http://test");
+        // WHEN clone is invoked and its parser and charset are modified
+        Document copy = original.clone();
+        copy.parser(Parser.xmlParser()); // switch clone to xml parser
+        copy.charset(Charset.forName("ISO-8859-1")); // change clone charset
+        // THEN original parser remains default HTML parser
+        assertNotEquals(original.parser().getClass(), copy.parser().getClass());
+        // AND original charset remains default UTF-8
+        assertNotEquals(original.charset(), copy.charset());
+    }
+}

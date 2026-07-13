@@ -1,0 +1,26 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("TC05: Adds 1 scenario; expected coverage ↑ from 0 % to 100 % (CC = 1). Verifies cachedChildren path on second children() invocation")
+    public void test_TC05() {
+        // Arrange: create a parent and a single child element
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // Prime the cache by first calling children(): this builds and caches the child list
+        Elements firstCall = parent.children();
+        // Act: call children() again; since the child elements list is cached, children() should return the same Elements instance
+        Elements secondCall = parent.children();
+        // Assert: the second call should return the exact same instance (object identity) as the first, not a new one
+        assertSame(firstCall, secondCall, "Expected children() to return the cached Elements instance on second call");
+    }
+}

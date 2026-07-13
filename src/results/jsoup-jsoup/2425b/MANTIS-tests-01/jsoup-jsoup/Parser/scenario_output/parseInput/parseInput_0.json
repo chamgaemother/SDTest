@@ -1,0 +1,109 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with valid HTML and baseUri returns Document after lock parse release",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Stub TreeBuilder.parse(htmlReader, baseUri, parser) returns a predefined Document instance; using real StringReader; no mocking framework used",
+      "expectedResult": "returned Document is the predefined instance from TreeBuilder.parse",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "lock-true",
+        "unlock-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput success String overload",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    String html = \"<p>text</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == predefinedDoc;"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader, String) with valid Reader and baseUri returns Document after lock parse release",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Stub TreeBuilder.parse(reader, baseUri, parser) returns a predefined Document; uses StringReader; stub is hand-written simple fake",
+      "expectedResult": "returned Document is the predefined instance from TreeBuilder.parse",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "lock-true",
+        "unlock-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput success Reader overload",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningDoc);",
+        "    Reader input = new StringReader(\"<div></div>\");",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert result == predefinedDoc;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null html throws NullPointerException before locking",
+      "path": "B0",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no lock attempted",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://a\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) when TreeBuilder.parse throws UncheckedIOException unlocks and propagates exception",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Stub TreeBuilder.parse(reader, baseUri, parser) throws java.io.UncheckedIOException; stub behavior explicit",
+      "expectedResult": "throws UncheckedIOException; lock is released in finally",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-io-error",
+        "lock-true",
+        "unlock-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput reader overload IO-error",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderThrowingIOE);",
+        "    Reader input = new StringReader(\"data\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    }
+  ]
+}

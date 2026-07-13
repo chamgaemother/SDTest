@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn trims whitespace and parses a valid date with default pattern",
+      "path": "B0→B1→B2(false)→B3→B4",
+      "precondition": "schema created with null pattern (default uuuu-M-d) and a fresh StubColumn",
+      "expectedResult": "stubColumn.getLastAdded() equals LocalDate.of(2021, 7, 4)",
+      "tags": [
+        "positive",
+        "trim",
+        "default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseWithWhitespaceDefaultPattern",
+        "  GIVEN",
+        "    String aString = \" 2021-7-4 \";",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", null);",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded() == LocalDate.of(2021, 7, 4);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn with custom pattern throws DateTimeParseException for mismatched input",
+      "path": "B0→B1→B2(false)→B3(exception)",
+      "precondition": "schema created with custom pattern \"MM-dd-uuuu\" and a fresh StubColumn",
+      "expectedResult": "DateTimeParseException is thrown and stubColumn.getLastAdded() remains null",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-pattern"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInvalidWithCustomPattern",
+        "  GIVEN",
+        "    String aString = \"2021/12/31\"; // wrong delimiters",
+        "    StubColumn stubColumn = new StubColumn();",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"MM-dd-uuuu\");",
+        "  WHEN",
+        "    call schema.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert stubColumn.getLastAdded() == null;",
+        "END"
+      ]
+    }
+  ]
+}

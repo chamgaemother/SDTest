@@ -1,0 +1,89 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class BM25InvertedIndex_search_0_Test {
+
+    @Test
+    @DisplayName("search nonexistent term returns empty list (B0 false)")
+    void test_TC01() {
+        // GIVEN: no movies added => index is empty so index.containsKey(term) is false (B0 false)
+        com.thealgorithms.searches.BM25InvertedIndex idx = new com.thealgorithms.searches.BM25InvertedIndex();
+        // WHEN
+        List<com.thealgorithms.searches.SearchResult> results = idx.search("unknown");
+        // THEN
+        assertTrue(results.isEmpty(), "Expected empty list when searching a term not in index");
+    }
+
+    @Test
+    @DisplayName("search single-term single-document returns one result sorted by BM25 (B0 true, loop-1, B3 true)")
+    void test_TC02() {
+        // GIVEN: one movie with content containing "alpha", so index.containsKey("alpha") true (B0 true)
+        com.thealgorithms.searches.BM25InvertedIndex idx = new com.thealgorithms.searches.BM25InvertedIndex();
+        idx.addMovie(1, "Title", 8.0, 2000, "alpha beta");
+        // WHEN
+        List<com.thealgorithms.searches.SearchResult> results = idx.search("alpha");
+        // THEN
+        assertAll("Single result expected",
+            () -> assertEquals(1, results.size(), "Expected exactly one result"),
+            () -> assertEquals(1, results.get(0).getDocId(), "Expected docId 1 for the only result")
+        );
+    }
+
+    @Test
+    @DisplayName("search term in multiple docs returns sorted results by relevance (loop-N, B3 true)")
+    void test_TC03() {
+        // GIVEN: two movies both containing "x"; BM25 should rank doc2 higher because it has shorter length or better frequency
+        com.thealgorithms.searches.BM25InvertedIndex idx = new com.thealgorithms.searches.BM25InvertedIndex();
+        idx.addMovie(1, "A", 7.0, 1990, "x x x y");
+        idx.addMovie(2, "B", 9.0, 2000, "x y");
+        // WHEN
+        List<com.thealgorithms.searches.SearchResult> results = idx.search("x");
+        // THEN
+        assertAll("Two results in descending relevance order",
+            () -> assertEquals(2, results.size(), "Expected two results"),
+            () -> assertEquals(2, results.get(0).getDocId(), "Expected docId 2 first due to higher BM25 score"),
+            () -> assertEquals(1, results.get(1).getDocId(), "Expected docId 1 second")
+        );
+    }
+
+    @Test
+    @DisplayName("search term with index entry but missing movie skips entry (B3 false)")
+    void test_TC04() throws Exception {
+        // GIVEN: one movie added then removed from movies map => index has term->docId but movie lookup returns null (B3 false)
+        com.thealgorithms.searches.BM25InvertedIndex idx = new com.thealgorithms.searches.BM25InvertedIndex();
+        idx.addMovie(1, "Name", 5.0, 2010, "term");
+        // Remove the movie entry via reflection
+        Field moviesField = com.thealgorithms.searches.BM25InvertedIndex.class.getDeclaredField("movies");
+        moviesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<Integer, com.thealgorithms.searches.Movie> moviesMap =
+                (Map<Integer, com.thealgorithms.searches.Movie>) moviesField.get(idx);
+        moviesMap.remove(1);
+        // WHEN
+        List<com.thealgorithms.searches.SearchResult> results = idx.search("term");
+        // THEN
+        assertTrue(results.isEmpty(), "Expected empty list after skipping missing movie entry");
+    }
+
+    @Test
+    @DisplayName("search uppercase term is normalized and returns result (term normalization at B0 true)")
+    void test_TC05() {
+        // GIVEN: movie content contains "gamma" in lowercase; searching "GAMMA" tests toLowerCase normalization
+        com.thealgorithms.searches.BM25InvertedIndex idx = new com.thealgorithms.searches.BM25InvertedIndex();
+        idx.addMovie(3, "C", 8.5, 2020, "Gamma Delta");
+        // WHEN
+        List<com.thealgorithms.searches.SearchResult> results = idx.search("GAMMA");
+        // THEN
+        assertAll("Normalization of uppercase search term",
+            () -> assertEquals(1, results.size(), "Expected one result after normalization"),
+            () -> assertEquals(3, results.get(0).getDocId(), "Expected docId 3 for normalized term match")
+        );
+    }
+}

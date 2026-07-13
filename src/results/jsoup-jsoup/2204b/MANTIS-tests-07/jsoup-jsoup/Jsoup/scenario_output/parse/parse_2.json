@@ -1,0 +1,162 @@
+{
+  "scenarios": [
+    {
+      "id": "TC27",
+      "description": "parse(html=null, parser non-null) throws IllegalArgumentException for null html with Parser overload",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 parse_string_parser_nullHtml",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "parse(html non-empty, baseUri non-empty, parser=null) throws IllegalArgumentException for null parser",
+      "path": "B0→B1→B2→B6",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-parameter",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC28 parse_string_baseUri_nullParser",
+        "  GIVEN",
+        "    String html = \"<p>Y</p>\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC29",
+      "description": "parse(File, charsetName invalid, baseUri) throws IOException for unsupported charset",
+      "path": "B0→B1→B2→B3→B7",
+      "precondition": "file exists with simple HTML",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "boundary",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC29 parse_file_invalidCharset",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"jsoup\", \".html\");",
+        "    write \"<p>Q</p>\" to temp;",
+        "    String charset = \"INVALID-CHARSET\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call Jsoup.parse(temp, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC30",
+      "description": "parse(Path, charsetName invalid) throws IOException for invalid charset in Path overload",
+      "path": "B0→B1→B2→B3→B7",
+      "precondition": "path exists with simple HTML",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "boundary",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC30 parse_path_invalidCharset",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"jsoup\", \".html\");",
+        "    Files.write(p, \"<div>Z</div>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"NO-SUCH-CHARSET\";",
+        "  WHEN",
+        "    call Jsoup.parse(p, charset);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC31",
+      "description": "parse(InputStream, charsetName invalid, baseUri) throws IOException for unsupported charset on stream",
+      "path": "B0→B1→B2→B3→B7",
+      "precondition": "InputStream over simple HTML bytes",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC31 parse_inputStream_invalidCharset",
+        "  GIVEN",
+        "    byte[] data = \"<p>S</p>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    String charset = \"BAD-CHARSET\";",
+        "    String baseUri = \"http://b/\";",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC32",
+      "description": "parse(InputStream, charsetName valid, baseUri, parser=null) throws IllegalArgumentException for null parser",
+      "path": "B0→B1→B2→B6",
+      "precondition": "InputStream over '<x/>' bytes",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-parameter",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC32 parse_inputStream_baseUri_nullParser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<x/>\".getBytes(\"UTF-8\"));",
+        "    String charset = null;",
+        "    String baseUri = \"u\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

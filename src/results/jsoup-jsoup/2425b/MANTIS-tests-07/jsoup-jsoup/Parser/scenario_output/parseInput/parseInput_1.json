@@ -1,0 +1,55 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, baseUri) propagates runtime exceptions thrown by TreeBuilder.parse and still releases lock",
+      "path": "B0→B2→EX",
+      "precondition": "Parser created with a TreeBuilder whose parse() throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": ["exception","branch","unlock"],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput propagates TreeBuilder runtime exception",
+        "  GIVEN",
+        "    // stub TreeBuilder to throw
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override Document parse(Reader in, String uri, Parser parser) {",
+        "        throw new IllegalStateException(\"fail-parse\"); }",
+        "      @Override TreeBuilder newInstance() { return this; }",
+        "      @Override ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      @Override TagSet defaultTagSet() { return TagSet.Html(); }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<html></html>\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"http://example.com\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail-parse\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String, null) using String overload throws NullPointerException inside TreeBuilder.parse",
+      "path": "B0→B1→B2→EX",
+      "precondition": "Parser created with HtmlTreeBuilder, baseUri is null",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": ["negative","null","branch"],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput(String, null) throws NPE in parse",
+        "  GIVEN",
+        "    String html = \"<div>test</div>\";",
+        "    String baseUri = null;",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

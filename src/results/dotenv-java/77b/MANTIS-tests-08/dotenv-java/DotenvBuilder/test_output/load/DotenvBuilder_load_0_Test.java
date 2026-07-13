@@ -1,0 +1,108 @@
+package io.github.cdimascio.dotenv;
+
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class DotenvBuilder_load_0_Test {
+
+    @Test
+    @DisplayName("TC01: load() returns DotenvImpl instance without systemProperties when systemProperties=false and empty .env file (loop-0)")
+    void test_TC01() throws IOException {
+        // Create a temp directory with an empty .env file to satisfy B0→B2 (systemProperties=false, so no loop)
+        Path tempDir = Files.createTempDirectory("tc01");
+        Path envFile = tempDir.resolve(".env");
+        Files.createFile(envFile);
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+        Dotenv dotenv = builder.load();
+
+        // No entry "ANY_KEY", so get should return null
+        assertNull(dotenv.get("ANY_KEY"));
+    }
+
+    @Test
+    @DisplayName("TC02: load() returns DotenvImpl and sets no system properties when systemProperties=true but .env is empty (loop-0, branch-true)")
+    void test_TC02() throws IOException {
+        // Create a temp directory with an empty .env file;
+        // branch-true: systemProperties=true triggers the forEach, but the list is empty so loop-0
+        Path tempDir = Files.createTempDirectory("tc02");
+        Path envFile = tempDir.resolve(".env");
+        Files.createFile(envFile);
+
+        // Ensure no lingering property
+        System.clearProperty("ANY_KEY");
+
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+
+        assertNull(dotenv.get("ANY_KEY"));
+        // No property set since file is empty
+        assertNull(System.getProperty("ANY_KEY"));
+    }
+
+    @Test
+    @DisplayName("TC03: load() returns DotenvImpl and sets one system property when systemProperties=true and .env has one entry (loop-1, branch-true)")
+    void test_TC03() throws IOException {
+        // Create a temp directory with .env containing "FOO=bar";
+        // branch-true and single iteration loop-1
+        Path tempDir = Files.createTempDirectory("tc03");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "FOO=bar".getBytes());
+
+        // Clean any existing property
+        System.clearProperty("FOO");
+
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+
+        // The builder should load the mapping and set system property
+        assertEquals("bar", dotenv.get("FOO"));
+        assertEquals("bar", System.getProperty("FOO"));
+    }
+
+    @Test
+    @DisplayName("TC04: load() returns DotenvImpl with multiple entries and sets each as system property when systemProperties=true (loop-N, branch-true)")
+    void test_TC04() throws IOException {
+        // Create a temp directory with .env containing "A=1" and "B=2"; branch-true and loop-N
+        Path tempDir = Files.createTempDirectory("tc04");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "A=1\nB=2".getBytes());
+
+        System.clearProperty("A");
+        System.clearProperty("B");
+
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+
+        assertAll(
+            () -> assertEquals("1", dotenv.get("A")),
+            () -> assertEquals("2", dotenv.get("B")),
+            () -> assertEquals("1", System.getProperty("A")),
+            () -> assertEquals("2", System.getProperty("B"))
+        );
+    }
+
+    @Test
+    @DisplayName("TC05: load() throws DotenvException when .env file is missing and throwIfMissing=true")
+    void test_TC05() throws IOException {
+        // Create an empty temp directory without .env; throwIfMissing=true stays default; takes B0 path leading to exception
+        Path tempDir = Files.createTempDirectory("tc05");
+
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString());
+        assertThrows(DotenvException.class, builder::load);
+    }
+}

@@ -1,0 +1,165 @@
+package org.jsoup;
+
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("parse(html non-empty, baseUri non-empty) returns parsed Document covering Parser.parse(html,baseUri)")
+    public void test_TC01_O1() {
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertTrue(doc.html().contains("<p>Hello</p>"), "Document should contain the original HTML"),
+            () -> assertEquals("http://example.com", doc.baseUri(), "Base URI should match the provided URI")
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html empty, baseUri empty) returns empty body Document")
+    public void test_TC02_O1() {
+        String html = "";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertEquals("", doc.body().html(), "Body HTML should be empty string"),
+            () -> assertEquals("", doc.baseUri(), "Base URI should be empty string")
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html null) throws IllegalArgumentException for null html input")
+    public void test_TC03_O1() {
+        String html = null;
+        String baseUri = "http://x/";
+        assertThrows(IllegalArgumentException.class,
+            () -> Jsoup.parse(html, baseUri),
+            "Expected IllegalArgumentException when html input is null"
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html non-empty, parser non-null) uses parser.parseInput and returns Document")
+    public void test_TC04_O2() {
+        String html = "<div/>";
+        String baseUri = "";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertAll(
+            () -> assertEquals(1, doc.select("div").size(), "One div element expected from xml parser"),
+            () -> assertEquals("", doc.baseUri(), "Base URI should match the provided empty URI")
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html non-empty, parser null) throws IllegalArgumentException for null parser")
+    public void test_TC05_O2() {
+        String html = "<p/>";
+        String baseUri = "";
+        Parser parser = null;
+        assertThrows(IllegalArgumentException.class,
+            () -> Jsoup.parse(html, baseUri, parser),
+            "Expected IllegalArgumentException when parser is null"
+        );
+    }
+
+    @Test
+    @DisplayName("parse(File file exists, charsetName non-null, baseUri non-empty) returns Document via DataUtil.load")
+    public void test_TC06_O3() throws IOException {
+        File tmp = File.createTempFile("test", ".html");
+        tmp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(tmp)) {
+            fw.write("<span>F</span>");
+        }
+        String cs = "UTF-8";
+        String baseUri = "http://f/";
+        Document doc = Jsoup.parse(tmp, cs, baseUri);
+        assertAll(
+            () -> assertEquals("F", doc.select("span").text(), "Span text should be 'F'"),
+            () -> assertEquals(baseUri, doc.baseUri(), "Base URI should match the provided URI")
+        );
+    }
+
+    @Test
+    @DisplayName("parse(File file exists, charsetName null) determines charset from meta or defaults UTF-8")
+    public void test_TC07_O3() throws IOException {
+        File tmp = File.createTempFile("t", ".html");
+        tmp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(tmp)) {
+            fw.write("<p>U</p>");
+        }
+        String cs = null;
+        Document doc = Jsoup.parse(tmp, cs);
+        assertAll(
+            () -> assertEquals("U", doc.select("p").text(), "Paragraph text should be 'U'"),
+            () -> assertEquals(tmp.toURI().toString(), doc.baseUri(), "Base URI should be file absolute path")
+        );
+    }
+
+    @Test
+    @DisplayName("parse(InputStream non-null, charsetName non-null, baseUri non-empty) returns Document via DataUtil.load")
+    public void test_TC08_O5() throws IOException {
+        String inputHtml = "<h1>1</h1>";
+        try (InputStream in = new ByteArrayInputStream(inputHtml.getBytes("UTF-8"))) {
+            String cs = "UTF-8";
+            String baseUri = "http://i/";
+            Document doc = Jsoup.parse(in, cs, baseUri);
+            assertAll(
+                () -> assertEquals("1", doc.select("h1").text(), "H1 text should be '1'"),
+                () -> assertEquals(baseUri, doc.baseUri(), "Base URI should match the provided URI")
+            );
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL with unsupported protocol) throws MalformedURLException before timeout")
+    public void test_TC09_O16() throws Exception {
+        URL url = new URL("ftp://example.com");
+        int timeout = 100;
+        assertThrows(MalformedURLException.class,
+            () -> Jsoup.parse(url, timeout),
+            "Expected MalformedURLException for unsupported protocol"
+        );
+    }
+
+    @Test
+    @DisplayName("parse(URL http, timeout=0) returns Document by immediate GET via Connection.get()")
+    public void test_TC10_O16() throws Exception {
+        // start embedded HTTP server to serve <t>OK</t>
+        HttpServer server = HttpServer.create(new InetSocketAddress(8888), 0);
+        server.createContext("/", exchange -> {
+            byte[] resp = "<t>OK</t>".getBytes("UTF-8");
+            exchange.sendResponseHeaders(200, resp.length);
+            exchange.getResponseBody().write(resp);
+            exchange.close();
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        try {
+            URL url = new URL("http://localhost:8888/");
+            int timeout = 0;
+            Document doc = Jsoup.parse(url, timeout);
+            assertEquals("OK", doc.select("t").text(), "Tag 't' text should be 'OK'");
+        } finally {
+            server.stop(0);
+        }
+    }
+}

@@ -1,0 +1,52 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("TC06: child(-1) on element with multiple element children returns last Element after index adjustment")
+    public void test_TC06() {
+        // GIVEN an element with three child elements appended in order
+        Element parent = new Element("ul");
+        parent.appendChild(new Element("li"));
+        parent.appendChild(new Element("li"));
+        parent.appendChild(new Element("li"));
+        // WHEN calling child with negative index -1, which should adjust to last index (2)
+        Element result = parent.child(-1);
+        // THEN the returned element is the third (last) child
+        // The adjustment branch for negative index is exercised, and loop iterates to collect children
+        assertSame(parent.children().get(2), result);
+    }
+
+    @Test
+    @DisplayName("TC07: child(index) throws IndexOutOfBoundsException when index >= element children count")
+    public void test_TC07() {
+        // GIVEN an element with two child elements
+        Element parent = new Element("div");
+        parent.appendChild(new Element("p"));
+        parent.appendChild(new Element("span"));
+        // WHEN requesting child at index 2 (equal to childrenSize), which is out of bounds
+        // THEN an IndexOutOfBoundsException should be thrown
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            parent.child(2);
+        });
+    }
+
+    @Test
+    @DisplayName("TC08: child(index) hits cached shadowChildrenRef path when invoked twice without modifications")
+    public void test_TC08() {
+        // GIVEN an element with two children (cache initially empty)
+        Element parent = new Element("section");
+        parent.appendElement("article");
+        Element b = parent.appendElement("aside");
+        // WHEN calling child(1) twice without modifying the list
+        Element firstCall = parent.child(1);
+        Element secondCall = parent.child(1);
+        // THEN both calls should return the same instance and populate then use the shadowChildrenRef cache
+        assertSame(b, firstCall, "First call should return the element at index 1");
+        assertSame(firstCall, secondCall, "Second call should hit cache and return the same instance");
+    }
+}

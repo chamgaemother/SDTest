@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse rejects versions with too many numeric segments (more than major.minor.patch)",
+      "path": "B0→B2→B3→B6",
+      "precondition": "none",
+      "expectedResult": "returns null due to StrictParser.parse throwing exception",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse-too-many-segments",
+        "  GIVEN",
+        "    String version = \"1.2.3.4\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse normalizes leading zeros in numeric identifiers to canonical form",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returns Semver with version \"1.2.3\" (leading zeros stripped)",
+      "tags": [
+        "positive",
+        "normalization"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse-leading-zeros-normalization",
+        "  GIVEN",
+        "    String version = \"01.002.0003\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals(\"1.2.3\", result.getVersion());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse accepts multiple build metadata tokens separated by dots",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returns Semver with build tokens [\"meta\",\"data\",\"info\"]",
+      "tags": [
+        "positive",
+        "iteration",
+        "build"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse-multi-build-tokens",
+        "  GIVEN",
+        "    String version = \"1.0.0+meta.data.info\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals(List.of(\"meta\",\"data\",\"info\"), result.getBuild());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse accepts multiple pre-release tokens separated by dots",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returns Semver with preRelease tokens [\"alpha\",\"beta\",\"gamma\"]",
+      "tags": [
+        "positive",
+        "iteration",
+        "pre-release"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse-multi-pre-release-tokens",
+        "  GIVEN",
+        "    String version = \"1.2.3-alpha.beta.gamma\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals(List.of(\"alpha\",\"beta\",\"gamma\"), result.getPreRelease());",
+        "END"
+      ]
+    }
+  ]
+}

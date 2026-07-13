@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() rebuilds cache when existing WeakReference has been cleared (shadowChildrenRef.get()==null)",
+      "path": "B0→B2→B3→B4(loop×1)→B7",
+      "precondition": "Element with one child; first call to children() to build cache; shadowChildrenRef cleared via reflection",
+      "expectedResult": "Returns new Elements list containing the single child element",
+      "tags": [
+        "cache",
+        "weakref",
+        "rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children rebuild on GC-cleared cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "    Elements first = parent.children();",
+        "    // simulate GC clearing of weak reference",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    refField.set(parent, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertEquals(1, second.size());",
+        "    assertSame(child, second.get(0));"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() rebuilds cache after mutation via prependChild (cache invalidation on nodelistChanged)",
+      "path": "B0→B2→B3→B4(loop×2)→B7",
+      "precondition": "Element with one child and cached children list built",
+      "expectedResult": "Returns a fresh Elements instance with children in new order (newly prepended first)",
+      "tags": [
+        "mutation",
+        "prepend",
+        "cache"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children rebuild after prependChild",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element e1 = parent.appendElement(\"li\");",
+        "    Elements first = parent.children();",
+        "    Element e2 = parent.prependElement(\"li\");",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertEquals(2, second.size());",
+        "    assertSame(e2, second.get(0));",
+        "    assertSame(e1, second.get(1));",
+        "    assertNotSame(first, second);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() filters out non-Element nodes and only returns actual Element children",
+      "path": "B0→B2→B3→B4(loop×2)→B7",
+      "precondition": "Element with one TextNode and one child Element appended",
+      "expectedResult": "Returns Elements list containing only the Element node, ignoring text nodes",
+      "tags": [
+        "filter",
+        "textnode",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children ignores non-Element nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"text\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(1, result.size());",
+        "    assertSame(child, result.get(0));"
+      ]
+    }
+  ]
+}

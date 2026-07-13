@@ -1,0 +1,88 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_outputSettings_2_Test {
+
+    @Test
+    @DisplayName("TC06: OutputSettings.indentAmount throws IllegalArgumentException for negative input")
+    public void test_TC06() {
+        // GIVEN a fresh OutputSettings
+        OutputSettings settings = new OutputSettings();
+        int indent = -1;
+        // WHEN & THEN calling indentAmount with negative value should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> settings.indentAmount(indent));
+    }
+
+    @Test
+    @DisplayName("TC07: OutputSettings.maxPaddingWidth throws IllegalArgumentException for less than -1")
+    public void test_TC07() {
+        // GIVEN a fresh OutputSettings
+        OutputSettings settings = new OutputSettings();
+        int width = -2;
+        // WHEN & THEN calling maxPaddingWidth below lower bound should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> settings.maxPaddingWidth(width));
+    }
+
+    @Test
+    @DisplayName("TC08: OutputSettings.syntax(xml) sets syntax to xml and escapeMode to xhtml")
+    public void test_TC08() {
+        // GIVEN an OutputSettings with non-default escapeMode to ensure change
+        OutputSettings settings = new OutputSettings().escapeMode(Entities.EscapeMode.extended);
+        // WHEN setting syntax to xml should branch into xml path and auto-set escapeMode to xhtml
+        settings.syntax(OutputSettings.Syntax.xml);
+        // THEN syntax() == xml and escapeMode() == xhtml
+        assertAll("syntax xml should switch escape mode",
+            () -> assertEquals(OutputSettings.Syntax.xml, settings.syntax()),
+            () -> assertEquals(Entities.EscapeMode.xhtml, settings.escapeMode())
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: OutputSettings.syntax(html) retains existing escapeMode")
+    public void test_TC09() {
+        // GIVEN an OutputSettings with escapeMode changed to extended
+        OutputSettings settings = new OutputSettings().escapeMode(Entities.EscapeMode.extended);
+        // WHEN setting syntax to html (default path) should not alter escapeMode
+        settings.syntax(OutputSettings.Syntax.html);
+        // THEN syntax() == html and escapeMode remains extended
+        assertAll("syntax html should preserve existing escapeMode",
+            () -> assertEquals(OutputSettings.Syntax.html, settings.syntax()),
+            () -> assertEquals(Entities.EscapeMode.extended, settings.escapeMode())
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: OutputSettings.clone produces a distinct instance with identical state")
+    public void test_TC10() {
+        // GIVEN a fully configured OutputSettings
+        OutputSettings settings = new OutputSettings()
+            .charset("ISO-8859-1")
+            .escapeMode(Entities.EscapeMode.extended)
+            .prettyPrint(false)
+            .outline(true)
+            .indentAmount(3)
+            .maxPaddingWidth(5);
+
+        // WHEN we clone the settings
+        OutputSettings copy = settings.clone();
+
+        // THEN the clone is a different instance but has identical property values
+        assertAll("cloned settings should match original state but not be same instance",
+            () -> assertNotSame(settings, copy),
+            () -> assertEquals(settings.charset(), copy.charset(), "charset should be copied"),
+            () -> assertEquals(settings.escapeMode(), copy.escapeMode(), "escapeMode should be copied"),
+            () -> assertEquals(settings.prettyPrint(), copy.prettyPrint(), "prettyPrint flag should be copied"),
+            () -> assertEquals(settings.outline(), copy.outline(), "outline flag should be copied"),
+            () -> assertEquals(settings.indentAmount(), copy.indentAmount(), "indentAmount should be copied"),
+            () -> assertEquals(settings.maxPaddingWidth(), copy.maxPaddingWidth(), "maxPaddingWidth should be copied")
+        );
+    }
+}

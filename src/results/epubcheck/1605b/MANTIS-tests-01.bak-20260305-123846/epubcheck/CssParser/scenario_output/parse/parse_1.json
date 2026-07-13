@@ -1,0 +1,129 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parse simple rule-set invokes selectors(), declaration() and endDocument normal-return branch",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader over \"h1 { color: red; }\"",
+      "expectedResult": "CssContentHandler.selectors and declaration called once, endDocument invoked",
+      "tags": [
+        "positive",
+        "ruleset",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse simple ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color: red; }\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    CssParser parser = new CssParser();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.selectorsCount == 1;",
+        "    assert doc.declarationCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse at-rule without block ('@charset') exercises MATCH_SEMI_OPENBRACE with hasBlock=false",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader over \"@charset 'utf-8';\"",
+      "expectedResult": "startAtRule and endAtRule called once, no nested rules, endDocument invoked",
+      "tags": [
+        "positive",
+        "atrule",
+        "no-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse at-rule without block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@charset 'utf-8';\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    CssParser parser = new CssParser();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleCount == 1;",
+        "    assert doc.endAtRuleCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parse at-rule with nested rule-set ('@media') exercises hasRuleSet true and recursive handleRuleSet",
+      "path": "B0→B1→B2→B4→B5→B7→B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader over \"@media screen { h2 { margin:0; } }\"",
+      "expectedResult": "startAtRule, selectors for inner rule-set, declaration invoked, endAtRule and endDocument invoked",
+      "tags": [
+        "positive",
+        "atrule",
+        "nested",
+        "ruleset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse media at-rule with nested ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media screen { h2 { margin:0; } }\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    CssParser parser = new CssParser();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleCount == 1;",
+        "    assert doc.selectorsCount == 1; // inner h2 selector",
+        "    assert doc.declarationCount == 1;",
+        "    assert doc.endAtRuleCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "PrematureEOFException thrown in handleRuleSet breaks loop and still calls endDocument",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Stub parser where handleRuleSet throws PrematureEOFException on first ruleset",
+      "expectedResult": "endDocument invoked once after breaking loop",
+      "tags": [
+        "exception",
+        "negative",
+        "loop-exit"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse handleRuleSet EOF",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"div{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    TestableCssParser parser = new TestableCssParser() {",
+        "      @Override CssTokenIterator provideIterator() {",
+        "        CssToken tk = new CssToken(Type.IDENT, \"div\");",
+        "        return new StubIterator(tk);",
+        "      }",
+        "      @Override void handleRuleSet(CssToken start, CssTokenIterator iter, CssContentHandler d, CssErrorHandler e) {",
+        "        throw new PrematureEOFException();",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"div{}\"), \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    }
+  ]
+}

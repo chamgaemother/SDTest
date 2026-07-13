@@ -1,0 +1,160 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "valueOf(null, …) throws NullPointerException at Validate.notNull(tagName)",
+      "path": "B0→B1→EX",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 null-tagName throws",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String ns = \"html\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "valueOf(\"  \", …) throws IllegalArgumentException for empty tagName after trim",
+      "path": "B0→B1→B2→EX",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 empty-string throws",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String ns = \"html\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "valueOf(\"TEXTAREA\", html, normal-case) returns direct known tag without cloning",
+      "path": "B0→B1→B3→RET",
+      "precondition": "ParseSettings.normal (preserveTagCase=false)",
+      "expectedResult": "returned Tag == static Tag.valueOf(\"textarea\"), isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "known-tag",
+        "no-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 direct-known no-clone",
+        "  GIVEN",
+        "    String tagName = \"TEXTAREA\";",
+        "    ParseSettings settings = ParseSettings.normal;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "  THEN",
+        "    assert result == Tag.valueOf(\"textarea\");",
+        "    assert result.isFormSubmittable();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "valueOf(\"DIV\", html, preserve-case) clones known non-submit tag and preserves case",
+      "path": "B0→B1→B2→B4→B6→clone→RET",
+      "precondition": "ParseSettings.preserveCase",
+      "expectedResult": "returned Tag != static DIV, tag.getName()==\"DIV\", isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "clone",
+        "non-submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone-non-submit",
+        "  GIVEN",
+        "    String tagName = \"DIV\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "  THEN",
+        "    assert result != Tag.valueOf(\"div\");",
+        "    assert result.getName().equals(\"DIV\");",
+        "    assertFalse(result.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf(\"input\", svg, normal-case) yields new generic tag for namespace mismatch",
+      "path": "B0→B1→B2→B4→B7→B8→RET",
+      "precondition": "ParseSettings.normal",
+      "expectedResult": "returned Tag.getName()==\"input\", isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "namespace-mismatch",
+        "generic"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 namespace-mismatch new-generic",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String ns = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.normal;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    assert result.getName().equals(\"input\");",
+        "    assertFalse(result.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(\"  input  \", default) trims whitespace before lookup and returns known submit tag",
+      "path": "B0→B1→B2→B4→B5→RET",
+      "precondition": "none (use valueOf(String))",
+      "expectedResult": "returned Tag.getName()==\"input\", isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "boundary",
+        "trim"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 trim-whitespace known-submit",
+        "  GIVEN",
+        "    String raw = \"  input  \";",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(raw);",
+        "  THEN",
+        "    assert result.getName().equals(\"input\");",
+        "    assertTrue(result.isFormSubmittable());",
+        "END"
+      ]
+    }
+  ]
+}

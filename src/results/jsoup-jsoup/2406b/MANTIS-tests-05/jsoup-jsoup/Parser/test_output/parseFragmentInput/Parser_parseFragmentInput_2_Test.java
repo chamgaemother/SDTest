@@ -1,0 +1,103 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_2_Test {
+
+    @Test
+    @DisplayName("TC14: parseFragmentInput(Reader) holds lock during TreeBuilder.parseFragment and releases after successful parse")
+    public void test_TC14() throws Exception {
+        // Use AtomicBoolean to detect lock held state inside parseFragment stub
+        AtomicBoolean heldDuring = new AtomicBoolean(false);
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public org.jsoup.nodes.Document parse(Reader in, String uri, Parser p) {
+                return null;
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                // Inside parseFragment stub, lock should be held by current thread
+                try {
+                    Field lockField = Parser.class.getDeclaredField("lock");
+                    lockField.setAccessible(true);
+                    ReentrantLock lock = (ReentrantLock) lockField.get(p);
+                    heldDuring.set(lock.isHeldByCurrentThread());
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+                // Call process method to satisfy abstract method requirement
+                process(null);
+                // Return empty list to simulate successful branch B4
+                return Collections.emptyList();
+            }
+            @Override
+            public void process(org.jsoup.parser.Token t) {
+                // no-op
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<x/>");
+        // Context element: using a dummy Element to satisfy branch B2 true path (non-null context)
+        Element context = new Element(org.jsoup.parser.Tag.valueOf("div"), "");
+        // WHEN: invoke the method under test
+        List<Node> result = parser.parseFragmentInput(reader, context, "uri");
+        // THEN: inside stub, lock was held
+        assertTrue(heldDuring.get(), "Lock should be held during parseFragment execution");  // branch B3
+        // THEN: after return, lock must be released
+        Field lf = Parser.class.getDeclaredField("lock");
+        lf.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lf.get(parser);
+        assertFalse(lock.isLocked(), "Lock should be released after parseFragmentInput returns");  // branch finally
+        // THEN: result is empty as stub returned empty list
+        assertTrue(result.isEmpty(), "Expected empty result list on successful parseFragment");
+    }
+
+    @Test
+    @DisplayName("TC15: parseFragmentInput(Reader) releases lock when TreeBuilder.parseFragment throws RuntimeException")
+    public void test_TC15() throws Exception {
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public org.jsoup.nodes.Document parse(Reader in, String uri, Parser p) {
+                return null;
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                // Call process method to satisfy abstract method requirement
+                process(null);
+                // Simulate failure branch B5 by throwing RuntimeException
+                throw new RuntimeException("parse failure");
+            }
+            @Override
+            public void process(org.jsoup.parser.Token t) {
+                // no-op
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("data");
+        // WHEN & THEN: expect RuntimeException with message "parse failure"
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+            parser.parseFragmentInput(reader, null, "base")
+        );
+        assertEquals("parse failure", ex.getMessage(), "Exception message should propagate from stub");  // branch B5
+        // THEN: after exception, lock must be released
+        Field lf = Parser.class.getDeclaredField("lock");
+        lf.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lf.get(parser);
+        assertFalse(lock.isLocked(), "Lock should be released after exception in parseFragmentInput");  // finally block
+    }
+}

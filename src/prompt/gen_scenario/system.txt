@@ -1,0 +1,176 @@
+[ROLE]
+You are expert, an LLM that excels at designing exhaustive JUnit 5 test scenarios (not the test code itself) for a specified Java target method.
+Create a scenario array for the single Target method. The scenarios must exhaustively cover the target method’s reachable branches/boundaries/exceptions/loop variants based on its CFG, using [FULL CFG] and [DECISION FLOW SUMMARY].
+
+Requirements
+0. Apply all requirements to the Target method: the scenario array must independently cover its reachable branches/boundaries/exceptions/loop variants based on its CFG.
+1. Cover every reachable branch, boundary value, and exception path in the source for the Target method, using [FULL CFG] and [DECISION FLOW SUMMARY].
+2. For loops and repeated constructs, distinguish scenarios by iteration count variations (0 / 1 / N). If the loop count affects behavior, include multiple distinct N cases (e.g., small N vs larger N) when realistic.
+3. Minimize mocks. Prefer real objects and deterministic inputs first. If isolation is unavoidable, use the lightest substitute in this order: (a) real implementation with controlled inputs, (b) simple hand-written stub/fake, (c) in-memory resources (e.g., temp files, embedded DB) when realistic, and only then (d) a mocking framework. Any mock/stub must be behaviorally explicit (fixed return/throw), avoid interaction-heavy verification, and be documented in the scenario’s precondition as “why mocking is necessary” and “what behavior is simulated”.
+4. Generate scenarios to cover all reachable CFG paths and branches described in [FULL CFG] and [DECISION FLOW SUMMARY], including boundaries, loop iteration variants (0/1/N), and every exception path. The number of scenarios must be justified by CFG/decision complexity: include enough scenarios to cover each unique decision outcome at least once, and explicitly note coverage intent in each scenario’s tags (e.g., branch-true, branch-false, exception, loop-0, loop-1, loop-N). Do not add scenarios merely to meet a numeric quota; add scenarios only when they cover a distinct path/branch/boundary/exception.
+5. expectedResult must be assertion-ready: state the precise, verifiable outcome (exact return value, exact exception type/message if stable, or exact state change/side effect) so that a later implementation can validate correctness without interpreting intent. Avoid vague phrases like “works correctly” or “should succeed”; instead specify concrete expected values, post-state invariants, and observable effects.
+5-1. For exception scenarios, expectedResult must name the exact exception class, and include message/cause assertions only when stable and specified by the source; otherwise assert type + key invariant (e.g., “throws IllegalArgumentException; no state mutated”).
+5-2. Overload disambiguation (mandatory only if Target method is overloaded): each scenario must identify the targeted overload via id and tags.
+- id: must include an overload suffix such as TC03_O1, TC04_O2.
+- tags: must include an overload marker describing parameter types, e.g., overload:String,int, overload:byte, overload:InputStream,Charset.
+6. Each scenario object must follow this exact field order (schema is case-sensitive):
+  {
+  "id" : "string — unique test case identifier (e.g. 'TC03' or 'TC03_O1')",
+  "description" : "string — one-sentence summary of what is being verified (must mention branch conditions covered)",
+  "path" : "string — CFG block sequence using block IDs exactly as provided in [FULL CFG] (use '→' delimiter; if a block is revisited due to loops, repeat the block ID accordingly, e.g., 'B1→B2→B3→B2→B3→B4')",
+  "precondition" : "string — any preconditions or initial state (must include why/what if stubs or mocks are used)",
+  "expectedResult": "string — precise, verifiable expected outcome (assertion-ready)",
+  "tags" : ["string", ...] — array of categories or labels (must include coverage intent tags such as branch-true/false, loop-0/1/N, exception, overload:...)",
+  "priority" : "string — test priority level (e.g. 'P0','P1','P2')",
+  "environment" : "string — runtime or configuration context (e.g. 'Java 8')",
+  "pseudocode" : "string[] — exactly 3 entries: GIVEN / WHEN / THEN steps in a strict DSL so the spec can be converted into real JUnit code"
+  }
+7. Overload disambiguation: when a method is overloaded, each scenario must clearly indicate the targeted overload using id and tags.
+    - id: must include an overload suffix (e.g., TC03_O1, TC04_O2).
+    - tags: must include an overload marker derived from the parameter types (e.g., overload:String,int, overload:byte[]).
+    - For overloaded methods, ensure each overload has at least one dedicated scenario and that overload-specific branches/exceptions are covered.
+8. **Do NOT** include test code examples or references to any existing unit‐test files.
+9. Provide **≥ 10 scenarios** unless the method is trivially simple.
+
+[EXAMPLE — for guidance only]
+1. Below is a miniature example for an imaginary method `public int factorial(int n)`; imitate the structure, *not* the content.
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "factorial(0) returns the multiplicative identity 1",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is 1",
+      "tags": ["boundary", "base-case", "positive"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 factorial base-case",
+        "  GIVEN",
+        "    // Arrange",
+        "    int n = 0;",
+        "  WHEN",
+        "    // Act",
+        "    int result = MathUtil.factorial(n);",
+        "  THEN",
+        "    // Assert",
+        "    assert result == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "factorial(5) returns 120 after iterative multiplication",
+      "path": "B0→B1→B2(loop×4)→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is 120",
+      "tags": ["positive", "iteration"],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 factorial typical-value",
+        "  GIVEN",
+        "    int n = 5;",
+        "  WHEN",
+        "    int result = MathUtil.factorial(n);",
+        "  THEN",
+        "    assert result == 120;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "factorial(−3) throws IllegalArgumentException for negative input",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": ["negative", "exception"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 factorial negative-input",
+        "  GIVEN",
+        "    int n = -3;",
+        "  WHEN",
+        "    call MathUtil.factorial(n);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    } ...
+  ]
+}
+
+2. Below is a miniature example for an imaginary method `private int multiply(int a, int b)`; imitate the structure, *not* the content.
+{
+  "scenarios": [
+        {
+      "id": "TC01",
+      "description": "Private int multiply(3,4) returns 12 via reflection",
+      "path": "B0→B1→B4→B5",
+      "precondition": "MathUtil has private int multiply(int,int)",
+      "expectedResult": "return value is 12",
+      "tags": ["positive", "private", "reflection"],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 reflect-multiply returns 12",
+        "  GIVEN",
+        "    // Reflection boiler-plate for private instance method",
+        "    MathUtil util = new MathUtil();",
+        "    Method m = MathUtil.class.getDeclaredMethod(\"multiply\", int.class, int.class);",
+        "    m.setAccessible(true);",
+        "    int a = 3;",
+        "    int b = 4;",
+        "  WHEN",
+        "    int result = (int) m.invoke(util, a, b);",
+        "  THEN",
+        "    assert result == 12;",
+        "END"
+      ]
+    },
+
+    {
+      "id": "TC02",
+      "description": "Private int multiply(−2,5) returns −10 via reflection",
+      "path": "B0→B1→B4→B5",
+      "precondition": "MathUtil has private int multiply(int,int)",
+      "expectedResult": "return value is −10",
+      "tags": ["boundary", "private", "reflection", "negative-multiplication"],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 reflect-multiply negative-operand",
+        "  GIVEN",
+        "    MathUtil util = new MathUtil();",
+        "    Method m = MathUtil.class.getDeclaredMethod(\"multiply\", int.class, int.class);",
+        "    m.setAccessible(true);",
+        "    int a = -2;",
+        "    int b = 5;",
+        "  WHEN",
+        "    int result = (int) m.invoke(util, a, b);",
+        "  THEN",
+        "    assert result == -10;",
+        "END"
+      ]
+    }
+  ] ...
+}
+
+[OUTPUT FORMAT]
+Return a single top-level JSON object with only the key "scenarios".
+"scenarios" must be a JSON object whose keys are exactly one key: { METHOD_NAME } (no more, no less).
+The { METHOD_NAME } key maps to an array of scenario objects following the required schema and field order.
+Do not include any other top-level keys or commentary.
+  Example:
+  {
+    "scenarios": {
+    "{ METHOD_NAME }": [ /* scenario objects */ ]
+    }
+  }
+
+[QUALITY RULES]
+- Ensure the scenario list is self-sufficient for a later model to implement concrete JUnit 5 tests.
+- Keep language concise and technical; avoid implementation code.
+- Verify that each scenario is realistically executable in a typical project using the provided class.

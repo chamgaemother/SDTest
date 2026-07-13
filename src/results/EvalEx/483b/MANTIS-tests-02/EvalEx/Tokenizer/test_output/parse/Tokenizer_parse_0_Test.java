@@ -1,0 +1,349 @@
+package com.ezylang.evalex.parser;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.config.FunctionDictionaryIfc;
+import com.ezylang.evalex.config.OperatorDictionaryIfc;
+import com.ezylang.evalex.functions.FunctionIfc;
+import com.ezylang.evalex.operators.OperatorIfc;
+import com.ezylang.evalex.data.EvaluationValue;
+import com.ezylang.evalex.parser.Token;
+import com.ezylang.evalex.parser.Tokenizer;
+import com.ezylang.evalex.parser.ParseException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tokenizer_parse_0_Test {
+
+    // Minimal stub operator implementing interface for testing
+    static class StubOperator implements OperatorIfc {
+        private final String symbol;
+        public StubOperator(String symbol) { this.symbol = symbol; }
+        @Override public String getName() { return symbol; }
+        @Override public EvaluationValue evaluate(com.ezylang.evalex.Expression expression, Token token, EvaluationValue... values) { return null; }
+        @Override public boolean isOperandLazy() { return false; } // Added missing method
+    }
+
+    // Scenario TC01
+    @Test
+    @DisplayName("Empty expression returns an empty token list (no loop iterations, no braces/arrays)")
+    void test_TC01() throws Exception {
+        // GIVEN empty input and config allowing all features
+        String expr = "";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        // WHEN
+        List<Token> tokens = new Tokenizer(expr, config).parse();
+        // THEN no tokens as input empty (B1->B7->B9->B11)
+        assertTrue(tokens.isEmpty());
+    }
+
+    // Scenario TC02
+    @Test
+    @DisplayName("Single number literal yields one token and returns normally (one iteration, implicit multiplication not triggered)")
+    void test_TC02() throws Exception {
+        // GIVEN a numeric string, config allowing all features, no operators
+        String expr = "123";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        // WHEN
+        List<Token> tokens = new Tokenizer(expr, config).parse();
+        // THEN single NUMBER_LITERAL token as no implicit multiplication (B2 false)
+        assertEquals(1, tokens.size());
+        Token t = tokens.get(0);
+        assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType());
+        assertEquals("123", t.getToken());
+    }
+
+    // Scenario TC03
+    @Test
+    @DisplayName("Implicit multiplication between number and variable when allowed inserts '*'\")
+    void test_TC03() throws Exception {
+        // GIVEN expression "2x": number then variable triggers implicit multiplication
+        String expr = "2x";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return "*".equals(s); }
+                public OperatorIfc getInfixOperator(String s) { return new StubOperator(s); }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        // WHEN
+        List<Token> tokens = new Tokenizer(expr, config).parse();
+        // THEN tokens: "2", "*", "x"
+        assertEquals(3, tokens.size());
+        assertEquals("2", tokens.get(0).getToken());
+        assertEquals(Token.TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+        assertEquals("*", tokens.get(1).getToken());
+        assertEquals("x", tokens.get(2).getToken());
+    }
+
+    // Scenario TC04
+    @Test
+    @DisplayName("Implicit multiplication disabled causes ParseException “Missing operator” after number-variable sequence")
+    void test_TC04() {
+        // GIVEN "2x" with implicit mult disabled, still triggers implicit check B2 true and B3 true leads to exception
+        String expr = "2x";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return false; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        // WHEN/THEN missing operator exception
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Missing operator", ex.getMessage());
+    }
+
+    // Scenario TC05
+    @Test
+    @DisplayName("Unbalanced open brace throws ParseException \"Closing brace not found\"")
+    void test_TC05() {
+        // GIVEN expression with unmatched '('
+        String expr = "(1+2";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return "+".equals(s); }
+                public OperatorIfc getInfixOperator(String s) { return new StubOperator(s); }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        // WHEN/THEN unmatched brace leads to closing brace not found
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Closing brace not found", ex.getMessage());
+    }
+
+    // Scenario TC06
+    @Test
+    @DisplayName("Unbalanced open array throws ParseException \"Closing array not found\"")
+    void test_TC06() {
+        // GIVEN unmatched '['
+        String expr = "[1,2";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Closing array not found", ex.getMessage());
+    }
+
+    // Scenario TC07
+    @Test
+    @DisplayName("Unexpected closing brace at start throws ParseException \"Unexpected closing brace\"")
+    void test_TC07() {
+        // GIVEN expression starting with ')', parseBraceClose sees negative balance
+        String expr = ")";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Unexpected closing brace", ex.getMessage());
+    }
+
+    // Scenario TC08
+    @Test
+    @DisplayName("Unexpected closing array at start throws ParseException of type ParseException")
+    void test_TC08() {
+        // GIVEN expression starting with ']', parse expects array close not allowed here or unexpected closing array
+        String expr = "]";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+    }
+
+    // Scenario TC09
+    @Test
+    @DisplayName("Structure separator at start throws ParseException \"Structure separator not allowed here\"")
+    void test_TC09() {
+        // GIVEN expression ".a" triggers parseStructureSeparator with no previous token
+        String expr = ".a";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return false; }
+                public OperatorIfc getInfixOperator(String s) { return null; }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Structure separator not allowed here", ex.getMessage());
+    }
+
+    // Scenario TC10
+    @Test
+    @DisplayName("Infix operator followed by another infix operator throws ParseException \"Unexpected token after infix operator\"")
+    void test_TC10() {
+        // GIVEN "1+*" where '+' infix then '*' infix triggers invalidTokenAfterInfixOperator
+        String expr = "1+*";
+        ExpressionConfiguration config = new ExpressionConfiguration() {
+            public OperatorDictionaryIfc getOperatorDictionary() { return new OperatorDictionaryIfc() {
+                public boolean hasInfixOperator(String s) { return "+".equals(s) || "*".equals(s); }
+                public OperatorIfc getInfixOperator(String s) { return new StubOperator(s); }
+                public boolean hasPrefixOperator(String s) { return false; }
+                public OperatorIfc getPrefixOperator(String s) { return null; }
+                public boolean hasPostfixOperator(String s) { return false; }
+                public OperatorIfc getPostfixOperator(String s) { return null; }
+                public void addOperator(String s, OperatorIfc operator) { }
+            }; }
+            public FunctionDictionaryIfc getFunctionDictionary() { return new FunctionDictionaryIfc() {
+                public boolean hasFunction(String s) { return false; }
+                public FunctionIfc getFunction(String s) { return null; }
+                public void addFunction(String s, FunctionIfc function) { }
+            }; }
+            public boolean isImplicitMultiplicationAllowed() { return true; }
+            public boolean isArraysAllowed() { return true; }
+            public boolean isStructuresAllowed() { return true; }
+            public boolean isSingleQuoteStringLiteralsAllowed() { return true; }
+        };
+        ParseException ex = assertThrows(ParseException.class,
+            () -> new Tokenizer(expr, config).parse());
+        assertEquals("Unexpected token after infix operator", ex.getMessage());
+    }
+}

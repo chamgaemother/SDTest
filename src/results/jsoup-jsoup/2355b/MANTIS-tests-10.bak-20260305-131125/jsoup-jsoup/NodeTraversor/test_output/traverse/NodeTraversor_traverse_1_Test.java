@@ -1,0 +1,145 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class NodeTraversor_traverse_1_Test {
+
+    // A visitor that tracks head/tail call counts and sequence
+    private static class TrackVisitor implements NodeVisitor {
+        int headCount = 0;
+        int tailCount = 0;
+        List<String> sequence = new ArrayList<>();
+        int rootVisits = 0;
+
+        @Override
+        public void head(Node node, int depth) {
+            headCount++;
+            sequence.add("head:" + node.nodeName() + "@" + depth);
+            if (depth == 0) rootVisits++;
+        }
+
+        @Override
+        public void tail(Node node, int depth) {
+            tailCount++;
+            sequence.add("tail:" + node.nodeName() + "@" + depth);
+        }
+    }
+
+    @Test
+    @DisplayName("traverse throws IllegalArgumentException when visitor is null")
+    public void test_TC01() {
+        Element root = new Element("div"); // valid root
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse((NodeVisitor) null, root));
+    }
+
+    @Test
+    @DisplayName("traverse throws IllegalArgumentException when root node is null")
+    public void test_TC02() {
+        NodeVisitor visitor = (n, d) -> { /* no-op */ };
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, (Node) null));
+    }
+
+    @Test
+    @DisplayName("traverse visits and tails a single isolated node (no parent, no children)")
+    public void test_TC03() {
+        // Single node: no children and no parent, so head->tail exactly once each
+        Element root = new Element("p");
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(1, visitor.headCount);
+        assertEquals(1, visitor.tailCount);
+    }
+
+    @Test
+    @DisplayName("traverse descends into child nodes and ascends correctly for two-level tree")
+    public void test_TC04() {
+        // Two-level: root->child, test DFS sequence
+        Element root = new Element("ul");
+        Element child = new Element("li");
+        root.appendChild(child);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        List<String> expected = List.of(
+            "head:ul@0",
+            "head:li@1",
+            "tail:li@1",
+            "tail:ul@0"
+        );
+        assertEquals(expected, visitor.sequence);
+    }
+
+    @Test
+    @DisplayName("traverse removal branch: visitor.head removes current node causes removal path")
+    public void test_TC05() {
+        // Root has two children; head removes first child => first child taken removal branch
+        Element root = new Element("div");
+        Element c1 = new Element("span");
+        Element c2 = new Element("span");
+        root.appendChild(c1);
+        root.appendChild(c2);
+        TrackVisitor visitor = new TrackVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                super.head(node, depth);
+                if (node == c1) node.remove(); // removal during head
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // After removal, only c2 remains
+        assertEquals(1, root.childNodeSize());
+        assertEquals(c2, root.childNode(0));
+        // visitor should have seen at least root head and c1 head and c2 head
+        assertTrue(visitor.headCount >= 3);
+    }
+
+    @Test
+    @DisplayName("traverse replacement branch: visitor.head replaces current node triggers replace path")
+    public void test_TC06() {
+        // Root has one child; head replaces child => replacement branch
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        Element replacement = new Element("section");
+        TrackVisitor visitor = new TrackVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                super.head(node, depth);
+                if (node == child) node.replaceWith(replacement);
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // Replacement should have occurred
+        assertEquals("section", root.childNode(0).nodeName());
+    }
+
+    @Test
+    @DisplayName("traverse over empty Elements list returns immediately")
+    public void test_TC07() {
+        // Empty elements: no traversal on any root
+        org.jsoup.select.Elements els = new org.jsoup.select.Elements();
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, els);
+        assertEquals(0, visitor.headCount);
+    }
+
+    @Test
+    @DisplayName("traverse over multiple Elements list invokes traverse per element")
+    public void test_TC08() {
+        // Two separate roots => two root head calls
+        Element e1 = new Element("a");
+        Element e2 = new Element("b");
+        org.jsoup.select.Elements els = new org.jsoup.select.Elements(e1, e2);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, els);
+        assertEquals(2, visitor.rootVisits);
+    }
+}

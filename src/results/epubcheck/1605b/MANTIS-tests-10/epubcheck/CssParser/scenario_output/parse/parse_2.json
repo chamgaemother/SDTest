@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "ATKEYWORD with invalid parameter triggers error path in handleAtRuleParam and skips at-rule without startAtRule",
+      "path": "B0→B1→B2→B4→handleAtRule(param-null)→error→return→B8",
+      "precondition": "none",
+      "expectedResult": "CssErrorHandler.error(GRAMMAR_UNEXPECTED_TOKEN) called once; CssContentHandler.startAtRule/endAtRule not invoked for 'foo'; endDocument() still invoked",
+      "tags": [
+        "negative",
+        "at-rule",
+        "error-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 at-rule-invalid-param",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo %;\" );",
+        "    CssParser parser = new CssParser(Locale.ROOT);",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify(err).error(argThat(ex -> ex.getCode() == CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN));",
+        "    verify(doc, never()).startAtRule(any());",
+        "    verify(doc, never()).endAtRule(any());",
+        "    verify(doc).endDocument();"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "ATKEYWORD with block containing declarations exercises hasBlock=true and handleDeclarationBlock path",
+      "path": "B0→B1→B2→B4→handleAtRule→MATCH_SEMI_OPENBRACE→startAtRule→hasBlock(true)→hasRuleSet(false)→handleDeclarationBlock→declaration→endAtRule→B8",
+      "precondition": "none",
+      "expectedResult": "CssContentHandler.startAtRule and declaration and endAtRule called for 'foo'; no errors",
+      "tags": [
+        "positive",
+        "at-rule",
+        "declaration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 at-rule-block-with-declarations",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo { color: blue; } \");",
+        "    CssParser parser = new CssParser(Locale.ROOT);",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify(doc).startAtRule(argThat(name -> \"foo\".equals(name)));",
+        "    verify(doc).declaration(any(CssDeclaration.class));",
+        "    verify(doc).endAtRule(argThat(name -> \"foo\".equals(name)));",
+        "    verify(err, never()).error(any());",
+        "    verify(doc).endDocument();"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("TC01: tagSet updates parser settings to case-sensitive mode and chains return value")
+    public void test_TC01() {
+        // GIVEN: default HTML parser has lower-case settings by default
+        Parser parser = Parser.htmlParser();
+        // Changed constructor parameters to accept boolean instead of ParseSettings
+        ParseSettings custom = new ParseSettings(true, true);
+        // WHEN: apply custom settings via settings() (intended tagSet)
+        Parser returned = parser.settings(custom);
+        // THEN: verify chaining and correct settings object stored
+        assertSame(parser, returned, "settings() should return the same parser instance for chaining");
+        assertSame(custom, parser.settings(), "Parser.settings() should return the provided custom settings");
+        // Inline comment: custom settings preserve case, so uppercase tag names should be recognized as-is (branch B5)
+        Document doc = parser.parseInput("<TAG>Text</TAG>", "");
+        // verify parse honors case: uppercase tag remains uppercase and selectable by uppercase selector
+        assertEquals(1, doc.select("TAG").size(), "Doc.select should find the uppercase TAG when case preserved");
+    }
+
+    @Test
+    @DisplayName("TC02: tagSet throws NullPointerException when given null settings")
+    public void test_TC02() {
+        // GIVEN: an XML parser instance
+        Parser parser = Parser.xmlParser();
+        // WHEN & THEN: passing null to settings() should throw NullPointerException (branch B2→B4)
+        assertThrows(NullPointerException.class,
+            () -> parser.settings(null),
+            "settings(null) should throw NullPointerException when provided settings is null");
+    }
+
+}

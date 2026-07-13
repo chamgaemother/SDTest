@@ -1,0 +1,83 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "clone() produces a parser instance independent of the original when trackErrors is modified",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "original.parser().getErrors() is empty",
+      "expectedResult": "original.parser().getTrackErrors() remains 0, clone.parser().getTrackErrors() is set to 10",
+      "tags": [
+        "positive",
+        "parser",
+        "independence",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone parser independence",
+        "  GIVEN",
+        "    Document original = new Document(\"http://test\");",
+        "    assert original.parser().getErrors().isEmpty();",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    clone.parser().setTrackErrors(10);",
+        "  THEN",
+        "    assert original.parser().getTrackErrors() == 0;",
+        "    assert clone.parser().getTrackErrors() == 10;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() copies a non-null Connection so clone.connection() returns the same instance instead of a new session",
+      "path": "B0→B1→B6→B7",
+      "precondition": "original.connection set to a custom Connection",
+      "expectedResult": "clone.connection() returns the same Connection instance set on original",
+      "tags": [
+        "positive",
+        "connection",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone retains custom connection",
+        "  GIVEN",
+        "    Document original = new Document(\"http://foo\");",
+        "    Connection conn = Jsoup.connect(\"http://foo\");",
+        "    original.connection(conn);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.connection() == conn;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() copies attributes from the root element so an attribute added to original is present on the clone",
+      "path": "B0→B1→B2→B3→B8",
+      "precondition": "original has a custom attribute on the root",
+      "expectedResult": "clone has the same attribute key and value as original",
+      "tags": [
+        "positive",
+        "attributes",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone copies root attributes",
+        "  GIVEN",
+        "    Document original = new Document(\"http://attr\");",
+        "    original.attr(\"data-test\", \"value123\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.attr(\"data-test\").equals(\"value123\");",
+        "END"
+      ]
+    }
+  ]
+}

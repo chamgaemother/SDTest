@@ -1,0 +1,46 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.DataNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import static org.junit.jupiter.api.Assertions.assertSame;
+public class Element_child_2_Test {
+
+    @Test
+    @DisplayName("child(1) after explicit cache invalidation via nodelistChanged() rebuilds shadowChildrenRef when referent is null")
+    public void test_TC08() throws Exception {
+        // GIVEN: parent with two Element children, and cache populated via initial child() call
+        Element parent = new Element("div");
+        Element first = new Element("a");
+        Element second = new Element("b");
+        parent.appendChild(first);
+        parent.appendChild(second);
+        // populate shadowChildrenRef cache (path B3 cacheExists true)
+        Element init = parent.child(1);
+        // ensure referent stored
+        // WHEN: force cache invalidation without structural change (cacheReferentNull)
+        // nodelistChanged is package-private, use reflection to clear shadowChildrenRef
+        Method nodelistChanged = Element.class.getDeclaredMethod("nodelistChanged");
+        nodelistChanged.setAccessible(true);
+        nodelistChanged.invoke(parent);
+        // THEN: second element returned after rebuild of cache (path B5)
+        Element result = parent.child(1);
+        assertSame(second, result, "Expected the second child element after cache invalidation to be returned");
+    }
+
+    @Test
+    @DisplayName("child(0) skips non-Element DataNode and returns first real Element child")
+    public void test_TC09() {
+        // GIVEN: parent with a DataNode then an Element child
+        Element parent = new Element("section");
+        DataNode data = new DataNode("xyz");
+        parent.appendChild(data);
+        Element childEl = new Element("p");
+        parent.appendChild(childEl);
+        // WHEN: child(0) should skip over DataNode (non-Element) and pick the first Element (filtering branch)
+        Element result = parent.child(0);
+        // THEN: only Element child is returned
+        assertSame(childEl, result, "Expected child(0) to return the first Element child, skipping DataNode");
+    }
+}

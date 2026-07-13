@@ -1,0 +1,149 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "attr(String key, String value) sets a new attribute when none existed",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); attributes initially null",
+      "expectedResult": "el.attributes().get(\"foo\") == \"bar\"",
+      "tags": [
+        "overload:String,String",
+        "branch-new-attribute",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 attr add-new",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    el.attr(\"foo\",\"bar\");",
+        "  THEN",
+        "    assert el.attributes().get(\"foo\").equals(\"bar\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "attr(String key, String value) replaces existing attribute value",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"foo\",\"old\");",
+      "expectedResult": "el.attributes().get(\"foo\") == \"new\"",
+      "tags": [
+        "overload:String,String",
+        "branch-replace-attribute",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 attr replace-existing",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.attr(\"foo\",\"old\");",
+        "  WHEN",
+        "    el.attr(\"foo\",\"new\");",
+        "  THEN",
+        "    assert el.attributes().get(\"foo\").equals(\"new\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "attr(String key, String value) throws IllegalArgumentException when key is null",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-key"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 attr null-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.attr(null,\"value\");",
+        "  THEN",
+        "    throws IllegalArgumentException; no state mutated",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "attr(String key, boolean value) adds boolean attribute when value true",
+      "path": "B0→B1→B4",
+      "precondition": "Element el = new Element(\"span\"); attributes initially null",
+      "expectedResult": "el.attributes().hasKey(\"checked\") == true and el.attributes().get(\"checked\").equals(\"\")",
+      "tags": [
+        "overload:String,boolean",
+        "branch-boolean-true",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 attr boolean-true",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    el.attr(\"checked\",true);",
+        "  THEN",
+        "    assert el.attributes().hasKey(\"checked\"); assert el.attributes().get(\"checked\").equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "attr(String key, boolean value) removes existing attribute when value false",
+      "path": "B0→B1→B5",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"foo\",\"bar\");",
+      "expectedResult": "el.attributes().hasKey(\"foo\") == false",
+      "tags": [
+        "overload:String,boolean",
+        "branch-boolean-false",
+        "remove-existing"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 attr boolean-false-remove",
+        "  GIVEN",
+        "    Element el = new Element(\"span\"); el.attr(\"foo\",\"bar\");",
+        "  WHEN",
+        "    el.attr(\"foo\",false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"foo\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "attr(String key, boolean value) leaves absent attribute when value false",
+      "path": "B0→B1→B5",
+      "precondition": "Element el = new Element(\"span\"); attributes initially null",
+      "expectedResult": "el.attributes().hasKey(\"foo\") == false",
+      "tags": [
+        "overload:String,boolean",
+        "branch-boolean-false",
+        "remove-nonexistent"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 attr boolean-false-no-effect",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    el.attr(\"foo\",false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"foo\");",
+        "END"
+      ]
+    }
+  ]
+}

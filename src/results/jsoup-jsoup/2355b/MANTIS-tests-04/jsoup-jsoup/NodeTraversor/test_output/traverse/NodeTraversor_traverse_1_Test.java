@@ -1,0 +1,81 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_1_Test {
+
+    @Test
+    @DisplayName("visitor.head replaces a node triggers the 'replace' branch (origSize == parent.childNodeSize())")
+    public void test_TC10() {
+        // GIVEN: a root element with one child; replacement ensures origSize == parent.childNodeSize()
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        List<String> headCalls = new ArrayList<>();
+        List<String> tailCalls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                headCalls.add(node.nodeName() + "@" + depth);
+                // trigger replace branch: parent has same number of children after replace
+                if (node == child) {
+                    node.replaceWith(new Element("em"));
+                }
+            }
+
+            @Override
+            public void tail(Node node, int depth) {
+                tailCalls.add(node.nodeName() + "@" + depth);
+            }
+        };
+
+        // WHEN: traverse the structure
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: replacement 'em' should be visited instead of original 'span'
+        // head on root at depth 0, head on replacement at depth 1
+        assertTrue(headCalls.contains("em@1"), "Expected head called on the replacement element at depth 1");
+        // tail on replacement at depth 1 and tail on root at depth 0
+        assertTrue(tailCalls.contains("em@1"), "Expected tail called on the replacement element at depth 1");
+        assertTrue(tailCalls.contains("div@0"), "Expected tail called on the root at depth 0");
+    }
+
+    @Test
+    @DisplayName("traverse(NodeVisitor,Elements) processes multiple elements in sequence (loop-N >1)")
+    public void test_TC11() {
+        // GIVEN: two sibling elements with no children -> depth stays at 0, enters loop twice
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("H:" + node.nodeName() + depth);
+            }
+
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("T:" + node.nodeName() + depth);
+            }
+        };
+        Elements els = new Elements(new Element("p"), new Element("span"));
+
+        // WHEN: traverse the Elements
+        NodeTraversor.traverse(visitor, els);
+
+        // THEN: visitor called head and tail for each element in order
+        List<String> expected = List.of(
+                "H:p0", "T:p0",
+                "H:span0", "T:span0"
+        );
+        assertEquals(expected, calls, "Expected head/tail calls for each element in sequence");
+    }
+}

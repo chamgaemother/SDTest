@@ -1,0 +1,47 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Iterator;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("Removing entries via dataset().entrySet().iterator().remove() clears corresponding data- attributes (iterator remove branch)")
+    public void test_TC10() {
+        // GIVEN an element with two data- attributes: data-a and data-b
+        Element el = new Element("div");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        // WHEN retrieving live dataset view and removing via iterator
+        Map<String, String> data = el.dataset();
+        Iterator<Map.Entry<String, String>> it = data.entrySet().iterator();
+        // iterate to last entry to exercise iterator remove path
+        while (it.hasNext()) {
+            it.next();
+        }
+        it.remove(); // should remove last data- attribute from element
+        // THEN both data-a and data-b should be removed from attributes as remove clears backing values
+        assertFalse(el.hasAttr("data-a") || el.hasAttr("data-b"),
+            "Expected both data-a and data-b attributes to be removed after iterator.remove()");
+    }
+
+    @Test
+    @DisplayName("Calling dataset().putAll(null) throws NullPointerException (null argument exception path)")
+    public void test_TC11() {
+        // GIVEN an element with no data- attributes and a null additions map
+        Element el = new Element("span");
+        Map<String, String> additions = null;
+        // WHEN retrieving dataset and calling putAll with null, expecting NullPointerException
+        Map<String, String> data = el.dataset();
+        NullPointerException thrown = assertThrows(NullPointerException.class, () -> {
+            data.putAll(additions);
+        });
+        // THEN a NullPointerException is thrown to signal null input is not allowed
+        assertNotNull(thrown, "Expected NullPointerException when calling putAll with null");
+    }
+}

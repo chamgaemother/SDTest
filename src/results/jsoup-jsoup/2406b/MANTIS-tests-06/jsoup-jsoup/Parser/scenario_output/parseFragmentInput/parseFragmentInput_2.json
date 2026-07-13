@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseFragmentInput(Reader, context, baseUri) propagates unchecked RuntimeException from TreeBuilder.parseFragment",
+      "path": "B0→B1→B2(exception)→B3",
+      "precondition": "TreeBuilder stub whose parseFragment throws IllegalStateException; context null",
+      "expectedResult": "IllegalStateException is thrown with original message",
+      "tags": [
+        "exception",
+        "runtime",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseFragmentInput Reader-runtime-exception",
+        "  GIVEN",
+        "    // stub builder throws on parseFragment",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public <N extends Node> List<N> parse(Reader in, String baseUri, Parser parser) { return null; }",
+        "      public <N extends Node> List<N> parseFragment(Reader in, Element context, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"stub error\");",
+        "      }",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }",
+        "      public TagSet defaultTagSet() { return TagSet.Html(); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      public void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader in = new StringReader(\"<p/>\");",
+        "    Element ctx = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(in, ctx, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub error\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseFragmentInput(String, non-null context, baseUri) propagates unchecked RuntimeException from TreeBuilder.parseFragment",
+      "path": "B0→B1→B2(exception)→B3",
+      "precondition": "TreeBuilder stub whose parseFragment throws NullPointerException; context is an Element",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "runtime",
+        "stub",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput String-runtime-exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public <N extends Node> List<N> parse(Reader in, String baseUri, Parser parser) { return null; }",
+        "      public <N extends Node> List<N> parseFragment(Reader in, Element context, String baseUri, Parser parser) {",
+        "        throw new NullPointerException(\"stub NPE\");",
+        "      }",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }",
+        "      public TagSet defaultTagSet() { return TagSet.Html(); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      public void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Element ctx = new Element(Tag.valueOf(\"div\"), \"http://example.com\");",
+        "    String fragment = \"<span></span>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, ctx, baseUri);",
+        "  THEN",
+        "    throws NullPointerException with message \"stub NPE\";",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Element.children() cache invalidation behavior.
+ */
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("children() rebuilds and returns a new list after cache invalidation by modification (TC06)")
+    public void test_TC06() {
+        // GIVEN: an element with one child element, so shadowChildrenRef is populated after first children()
+        Element el = new Element("div");
+        // Append a child element <span> to populate the children cache
+        Element child = el.appendElement("span");
+        // First call to children() builds and caches the child elements list
+        Elements firstList = el.children();
+        assertNotNull(firstList, "First children() should return a non-null Elements list");
+        assertEquals(1, firstList.size(), "First list should have exactly one element");
+        assertSame(child, firstList.get(0), "The single child in the first list should be the appended span element");
+
+        // WHEN: modifying the element by appending text triggers nodelistChanged, invalidating the cache
+        el.appendText("text"); // Text addition should invalidate the shadowChildrenRef cache via NodeList.onContentsChanged
+
+        // THEN: children() should rebuild the list, returning a new Elements instance
+        Elements secondList = el.children();
+        // A new instance indicates cache was invalidated and rebuilt
+        assertNotSame(firstList, secondList, "Second children() call should return a new Elements instance after invalidation");
+        assertEquals(1, secondList.size(), "Second list should still contain one element after cache invalidation");
+        assertSame(child, secondList.get(0), "The single child in the second list should still be the same span element");
+    }
+}

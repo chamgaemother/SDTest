@@ -1,0 +1,65 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC06: children() on element with only non-Element children (childNodeSize>0, loop with zero element matches) returns empty Elements")
+    public void test_TC06() {
+        // GIVEN: parent has only TextNode children, so childElementsList should see non-zero childNodes but filter out all
+        Element parent = new Element("div");
+        parent.appendText("hello"); // adds a TextNode child
+        parent.appendText("world"); // adds another TextNode child
+        // WHEN: call children(), which filters childNodes by instance of Element
+        Elements result = parent.children();
+        // THEN: no Element children, so size should be 0
+        assertEquals(0, result.size(), "Expected no element children when only text nodes are present");
+    }
+
+    @Test
+    @DisplayName("TC07: children() reflects removal of children via empty() invalidates cache and returns updated empty list")
+    public void test_TC07() {
+        // GIVEN: parent with one Element child, children() caches list of size 1
+        Element parent = new Element("div");
+        Element p = parent.appendElement("p");
+        Elements first = parent.children();
+        assertEquals(1, first.size(), "Initial children() should return one element");
+        // WHEN: empty() clears all children and invalidates cache (nodelistChanged)
+        parent.empty();
+        // THEN: second children() should rebuild and return empty list
+        Elements second = parent.children();
+        assertEquals(0, second.size(), "After empty(), children() should return empty list");
+    }
+
+    @Test
+    @DisplayName("TC08: childElementsList() cache is invalidated after appending TextNode via prependChild() and rebuilds new list instance")
+    public void test_TC08() throws Exception {
+        // GIVEN: parent with one Element child, retrieve childElementsList via reflection to get initial cache
+        Element parent = new Element("div");
+        parent.appendElement("span"); // ensure there is one Element child
+        Method m = Element.class.getDeclaredMethod("childElementsList");
+        m.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Element> firstList = (List<Element>) m.invoke(parent);
+        // Cache should hold list instance; we now mutate childNodes
+        // WHEN: prependChild a TextNode, which triggers nodelistChanged and invalidates shadowChildrenRef
+        parent.prependChild(new TextNode("txt"));
+        @SuppressWarnings("unchecked")
+        List<Element> secondList = (List<Element>) m.invoke(parent);
+        // THEN: the two list instances should differ, indicating cache invalidation
+        assertNotSame(firstList, secondList, "childElementsList cache should be invalidated after modifying childNodes");
+        // And the rebuilt list should still include only the original span element
+        assertEquals(1, secondList.size(), "After prepending a TextNode, childElementsList should only list Element children");
+        assertEquals("span", secondList.get(0).tagName(), "The only element child should remain 'span'");
+    }
+}

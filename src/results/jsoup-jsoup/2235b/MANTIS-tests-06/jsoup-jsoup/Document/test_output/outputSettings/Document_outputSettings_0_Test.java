@@ -1,0 +1,68 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for org.jsoup.nodes.Document#outputSettings methods.
+ */
+public class Document_outputSettings_0_Test {
+
+    @Test
+    @DisplayName("outputSettings() returns the current OutputSettings field")
+    public void test_TC01() throws Exception {
+        // GIVEN a new Document with its own default OutputSettings
+        Document doc = new Document("http://example.com");
+        // Use reflection to capture the initial private field value
+        Field settingsField = Document.class.getDeclaredField("outputSettings");
+        settingsField.setAccessible(true);
+        Document.OutputSettings original = (Document.OutputSettings) settingsField.get(doc);
+
+        // WHEN calling the getter method
+        Document.OutputSettings result = doc.outputSettings();
+
+        // THEN the returned value must be the exact same instance as the private field held
+        assertSame(original, result, "Getter should return the same OutputSettings instance stored in the Document field");
+    }
+
+    @Test
+    @DisplayName("outputSettings(OutputSettings) with non-null argument sets field and returns this Document")
+    public void test_TC02() throws Exception {
+        // GIVEN a new Document and a fresh OutputSettings instance
+        Document doc = new Document("http://ex");
+        Document.OutputSettings newSettings = new Document.OutputSettings();
+        // Ensure we pass through the non-null branch (branch-true)
+
+        // WHEN calling the setter with a non-null argument
+        Document returned = doc.outputSettings(newSettings);
+
+        // THEN it should return the same Document instance (for chaining)
+        assertSame(doc, returned, "Setter should return the same Document instance for chaining");
+        // AND the internal field should have been updated to the provided newSettings
+        // Use public getter to verify
+        assertSame(newSettings, doc.outputSettings(), "After setter, getter should return the newly set OutputSettings instance");
+    }
+
+    @Test
+    @DisplayName("outputSettings(OutputSettings) with null argument throws IllegalArgumentException")
+    public void test_TC03() throws Exception {
+        // GIVEN a new Document and capture its initial settings
+        Document doc = new Document("http://ex");
+        Field settingsField = Document.class.getDeclaredField("outputSettings");
+        settingsField.setAccessible(true);
+        Document.OutputSettings original = (Document.OutputSettings) settingsField.get(doc);
+        // Ensure we attempt the null-argument branch (branch-false)
+
+        // WHEN calling the setter with null, THEN it should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> doc.outputSettings(null),
+            "Setter should throw IllegalArgumentException when given null");
+
+        // AND the internal field must remain unchanged after the exception
+        Document.OutputSettings after = (Document.OutputSettings) settingsField.get(doc);
+        assertSame(original, after, "OutputSettings field should remain unchanged if setter throws");
+    }
+}

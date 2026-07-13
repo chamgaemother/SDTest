@@ -1,0 +1,35 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "charset(html) on HTML syntax with existing <meta charset> only updates its attribute and removes no obsolete elements",
+      "path": "B0→B1→B3→B5→B7→B9→B11",
+      "precondition": "Document.createShell(\"http://example\") and head contains one <meta charset>",
+      "expectedResult": "existing meta[charset] attr updated to new charset, no meta[name=charset] removed",
+      "tags": [
+        "positive",
+        "html",
+        "update-only"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 charset updates existing HTML meta[charset] only",
+        "  GIVEN",
+        "    // Arrange a shell document with one meta[charset] element",
+        "    Document doc = Document.createShell(\"http://example\");",
+        "    Element existing = doc.head().appendElement(\"meta\").attr(\"charset\", \"OLD\");",
+        "  WHEN",
+        "    // Act: set to US-ASCII",
+        "    doc.charset(StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    // Assert: updated attribute and no obsolete meta[name=charset]",
+        "    Element updated = doc.head().selectFirst(\"meta[charset]\");",
+        "    assert updated != null;",
+        "    assert updated.attr(\"charset\").equals(StandardCharsets.US_ASCII.displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

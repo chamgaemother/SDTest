@@ -1,0 +1,125 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("TC01: Default load() with no entries applies no systemProperties and returns empty Dotenv")
+    void test_TC01() throws Exception {
+        // GIVEN: non-existing directory -> no file -> throwIfMissing=false leads to B1->B2 path, no entries loop
+        Path dir = Files.createTempDirectory("nonexistent_dir");
+        // ensure directory is empty and no .env
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMissing();
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: entries size 0 as no file and missing is ignored
+        assertEquals(0, dotenv.entries().size());
+    }
+
+    @Test
+    @DisplayName("TC02: Default load() with a single valid entry applies no systemProperties and returns one entry")
+    void test_TC02() throws Exception {
+        // GIVEN: one-line .env -> B1->B2 branch true (systemProperties=false), loop executes once
+        Path dir = Files.createTempDirectory("envdir");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, Collections.singletonList("KEY=VALUE"));
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).filename(".env");
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: contains the single entry
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertTrue(entries.contains(new DotenvEntry("KEY", "VALUE")));
+        assertEquals(1, entries.size());
+    }
+
+    @Test
+    @DisplayName("TC03: Default load() with multiple valid entries applies no systemProperties and returns all entries")
+    void test_TC03() throws Exception {
+        // GIVEN: two-line .env -> B1->B2 branch true, loop executes twice
+        Path dir = Files.createTempDirectory("envdir2");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, Arrays.asList("A=1", "B=2"));
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString());
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: size=2 and correct values
+        assertEquals(2, dotenv.entries().size());
+        assertEquals("1", dotenv.get("A"));
+        assertEquals("2", dotenv.get("B"));
+    }
+
+    @Test
+    @DisplayName("TC04: load() with systemProperties=true skips setting via forEach and returns entries without altering System properties")
+    void test_TC04() throws Exception {
+        // GIVEN: one-line .env and systemProperties=true -> B0->B2 branch false (skip loop), ensure system remains unchanged
+        System.clearProperty("X");
+        Path dir = Files.createTempDirectory("envdir3");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, Collections.singletonList("X=Y"));
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: System property X unchanged (null) and entry still present
+        assertNull(System.getProperty("X"));
+        assertTrue(dotenv.entries().contains(new DotenvEntry("X", "Y")));
+    }
+
+    @Test
+    @DisplayName("TC05: load() throws DotenvException when .env missing and throwIfMissing=true")
+    void test_TC05() throws Exception {
+        // GIVEN: empty dir, default throwIfMissing=true -> B0 only entry, exception at parse
+        Path dir = Files.createTempDirectory("missingDir");
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString());
+        // WHEN & THEN
+        assertThrows(DotenvException.class, builder::load);
+    }
+
+    @Test
+    @DisplayName("TC06: load() ignores missing file when ignoreIfMissing() is set and returns empty Dotenv")
+    void test_TC06() throws Exception {
+        // GIVEN: empty dir, ignoreIfMissing() -> B1->B2 branch true, zero-loop
+        Path dir = Files.createTempDirectory("dir4");
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMissing();
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: no entries
+        assertTrue(dotenv.entries().isEmpty());
+    }
+
+    @Test
+    @DisplayName("TC07: load() throws DotenvException on malformed entry when throwIfMalformed=true")
+    void test_TC07() throws Exception {
+        // GIVEN: one malformed line, default throwIfMalformed=true -> B0 only entry, exception
+        Path dir = Files.createTempDirectory("dir5");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, Collections.singletonList("NO_EQUALS"));
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString());
+        // WHEN & THEN
+        assertThrows(DotenvException.class, builder::load);
+    }
+
+    @Test
+    @DisplayName("TC08: load() ignores malformed entries when ignoreIfMalformed() is set and returns only valid entries")
+    void test_TC08() throws Exception {
+        // GIVEN: mixed lines, ignoreIfMalformed() -> B1->B2 branch true, malformed skipped
+        Path dir = Files.createTempDirectory("dir6");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, Arrays.asList("GOOD=1", "BAD_LINE"));
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMalformed();
+        // WHEN
+        Dotenv dotenv = builder.load();
+        // THEN: only GOOD present
+        assertEquals(1, dotenv.entries().size());
+        assertEquals("1", dotenv.get("GOOD"));
+    }
+}

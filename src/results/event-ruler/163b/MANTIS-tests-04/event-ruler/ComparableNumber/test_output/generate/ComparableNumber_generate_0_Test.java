@@ -1,0 +1,97 @@
+package software.amazon.event.ruler;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class ComparableNumber_generate_0_Test {
+
+    @Test
+    @DisplayName("Value below minimum (-5e9) triggers IllegalArgumentException branch (f < -5e9)")
+    void test_TC01() throws Exception {
+        double f = -5000000000.000001;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        Executable call = () -> {
+            try {
+                generate.invoke(null, f);
+            } catch (InvocationTargetException ite) {
+                throw ite.getCause();
+            }
+        };
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, call);
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("Value must be between -5000000000.0 and 5000000000.0, inclusive"),
+                "Exception message should mention the allowed range");
+    }
+
+    @Test
+    @DisplayName("Value above maximum (5e9) triggers IllegalArgumentException branch (f > 5e9)")
+    void test_TC02() throws Exception {
+        double f = 5000000000.1;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        Executable call = () -> {
+            try {
+                generate.invoke(null, f);
+            } catch (InvocationTargetException ite) {
+                throw ite.getCause();
+            }
+        };
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, call);
+        String msg = ex.getMessage();
+        assertTrue(msg.contains("Value must be between -5000000000.0 and 5000000000.0, inclusive"),
+                "Exception message should mention the allowed range");
+    }
+
+    @Test
+    @DisplayName("Value at minimum boundary (-5e9) returns zero hex string")
+    void test_TC03() throws Exception {
+        double f = -5000000000.0;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String hex = (String) generate.invoke(null, f);
+        assertEquals("00000000000000", hex,
+                "Minimum boundary should map to all-zero hex");
+    }
+
+    @Test
+    @DisplayName("Value at maximum boundary (5e9) returns all-ones hex string")
+    void test_TC04() throws Exception {
+        double f = 5000000000.0;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String hex = (String) generate.invoke(null, f);
+        assertEquals("FFFFFFFFFFFFFF", hex,
+                "Maximum boundary should map to all-F hex");
+    }
+
+    @Test
+    @DisplayName("Zero value produces mid-range hex representing 1e15")
+    void test_TC05() throws Exception {
+        double f = 0.0;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String hex = (String) generate.invoke(null, f);
+        assertEquals("7FFFFFFFFFFFFF", hex,
+                "Zero should map to mid-range hex value");
+    }
+
+    @Test
+    @DisplayName("Fractional value preserves six decimal digits in hex conversion")
+    void test_TC06() throws Exception {
+        double f = 1.234567;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String hex = (String) generate.invoke(null, f);
+        assertEquals("800012D687500", hex,
+                "Fractional value must preserve six decimal digits in hex");
+    }
+}

@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC01: children() on element with no child nodes returns empty Elements (childNodeSize==0)")
+    public void test_TC01() {
+        // GIVEN an element with no children → branch: childNodeSize()==0 → B0→B1 path
+        Element el = new Element("div");
+        // WHEN calling children()
+        Elements result = el.children();
+        // THEN expect empty Elements list
+        assertEquals(0, result.size(), "Expected no child elements when none were appended");
+    }
+
+    @Test
+    @DisplayName("TC02: children() on element with one Element child returns list of size 1 (loop-1)")
+    public void test_TC02() {
+        // GIVEN a parent with one element child → branch: childNodeSize()>0 → B1→B2, one loop iteration
+        Element parent = new Element("ul");
+        Element child = new Element("li");
+        parent.appendChild(child);
+        // WHEN calling children()
+        Elements result = parent.children();
+        // THEN expect exactly the one appended Element in result
+        assertEquals(1, result.size(), "Expected one child element");
+        assertSame(child, result.get(0), "Expected the returned child to be the same instance appended");
+    }
+
+    @Test
+    @DisplayName("TC03: children() filters out non-Element nodes, returning only Element children (mixed nodes)")
+    public void test_TC03() {
+        // GIVEN a parent with a mix of TextNode, Element, DataNode, Element → ensure filter logic
+        Element parent = new Element("p");
+        parent.appendChild(new TextNode("text"));                      // non-Element node, should be skipped
+        Element span = new Element("span"); parent.appendChild(span);  // Element node, should be included
+        parent.appendChild(new DataNode("data"));                      // non-Element node, should be skipped
+        Element em = new Element("em"); parent.appendChild(em);        // Element node, should be included
+        // WHEN calling children()
+        Elements result = parent.children();
+        // THEN only span and em appear in order
+        assertEquals(2, result.size(), "Expected two element children after filtering non-Element nodes");
+        assertSame(span, result.get(0), "First element child should be the <span>");
+        assertSame(em, result.get(1), "Second element child should be the <em>");
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns snapshot so later appendChild updates new children list (cache invalidated)")
+    public void test_TC04() {
+        // GIVEN a parent with one child → first children() builds cache with 1 element
+        Element parent = new Element("div");
+        Element a = new Element("a");
+        parent.appendChild(a);
+        // WHEN first snapshot
+        Elements first = parent.children();
+        // THEN first snapshot size is 1
+        assertEquals(1, first.size(), "First snapshot should contain one child");
+        // WHEN append a new child, cache should invalidate and next children() reflects updated list
+        parent.appendChild(new Element("b"));
+        Elements second = parent.children();
+        // THEN second snapshot size is 2
+        assertEquals(2, second.size(), "Second snapshot should reflect two children after appendChild");
+        // Also ensure original snapshot remains unchanged
+        assertEquals(1, first.size(), "Original snapshot should remain unchanged after new append");
+    }
+}

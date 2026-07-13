@@ -1,0 +1,148 @@
+package org.jsoup;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("parse(String html) with empty input returns an empty document body fragment")
+    public void test_TC01() {
+        // empty html => empty body
+        String html = "";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(String html) with null html throws IllegalArgumentException")
+    public void test_TC02() {
+        // null html should trigger API precondition
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse((String) null));
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri) resolves relative URLs against baseUri")
+    public void test_TC03() {
+        // non-null html and baseUri => absolute resolution
+        String html = "<a href=\"page\">link</a>";
+        String base = "http://example.com/";
+        Document doc = Jsoup.parse(html, base);
+        assertEquals("http://example.com/page", doc.select("a").first().absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri) when baseUri is empty uses default base")
+    public void test_TC04() {
+        // empty baseUri => relative href unchanged
+        String html = "<a href=\"page\">link</a>";
+        String base = "";
+        Document doc = Jsoup.parse(html, base);
+        assertEquals("page", doc.select("a").first().attr("href"));
+    }
+
+    @Test
+    @DisplayName("parse(String html, Parser parser) uses xmlParser when html non-empty")
+    public void test_TC05() {
+        // using xmlParser should preserve tag casing and structure
+        String html = "<tag>content</tag>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        assertEquals("content", doc.select("tag").first().text());
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri, Parser parser) with null html throws IllegalArgumentException")
+    public void test_TC06() {
+        // html null precondition
+        String base = "http://x/";
+        Parser parser = Parser.htmlParser();
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse((String) null, base, parser));
+    }
+
+    @Test
+    @DisplayName("parse(URL url, int timeoutMillis) with valid HTTP URL returns fetched document")
+    public void test_TC07() throws Exception {
+        // simulate HTTP server returning <p>ok</p>
+        HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/test", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                String response = "<p>ok</p>";
+                exchange.sendResponseHeaders(200, response.getBytes().length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
+            }
+        });
+        server.start();
+        try {
+            URL url = new URL("http://localhost:8080/test");
+            int timeout = 5000;
+            Document doc = Jsoup.parse(url, timeout);
+            assertEquals("ok", doc.select("p").first().text());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL url, int timeoutMillis) with non-HTTP URL throws MalformedURLException")
+    public void test_TC08() throws Exception {
+        // ftp protocol invalid
+        URL url = new URL("ftp://example.com");
+        int timeout = 1000;
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, timeout));
+    }
+
+    @Test
+    @DisplayName("parse(File file) reads UTF-8 file and returns parsed document")
+    public void test_TC09() throws Exception {
+        // create temp file with UTF-8 content
+        Path path = Files.createTempFile("test", ".html");
+        Files.write(path, "<div>data</div>".getBytes(StandardCharsets.UTF_8));
+        File file = path.toFile();
+        Document doc = Jsoup.parse(file);
+        assertEquals("data", doc.select("div").first().text());
+        file.delete();
+    }
+
+    @Test
+    @DisplayName("parse(File file, String charsetName, String baseUri) with missing file throws IOException")
+    public void test_TC10() {
+        // missing file triggers IOException
+        File file = new File("no-such.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(file, "UTF-8", "http://x/"));
+    }
+
+    @Test
+    @DisplayName("parse(InputStream in, String charsetName, String baseUri) with custom parser overload not used")
+    public void test_TC11() throws Exception {
+        // input stream readable => parsed
+        InputStream in = new ByteArrayInputStream("<span>t</span>".getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String base = "";
+        Document doc = Jsoup.parse(in, charset, base);
+        assertEquals("t", doc.select("span").first().text());
+    }
+}

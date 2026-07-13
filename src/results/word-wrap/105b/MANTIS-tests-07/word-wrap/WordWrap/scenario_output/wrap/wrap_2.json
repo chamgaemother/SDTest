@@ -1,0 +1,171 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "fromClasspathUtf8 on missing resource triggers NullPointerException when reader is null",
+      "path": "B0→B1→B2(reader=null)→wrap(internal)→NullPointerException",
+      "precondition": "no classpath resource named '/no-such.txt'",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "fromClasspath"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 missing classpath resource",
+        "  GIVEN",
+        "    String resource = \"/no-such.txt\";",
+        "    Builder b = WordWrap.fromClasspathUtf8(resource);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "from(File,Charset) throws IORuntimeException when input file not found",
+      "path": "B0→B1→FileInputStream→FileNotFoundException→IORuntimeException",
+      "precondition": "File f = new File(\"does-not-exist.txt\") not present",
+      "expectedResult": "IORuntimeException wrapping FileNotFoundException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "fromFile"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 missing input file",
+        "  GIVEN",
+        "    File f = new File(\"does-not-exist.txt\");",
+        "  WHEN & THEN",
+        "    throws IORuntimeException when calling WordWrap.from(f, UTF_8);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "wrap(LineConsumer) throws IORuntimeException when consumer.writeNewLine throws IOException",
+      "path": "B0→B1→consumer.write→consumer.writeNewLine→IOException→IORuntimeException",
+      "precondition": "consumer whose writeNewLine() throws IOException",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "wrapConsumer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 consumer writeNewLine exception",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a\\nb\");",
+        "    LineConsumer c = stub that throws IOException in writeNewLine();",
+        "  WHEN & THEN",
+        "    assert IORuntimeException from b.wrap(c);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "close(Reader) rethrows IORuntimeException when reader.close() throws IOException",
+      "path": "B0→B1→wrap(writer)→finally→close(reader)→IOException→IORuntimeException",
+      "precondition": "Reader r whose close() throws IOException",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "close"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 reader close failure",
+        "  GIVEN",
+        "    Reader r = stub that throws IOException on close();",
+        "    Builder b = WordWrap.from(r, true);",
+        "    Writer w = new StringWriter();",
+        "  WHEN & THEN",
+        "    assert IORuntimeException from b.wrap(w);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "static rightTrim removes trailing whitespace characters",
+      "path": "B0→rightTrim(loop)→return trimmed",
+      "precondition": "none",
+      "expectedResult": "result equals \"abc\" when input is \"abc \\t  \"",
+      "tags": [
+        "positive",
+        "utility",
+        "rightTrim"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 rightTrim trailing spaces",
+        "  GIVEN",
+        "    String s = \"abc \\t  \";",
+        "  WHEN",
+        "    String result = WordWrap.rightTrim(s);",
+        "  THEN",
+        "    assertEquals(\"abc\", result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "static leftTrim(String) removes leading whitespace from string longer than width",
+      "path": "B0→leftTrim(loop)→return trimmed",
+      "precondition": "none",
+      "expectedResult": "result equals \"xyz\" when input is \"  xyz\"",
+      "tags": [
+        "positive",
+        "utility",
+        "leftTrim"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 leftTrim leading spaces",
+        "  GIVEN",
+        "    String s = \"  xyz\";",
+        "  WHEN",
+        "    String result = WordWrap.leftTrim(s);",
+        "  THEN",
+        "    assertEquals(\"xyz\", result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "writeBrokenWord else-branch splits very short word without hyphen when length≤2",
+      "path": "B0→wordWrap→writeBrokenWord(path2)→out.writeNewLine",
+      "precondition": "default insertHyphens=true, breakWords=true",
+      "expectedResult": "input \"ab\" with maxWidth 1 produces [\"\",\"ab\"] or single 'ab'? trimmed properly",
+      "tags": [
+        "positive",
+        "broken-word",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 writeBrokenWord short word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"ab\").maxWidth(1);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.get(0).equals(\"a\");",
+        "    assert lines.get(1).equals(\"b\");",
+        "END"
+      ]
+    }
+  ]
+}

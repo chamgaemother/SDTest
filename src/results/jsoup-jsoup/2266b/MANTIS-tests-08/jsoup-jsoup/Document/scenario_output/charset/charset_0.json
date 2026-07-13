@@ -1,0 +1,170 @@
+{
+  "method": "charset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "charset(Charset.UTF_8) on HTML document with no existing <meta charset> or obsolete tags appends new meta and removes none",
+      "path": "B0→B1→B2(html)→B3(metaCharset==null)→B4(appendElement)→B5(removeObsolete zero)",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); // default updateMetaCharset false, no meta[charset], no meta[name=charset]",
+      "expectedResult": "doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.UTF_8.displayName()) && doc.select(\"meta[name=charset]\").isEmpty()",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-0",
+        "html",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 append-meta-on-html without-obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    doc.charset(Charset.UTF_8);",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.UTF_8.displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "charset(Charset.ISO_8859_1) updates existing <meta charset> and removes no obsolete tags",
+      "path": "B0→B1→B2(html)→B6(metaCharset!=null)→B7(attr-update)→B5(removeObsolete zero)",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.head().appendElement(\"meta\").attr(\"charset\",\"OLD\");",
+      "expectedResult": "doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.ISO_8859_1.displayName()) && doc.select(\"meta[name=charset]\").isEmpty()",
+      "tags": [
+        "branch-false",
+        "branch-true",
+        "loop-0",
+        "html",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 update-existing-meta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\",\"OLD\");",
+        "  WHEN",
+        "    doc.charset(Charset.ISO_8859_1);",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.ISO_8859_1.displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "charset(Charset.UTF_16) on HTML document removes multiple obsolete <meta name=charset> elements",
+      "path": "B0→B1→B2(html)→B3(metaCharset==null)→B4(appendElement)→B8(removeObsolete loop×2)",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.head().appendElement(\"meta\").attr(\"name\",\"charset\"); doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+      "expectedResult": "doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.UTF_16.displayName()) && doc.select(\"meta[name=charset]\").isEmpty()",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-N",
+        "html",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 remove-multiple-obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.UTF_16);",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.UTF_16.displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "charset(null) throws NullPointerException when passed null charset",
+      "path": "B0→B9(nullParam)→EX",
+      "precondition": "Document doc = new Document(\"http://example.com\");",
+      "expectedResult": "throws NullPointerException; no meta tags added",
+      "tags": [
+        "exception",
+        "negative",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 null-charset-param",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    call doc.charset(null);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "charset(Charset.UTF_8) in XML mode with no existing declaration prepends new XmlDeclaration",
+      "path": "B0→B1→B2(xml)→B10(no xml decl)→B11(prependChild)",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+      "expectedResult": "first child node is XmlDeclaration with name 'xml' and attrs version='1.0', encoding=Charset.UTF_8.displayName()",
+      "tags": [
+        "xml",
+        "branch-true",
+        "branch-false",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 xml-mode-prepend-declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    doc.charset(Charset.UTF_8);",
+        "  THEN",
+        "    Node n = doc.childNode(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    assert ((XmlDeclaration)n).attr(\"encoding\").equals(Charset.UTF_8.displayName());",
+        "    assert ((XmlDeclaration)n).attr(\"version\").equals(\"1.0\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "charset(Charset.ISO_8859_1) in XML mode updates existing XmlDeclaration encoding and preserves version",
+      "path": "B0→B1→B2(xml)→B10(xmlDeclExists)→B12(update attrs)",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.outputSettings().syntax(OutputSettings.Syntax.xml); doc.prependChild(new XmlDeclaration(\"xml\",false).attr(\"version\",\"1.0\").attr(\"encoding\",\"OLD\"));",
+      "expectedResult": "XmlDeclaration encoding updated to Charset.ISO_8859_1.displayName() and version remains '1.0'",
+      "tags": [
+        "xml",
+        "branch-true",
+        "branch-true-case2",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 xml-mode-update-existing-declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\",false);",
+        "    decl.attr(\"version\",\"1.0\");",
+        "    decl.attr(\"encoding\",\"OLD\");",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.ISO_8859_1);",
+        "  THEN",
+        "    XmlDeclaration d = (XmlDeclaration)doc.childNode(0);",
+        "    assert d.attr(\"encoding\").equals(Charset.ISO_8859_1.displayName());",
+        "    assert d.attr(\"version\").equals(\"1.0\");"
+      ]
+    }
+  ]
+}

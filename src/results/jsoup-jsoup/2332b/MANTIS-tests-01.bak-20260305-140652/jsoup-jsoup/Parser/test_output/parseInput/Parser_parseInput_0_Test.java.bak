@@ -1,0 +1,104 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String, String) delegates to parseInput(Reader, String) and returns placeholder Document")
+    public void test_TC01_O1() {
+        // Setup: stub HtmlTreeBuilder so that parse(...) returns our placeholderDoc
+        Document placeholderDoc = new Document("http://example.com");
+        HtmlTreeBuilder stubBuilder = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                // path B1→B2→B3: entering String overload, delegating to Reader overload, then success branch
+                return placeholderDoc;
+            }
+        };
+        Parser p = new Parser(stubBuilder);
+        String html = "<p>ok</p>";
+        String baseUri = "http://example.com";
+
+        Document result = p.parseInput(html, baseUri);
+
+        // Oracle: should return exactly the placeholder instance from stub
+        assertSame(placeholderDoc, result, "Expected stubbed Document instance");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseInput(String, String) throws RuntimeException when underlying parse fails")
+    public void test_TC02_O1() {
+        // Setup: stub HtmlTreeBuilder so that parse(...) throws RuntimeException("fail")
+        HtmlTreeBuilder stubBuilder = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                // simulate failure at B3 branch
+                throw new RuntimeException("fail");
+            }
+        };
+        Parser p = new Parser(stubBuilder);
+        String html = "<bad";
+        String baseUri = "base";
+
+        // Oracle: expect RuntimeException with message "fail"
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> p.parseInput(html, baseUri),
+            "Expected RuntimeException when treeBuilder.parse throws");
+        assertEquals("fail", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parseInput(Reader, String) returns placeholder Document when treeBuilder.parse succeeds")
+    public void test_TC03_O2() {
+        // Setup: stub HtmlTreeBuilder so parse(Reader,...) returns our placeholderDoc
+        Document placeholderDoc = new Document("uri");
+        HtmlTreeBuilder stubBuilder = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                // path B4→B5: direct Reader overload success
+                return placeholderDoc;
+            }
+        };
+        Parser p = new Parser(stubBuilder);
+        Reader reader = new StringReader("<html></html>");
+        String baseUri = "uri";
+
+        Document result = p.parseInput(reader, baseUri);
+
+        assertSame(placeholderDoc, result, "Expected stubbed Document instance from Reader overload");
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseInput(Reader, String) throws IllegalArgumentException when Reader is null")
+    public void test_TC04_O2() {
+        // Passing null reader should trigger validation at B4, before parse invoked
+        Parser p = Parser.htmlParser();
+        Reader reader = null;
+        String baseUri = "uri";
+
+        assertThrows(IllegalArgumentException.class,
+            () -> p.parseInput(reader, baseUri),
+            "Expected IllegalArgumentException for null Reader");
+    }
+
+    @Test
+    @DisplayName("TC05_O1: parseInput(String, String) throws IllegalArgumentException for null html")
+    public void test_TC05_O1() {
+        // Passing null HTML string should be validated at B1, no parse invoked
+        Parser p = Parser.htmlParser();
+        String html = null;
+        String baseUri = "base";
+
+        assertThrows(IllegalArgumentException.class,
+            () -> p.parseInput(html, baseUri),
+            "Expected IllegalArgumentException for null HTML input");
+    }
+}

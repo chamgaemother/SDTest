@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Chaining setTrackPosition calls maintains fluent API and returns same instance each time",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser created via Parser.htmlParser() with default trackPosition=false",
+      "expectedResult": "Each setTrackPosition invocation returns the same parser instance and trackPosition reflects the last call",
+      "tags": [
+        "fluent-api",
+        "chaining",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 setTrackPosition chaining",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Parser p1 = parser.setTrackPosition(true);",
+        "    Parser p2 = p1.setTrackPosition(true);",
+        "    Parser p3 = p2.setTrackPosition(false);",
+        "  THEN",
+        "    assertSame(parser, p1);",
+        "    assertSame(p1, p2);",
+        "    assertSame(p2, p3);",
+        "    assertFalse(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Setting trackPosition before newInstance propagates state to the copied parser",
+      "path": "B0→B4→B5",
+      "precondition": "Parser created via Parser.htmlParser(); setTrackPosition(true)",
+      "expectedResult": "newInstance() returns a new Parser with trackPosition=true",
+      "tags": [
+        "propagation",
+        "newInstance",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 setTrackPosition with newInstance propagation",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser().setTrackPosition(true);",
+        "  WHEN",
+        "    Parser copy = original.newInstance();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assertTrue(copy.isTrackPosition());",
+        "END"
+      ]
+    }
+  ]
+}

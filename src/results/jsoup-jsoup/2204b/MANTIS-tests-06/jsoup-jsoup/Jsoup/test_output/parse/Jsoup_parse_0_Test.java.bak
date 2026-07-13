@@ -1,0 +1,106 @@
+package org.jsoup;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(html, baseUri) with non-empty html and non-empty baseUri returns a Document with correct baseUri resolution")
+    public void test_TC01_O1() {
+        // branch-true: non-empty html triggers normal parse path
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        // verify baseUri is set and element parsed
+        assertEquals("http://example.com", doc.baseUri());
+        Elements ps = doc.select("p");
+        assertEquals(1, ps.size());
+        assertEquals("Test", ps.first().text());
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with empty html returns empty Document body")
+    public void test_TC02_O1() {
+        // branch-false: empty html yields no children
+        String html = "";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertTrue(doc.body().children().isEmpty());
+        assertEquals("http://example.com", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with null html throws NullPointerException")
+    public void test_TC03_O1() {
+        // null html should throw NPE before parsing
+        String html = null;
+        String baseUri = "http://example.com";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("parse(html) uses empty baseUri and returns Document with default baseUri")
+    public void test_TC04_O2() {
+        // branch-true: non-empty html uses default empty baseUri
+        String html = "<div>Empty</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri());
+        assertEquals("Empty", doc.select("div").text());
+    }
+
+    @Test
+    @DisplayName("parse(html) with null html throws NullPointerException")
+    public void test_TC05_O2() {
+        // null html for single-arg parse should throw NPE
+        String html = null;
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html));
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) with non-empty html and xmlParser returns XML Document")
+    public void test_TC06_O3() {
+        // loop-0: xmlParser handles tags directly, no HTML corrections
+        String html = "<root><tag/></root>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        Elements elems = doc.select("root > tag");
+        assertEquals(1, elems.size());
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) with parser=null throws NullPointerException")
+    public void test_TC07_O3() {
+        // null parser should cause NPE
+        String html = "<a/>";
+        Parser parser = null;
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, parser));
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with non-empty html, baseUri and custom parser returns Document")
+    public void test_TC08_O4() {
+        // positive: three-arg parse with xmlParser and custom baseUri
+        String html = "<x><y/></x>";
+        String baseUri = "base://";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertEquals("base://", doc.baseUri());
+        assertEquals(1, doc.select("x > y").size());
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with null baseUri throws NullPointerException")
+    public void test_TC09_O4() {
+        // null baseUri should throw NPE per contract
+        String html = "<x/>";
+        String baseUri = null;
+        Parser parser = Parser.xmlParser();
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+}

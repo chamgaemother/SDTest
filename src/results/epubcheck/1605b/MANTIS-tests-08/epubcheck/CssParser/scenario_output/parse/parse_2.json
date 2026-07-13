@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "IOException thrown by handleAtRule propagates and prevents endDocument",
+      "path": "B0→B1→B2→B4",
+      "precondition": "scan() returns iterator with one ATKEYWORD token",
+      "expectedResult": "IOException is thrown; startDocument() called once; endDocument() not called",
+      "tags": [
+        "exception",
+        "propagation",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 propagate-IOException-in-handleAtRule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssToken atTk = /* real CssToken.Type.ATKEYWORD token */;",
+        "    StubIterator iter = new StubIterator(Arrays.asList(atTk));",
+        "    CssParser parser = new CssParser(){",
+        "      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e){",
+        "        return iter;",
+        "      }",
+        "    };",
+        "    doThrow(new IOException(\"fail-handleAtRule\")).when(parser).handleAtRule(atTk, iter, doc, err);",
+        "  WHEN",
+        "    call parser.parse(reader, \"sys\", err, doc)",
+        "  THEN",
+        "    throws IOException;",
+        "    verify(doc).startDocument();",
+        "    verify(doc, never()).endDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "IOException thrown by handleRuleSet propagates and prevents endDocument",
+      "path": "B0→B1→B2→B3",
+      "precondition": "scan() returns iterator with one non-ATKEYWORD token",
+      "expectedResult": "IOException is thrown; startDocument() called once; endDocument() not called",
+      "tags": [
+        "exception",
+        "propagation",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 propagate-IOException-in-handleRuleSet",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssToken idTk = /* real CssToken.Type.IDENT token */;",
+        "    StubIterator iter = new StubIterator(Arrays.asList(idTk));",
+        "    CssParser parser = new CssParser(){",
+        "      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e){",
+        "        return iter;",
+        "      }",
+        "    };",
+        "    doThrow(new IOException(\"fail-handleRuleSet\")).when(parser).handleRuleSet(idTk, iter, doc, err);",
+        "  WHEN",
+        "    call parser.parse(reader, \"sys\", err, doc)",
+        "  THEN",
+        "    throws IOException;",
+        "    verify(doc).startDocument();",
+        "    verify(doc, never()).endDocument();",
+        "END"
+      ]
+    }
+  ]
+}

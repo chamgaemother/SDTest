@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild(Comment) on non-empty element skips ensureChildNodes and sets correct siblingIndex",
+      "path": "B0→B3→B5",
+      "precondition": "parent has one existing child node",
+      "expectedResult": "parent.childNodeSize()==2, new comment.parent()==parent, siblingIndex==1",
+      "tags": [
+        "positive",
+        "comment-node",
+        "skip-ensure",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild Comment node after existing child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode tn = new TextNode(\"foo\");",
+        "    parent.appendChild(tn);",
+        "  WHEN",
+        "    Comment cm = new Comment(\"bar\");",
+        "    parent.appendChild(cm);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert cm.parent() == parent;",
+        "    // reflection to get siblingIndex",
+        "    assert siblingIndex(cm) == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild(DataNode) moves DataNode from old parent to new parent and resets siblingIndex",
+      "path": "B0→B2→B3→B5",
+      "precondition": "dataNode attached to oldParent",
+      "expectedResult": "oldParent.childNodeSize()==0, newParent.childNodeSize()==1, dataNode.parent()==newParent,siblingIndex==0",
+      "tags": [
+        "positive",
+        "data-node",
+        "move",
+        "cache-invalid"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 move DataNode between parents",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"script\");",
+        "    DataNode dn = new DataNode(\"x=1;\");",
+        "    oldParent.appendChild(dn);",
+        "    Element newParent = new Element(\"div\");",
+        "  WHEN",
+        "    newParent.appendChild(dn);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert dn.parent() == newParent;",
+        "    assert siblingIndex(dn) == 0;",
+        "END"
+      ]
+    }
+  ]
+}

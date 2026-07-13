@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseBodyFragment(String html, String baseUri) with empty baseUri and fragment containing a relative link preserves the relative href",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "none",
+      "expectedResult": "body HTML contains <a href=\"page.html\"> without resolving to absolute URL",
+      "tags": [
+        "positive",
+        "boundary",
+        "relative-link",
+        "two-arg-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseBodyFragment preserves relative link without baseUri",
+        "  GIVEN",
+        "    String html = \"<a href='page.html'>Link</a>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"href=\\\"page.html\\\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseBodyFragment(String html, String baseUri) with non-empty baseUri resolves relative href to absolute URL",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "body HTML contains <a href=\"https://example.com/page.html\">",
+      "tags": [
+        "positive",
+        "relative-resolution",
+        "two-arg-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseBodyFragment resolves relative link with baseUri",
+        "  GIVEN",
+        "    String html = \"<a href='page.html'>Link</a>\";",
+        "    String baseUri = \"https://example.com/path/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"href=\\\"https://example.com/path/page.html\\\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseBodyFragment(String html, String baseUri) with <base href> in fragment overrides the provided baseUri for link resolution",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "none",
+      "expectedResult": "body HTML uses <base> href for resolving relative link instead of parameter baseUri",
+      "tags": [
+        "positive",
+        "base-tag",
+        "override",
+        "two-arg-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment uses embedded <base> tag over provided baseUri",
+        "  GIVEN",
+        "    String html = \"<base href='https://site.com/'>\" + \"<a href='page.html'>Link</a>\";",
+        "    String baseUri = \"https://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"href=\\\"https://site.com/page.html\\\"\");",
+        "END"
+      ]
+    }
+  ]
+}

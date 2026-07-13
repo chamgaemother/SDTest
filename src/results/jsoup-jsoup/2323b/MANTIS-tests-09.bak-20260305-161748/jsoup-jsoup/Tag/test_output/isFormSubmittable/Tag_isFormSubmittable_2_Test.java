@@ -1,0 +1,46 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.jsoup.parser.ParseSettings; // Added import for ParseSettings
+import org.jsoup.parser.Tag; // Added import for Tag
+import org.jsoup.parser.Parser; // Added import for Parser
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("isFormSubmittable returns true for uppercase known submittable tag with preserveCase=false")
+    public void test_TC08() {
+        // This input exercises path B0→B1→B2→B3→B5: known tag found in default HTML namespace, preserveTagCase=false, so name normalized and formSubmit flag true
+        String tagName = "INPUT";
+        // Use lowercase settings to force tagName normalization
+        ParseSettings settings = ParseSettings.lowercase;
+
+        // Act
+        Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);
+        boolean result = tag.isFormSubmittable();
+
+        // Assert that the tag name was normalized to lowercase and that input is submittable by default
+        assertAll("Normalized name and submittable",
+            () -> assertEquals("input", tag.getName(), "Tag name should be normalized to lowercase 'input'"),
+            () -> assertTrue(result, "Known form-submittable tag 'input' should return true")
+        );
+    }
+
+    @Test
+    @DisplayName("isFormSubmittable returns false for known submittable tag with a non-HTML namespace")
+    public void test_TC09() {
+        // This input exercises path B0→B1→B2(ns-mismatch)→B4→B5: tagName matches known, but namespace mismatch leads to new generic tag with formSubmit=false
+        String tagName = "input";
+        String fakeNamespace = "http://example.com/custom";
+        // Use preserveCase settings but namespace is non-HTML so known tag lookup fails namespace check
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // Act
+        Tag tag = Tag.valueOf(tagName, fakeNamespace, settings);
+        boolean result = tag.isFormSubmittable();
+
+        // Assert that a tag in a non-HTML namespace is not considered form-submittable
+        assertFalse(result, "Tag in non-HTML namespace should not be considered form-submittable");
+    }
+}

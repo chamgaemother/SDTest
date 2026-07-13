@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "Reader overload propagates IllegalArgumentException from treeBuilder.parse",
+      "path": "B0→B3→B6",
+      "precondition": "Parser with TreeBuilder whose parse() throws IllegalArgumentException",
+      "expectedResult": "IllegalArgumentException is thrown with original message",
+      "tags": [
+        "negative",
+        "exception",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput reader illegal-argument",
+        "  GIVEN",
+        "    TreeBuilder tb = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) { throw new IllegalArgumentException(\"bad arg\"); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return null; }",
+        "      @Override protected void process(Token token) {}",
+        "    };",
+        "    Parser p = new Parser(tb);",
+        "    Reader in = new StringReader(\"<div>x</div>\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call p.parseInput(in, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException with message \"bad arg\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Reader overload returns null when treeBuilder.parse returns null Document",
+      "path": "B0→B3→B5",
+      "precondition": "Parser with TreeBuilder whose parse() returns null",
+      "expectedResult": "return value is null",
+      "tags": [
+        "edge",
+        "null-return",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput reader returns-null",
+        "  GIVEN",
+        "    TreeBuilder tb = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) { return null; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return null; }",
+        "      @Override protected void process(Token token) {}",
+        "    };",
+        "    Parser p = new Parser(tb);",
+        "    Reader in = new StringReader(\"<p>test</p>\");",
+        "    String baseUri = \"http://ex\";",
+        "  WHEN",
+        "    Document result = p.parseInput(in, baseUri);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "String overload propagates IOException thrown when reading from Reader via reflection",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Parser with TreeBuilder reading from faulty Reader that throws IOException on read",
+      "expectedResult": "IOException is thrown with cause message from Reader",
+      "tags": [
+        "negative",
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput string-to-reader io-exception",
+        "  GIVEN",
+        "    TreeBuilder tb = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new HtmlTreeBuilder().defaultSettings(); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) throws IOException {",
+        "        in.read(); // triggers IOException",
+        "        return new Document(baseUri);",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return null; }",
+        "      @Override protected void process(Token token) {}",
+        "    };",
+        "    Parser p = new Parser(tb);",
+        "    // Use reflection to invoke Reader overload",
+        "    Method m = Parser.class.getMethod(\"parseInput\", Reader.class, String.class);",
+        "    m.setAccessible(true);",
+        "    Reader faulty = new Reader() {",
+        "      @Override public int read(char[] cbuf, int off, int len) throws IOException { throw new IOException(\"read failed\"); }",
+        "      @Override public void close() {}",
+        "    };",
+        "  WHEN",
+        "    invoke m on p with faulty, \"uri\";",
+        "  THEN",
+        "    throws IOException with cause message \"read failed\";",
+        "END"
+      ]
+    }
+  ]
+}

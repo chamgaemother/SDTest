@@ -1,0 +1,100 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(html, baseUri) throws NullPointerException when baseUri is null")
+    public void test_TC21() {
+        String html = "<p>test</p>";
+        // baseUri null should trigger NPE before parsing
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, (String) null));
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) throws NullPointerException when parser is null")
+    public void test_TC22() {
+        String html = "<div/>";
+        // parser null should trigger NPE on method entry
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, (Parser) null));
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) throws NullPointerException when parser is null")
+    public void test_TC23() {
+        String html = "<img/>";
+        String baseUri = "http://example/";
+        // null parser should trigger NPE before any parsing
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, (Parser) null));
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, parser) successfully parses with xmlParser")
+    public void test_TC24() throws IOException {
+        // create temp XML file with known content
+        Path temp = Files.createTempFile("tc24", ".xml");
+        Files.write(temp, "<root><child/></root>".getBytes("UTF-8"));
+        File file = temp.toFile();
+        String charset = "UTF-8";
+        String baseUri = "http://host/";
+        Parser parser = Parser.xmlParser();
+        // xmlParser should preserve element names and baseUri
+        Document doc = Jsoup.parse(file, charset, baseUri, parser);
+        assertNotNull(doc.selectFirst("child"), "Expected <child> element present");
+        assertEquals(baseUri, doc.baseUri(), "Expected baseUri preserved");
+        Files.deleteIfExists(temp);
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri, parser) successfully parses with htmlParser")
+    public void test_TC25() throws IOException {
+        // create temp HTML file with known body content
+        Path temp = Files.createTempFile("tc25", ".html");
+        Files.write(temp, "<p>Hello</p>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "https://x/";
+        Parser parser = Parser.htmlParser();
+        // htmlParser should parse HTML into body content and set baseUri
+        Document doc = Jsoup.parse(temp, charset, baseUri, parser);
+        assertEquals("<p>Hello</p>", doc.body().html(), "Body HTML must match input");
+        assertEquals(baseUri, doc.baseUri(), "Expected baseUri preserved");
+        Files.deleteIfExists(temp);
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, null, baseUri) uses fallback charset and closes stream")
+    public void test_TC26() throws IOException {
+        byte[] data = "<span>f</span>".getBytes("UTF-8");
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        String charset = null;
+        String baseUri = "";
+        // null charset should fallback to BOM/meta/UTF-8, stream closed after parse
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        assertEquals("<span>f</span>", doc.body().html(), "Parsed HTML fragment must match");
+        assertEquals(-1, in.read(), "Stream should be at EOF after parse");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri, parser) throws NullPointerException when parser is null")
+    public void test_TC27() throws IOException {
+        byte[] data = "<a/>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(data);
+        String charset = "UTF-8";
+        String baseUri = "http://b/";
+        // null parser should trigger NPE on entry
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(in, charset, baseUri, (Parser) null));
+    }
+}

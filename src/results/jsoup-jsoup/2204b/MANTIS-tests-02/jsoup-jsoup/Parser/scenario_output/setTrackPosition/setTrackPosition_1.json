@@ -1,0 +1,53 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "newInstance() deep-copies a parser with trackPosition=true so the copy also has trackPosition=true",
+      "path": "B0→B1(copyCtor)→B2(trackPositionAssign)+→B3(return)",
+      "precondition": "parser created via Parser.htmlParser() and setTrackPosition(true)",
+      "expectedResult": "newParser.isTrackPosition() == true and newParser != originalParser",
+      "tags": [
+        "copy",
+        "positive",
+        "state-propagation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 deep-copy retains true",
+        "  GIVEN",
+        "    Parser orig = Parser.htmlParser().setTrackPosition(true);",
+        "  WHEN",
+        "    Parser copy = orig.newInstance();",
+        "  THEN",
+        "    assert copy != orig;",
+        "    assertTrue(copy.isTrackPosition());"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "newInstance() deep-copies a parser with trackPosition=false so the copy also has trackPosition=false",
+      "path": "B0→B1(copyCtor)→B2(trackPositionAssign)-→B3(return)",
+      "precondition": "parser created via Parser.htmlParser() (default trackPosition=false)",
+      "expectedResult": "newParser.isTrackPosition() == false and newParser != originalParser",
+      "tags": [
+        "copy",
+        "boundary",
+        "state-propagation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 deep-copy retains false",
+        "  GIVEN",
+        "    Parser orig = Parser.htmlParser();",
+        "    assertFalse(orig.isTrackPosition());",
+        "  WHEN",
+        "    Parser copy = orig.newInstance();",
+        "  THEN",
+        "    assert copy != orig;",
+        "    assertFalse(copy.isTrackPosition());"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "clone() propagates RuntimeException when parser.clone() throws",
+      "path": "B0→B1→B2→B3*→EX",
+      "precondition": "Document created and its parser replaced with stub that throws on clone()",
+      "expectedResult": "RuntimeException with the stub message is thrown",
+      "tags": [
+        "exception",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone propagates parser.clone exception",
+        "  GIVEN",
+        "    // Arrange",
+        "    Document doc = new Document(\"ns\", \"http://base\");",
+        "    Parser failingParser = new Parser.ParserSettings(\"invalid\") {",
+        "       @Override public Parser clone() { throw new RuntimeException(\"fail\"); }",
+        "    };",
+        "    doc.parser(failingParser);",
+        "  WHEN",
+        "    // Act",
+        "    call doc.clone();",
+        "  THEN",
+        "    // Assert",
+        "    throws RuntimeException with message \"fail\";",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,81 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("clean(html, baseUri empty, safelist.preserveRelativeLinks=true) assigns DummyUri and preserves relative links")
+    public void test_TC23() {
+        // Given an HTML fragment with a relative href and a safelist that preserves relative links
+        String html = "<a href='/img.png'>img</a>";
+        Safelist sl = Safelist.basic().preserveRelativeLinks(true);
+        // When: cleaning with empty baseUri triggers the DummyUri assignment path
+        String out = Jsoup.clean(html, "", sl);
+        // Then: the output must contain href="<DummyUri>/img.png"
+        String expectedPrefix = org.jsoup.internal.SharedConstants.DummyUri + "/img.png";
+        assertTrue(out.contains("href=\"" + expectedPrefix + "\""),
+            "Expected the DummyUri prefix to be applied for preserved relative links");
+    }
+
+    @Test
+    @DisplayName("clean(html, non-empty baseUri, safelist.default) resolves relative links against provided baseUri")
+    public void test_TC24() {
+        // Given an HTML fragment with a relative href and a non-empty baseUri
+        String html = "<a href='/path'>link</a>";
+        String base = "https://site.com";
+        Safelist sl = Safelist.basic();
+        // When: cleaning with a non-empty baseUri uses that for resolution
+        String out = Jsoup.clean(html, base, sl);
+        // Then: the href must be resolved against the provided baseUri
+        assertTrue(out.contains("href=\"https://site.com/path\""),
+            "Expected the relative path to be resolved against the provided baseUri");
+    }
+
+    @Test
+    @DisplayName("clean(html, safelist) delegates to clean(html, \"\", safelist) and strips relative links when not preserved")
+    public void test_TC25() {
+        // Given an HTML fragment with a relative href and the none() safelist (no preservation)
+        String html = "<a href='/r'>x</a>";
+        Safelist sl = Safelist.none();
+        // When: using the two-arg clean overload delegates to empty baseUri without preservation
+        String out = Jsoup.clean(html, sl);
+        // Then: the href attribute must be stripped or empty
+        assertTrue(out.contains("href=\"\""),
+            "Expected relative href to be removed (empty) when preserveRelativeLinks is false");
+    }
+
+    @Test
+    @DisplayName("clean(html, baseUri, safelist, outputSettings) applies provided Document.OutputSettings")
+    public void test_TC26() {
+        // Given nested elements and prettyPrint=false to avoid formatting
+        String html = "<div><p>a</p><p>b</p></div>";
+        Safelist sl = Safelist.basic();
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+        // When: cleaning with custom output settings bypasses indentation/newlines
+        String out = Jsoup.clean(html, "http://x/", sl, os);
+        // Then: output is a flat fragment of body content
+        assertEquals("<p>a</p><p>b</p>", out,
+            "Expected cleaned output without indentation or newlines when prettyPrint is false");
+    }
+
+    @Test
+    @DisplayName("isValid(html, safelist) returns false when tags not allowed and true when allowed")
+    public void test_TC27() {
+        // Given a forbidden tag under none() and an allowed paragraph under basic()
+        String bad = "<div>x</div>";
+        String good = "<p>y</p>";
+        Safelist none = Safelist.none();
+        Safelist basic = Safelist.basic();
+        // When: validating both fragments
+        boolean resBad = Jsoup.isValid(bad, none);
+        boolean resGood = Jsoup.isValid(good, basic);
+        // Then: bad should be invalid, good should be valid
+        assertFalse(resBad, "Expected <div> to be invalid under Safelist.none() ");
+        assertTrue(resGood, "Expected <p> to be valid under Safelist.basic() ");
+    }
+}

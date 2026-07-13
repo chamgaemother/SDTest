@@ -1,0 +1,52 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "sourceRange returns UntrackedAttr when parent is null (parent==null branch)",
+      "path": "B0→B1",
+      "precondition": "Attribute attr = new Attribute(\"key\", \"value\", null);",
+      "expectedResult": "return value is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-true",
+        "parent-null",
+        "exception-free"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 sourceRange parent-null",
+        "  GIVEN",
+        "    Attribute attr = new Attribute(\"key\", \"value\", null);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "sourceRange delegates to parent.sourceRange when parent is non-null (parent!=null branch)",
+      "path": "B0→B2",
+      "precondition": "// Using a stub Attributes to simulate sourceRange behavior\nAttributes stub = new Attributes() {\n  @Override public Range.AttributeRange sourceRange(String key) { return Range.AttributeRange.UntrackedAttr; }\n};\nAttribute attr = new Attribute(\"data-key\", \"val\", stub);",
+      "expectedResult": "returns stub.sourceRange(\"data-key\") which is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-false",
+        "parent-non-null",
+        "exception-free"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 sourceRange parent-non-null",
+        "  GIVEN",
+        "    Attributes stub = new Attributes(){public Range.AttributeRange sourceRange(String k){return Range.AttributeRange.UntrackedAttr;}};",
+        "    Attribute attr = new Attribute(\"data-key\",\"val\",stub);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,104 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when input string is null (aString == null branch)",
+      "path": "B0→B1(true)→B5",
+      "precondition": "Use a simple stub implementing DfColumn that records the argument passed to addObject; no mocking framework used",
+      "expectedResult": "stub.addedObject is null",
+      "tags": [
+        "branch-true",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assert stub.addedObject == null;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() branch)",
+      "path": "B0→B1(false)→B2(true)→B5",
+      "precondition": "Use a simple stub implementing DfColumn that records the argument passed to addObject; no mocking framework used",
+      "expectedResult": "stub.addedObject is null",
+      "tags": [
+        "branch-false",
+        "branch-true",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn empty-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"   \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assert stub.addedObject == null;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn adds LocalDate when input matches pattern (both branches false)",
+      "path": "B0→B1(false)→B2(false)→B3(false)→B4→B5",
+      "precondition": "Use a simple stub implementing DfColumn that records the argument passed to addObject; no mocking framework used",
+      "expectedResult": "stub.addedObject equals LocalDate.of(2020,1,2)",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "valid-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"2020-1-2\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assert stub.addedObject.equals(LocalDate.of(2020, 1, 2));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn throws DateTimeParseException for invalid date string (parse error branch)",
+      "path": "B0→B1(false)→B2(false)→B3(false)→B4(exception)",
+      "precondition": "Use a simple stub implementing DfColumn; no mocking framework used",
+      "expectedResult": "throws java.time.format.DateTimeParseException",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn invalid-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"bad-date\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;"
+      ]
+    }
+  ]
+}

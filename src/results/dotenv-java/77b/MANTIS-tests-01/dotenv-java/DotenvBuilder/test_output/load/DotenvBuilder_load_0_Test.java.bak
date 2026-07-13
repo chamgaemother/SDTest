@@ -1,0 +1,178 @@
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("TC01: Default load() with empty .env file does not set system properties and returns empty Dotenv entries")
+    void test_TC01() throws IOException {
+        // Branch false (systemProperties=false), loop-0 (empty file)
+        Path tempDir = Files.createTempDirectory("tc01");
+        // create empty .env
+        Files.createFile(tempDir.resolve(".env"));
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).filename(".env");
+        Dotenv dotenv = builder.load();
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertTrue(entries.isEmpty(), "Expected no entries for empty .env");
+        // verify no new system property
+        assertNull(System.getProperty("ANY_KEY"), "No system properties should be set");
+    }
+
+    @Test
+    @DisplayName("TC02: systemProperties=true with empty .env file iterates zero elements without exception")
+    void test_TC02() throws IOException {
+        // Branch true (systemProperties=true), loop-0
+        Path tempDir = Files.createTempDirectory("tc02");
+        Files.createFile(tempDir.resolve(".env"));
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .filename(".env")
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertTrue(entries.isEmpty(), "Expected no entries for empty .env");
+        // ensure no system properties were set
+        assertNull(System.getProperty("FOO"), "No system properties should be set for empty .env");
+    }
+
+    @Test
+    @DisplayName("TC03: Default load() with one entry .env file does not set system properties and returns single entry")
+    void test_TC03() throws IOException {
+        // Branch false, loop-0 downstream but one entry parsed
+        Path tempDir = Files.createTempDirectory("tc03");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "KEY1=VAL1\n".getBytes());
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).filename(".env");
+        Dotenv dotenv = builder.load();
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertEquals(1, entries.size(), "Expected one entry parsed");
+        assertTrue(entries.contains(new DotenvEntry("KEY1","VAL1")), "Entry KEY1=VAL1 should be present");
+        assertNull(System.getProperty("KEY1"), "System property KEY1 should remain unset");
+    }
+
+    @Test
+    @DisplayName("TC04: systemProperties=true with one entry .env file iterates exactly one element and sets system property")
+    void test_TC04() throws IOException {
+        // Branch true, loop-1
+        Path tempDir = Files.createTempDirectory("tc04");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "KEY1=VAL1\n".getBytes());
+        // clear before
+        System.clearProperty("KEY1");
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .filename(".env")
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+        // one entry should have been set
+        assertEquals("VAL1", System.getProperty("KEY1"), "System property KEY1 should be set to VAL1");
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertTrue(entries.contains(new DotenvEntry("KEY1","VAL1")));
+    }
+
+    @Test
+    @DisplayName("TC05: systemProperties=true with multiple entries .env file iterates N>1 elements and sets all system properties")
+    void test_TC05() throws IOException {
+        // Branch true, loop-N (N=3)
+        Path tempDir = Files.createTempDirectory("tc05");
+        Path envFile = tempDir.resolve(".env");
+        String content = "KEY1=V1\nKEY2=V2\nKEY3=V3\n";
+        Files.write(envFile, content.getBytes());
+        System.clearProperty("KEY1");
+        System.clearProperty("KEY2");
+        System.clearProperty("KEY3");
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .filename(".env")
+                                      .systemProperties();
+        Dotenv dotenv = builder.load();
+        assertEquals("V1", System.getProperty("KEY1"));
+        assertEquals("V2", System.getProperty("KEY2"));
+        assertEquals("V3", System.getProperty("KEY3"));
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertEquals(3, entries.size(), "Expected three entries parsed");
+    }
+
+    @Test
+    @DisplayName("TC06: Default load() on missing file throws DotenvException")
+    void test_TC06() throws IOException {
+        // Branch at B0, missing file => parser will throw
+        Path tempDir = Files.createTempDirectory("tc06");
+        // no .env created
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).filename(".env");
+        assertThrows(DotenvException.class, builder::load, "Expected DotenvException for missing file");
+    }
+
+    @Test
+    @DisplayName("TC07: ignoreIfMissing() on missing file returns empty Dotenv without exception")
+    void test_TC07() throws IOException {
+        // Branch false on throwIfMissing, B0→B2
+        Path tempDir = Files.createTempDirectory("tc07");
+        // no file
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .filename(".env")
+                                      .ignoreIfMissing();
+        Dotenv dotenv = builder.load();
+        assertTrue(dotenv.entries().isEmpty(), "Expected empty entries when missing file ignored");
+    }
+
+    @Test
+    @DisplayName("TC08: Default load() on malformed .env throws DotenvException")
+    void test_TC08() throws IOException {
+        // Branch at B0, malformed and throwIfMalformed true => exception
+        Path tempDir = Files.createTempDirectory("tc08");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "MALFORMEDLINE\n".getBytes());
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).filename(".env");
+        assertThrows(DotenvException.class, builder::load, "Expected DotenvException for malformed line");
+    }
+
+    @Test
+    @DisplayName("TC09: ignoreIfMalformed() on malformed .env returns empty Dotenv without exception")
+    void test_TC09() throws IOException {
+        // Branch false on throwIfMalformed, B0→B2
+        Path tempDir = Files.createTempDirectory("tc09");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "BADLINE\n".getBytes());
+        DotenvBuilder builder = Dotenv.configure()
+                                      .directory(tempDir.toString())
+                                      .filename(".env")
+                                      .ignoreIfMalformed();
+        Dotenv dotenv = builder.load();
+        assertTrue(dotenv.entries().isEmpty(), "Expected empty entries when malformed ignored");
+    }
+
+    @Test
+    @DisplayName("TC10: Default load() with multiple entries .env file returns all entries and does not set system properties")
+    void test_TC10() throws IOException {
+        // Branch false, loop-N (N=3)
+        Path tempDir = Files.createTempDirectory("tc10");
+        Path envFile = tempDir.resolve(".env");
+        String content = "KEYA=A\nKEYB=B\nKEYC=C\n";
+        Files.write(envFile, content.getBytes());
+        System.clearProperty("KEYA");
+        System.clearProperty("KEYB");
+        System.clearProperty("KEYC");
+        DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).filename(".env");
+        Dotenv dotenv = builder.load();
+        Set<DotenvEntry> entries = dotenv.entries();
+        assertEquals(3, entries.size(), "Expected three entries parsed");
+        assertTrue(entries.contains(new DotenvEntry("KEYA","A")));
+        assertTrue(entries.contains(new DotenvEntry("KEYB","B")));
+        assertTrue(entries.contains(new DotenvEntry("KEYC","C")));
+        assertNull(System.getProperty("KEYA"), "System properties should not be set by default");
+        assertNull(System.getProperty("KEYB"), "System properties should not be set by default");
+        assertNull(System.getProperty("KEYC"), "System properties should not be set by default");
+    }
+}

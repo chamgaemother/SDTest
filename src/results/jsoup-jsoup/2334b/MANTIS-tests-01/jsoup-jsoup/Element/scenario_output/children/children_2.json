@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() with only text nodes caches empty result on first call and reuses underlying list referent on second call (referent non-null path)",
+      "path": "B0→B3(false)→B6(false)→B7→B0→B3(false)→B6(true)→B7",
+      "precondition": "Element has one TextNode child and no Element children",
+      "expectedResult": "first and second children() calls return equal sizes=0 but wrap referent cache path, second call uses non-null referent",
+      "tags": [
+        "cache",
+        "text-only",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children text-only cache reuse",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendText(\"data\");",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 0;",
+        "    assert second.size() == 0;",
+        "    // underlying referent list reused, verify no NullPointer or recompute",
+        "    assertNotNull(getShadowChildrenRef(el).get());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() recomputes after children cleared via empty(), invalidating cache and returning empty list",
+      "path": "B0→B3(false)→B6(false)→B7→nodelistChanged on clear→B0→B3(true)",
+      "precondition": "Element has two Element children and cache primed",
+      "expectedResult": "after empty(), children() returns size=0",
+      "tags": [
+        "cache",
+        "modification",
+        "empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children recompute after empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "    el.children(); // prime cache",
+        "  WHEN",
+        "    el.empty(); // clears childNodes and triggers nodelistChanged",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "    // ensure cache reflects cleared state",
+        "END"
+      ]
+    }
+  ]
+}

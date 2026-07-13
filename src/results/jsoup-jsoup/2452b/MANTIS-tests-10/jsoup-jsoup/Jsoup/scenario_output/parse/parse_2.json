@@ -1,0 +1,163 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "clean(String, String, Safelist) sets baseUri to DummyUri when baseUri is empty and safelist.preserveRelativeLinks() is true",
+      "path": "B0→B1(true)→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "returned HTML retains relative links unchanged and no exception",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "safelist",
+        "relative-links"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC19 clean empty-baseUri with preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"/foo\\\">link</a>\";",
+        "    Safelist safelist = Safelist.relaxed();",
+        "    safelist.preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, \"\", safelist);",
+        "  THEN",
+        "    assert result.contains(\"<a href=\\\"/foo\\\">link</a>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "clean(String, String, Safelist) skips DummyUri branch when baseUri is non-empty",
+      "path": "B0→B1(false)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned HTML contains sanitized output and no DummyUri applied",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "safelist"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC20 clean non-empty-baseUri skips DummyUri",
+        "  GIVEN",
+        "    String html = \"<b>bold</b>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert result.equals(\"<b>bold</b>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "clean(String, String, Safelist, OutputSettings) applies supplied output settings",
+      "path": "B0→B6→B7→B8",
+      "precondition": "none",
+      "expectedResult": "returned HTML is pretty-printed according to provided settings",
+      "tags": [
+        "positive",
+        "clean",
+        "outputSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC21 clean with outputSettings",
+        "  GIVEN",
+        "    String html = \"<p>one<em>two</em>three</p>\";",
+        "    Safelist safelist = Safelist.none();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, \"\", safelist, os);",
+        "  THEN",
+        "    assert result.contains(\"one<em>two</em>three\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "isValid(String, Safelist) returns true when input matches safelist exactly",
+      "path": "B0→B1(valid)→B3",
+      "precondition": "none",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "isValid",
+        "safelist",
+        "validation"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC22 isValid returns true for allowed tags",
+        "  GIVEN",
+        "    String html = \"<p>ok</p>\";",
+        "    Safelist safelist = Safelist.relaxed();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "isValid(String, Safelist) returns false when input contains disallowed tags",
+      "path": "B0→B1(invalid)→B2",
+      "precondition": "none",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "isValid",
+        "safelist"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC23 isValid returns false for disallowed tags",
+        "  GIVEN",
+        "    String html = \"<script>alert(1)</script>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL, int) throws SocketTimeoutException when server delays beyond timeoutMillis",
+      "path": "B0→B1→B2(timeout)→exception",
+      "precondition": "HTTP server delays response longer than timeout",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "timeout",
+        "parse",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC24 parse URL with server delay triggers timeout",
+        "  GIVEN",
+        "    start HTTP server that sleeps 500ms before sending",
+        "    URL url = new URL(\"http://localhost:port/\");",
+        "    int timeoutMillis = 100;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeoutMillis);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    }
+  ]
+}

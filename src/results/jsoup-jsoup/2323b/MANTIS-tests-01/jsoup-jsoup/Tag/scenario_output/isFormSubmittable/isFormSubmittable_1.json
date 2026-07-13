@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Known form-submittable tag name with non-default namespace returns non-submittable default tag",
+      "path": "B0→B2→B9→B10",
+      "precondition": "ParseSettings.preserveCase and non-HTML namespace",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "default-creation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 namespace-mismatch yields default non-submittable",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = t.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "ValueOf clone branch when preserveTagCase=true yields formSubmit flag from cloned known tag",
+      "path": "B0→B3→B5→B6→B7→B10",
+      "precondition": "Tag 'PRE' exists in HTML namespace, ParseSettings.preserveCase",
+      "expectedResult": "return value is false",
+      "tags": [
+        "clone-path",
+        "preserve-case",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 preserve-case clone branch then isFormSubmittable",
+        "  GIVEN",
+        "    String tagName = \"PRE\";",
+        "    String normalName = \"pre\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(tagName, normalName, namespace, settings);",
+        "    boolean result = t.isFormSubmittable();",
+        "  THEN",
+        "    assert t.getName().equals(\"PRE\");",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

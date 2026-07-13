@@ -1,0 +1,104 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parse(\"a.b.c\") returns null when non-numeric segments cause StrictParser to throw",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "null returned due to parse exception",
+      "tags": [
+        "negative",
+        "exception",
+        "format-invalid"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parse non-numeric segments",
+        "  GIVEN",
+        "    String version = \"a.b.c\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(\"1.2.3+build\") returns Semver with empty prerelease and single build token",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getPreRelease()==[] and getBuild()==[\"build\"]",
+      "tags": [
+        "positive",
+        "build-only",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parse build-only metadata",
+        "  GIVEN",
+        "    String version = \"1.2.3+build\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assert result.getPreRelease().isEmpty();",
+        "    assertEquals([\"build\"], result.getBuild());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(\"1.2.3-beta\") returns Semver with single prerelease and empty build",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getPreRelease()==[\"beta\"] and getBuild()==[]",
+      "tags": [
+        "positive",
+        "prerelease-only",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parse prerelease-only metadata",
+        "  GIVEN",
+        "    String version = \"1.2.3-beta\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals([\"beta\"], result.getPreRelease());",
+        "    assert result.getBuild().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parse(\"-1.2.3\") returns null when major version negative triggers parse exception",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "null returned due to invalid negative major",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parse negative major",
+        "  GIVEN",
+        "    String version = \"-1.2.3\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    }
+  ]
+}

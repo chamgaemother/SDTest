@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "dataset.clear() removes all data- attributes and clears the view (clear branch)",
+      "path": "B0→B1(dataset())→B2(clear)→B3(return empty)",
+      "precondition": "Element with attributes data-a=\"1\", data-b=\"2\"",
+      "expectedResult": "Underlying attributes no longer contain data-a or data-b and dataset view is empty",
+      "tags": [
+        "mutation",
+        "clear",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 dataset clear removes all entries",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"1\");",
+        "    el.attr(\"data-b\", \"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-a\"));",
+        "    assertFalse(el.attributes().hasKey(\"data-b\"));",
+        "    assertTrue(ds.isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Removing via dataset.entrySet().iterator().remove() deletes underlying data- attribute (iterator-remove branch)",
+      "path": "B0→B1(dataset())→B2(entrySetIterator)→B3(iterator.remove)→B4(return view)",
+      "precondition": "Element with single data-x=\"v\"",
+      "expectedResult": "Underlying attribute data-x removed and dataset view no longer contains key \"x\"",
+      "tags": [
+        "mutation",
+        "iterator",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 dataset iterator remove removes entry",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-x\", \"v\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    Iterator<Map.Entry<String,String>> it = ds.entrySet().iterator();",
+        "    Map.Entry<String,String> entry = it.next();",
+        "    it.remove();",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-x\"));",
+        "    assertFalse(ds.containsKey(\"x\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset.put on existing key overwrites and returns previous value (overwrite branch)",
+      "path": "B0→B1(dataset())→B2(put existing key)→B5(return old value)",
+      "precondition": "Element with data-a=\"old\"",
+      "expectedResult": "ds.put(\"a\",\"new\") returns \"old\" and underlying attr data-a=\"new\"",
+      "tags": [
+        "mutation",
+        "overwrite",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 dataset put existing key overwrites value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"old\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    String prev = ds.put(\"a\", \"new\");",
+        "  THEN",
+        "    assertEquals(\"old\", prev);",
+        "    assertEquals(\"new\", el.attr(\"data-a\"));",
+        "    assertEquals(\"new\", ds.get(\"a\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset.put with null value throws NullPointerException (put-null-value exception branch)",
+      "path": "B0→B1(dataset())→B2(put key,null)→B6(throw NPE)",
+      "precondition": "Element with no data- attributes",
+      "expectedResult": "NullPointerException thrown when putting null value",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 dataset put null value throws NPE",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(\"x\", null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

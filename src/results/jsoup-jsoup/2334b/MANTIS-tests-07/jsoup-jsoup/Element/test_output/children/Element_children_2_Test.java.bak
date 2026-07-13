@@ -1,0 +1,95 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.List;
+import java.util.WeakHashMap;
+import java.util.WeakReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC13 children() rebuilds cache after prependChild triggers nodelistChanged clearing shadowChildrenRef")
+    public void test_TC13() throws Exception {
+        // GIVEN: a parent with one existing child, and cache populated via children()
+        Element parent = new Element("div");
+        Element a = new Element("a");
+        parent.appendChild(a);
+        // Prime the cache: initial children list created and shadowChildrenRef set
+        parent.children();
+        // WHEN: prependChild should clear the shadowChildrenRef cache and rebuild
+        Element b = new Element("b");
+        parent.prependChild(b); // triggers nodelistChanged, invalidating cache
+        List<Element> result = parent.children();
+        // THEN: children() returns fresh list with new and existing children in correct order
+        assertEquals(2, result.size(), "Expected two children after prependChild");
+        assertSame(b, result.get(0), "Prepended element should be first");
+        assertSame(a, result.get(1), "Existing element should follow the prepended one");
+        // AND: verify shadowChildrenRef is rebuilt (non-null referent)
+        Field f = Element.class.getDeclaredField("shadowChildrenRef");
+        f.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref = (WeakReference<List<Element>>) f.get(parent);
+        assertNotNull(ref.get(), "shadowChildrenRef referent should be rebuilt and non-null");
+    }
+
+    @Test
+    @DisplayName("TC14 children() rebuilds cache after prependChildren(Collection) triggers nodelistChanged")
+    public void test_TC14() throws Exception {
+        // GIVEN: a parent with two children, cache populated via children()
+        Element parent = new Element("ul");
+        Element a = new Element("li");
+        Element b = new Element("li");
+        parent.appendChild(a);
+        parent.appendChild(b);
+        parent.children(); // primes cache with [a, b]
+        // WHEN: prependChildren should clear cache and prepend new nodes
+        Element x = new Element("x");
+        Element y = new Element("y");
+        parent.prependChildren(Arrays.asList(x, y)); // triggers nodelistChanged
+        List<Element> result = parent.children();
+        // THEN: children list updated size and order with new elements first
+        assertEquals(4, result.size(), "Expected four children after prependChildren");
+        assertEquals("x", result.get(0).tagName(), "First child should be tag 'x'");
+        assertEquals("y", result.get(1).tagName(), "Second child should be tag 'y'");
+        assertEquals("li", result.get(2).tagName(), "Third child should be original 'li' a");
+        assertEquals("li", result.get(3).tagName(), "Fourth child should be original 'li' b");
+        // AND: verify shadowChildrenRef rebuilt by reflection
+        Field f = Element.class.getDeclaredField("shadowChildrenRef");
+        f.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref = (WeakReference<List<Element>>) f.get(parent);
+        assertNotNull(ref.get(), "shadowChildrenRef referent should be rebuilt after prependChildren");
+    }
+
+    @Test
+    @DisplayName("TC15 children() rebuilds cache after insertChildren(varargs) triggers nodelistChanged and index roll-around")
+    public void test_TC15() throws Exception {
+        // GIVEN: a parent with one child, cache populated via children()
+        Element parent = new Element("div");
+        Element a = new Element("p");
+        parent.appendChild(a);
+        parent.children(); // primes cache
+        // WHEN: insertChildren with negative index (-1) rolls to end and invalidates cache
+        Element c1 = new Element("span");
+        Element c2 = new Element("em");
+        parent.insertChildren(-1, c1, c2); // roll-around to append then triggers nodelistChanged
+        List<Element> result = parent.children();
+        // THEN: children list now has original then inserted ones
+        assertEquals(3, result.size(), "Expected three children after insertChildren varargs");
+        assertSame(a, result.get(0), "Original child remains first");
+        assertSame(c1, result.get(1), "First inserted child should be second");
+        assertSame(c2, result.get(2), "Second inserted child should be third");
+        // AND: cache rebuilt: shadowChildrenRef referent non-null
+        Field f = Element.class.getDeclaredField("shadowChildrenRef");
+        f.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref = (WeakReference<List<Element>>) f.get(parent);
+        assertNotNull(ref.get(), "shadowChildrenRef referent should be rebuilt after insertChildren");
+    }
+}

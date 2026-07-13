@@ -1,0 +1,172 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Empty CSS (only whitespace) results in only startDocument and endDocument",
+      "path": "B0→B1(false)→B8",
+      "precondition": "none",
+      "expectedResult": "doc.startDocument() and doc.endDocument() each called once; no selectors or atRules",
+      "tags": [
+        "positive",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse empty CSS",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"   \\n  \");",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.start.get() == 1;",
+        "    assert doc.end.get() == 1;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "One ruleset with one declaration triggers selectors, declaration, endSelectors",
+      "path": "B0→B1(true)→B2(non-ATKEYWORD)→B3→B5→B7→B1(false)→B8",
+      "precondition": "none",
+      "expectedResult": "selectors() invoked once; declaration() invoked once; endSelectors() invoked once; document wrapper calls balanced",
+      "tags": [
+        "positive",
+        "rule-set",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse simple ruleset",
+        "  GIVEN",
+        "    String css = \"h1 { color: blue; }\";",
+        "    Reader reader = new StringReader(css);",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.start.get() == 1;",
+        "    assert doc.end.get() == 1;",
+        "    // verify contentHandler.selectors and declaration calls count==1",
+        "    assert doc.selectorsCount == 1;",
+        "    assert doc.declarationsCount == 1;",
+        "    assert doc.endSelectorsCount == 1;"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "One at-rule without block (@charset) triggers startAtRule and endAtRule",
+      "path": "B0→B1(true)→B2(ATKEYWORD)→B4→B5→B7→B1(false)→B8",
+      "precondition": "none",
+      "expectedResult": "contentHandler.startAtRule then endAtRule called with \"charset\"",
+      "tags": [
+        "positive",
+        "at-rule",
+        "no-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse simple at-rule",
+        "  GIVEN",
+        "    String css = \"@charset \\\"UTF-8\\\";\";",
+        "    Reader reader = new StringReader(css);",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"charset\");",
+        "    assert doc.endAtRuleNames.contains(\"charset\");",
+        "    assert doc.start.get() == 1;",
+        "    assert doc.end.get() == 1;"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "IOException during scan propagates without calling handlers",
+      "path": "B0(exception)",
+      "precondition": "Reader that throws IOException on read",
+      "expectedResult": "IOException is thrown; startDocument and endDocument not called",
+      "tags": [
+        "negative",
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse io-exception",
+        "  GIVEN",
+        "    Reader reader = new Reader(){ public int read(char[] c,int o,int l)throws IOException{throw new IOException(\"fail\");} public void close(){} };",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException(\"fail\");",
+        "    assert doc.start.get() == 0;",
+        "    assert doc.end.get() == 0;"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "CssException from scan propagates without calling handlers",
+      "path": "B0(exception)",
+      "precondition": "override Messages to cause CssScanner to throw CssException",
+      "expectedResult": "CssException is thrown; no document events",
+      "tags": [
+        "negative",
+        "exception",
+        "grammar"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse css-exception",
+        "  GIVEN",
+        "    // use a Reader containing invalid charset name to provoke CssGrammarException in scan",
+        "    Reader reader = new StringReader(\"@charset \\\"bad\\\";\");",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssException;",
+        "    assert doc.start.get() == 0;",
+        "    assert doc.end.get() == 0;"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Premature EOF in a ruleset declaration triggers break and endDocument",
+      "path": "B0→B1(true)→B2(non-ATKEYWORD)→B3(caught PrematureEOFException)→B8",
+      "precondition": "none",
+      "expectedResult": "endDocument called once; loop exits on PrematureEOFException",
+      "tags": [
+        "negative",
+        "exception",
+        "eof"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse truncated ruleset",
+        "  GIVEN",
+        "    String css = \"h1 { color:\";",
+        "    Reader reader = new StringReader(css);",
+        "    CountingContentHandler doc = new CountingContentHandler();",
+        "    StubErrorHandler err = new StubErrorHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.start.get() == 1;",
+        "    assert doc.end.get() == 1;"
+      ]
+    }
+  ]
+}

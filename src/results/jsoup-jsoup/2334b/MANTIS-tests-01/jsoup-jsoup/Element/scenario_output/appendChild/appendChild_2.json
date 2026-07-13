@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild reparenting a middle child removes it and shifts remaining siblings' indexes",
+      "path": "B0→B1(reparent)→B2(ensureChildNodes)→B3(add)→B4(setSiblingIndex)",
+      "precondition": "oldParent has three children [A,B,C]; newParent empty",
+      "expectedResult": "oldParent retains A and C with siblingIndex 0 and 1; B moves to newParent at index 0",
+      "tags": [
+        "positive",
+        "reparent",
+        "sibling-shift"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild reparent middle-child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"div\");",
+        "    Element A = new Element(\"p\");",
+        "    Element B = new Element(\"span\");",
+        "    Element C = new Element(\"a\");",
+        "    oldParent.appendChild(A);",
+        "    oldParent.appendChild(B);",
+        "    oldParent.appendChild(C);",
+        "  WHEN",
+        "    newParent.appendChild(B);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 2;",
+        "    assert oldParent.child(0) == A && A.siblingIndex() == 0;",
+        "    assert oldParent.child(1) == C && C.siblingIndex() == 1;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert newParent.child(0) == B && B.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild on same parent moves existing child from start to end and updates indexes",
+      "path": "B0→B1(reparent same parent)→B2(skip initialization)→B3(add)→B4(setSiblingIndex)",
+      "precondition": "parent has two children [X,Y]",
+      "expectedResult": "after appendChild(X), order is [Y,X] with siblingIndex Y=0, X=1",
+      "tags": [
+        "positive",
+        "reparent-self",
+        "order-change"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 appendChild on same parent reorder",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element X = new Element(\"li\");",
+        "    Element Y = new Element(\"li\");",
+        "    parent.appendChild(X);",
+        "    parent.appendChild(Y);",
+        "  WHEN",
+        "    parent.appendChild(X);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert parent.child(0) == Y && Y.siblingIndex() == 0;",
+        "    assert parent.child(1) == X && X.siblingIndex() == 1;"
+      ]
+    }
+  ]
+}

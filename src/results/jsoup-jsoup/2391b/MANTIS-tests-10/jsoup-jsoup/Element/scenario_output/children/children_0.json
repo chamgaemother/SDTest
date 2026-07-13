@@ -1,0 +1,272 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on element with no child nodes returns empty list (childNodeSize==0 branch)",
+      "path": "B0→B1→B2",
+      "precondition": "Element parent = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns single child when exactly one Element child present (loop-1, filterNodes)",
+      "path": "B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new Element(\"p\"));",
+      "expectedResult": "returned Elements.size() == 1 and result.get(0).tagName() == \"p\"",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"p\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() filters out non-Element nodes (mixed TextNode and Element, loop>1)",
+      "path": "B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"text\")); parent.appendChild(new Element(\"span\"));",
+      "expectedResult": "returned Elements.size() == 1 and result.get(0).tagName() == \"span\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"text\"));",
+        "    parent.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"span\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() returns multiple element children in order (three Element children, loop-N)",
+      "path": "B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendChild(new Element(\"li\")); parent.appendChild(new Element(\"li\")); parent.appendChild(new Element(\"li\"));",
+      "expectedResult": "returned Elements.size() == 3 and tags match [\"li\",\"li\",\"li\"] in insertion order",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children multi-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    parent.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.get(0).tagName().equals(\"li\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() reflects dynamic additions after prior empty children() (cache invalidation by fresh NodeList)",
+      "path": "B0→B1→B2→B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"div\"); // call children(), then add child, then call children()",
+      "expectedResult": "first call result.size()==0, second call result.size()==1",
+      "tags": [
+        "branch-false→branch-true",
+        "loop-0→loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children dynamic-addition",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    parent.appendChild(new Element(\"a\"));",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 0;",
+        "    assert second.size() == 1;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() uses cached children list on second call (cachedChildren != null branch)",
+      "path": "B0→B1→B3→B4→B5→B6→B3→B4→B6",
+      "precondition": "Element parent = new Element(\"div\"); parent.attributes().userData().put(\"jsoup.childEls\", new WeakReference<>(Arrays.asList(new Element(\"p\")))); parent.attributes().userData().put(\"jsoup.childElsMod\", parent.childNodeSize());",
+      "expectedResult": "returned Elements from second call equals wrapped cached list of size 1",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "cachedChildren",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cached-path",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    List<Element> cached = Arrays.asList(new Element(\"p\"));",
+        "    parent.attributes().userData().put(\"jsoup.childEls\", new WeakReference<>(cached));",
+        "    parent.attributes().userData().put(\"jsoup.childElsMod\", parent.childNodeSize());",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() after clearing NodeList recreates new list (empty after empty()), loop-0",
+      "path": "B0→B1→B3→B4→B5→B6→B0→B1→B2",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new Element(\"span\")); parent.children(); parent.empty();",
+      "expectedResult": "after empty(), children().size()==0",
+      "tags": [
+        "branch-true→branch-false",
+        "loop-1→loop-0",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children after-empty",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"span\"));",
+        "    parent.children();",
+        "    parent.empty();",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() on element with only TextNode children returns empty list (filterNodes yields none)",
+      "path": "B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"x\")); parent.appendChild(new TextNode(\"y\"));",
+      "expectedResult": "returned Elements.size()==0",
+      "tags": [
+        "branch-true",
+        "loop-N filterNodes",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children only-text-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"x\"));",
+        "    parent.appendChild(new TextNode(\"y\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() preserves insertion order when removing and re-adding children (loop variants)",
+      "path": "B0→B1→B3→B4→B5→B6→B0→B1→B3→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"div\"); Element c1 = new Element(\"p\"); Element c2 = new Element(\"span\"); parent.appendChild(c1); parent.appendChild(c2); parent.children(); parent.removeChild(c1); parent.appendChild(c1);",
+      "expectedResult": "second children().get(0).tagName()==\"span\" and get(1).tagName()==\"p\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "order-preserved",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children removal-and-readdition",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"span\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "    parent.children();",
+        "    parent.removeChild(c1);",
+        "    parent.appendChild(c1);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.get(0).tagName().equals(\"span\");",
+        "    assert result.get(1).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() on deeply nested children returns only direct child Elements (loop-N nested tree but only direct)",
+      "path": "B0→B1→B3→B4→B5→B6",
+      "precondition": "Element root = new Element(\"div\"); Element child = new Element(\"p\"); Element grand = new Element(\"span\"); child.appendChild(grand); root.appendChild(child);",
+      "expectedResult": "root.children().size()==1 and is child only",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "nested",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 children direct-only",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    Element grand = new Element(\"span\");",
+        "    child.appendChild(grand);",
+        "    root.appendChild(child);",
+        "  WHEN",
+        "    Elements result = root.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == child;"
+      ]
+    }
+  ]
+}

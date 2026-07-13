@@ -1,0 +1,33 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() rebuilds and returns a new Elements when cached list modCount mismatches after mutation",
+      "path": "B1(false)→childElementsList→cachedChildren(non-null)→modCount mismatch→stashChildren→return new list",
+      "precondition": "element has one child, children() called once to build cache, then element.empty() called",
+      "expectedResult": "second call to children() returns an empty Elements instance different from the first cached instance",
+      "tags": [
+        "cache",
+        "modcount",
+        "mutation",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache invalidation on modification",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "    Elements first = parent.children();  // primes cache",
+        "  WHEN",
+        "    parent.empty();                    // clears childNodes -> modCount changes",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second.size() == 0;",
+        "    assert second != first;            // new instance built, not cached"
+      ]
+    }
+  ]
+}

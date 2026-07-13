@@ -1,0 +1,32 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_appendChild_1_Test {
+
+    @Test
+    @DisplayName("appendChild(child with existing parent) reparents node (remove from old) then appends to new parent")
+    public void test_TC04() {
+        // GIVEN: an old parent with one child node and a new parent with none
+        Element oldParent = new Element("div");
+        Element newParent = new Element("section");
+        Element child = new Element("span");
+        // Precondition: attach child to oldParent, so it has a parent and siblingIndex 0
+        oldParent.appendChild(child);
+        assertEquals(1, oldParent.childNodeSize(), "oldParent should have exactly one child before reparenting");
+
+        // WHEN: appending the same child to newParent triggers reparenting (oldParent removal branch)
+        newParent.appendChild(child);
+        // Explanation: since child.parent() was non-null, reparent branch is taken (B2->B3_true)
+
+        // THEN: child should be removed from oldParent
+        assertEquals(0, oldParent.childNodeSize(), "child should be removed from oldParent after reparenting");
+        // AND: child should now belong to newParent
+        assertEquals(1, newParent.childNodeSize(), "newParent should have one child after appendChild");
+        assertSame(newParent, child.parent(), "child.parent() should refer to newParent after reparenting");
+        // AND: siblingIndex is updated to 0 in newParent
+        assertEquals(0, child.siblingIndex(), "child.siblingIndex() should be 0 after being first child in newParent");
+    }
+}

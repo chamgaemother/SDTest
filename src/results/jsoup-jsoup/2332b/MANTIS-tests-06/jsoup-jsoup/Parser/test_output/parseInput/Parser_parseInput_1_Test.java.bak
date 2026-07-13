@@ -1,0 +1,73 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with non-null Reader and null baseUri throws IllegalArgumentException")
+    public void test_TC07_O2() {
+        // GIVEN a valid Reader but null baseUri to force invalid argument path
+        Reader reader = new StringReader("<p>Test</p>");
+        String baseUri = null;
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // WHEN & THEN: expect IllegalArgumentException due to null baseUri (precondition violated)
+        assertThrows(IllegalArgumentException.class, () -> parser.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) with empty html string returns Document with empty body")
+    public void test_TC08_O1() {
+        // GIVEN empty HTML string to hit branch for zero-length input and non-null baseUri
+        String html = "";
+        String baseUri = "http://ex/";
+        Parser parser = Parser.htmlParser();
+        // WHEN parsing empty input
+        Document doc = parser.parseInput(html, baseUri);
+        // THEN: document is non-null and its body HTML is empty
+        assertNotNull(doc, "Expected a Document instance even for empty input");
+        assertEquals("", doc.body().html(), "Empty input should result in empty body content");
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) with whitespace-only html returns Document with text node")
+    public void test_TC09_O1() {
+        // GIVEN whitespace-only HTML to trigger text-node-only path
+        String html = "   ";
+        String baseUri = "http://site/";
+        Parser parser = Parser.htmlParser();
+        // WHEN parsing whitespace-only input
+        Document doc = parser.parseInput(html, baseUri);
+        // THEN: body has one child node (text) and its trimmed content is empty
+        List<Node> nodes = doc.body().childNodes();
+        assertEquals(1, nodes.size(), "Whitespace should produce a single text node");
+        assertTrue(nodes.get(0).toString().trim().isEmpty(), "Text node should contain only whitespace");
+    }
+
+    @Test
+    @DisplayName("xmlParser.parseInput(String, String) with valid XML returns Document without HTML body tags")
+    public void test_TC10_O1() {
+        // GIVEN an XML parser and simple XML to exercise XML tree builder branch
+        String xml = "<root><a/></root>";
+        String baseUri = "uri";
+        Parser parser = Parser.xmlParser();
+        // WHEN parsing XML input
+        Document doc = parser.parseInput(xml, baseUri);
+        // THEN: the XML structure is preserved and no HTML body child nodes exist
+        assertNotNull(doc, "Expected a Document for valid XML");
+        // Verify element 'a' under 'root'
+        assertEquals(1, doc.select("root > a").size(), "XML root should contain one <a/> element");
+        // XML parsing should not populate HTML body
+        assertEquals(0, doc.body().childNodeSize(), "XML parse should not create HTML body nodes");
+    }
+}

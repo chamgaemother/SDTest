@@ -1,0 +1,108 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_Methods_Test {
+
+    @Test
+    @DisplayName("TC03: setTrackErrors(5) enables error tracking and getErrors reflects max size >0 branch-true")
+    public void test_TC03() {
+        // GIVEN: a new parser with no error tracking by default
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        assertFalse(parser.isTrackErrors(), "Precondition: no error tracking initially");
+        // WHEN: enable tracking with maxErrors=5 (branch where maxErrors > 0)
+        parser.setTrackErrors(5);
+        // THEN: tracking enabled and maxSize reflects 5
+        assertTrue(parser.isTrackErrors(), "Expected isTrackErrors() true when maxErrors > 0");
+        assertEquals(5, parser.getErrors().getMaxSize(), "getErrors().getMaxSize() should be set to 5");
+    }
+
+    @Test
+    @DisplayName("TC04: setTrackErrors(0) disables error tracking branch-false")
+    public void test_TC04() {
+        // GIVEN: a parser with tracking enabled initially
+        Parser parser = new Parser(new HtmlTreeBuilder()).setTrackErrors(3);
+        assertTrue(parser.isTrackErrors(), "Precondition: error tracking enabled with maxErrors=3");
+        // WHEN: disable tracking with maxErrors=0 (branch where maxErrors <= 0)
+        parser.setTrackErrors(0);
+        // THEN: tracking disabled and maxSize reflects 0
+        assertFalse(parser.isTrackErrors(), "Expected isTrackErrors() false when maxErrors = 0");
+        assertEquals(0, parser.getErrors().getMaxSize(), "getErrors().getMaxSize() should be 0 when disabled");
+    }
+
+    @Test
+    @DisplayName("TC05: newInstance produces a deep copy independent of original settings and errors")
+    public void test_TC05() {
+        // GIVEN: a parser with custom settings, tracking and position enabled
+        Parser orig = new Parser(new HtmlTreeBuilder())
+            .setTrackErrors(2)
+            .setTrackPosition(true)
+            .settings(ParseSettings.preserveCase);
+        // WHEN: make a deep copy
+        Parser copy = orig.newInstance();
+        // THEN: verify deep copy semantics
+        assertNotSame(orig, copy, "Copy should not be same instance as original");
+        assertEquals(orig.isTrackErrors(), copy.isTrackErrors(), "Copy should inherit trackErrors state");
+        assertNotSame(orig.getErrors(), copy.getErrors(), "Errors list should be a new instance");
+        assertEquals(orig.settings(), copy.settings(), "Settings values should be equal");
+        assertNotSame(orig.settings(), copy.settings(), "Settings should not be the same instance");
+        assertNotSame(orig.getTreeBuilder(), copy.getTreeBuilder(), "TreeBuilder should be a new instance");
+    }
+
+    @Test
+    @DisplayName("TC06: settings(ParseSettings) updates and settings() returns new settings branch")
+    public void test_TC06() {
+        // GIVEN: a default parser
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        ParseSettings custom = ParseSettings.preserveCase;
+        // WHEN: apply custom settings (branch into setter)
+        Parser returned = parser.settings(custom);
+        // THEN: settings() returns exactly the provided instance, and chaining returns 'this'
+        assertSame(parser, returned, "settings(ParseSettings) should return same parser instance");
+        assertSame(custom, parser.settings(), "settings() should return the provided ParseSettings instance");
+    }
+
+    @Test
+    @DisplayName("TC07: static htmlParser() returns Parser with HtmlTreeBuilder instance")
+    public void test_TC07() {
+        // WHEN: call the factory method
+        Parser parser = Parser.htmlParser();
+        // THEN: the TreeBuilder inside should be an HtmlTreeBuilder
+        assertNotNull(parser.getTreeBuilder(), "TreeBuilder should not be null");
+        assertTrue(parser.getTreeBuilder() instanceof HtmlTreeBuilder,
+            "Expected an instance of HtmlTreeBuilder from htmlParser()");
+    }
+
+    @Test
+    @DisplayName("TC08: static xmlParser() returns Parser with XmlTreeBuilder instance")
+    public void test_TC08() {
+        // WHEN: call the XML factory method
+        Parser parser = Parser.xmlParser();
+        // THEN: the TreeBuilder should be XmlTreeBuilder
+        assertNotNull(parser.getTreeBuilder(), "TreeBuilder should not be null");
+        assertTrue(parser.getTreeBuilder() instanceof XmlTreeBuilder,
+            "Expected an instance of XmlTreeBuilder from xmlParser()");
+    }
+
+    @Test
+    @DisplayName("TC09: unescapeEntities returns correct unescaped string in strict mode and non-strict mode")
+    public void test_TC09() {
+        // GIVEN: an HTML-escaped input string containing angle brackets
+        String input = "&amp;lt;&amp;gt;";
+        // WHEN: unescape in non-attribute mode (false) and attribute mode (true)
+        String out1 = Parser.unescapeEntities(input, false);
+        String out2 = Parser.unescapeEntities(input, true);
+        // THEN: both modes should yield the same logical unescaped result "<>"
+        assertEquals("<>", out1, "Non-attribute mode should unescape entities to '<>'");
+        assertEquals("<>", out2, "Attribute mode should also unescape entities to '<>'");
+    }
+}

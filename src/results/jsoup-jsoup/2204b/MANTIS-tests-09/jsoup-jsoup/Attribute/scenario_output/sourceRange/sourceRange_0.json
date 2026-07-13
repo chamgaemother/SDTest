@@ -1,0 +1,51 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "sourceRange returns UntrackedAttr when parent is null (parent == null branch)",
+      "path": "B0→B1",
+      "precondition": "Attribute attr = new Attribute(\"key\", \"value\", null);",
+      "expectedResult": "return value is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-true",
+        "parent-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 sourceRange parent-null",
+        "  GIVEN",
+        "    Attribute attr = new Attribute(\"key\",\"value\",null);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "sourceRange returns parent.sourceRange(key) when parent is non-null (parent != null branch)",
+      "path": "B0→B2",
+      "precondition": "// stub Attributes to return a fixed range\nAttributes stubParent = new Attributes(){ @Override public Range.AttributeRange sourceRange(String k){ return new Range.AttributeRange(1,2,3,4);} }; \nAttribute attr = new Attribute(\"attrKey\",\"val\", stubParent);",
+      "expectedResult": "return value is a Range.AttributeRange with startTagStart=1,startTagEnd=2,endTagStart=3,endTagEnd=4",
+      "tags": [
+        "branch-false",
+        "parent-non-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange parent-non-null",
+        "  GIVEN",
+        "    Attributes stubParent = new Attributes(){ public Range.AttributeRange sourceRange(String k){ return new Range.AttributeRange(1,2,3,4);} };",
+        "  WHEN",
+        "    Range.AttributeRange result = new Attribute(\"attrKey\",\"val\",stubParent).sourceRange();",
+        "  THEN",
+        "    assert result.getStartTagStart() == 1 && result.getStartTagEnd() == 2 && result.getEndTagStart() == 3 && result.getEndTagEnd() == 4;",
+        "END"
+      ]
+    }
+  ]
+}

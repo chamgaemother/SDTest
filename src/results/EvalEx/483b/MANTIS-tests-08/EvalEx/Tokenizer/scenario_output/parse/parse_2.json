@@ -1,0 +1,196 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "Implicit multiplication between ')' and '(' disallowed throws Missing operator",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() == false",
+      "expectedResult": "ParseException with message 'Missing operator'",
+      "tags": [
+        "negative",
+        "implicit-multiplication",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 implicit-mult brace-close to brace-open disallowed",
+        "  GIVEN",
+        "    String expr = \")(\";",
+        "    ExpressionConfiguration config = new StubConfig(false, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Missing operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Implicit multiplication between number and variable inserts '*'",
+      "path": "B0→B1→B2→B4→B6→…→B11",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() == true",
+      "expectedResult": "Tokens sequence [2,*,x] with infix '*' inserted",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "variable"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 implicit-mult number to variable allowed",
+        "  GIVEN",
+        "    String expr = \"2x\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getToken().equals(\"2\");",
+        "    assert tokens.get(1).getToken().equals(\"*\");",
+        "    assert tokens.get(2).getToken().equals(\"x\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Implicit multiplication between number and variable disallowed throws Missing operator",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() == false",
+      "expectedResult": "ParseException with message 'Missing operator'",
+      "tags": [
+        "negative",
+        "implicit-multiplication",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 implicit-mult number to variable disallowed",
+        "  GIVEN",
+        "    String expr = \"2x\";",
+        "    ExpressionConfiguration config = new StubConfig(false, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Missing operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Unexpected token after infix operator throws Unexpected token after infix operator",
+      "path": "B0→B1→B2→B6→…→B6→B1→B2→B6→validate→exception",
+      "precondition": "expr contains '2+)'",
+      "expectedResult": "ParseException with message 'Unexpected token after infix operator'",
+      "tags": [
+        "negative",
+        "validateToken",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 unexpected token after infix operator",
+        "  GIVEN",
+        "    String expr = \"2+)\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected token after infix operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Balanced array '[1]' returns tokens ARRAY_OPEN, NUMBER_LITERAL, ARRAY_CLOSE",
+      "path": "B0→B1→B2→B6→…→B1→B7→B9→B11",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "Tokens '[', '1', ']' with correct types",
+      "tags": [
+        "positive",
+        "array",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 balanced array parse",
+        "  GIVEN",
+        "    String expr = \"[1]\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == TokenType.ARRAY_OPEN;",
+        "    assert tokens.get(1).getToken().equals(\"1\");",
+        "    assert tokens.get(2).getType() == TokenType.ARRAY_CLOSE;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "Structure separator between variables when allowed produces VARIABLE, '.', VARIABLE",
+      "path": "B0→B1→B2→B6→…→B11",
+      "precondition": "configuration.isStructuresAllowed() == true",
+      "expectedResult": "Tokens ['a','.','b'] with STRUCTURE_SEPARATOR in middle",
+      "tags": [
+        "positive",
+        "structure",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 structure separator parse",
+        "  GIVEN",
+        "    String expr = \"a.b\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getToken().equals(\"a\");",
+        "    assert tokens.get(1).getToken().equals(\".\");",
+        "    assert tokens.get(2).getToken().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Double-quoted string literal is parsed as STRING_LITERAL",
+      "path": "B0→B1→B2→B6→…→B11",
+      "precondition": "configuration.isSingleQuoteStringLiteralsAllowed() irrelevant",
+      "expectedResult": "Token list with one STRING_LITERAL token 'hello'",
+      "tags": [
+        "positive",
+        "string-literal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 double-quoted string literal parse",
+        "  GIVEN",
+        "    String expr = \"\\\"hello\\\"\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, false, false);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == TokenType.STRING_LITERAL;",
+        "    assert tokens.get(0).getToken().equals(\"hello\");",
+        "END"
+      ]
+    }
+  ]
+}

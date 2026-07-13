@@ -1,0 +1,98 @@
+package com.thealgorithms.geometry;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ConvexHull_convexHullRecursive_Test {
+
+    @Test
+    @DisplayName("TC01: convexHullRecursive(empty list) throws IndexOutOfBoundsException when accessing points.get(0)")
+    void test_TC01() {
+        // GIVEN an empty list of points to trigger points.get(0) failure
+        List<Point> points = new ArrayList<>();
+        // WHEN & THEN expect IndexOutOfBoundsException due to empty list access
+        assertThrows(IndexOutOfBoundsException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("TC02: convexHullRecursive(single point) returns list with that point (no loop iterations)")
+    void test_TC02() {
+        // GIVEN a single point so constructor adds it as both leftmost and rightmost, no classification loop runs
+        Point p = new Point(5, 5);
+        List<Point> points = new ArrayList<>(Arrays.asList(p));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN
+        assertEquals(1, result.size(), "Result should contain exactly one point");
+        assertEquals(p, result.get(0), "The single input point should be returned");
+    }
+
+    @Test
+    @DisplayName("TC03: convexHullRecursive(two points) returns both sorted (loop-0 classification)")
+    void test_TC03() {
+        // GIVEN two points in arbitrary order; sort step should reorder them
+        Point p1 = new Point(2, 1);
+        Point p2 = new Point(1, 2);
+        List<Point> points = new ArrayList<>(Arrays.asList(p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN
+        assertEquals(2, result.size(), "Result should contain exactly two points");
+        // ensure sorted order: compareTo(first, second) < 0
+        assertTrue(result.get(0).compareTo(result.get(1)) < 0,
+                "Returned points should be in ascending sorted order");
+    }
+
+    @Test
+    @DisplayName("TC04: convexHullRecursive(colinear three points) returns only endpoints (det==0 at classification)")
+    void test_TC04() {
+        // GIVEN three colinear points; B->C->A order ensures classification sees det==0 for all
+        Point A = new Point(0, 0);
+        Point B = new Point(1, 1);
+        Point C = new Point(2, 2);
+        List<Point> points = new ArrayList<>(Arrays.asList(B, C, A));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN only endpoints A and C remain
+        List<Point> expected = Arrays.asList(A, C);
+        assertEquals(expected, result, "Colinear points should yield only the two endpoints");
+    }
+
+    @Test
+    @DisplayName("TC05: convexHullRecursive(three points forming triangle) returns all three hull points")
+    void test_TC05() {
+        // GIVEN three non-colinear points forming a triangle; all should be on hull
+        Point A = new Point(0, 0);
+        Point B = new Point(1, 0);
+        Point C = new Point(0, 1);
+        List<Point> points = new ArrayList<>(Arrays.asList(C, A, B));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN result sorted should contain A, B, C
+        List<Point> expected = Arrays.asList(A, B, C);
+        assertEquals(expected, result, "Triangle vertices should all appear in sorted hull list");
+    }
+
+    @Test
+    @DisplayName("TC06: convexHullRecursive(four points with one interior) returns only the four corner points")
+    void test_TC06() {
+        // GIVEN square corners plus an interior point; interior (1,1) should be excluded
+        Point p1 = new Point(0, 0);
+        Point p2 = new Point(0, 2);
+        Point p3 = new Point(2, 2);
+        Point p4 = new Point(2, 0);
+        Point interior = new Point(1, 1);
+        List<Point> points = new ArrayList<>(Arrays.asList(p1, p2, p3, p4, interior));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN sorted corners only
+        List<Point> expected = Arrays.asList(p1, p2, p4, p3);
+        assertEquals(expected, result, "Interior point should not appear; only square corners in sorted order");
+    }
+}

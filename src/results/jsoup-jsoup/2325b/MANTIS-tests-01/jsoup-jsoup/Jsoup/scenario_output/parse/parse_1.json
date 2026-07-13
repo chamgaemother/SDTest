@@ -1,0 +1,181 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(html, parser) with null html throws IllegalArgumentException",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "null-input",
+        "parser-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse(html, parser) null-html",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(html, parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "null-parser",
+        "parser-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse(html, parser) null-parser",
+        "  GIVEN",
+        "    String html = \"<p>x</p>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File, charsetName, baseUri) with valid small HTML file returns Document with correct baseUri",
+      "path": "B0→B4→B6→B8",
+      "precondition": "temporary file exists with content '<title>F</title>'",
+      "expectedResult": "Document.title() is 'F' and baseUri equals provided baseUri",
+      "tags": [
+        "positive",
+        "file-overload",
+        "IO"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse(file, charset, baseUri) valid-file",
+        "  GIVEN",
+        "    File temp = createTempFile(\"<html><head><title>F</title></head><body></body></html>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(temp, charset, baseUri);",
+        "  THEN",
+        "    assert doc.title().equals(\"F\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(File, charsetName) with non-existent file throws IOException",
+      "path": "B0→B4→B5→B7",
+      "precondition": "File does not exist",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "exception",
+        "file-overload",
+        "IO"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse(file, charset) missing-file",
+        "  GIVEN",
+        "    File missing = new File(\"no-such-file.html\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    call Jsoup.parse(missing, charset);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(File) with valid file infers UTF-8 and uses file path as baseUri",
+      "path": "B0→B4→B6→B9",
+      "precondition": "temporary file exists with body '<p>Hello</p>'",
+      "expectedResult": "doc.body().text() is 'Hello' and baseUri equals file.absolutePath()",
+      "tags": [
+        "positive",
+        "file-overload",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse(file) default-charset",
+        "  GIVEN",
+        "    File temp = createTempFile(\"<html><body><p>Hello</p></body></html>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(temp);",
+        "  THEN",
+        "    assert doc.body().text().equals(\"Hello\");",
+        "    assert doc.baseUri().equals(temp.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(URL, timeout) with invalid protocol throws MalformedURLException",
+      "path": "B0→B10→B11",
+      "precondition": "none",
+      "expectedResult": "java.net.MalformedURLException is thrown",
+      "tags": [
+        "exception",
+        "url-overload",
+        "protocol"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse(url, timeout) bad-protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(URL, timeout) with timeout exceeded throws SocketTimeoutException",
+      "path": "B0→B10→B12",
+      "precondition": "URL points to a host that drops connections",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "exception",
+        "url-overload",
+        "timeout"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse(url, timeout) connection-timeout",
+        "  GIVEN",
+        "    URL url = new URL(\"http://10.255.255.1\");",
+        "    int timeout = 1;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws SocketTimeoutException;",
+        "END"
+      ]
+    }
+  ]
+}

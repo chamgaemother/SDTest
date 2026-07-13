@@ -1,0 +1,111 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "valueOf(null, namespace, settings) throws NullPointerException on null tagName",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "validate"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 valueOf null-tagName",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "valueOf(\"  \", namespace, settings) throws IllegalArgumentException on empty tagName after trim",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "boundary",
+        "validate"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 valueOf empty-tagName",
+        "  GIVEN",
+        "    String tagName = \"  \";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Unknown custom tag returns non-submittable Tag instance with formSubmit false",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "none",
+      "expectedResult": "new Tag created; isFormSubmittable() returns false",
+      "tags": [
+        "positive",
+        "unknown",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 valueOf custom-unknown-tag",
+        "  GIVEN",
+        "    String tagName = \"customTag\";",
+        "    String namespace = \"http://example.com/ns\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Known form-submittable tag with preserved case triggers clone path and returns true",
+      "path": "B0→B1→B2→B5→B6→B7",
+      "precondition": "Tag 'input' already in static map",
+      "expectedResult": "cloned Tag with uppercase name; isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "preserve-case",
+        "clone",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 valueOf preserveCase-clone-path",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

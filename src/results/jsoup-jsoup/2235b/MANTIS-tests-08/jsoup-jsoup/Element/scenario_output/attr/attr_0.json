@@ -1,0 +1,168 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "attr(String,String) with new key adds attribute and returns same element",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); no existing attributes",
+      "expectedResult": "el.attributes().get(\"foo\") == \"bar\" and returned object == el",
+      "tags": [
+        "positive",
+        "branch-false(existing)",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 attr add-new-string-attr",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Element ret = el.attr(\"foo\",\"bar\");",
+        "  THEN",
+        "    assert ret == el;",
+        "    assert el.attributes().get(\"foo\").equals(\"bar\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "attr(String,String) with existing key overwrites value",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"key\",\"old\");",
+      "expectedResult": "el.attributes().get(\"key\") == \"new\"",
+      "tags": [
+        "positive",
+        "overwrite",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 attr overwrite-string-attr",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"key\",\"old\");",
+        "  WHEN",
+        "    el.attr(\"key\",\"new\");",
+        "  THEN",
+        "    assert el.attributes().get(\"key\").equals(\"new\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "attr(String,String) with null key throws IllegalArgumentException",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"p\");",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "null-key",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 attr-null-key-string",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "  WHEN",
+        "    call el.attr(null,\"value\");",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "attr(String,boolean) with true adds boolean attribute",
+      "path": "B0→B4→B5",
+      "precondition": "Element el = new Element(\"a\"); no existing attributes",
+      "expectedResult": "el.attributes().hasKey(\"hidden\") is true and el.attributes().get(\"hidden\").equals(\"\")",
+      "tags": [
+        "branch-true(add)",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 attr-boolean-true",
+        "  GIVEN",
+        "    Element el = new Element(\"a\");",
+        "  WHEN",
+        "    Element ret = el.attr(\"hidden\", true);",
+        "  THEN",
+        "    assert ret == el;",
+        "    assert el.attributes().hasKey(\"hidden\");",
+        "    assert el.attributes().get(\"hidden\").equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "attr(String,boolean) with false on non-existent key remains no attribute",
+      "path": "B0→B4→B6",
+      "precondition": "Element el = new Element(\"img\"); ensure el.attributes().hasKey(\"checked\") == false",
+      "expectedResult": "el.attributes().hasKey(\"checked\") == false",
+      "tags": [
+        "branch-false(remove-nonexistent)",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 attr-boolean-false-no-op",
+        "  GIVEN",
+        "    Element el = new Element(\"img\");",
+        "  WHEN",
+        "    el.attr(\"checked\", false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"checked\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "attr(String,boolean) with false on existing key removes attribute",
+      "path": "B0→B4→B6",
+      "precondition": "Element el = new Element(\"li\"); el.attr(\"flag\", true);",
+      "expectedResult": "el.attributes().hasKey(\"flag\") == false",
+      "tags": [
+        "branch-false(remove)",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 attr-boolean-false-remove",
+        "  GIVEN",
+        "    Element el = new Element(\"li\");",
+        "    el.attr(\"flag\", true);",
+        "  WHEN",
+        "    el.attr(\"flag\", false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"flag\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "attr(String,boolean) with null key throws NullPointerException",
+      "path": "B0→B4→B7",
+      "precondition": "Element el = new Element(\"ol\");",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-key",
+        "overload:String,boolean"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 attr-null-key-boolean",
+        "  GIVEN",
+        "    Element el = new Element(\"ol\");",
+        "  WHEN",
+        "    call el.attr(null, true);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,154 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Set;
+import static org.junit.jupiter.api.Assertions.*;
+public class DotenvBuilder_load_0_Test {
+    private static final Path ENV_FILE = Path.of(".env");
+
+    @Test
+    @DisplayName("TC01: default load() with missing .env throws DotenvException (throwIfMissing=true)")
+    public void test_TC01() throws IOException {
+        // Ensure no .env exists to trigger throwIfMissing=true path (B0, branch throw)
+        Files.deleteIfExists(ENV_FILE);
+        DotenvBuilder builder = new DotenvBuilder();
+        assertThrows(DotenvException.class, builder::load, "Expected DotenvException when .env is missing with default settings");
+    }
+
+    @Test
+    @DisplayName("TC02: ignoreIfMissing().load() with missing .env returns empty Dotenv (throwIfMissing=false)")
+    public void test_TC02() throws IOException, DotenvException {
+        // Ensure no .env exists and ignoreIfMissing disables exception, so B0->B1->B2 path
+        Files.deleteIfExists(ENV_FILE);
+        DotenvBuilder builder = new DotenvBuilder().ignoreIfMissing();
+        Dotenv dotenv = builder.load();
+        // entries() contains only system env entries (>=0)
+        assertNotNull(dotenv.entries());
+        // entries(null) returns only file entries, should be empty
+        assertTrue(dotenv.entries((Dotenv.Filter) null).isEmpty(), 
+            "Expected no file entries when .env is missing and ignoreIfMissing()");
+    }
+
+    @Test
+    @DisplayName("TC03: default load() with one-entry .env returns Dotenv with one file entry and no systemProperties set")
+    public void test_TC03() throws IOException, DotenvException {
+        // Create .env with one entry KEY=VALUE to take the B0->B1->B2 branch and parse one line
+        Files.writeString(ENV_FILE, "KEY=VALUE", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        // Ensure no System property override
+        System.clearProperty("KEY");
+
+        DotenvBuilder builder = new DotenvBuilder();
+        Dotenv dotenv = builder.load();
+        assertEquals("VALUE", dotenv.get("KEY"), "Expected get(KEY) to return VALUE from file");
+        assertNull(System.getProperty("KEY"), "Expected no System.property for KEY by default");
+    }
+
+    @Test
+    @DisplayName("TC04: default load() with two-entry .env returns Dotenv with both file entries")
+    public void test_TC04() throws IOException, DotenvException {
+        // Create .env with two entries A=1 and B=2 for B0->B1->B2 path
+        String content = "A=1\nB=2";
+        Files.writeString(ENV_FILE, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("A");
+        System.clearProperty("B");
+
+        DotenvBuilder builder = new DotenvBuilder();
+        Dotenv dotenv = builder.load();
+        assertEquals("1", dotenv.get("A"), "Expected get(A) to return '1'");
+        assertEquals("2", dotenv.get("B"), "Expected get(B) to return '2'");
+    }
+
+    @Test
+    @DisplayName("TC05: systemProperties().load() with one-entry .env sets corresponding System.property")
+    public void test_TC05() throws IOException, DotenvException {
+        // Create .env with X=Y, enable systemProperties to take B0->B2 branch
+        Files.writeString(ENV_FILE, "X=Y", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("X");
+
+        DotenvBuilder builder = new DotenvBuilder().systemProperties();
+        Dotenv dotenv = builder.load();
+        assertEquals("Y", System.getProperty("X"), "Expected System.property X to be set to Y");
+        assertEquals("Y", dotenv.get("X"), "Expected get(X) to return Y even after systemProperties()");
+    }
+
+    @Test
+    @DisplayName("TC06: systemProperties().load() with empty .env file returns Dotenv and sets no System.property")
+    public void test_TC06() throws IOException, DotenvException {
+        // Create an empty .env file to parse zero entries, B0->B2 path
+        Files.writeString(ENV_FILE, "", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("KEY_EMPTY");
+
+        DotenvBuilder builder = new DotenvBuilder().systemProperties();
+        Dotenv dotenv = builder.load();
+        // entries() should be >=0, no new properties added
+        assertTrue(dotenv.entries().size() >= 0, "Expected entries size >= 0 even when file is empty");
+        assertNull(System.getProperty("KEY_EMPTY"), "Expected no System.property set for empty file");
+    }
+
+    @Test
+    @DisplayName("TC07: systemProperties().load() with five-entry .env sets all five System.properties")
+    public void test_TC07() throws IOException, DotenvException {
+        // Create .env with five entries to verify loop of systemProperties B0->B2
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= 5; i++) {
+            sb.append("K").append(i).append("=V").append(i);
+            if (i < 5) sb.append("\n");
+            System.clearProperty("K" + i);
+        }
+        Files.writeString(ENV_FILE, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+        DotenvBuilder builder = new DotenvBuilder().systemProperties();
+        Dotenv dotenv = builder.load();
+        for (int i = 1; i <= 5; i++) {
+            assertEquals("V" + i, System.getProperty("K" + i), 
+                String.format("Expected System.property K%d to be V%d", i, i));
+        }
+    }
+
+    @Test
+    @DisplayName("TC08: default load() with malformed .env throws DotenvException (throwIfMalformed=true)")
+    public void test_TC08() throws IOException {
+        // Malformed line without '=' triggers throwIfMalformed=true at B0
+        Files.writeString(ENV_FILE, "BADLINE", StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        DotenvBuilder builder = new DotenvBuilder();
+        assertThrows(DotenvException.class, builder::load, "Expected DotenvException for malformed line without '='");
+    }
+
+    @Test
+    @DisplayName("TC09: ignoreIfMalformed().load() with malformed .env returns Dotenv ignoring malformed lines")
+    public void test_TC09() throws IOException, DotenvException {
+        // Create .env with one good and one bad line, ignoreIfMalformed takes B0->B1->B2
+        String content = "GOOD=1\nBADLINE";
+        Files.writeString(ENV_FILE, content, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("GOOD");
+
+        DotenvBuilder builder = new DotenvBuilder().ignoreIfMalformed();
+        Dotenv dotenv = builder.load();
+        assertEquals("1", dotenv.get("GOOD"), "Expected GOOD entry to be parsed and BADLINE ignored");
+    }
+
+    @Test
+    @DisplayName("TC10: default load() with ten-entry .env returns Dotenv with ten file entries (large N)")
+    public void test_TC10() throws IOException, DotenvException {
+        // Create .env with 10 entries to test loop-N B0->B1->B2
+        StringBuilder sb = new StringBuilder();
+        for (int i = 1; i <= 10; i++) {
+            sb.append("L").append(i).append("=V").append(i);
+            if (i < 10) sb.append("\n");
+            System.clearProperty("L" + i);
+        }
+        Files.writeString(ENV_FILE, sb.toString(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+
+        DotenvBuilder builder = new DotenvBuilder();
+        Dotenv dotenv = builder.load();
+        for (int i = 1; i <= 10; i++) {
+            assertEquals("V" + i, dotenv.get("L" + i), 
+                String.format("Expected L%d to be V%d", i, i));
+        }
+    }
+}

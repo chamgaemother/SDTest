@@ -1,0 +1,79 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Known form-submit tag “option” returns true via valueOf(String,ParseSettings) overload",
+      "path": "B0→B1→B2→B4→B5→return",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "overload",
+        "form-submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 valueOf-option-with-settings",
+        "  GIVEN",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(\"option\", settings);",
+        "  THEN",
+        "    assert t.isFormSubmittable() == true;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Known form-submit tag “input” in non-HTML namespace returns false via valueOf(String, String, ParseSettings)",
+      "path": "B0→B1→B3→B6→B7→return",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "form-submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 input-in-svg-namespace",
+        "  GIVEN",
+        "    String ns = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(\"input\", ns, settings);",
+        "  THEN",
+        "    assert t.isFormSubmittable() == false;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Uppercase known form-submit tag triggers clone path and preserves formSubmit=true",
+      "path": "B0→B1→B2→B4→clone→return",
+      "precondition": "none",
+      "expectedResult": "cloned Tag is not the static instance and isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "clone-path",
+        "form-submit"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 uppercase-input-triggers-clone",
+        "  GIVEN",
+        "    String name = \"INPUT\";",
+        "    String normal = ParseSettings.normalName(name);",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "    Tag base = Tag.valueOf(\"input\");",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(name, normal, ns, settings);",
+        "  THEN",
+        "    assert t != base;",
+        "    assert t.isFormSubmittable() == true;"
+      ]
+    }
+  ]
+}

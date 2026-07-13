@@ -1,0 +1,80 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with non-empty HTML and valid baseUri returns a Document via treeBuilder.parse",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use real HtmlTreeBuilder; no mocks needed",
+      "expectedResult": "returns a Document whose body contains the parsed node for `<p>Test</p>`",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "no-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parseInput(String,String) normal",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"p\").text().equals(\"Test\");"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader, String) with empty input returns an empty Document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use StringReader for empty input; no mocks needed",
+      "expectedResult": "returns a Document with an empty body node list",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "boundary-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parseInput(Reader,String) empty-input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    String baseUri = \"http://example.com\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 0;"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader, String) when Reader throws IOException propagates UncheckedIOException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub Reader that throws IOException on read; mocking avoided by simple stub",
+      "expectedResult": "throws UncheckedIOException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parseInput(Reader,String) io-exception",
+        "  GIVEN",
+        "    Reader reader = new Reader() { public int read(char[] cbuf, int off, int len) throws IOException { throw new IOException(\"fail\"); } public void close(){} };",
+        "    String baseUri = \"http://example.com\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    }
+  ]
+}

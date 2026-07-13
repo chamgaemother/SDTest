@@ -1,0 +1,19 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class MiniMaxAlgorithm_setScores_1_Test {
+
+    @Test
+    @DisplayName("TC04: setScores(null) throws NullPointerException before any branch")
+    void test_TC04() {
+        // GIVEN a fresh MiniMaxAlgorithm instance and a null scores array
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] scores = null;
+        // WHEN & THEN: calling setScores with null should immediately throw NullPointerException
+        // This satisfies path B0 where lengthof scores would cause NPE before any modulus check
+        assertThrows(NullPointerException.class, () -> alg.setScores(scores));
+    }
+}

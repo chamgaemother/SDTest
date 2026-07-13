@@ -1,0 +1,135 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when input string is null (tests aString == null branch)",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Use a simple stub DfColumn that records added objects; mocking is necessary to capture addObject(null) without a full DataFrame implementation",
+      "expectedResult": "stubDfColumn.lastAdded == null",
+      "tags": [
+        "branch-aString-null",
+        "pattern-default",
+        "priority-high"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"date\", null);",
+        "    StubDfColumn stubDfColumn = new StubDfColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stubDfColumn);",
+        "  THEN",
+        "    assert stubDfColumn.lastAdded == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when input is empty or whitespace (tests trimmed.isEmpty branch)",
+      "path": "B0→B2→B3→B4→B6",
+      "precondition": "Use stub DfColumn to record added objects; mocking is necessary to capture addObject(null)",
+      "expectedResult": "stubDfColumn.lastAdded == null",
+      "tags": [
+        "branch-empty",
+        "pattern-default"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn empty-string",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"date\", null);",
+        "    StubDfColumn stubDfColumn = new StubDfColumn();",
+        "    String aString = \"   \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stubDfColumn);",
+        "  THEN",
+        "    assert stubDfColumn.lastAdded == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn parses and adds LocalDate for valid date string using default pattern (tests non-null/non-empty branches)",
+      "path": "B0→B2→B3→B5→B4→B6",
+      "precondition": "Use stub DfColumn that records added objects; mocking is necessary to capture addObject(LocalDate)",
+      "expectedResult": "stubDfColumn.lastAdded.equals(LocalDate.of(2021, 12, 31))",
+      "tags": [
+        "branch-non-null",
+        "branch-non-empty",
+        "pattern-default"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-default-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"date\", null);",
+        "    StubDfColumn stubDfColumn = new StubDfColumn();",
+        "    String aString = \"2021-12-31\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stubDfColumn);",
+        "  THEN",
+        "    assert stubDfColumn.lastAdded.equals(LocalDate.of(2021, 12, 31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn parses and adds LocalDate for valid date string using custom pattern (tests custom pattern branch)",
+      "path": "B0→B2→B3→B5→B4→B6",
+      "precondition": "Use stub DfColumn to capture addObject(LocalDate); mocking is necessary for isolation",
+      "expectedResult": "stubDfColumn.lastAdded.equals(LocalDate.of(2020, 1, 2))",
+      "tags": [
+        "branch-non-null",
+        "branch-non-empty",
+        "pattern-custom"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn valid-custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"date\", \"M/d/uuuu\");",
+        "    StubDfColumn stubDfColumn = new StubDfColumn();",
+        "    String aString = \"1/2/2020\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stubDfColumn);",
+        "  THEN",
+        "    assert stubDfColumn.lastAdded.equals(LocalDate.of(2020, 1, 2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn throws DateTimeParseException for malformed input (tests parse exception branch)",
+      "path": "B0→B2→B3→B5→Exception",
+      "precondition": "Use real DfColumn stub; mocking is necessary only to satisfy parameter but behavior is not invoked on exception",
+      "expectedResult": "throws DateTimeParseException",
+      "tags": [
+        "exception",
+        "branch-non-null",
+        "branch-non-empty",
+        "pattern-default"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn malformed-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"date\", null);",
+        "    StubDfColumn stubDfColumn = new StubDfColumn();",
+        "    String aString = \"not-a-date\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, stubDfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    }
+  ]
+}

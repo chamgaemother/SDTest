@@ -1,0 +1,79 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+
+// Added imports for required classes
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Node;
+public class Element_appendChild_0_Test {
+
+    @Test
+    @DisplayName("appendChild(null) throws IllegalArgumentException for null child")
+    public void test_TC01() {
+        Element parent = new Element("div");
+        // B0→B1: passing null to appendChild should hit the Validate.notNull check and throw
+        assertThrows(IllegalArgumentException.class, () -> parent.appendChild(null));
+        // no childNodes created
+        assertEquals(0, parent.childNodeSize(), "No child should be added on exception");
+    }
+
+    @Test
+    @DisplayName("appendChild(firstChild) creates childNodes list and adds the child with index 0")
+    public void test_TC02() throws Exception {
+        Element parent = new Element("span");
+        TextNode child = new TextNode("text");
+        // Precondition: parent.childNodes == EmptyNodes, so ensureChildNodes() will create new list
+        Element result = parent.appendChild(child);
+        assertSame(parent, result, "Should return the parent instance for chaining");
+        assertEquals(1, parent.childNodeSize(), "After first appendChild, size should be 1");
+        // Reflectively check siblingIndex field set to 0
+        Field sibField = Node.class.getDeclaredField("siblingIndex");
+        sibField.setAccessible(true);
+        int index = sibField.getInt(child);
+        assertEquals(0, index, "Child siblingIndex should be 0 for first child");
+        assertSame(parent, child.parent(), "Child.parent should be set to the parent element");
+    }
+
+    @Test
+    @DisplayName("appendChild(secondChild) skips list creation and adds a second child with index 1")
+    public void test_TC03() throws Exception {
+        Element parent = new Element("p");
+        TextNode first = new TextNode("one");
+        parent.appendChild(first); // initialize list
+        TextNode second = new TextNode("two");
+        // B2(false): childNodes already initialized, so ensureChildNodes() is not creating a new internal list
+        parent.appendChild(second);
+        assertEquals(2, parent.childNodeSize(), "After adding second child, size should be 2");
+        // Check insertion order via public childNodes() method
+        List<Node> nodes = parent.childNodes();
+        assertSame(first, nodes.get(0), "First element in childNodes should be the first appended node");
+        assertSame(second, nodes.get(1), "Second element in childNodes should be the second appended node");
+        // Check siblingIndex of second child
+        Field sibField = Node.class.getDeclaredField("siblingIndex");
+        sibField.setAccessible(true);
+        int idx2 = sibField.getInt(second);
+        assertEquals(1, idx2, "Second child's siblingIndex should be 1");
+    }
+
+    @Test
+    @DisplayName("appendChild(childWithParent) reparents node from its old parent to new parent")
+    public void test_TC04() throws Exception {
+        Element oldParent = new Element("ul");
+        Element child = new Element("li");
+        oldParent.appendChild(child);
+        Element newParent = new Element("ol");
+        // child already has oldParent, so appendChild should reparent
+        newParent.appendChild(child);
+        // child.parent() == newParent
+        assertSame(newParent, child.parent(), "Child should now have newParent as parent");
+        // oldParent.childNodeSize() decremented
+        assertEquals(0, oldParent.childNodeSize(), "Old parent should have no children after reparenting");
+        // newParent.childNodeSize() incremented
+        assertEquals(1, newParent.childNodeSize(), "New parent should have one child after reparenting");
+    }
+}

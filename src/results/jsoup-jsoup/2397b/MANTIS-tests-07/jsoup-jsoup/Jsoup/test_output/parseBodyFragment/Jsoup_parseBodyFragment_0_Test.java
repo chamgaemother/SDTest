@@ -1,0 +1,68 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * Test class for org.jsoup.Jsoup.parseBodyFragment methods.
+ */
+public class Jsoup_parseBodyFragment_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseBodyFragment(String html, String baseUri) with non-empty html and non-empty baseUri returns Document with body html preserved")
+    public void test_TC01_O1() {
+        // Branch: html non-null and baseUri non-empty, goes through parseBodyFragment path normal
+        String html = "<p>Hello</p>";
+        String baseUri = "https://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // Expect the body HTML to match the input fragment exactly
+        assertEquals("<p>Hello</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseBodyFragment(String html, String baseUri) with empty html returns empty body content")
+    public void test_TC02_O1() {
+        // Branch: html empty string, still non-null, should produce empty body content
+        String html = "";
+        String baseUri = "https://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        // Expect no content in body
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parseBodyFragment(String html) uses empty baseUri and non-empty html returns Document with body html preserved")
+    public void test_TC03_O2() {
+        // Branch: single-arg overload, baseUri defaults to empty, html non-null
+        String html = "<div>Test</div>";
+        Document doc = Jsoup.parseBodyFragment(html);
+        // Expect the body HTML to match the input fragment exactly
+        assertEquals("<div>Test</div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseBodyFragment(String html, String baseUri) with null html throws NullPointerException")
+    public void test_TC04_O1() {
+        // Branch: html is null, should trigger NullPointerException before parsing
+        String html = null;
+        String baseUri = "https://example.com";
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(html, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseBodyFragment(String html) with null html throws NullPointerException")
+    public void test_TC05_O2() {
+        // Branch: single-arg overload with null html, should trigger NullPointerException
+        String html = null;
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(html);
+        });
+    }
+}

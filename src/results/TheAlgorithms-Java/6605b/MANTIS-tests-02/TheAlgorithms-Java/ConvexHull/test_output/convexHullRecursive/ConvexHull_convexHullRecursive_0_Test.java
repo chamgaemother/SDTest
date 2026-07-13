@@ -1,0 +1,116 @@
+package com.thealgorithms.geometry;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class ConvexHull_convexHullRecursive_0_Test {
+
+    @Test
+    @DisplayName("TC01: Passing null list throws NullPointerException")
+    void test_TC01() {
+        // When a null reference is passed, method should immediately NPE
+        assertThrows(NullPointerException.class, () -> ConvexHull.convexHullRecursive(null));
+    }
+
+    @Test
+    @DisplayName("TC02: Empty list throws IndexOutOfBoundsException at get(0)")
+    void test_TC02() {
+        List<Point> empty = new ArrayList<>();
+        // First access is points.get(0), so empty list → IOBE
+        assertThrows(IndexOutOfBoundsException.class, () -> ConvexHull.convexHullRecursive(empty));
+    }
+
+    @Test
+    @DisplayName("TC03: Single point returns list with the same single point (no loop iterations)")
+    void test_TC03() {
+        Point p = new Point(0, 0);
+        List<Point> pts = new ArrayList<>();
+        pts.add(p);
+        // size==1 leads straight to return B0→B7→B6
+        List<Point> result = ConvexHull.convexHullRecursive(pts);
+        assertAll(
+            () -> assertEquals(1, result.size(), "Result should contain exactly one point"),
+            () -> assertEquals(p, result.get(0), "Returned point should equal the input point")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: Two points returns both points sorted (loop skipped)")
+    void test_TC04() {
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(0, 0);
+        List<Point> pts = new ArrayList<>();
+        pts.add(p1);
+        pts.add(p2);
+        // size==2: after sort and before loops, should return both
+        List<Point> result = ConvexHull.convexHullRecursive(pts);
+        List<Point> expected = List.of(new Point(0, 0), new Point(1, 1));
+        assertEquals(expected, result, "Two-point hull must be sorted endpoints");
+    }
+
+    @Test
+    @DisplayName("TC05: Three collinear points returns only the two endpoints (upper and lower loop single iteration branch det==0)")
+    void test_TC05() {
+        List<Point> pts = new ArrayList<>();
+        pts.add(new Point(0, 0));
+        pts.add(new Point(1, 0));
+        pts.add(new Point(2, 0));
+        // All det==0 in loops → only leftmost and rightmost kept
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(pts));
+        List<Point> expected = List.of(new Point(0, 0), new Point(2, 0));
+        assertEquals(expected, result, "Collinear points should yield just the extreme endpoints");
+    }
+
+    @Test
+    @DisplayName("TC06: Three non-collinear points returns triangle vertices (upper loop det>0 branch)")
+    void test_TC06() {
+        List<Point> pts = new ArrayList<>();
+        pts.add(new Point(0, 0));
+        pts.add(new Point(1, 1));
+        pts.add(new Point(2, 0));
+        // One point lies above the line → det>0 branch exercised
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(pts));
+        List<Point> expected = List.of(new Point(0, 0), new Point(1, 1), new Point(2, 0));
+        assertEquals(expected, result, "Non-collinear three points should all appear in the hull sorted");
+    }
+
+    @Test
+    @DisplayName("TC07: Four points with one interior yields only convex hull corners (interior point filtered)")
+    void test_TC07() {
+        List<Point> pts = new ArrayList<>();
+        pts.add(new Point(0, 0));
+        pts.add(new Point(2, 0));
+        pts.add(new Point(2, 2));
+        // interior
+        pts.add(new Point(1, 1));
+        // The interior point (1,1) should be filtered out; endpoints form triangle
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(pts));
+        List<Point> expected = List.of(new Point(0, 0), new Point(2, 0), new Point(2, 2));
+        assertEquals(expected, result, "Interior points must be excluded, only extreme corners returned");
+    }
+
+    @Test
+    @DisplayName("TC08: Multiple upper and lower hull recursion paths executed (deep candidate points branching)")
+    void test_TC08() {
+        List<Point> pts = new ArrayList<>();
+        pts.add(new Point(0, 0));
+        pts.add(new Point(5, 0));
+        pts.add(new Point(5, 5));
+        pts.add(new Point(0, 5));
+        // interior
+        pts.add(new Point(2, 2));
+        // This set forces recursion in constructHull for both upper and lower branches
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(pts));
+        List<Point> expected = List.of(
+            new Point(0, 0),
+            new Point(0, 5),
+            new Point(5, 0),
+            new Point(5, 5)
+        );
+        assertEquals(expected, result, "Convex hull of a square with interior point should be its four corners sorted");
+    }
+}

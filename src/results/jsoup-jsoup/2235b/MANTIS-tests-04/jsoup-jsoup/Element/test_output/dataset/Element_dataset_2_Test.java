@@ -1,0 +1,70 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Iterator;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("TC09: dataset.clear() removes all data- attributes and clears the view (clear branch)")
+    public void test_TC09() {
+        // GIVEN: An element with two data- attributes to trigger clear branch
+        Element el = new Element("div");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        // WHEN: Obtain the dataset view and clear it
+        Map<String, String> ds = el.dataset();
+        ds.clear(); // should remove all data- entries underlying
+        // THEN: Underlying attributes should no longer contain the keys, and view is empty
+        assertFalse(el.attributes().hasKey("data-a"), "Attribute data-a should be removed after clear");
+        assertFalse(el.attributes().hasKey("data-b"), "Attribute data-b should be removed after clear");
+        assertTrue(ds.isEmpty(), "Dataset view should be empty after clear");
+    }
+
+    @Test
+    @DisplayName("TC10: Removing via dataset.entrySet().iterator().remove() deletes underlying data- attribute (iterator-remove branch)")
+    public void test_TC10() {
+        // GIVEN: An element with a single data- attribute to test iterator removal
+        Element el = new Element("div");
+        el.attr("data-x", "v");
+        // WHEN: Obtain the dataset view and remove entry via iterator
+        Map<String, String> ds = el.dataset();
+        Iterator<Map.Entry<String, String>> it = ds.entrySet().iterator();
+        Map.Entry<String, String> entry = it.next(); // should retrieve the only entry "x"->"v"
+        it.remove(); // triggers removal of underlying attribute data-x
+        // THEN: Underlying attribute removed and view no longer contains key
+        assertFalse(el.attributes().hasKey("data-x"), "Underlying attribute data-x should be removed by iterator.remove");
+        assertFalse(ds.containsKey("x"), "Dataset view should no longer contain key 'x' after iterator.remove");
+    }
+
+    @Test
+    @DisplayName("TC11: dataset.put on existing key overwrites and returns previous value (overwrite branch)")
+    public void test_TC11() {
+        // GIVEN: An element with existing data-a="old" to test overwrite
+        Element el = new Element("div");
+        el.attr("data-a", "old");
+        // WHEN: Put a new value for key "a" and capture returned previous value
+        Map<String, String> ds = el.dataset();
+        String prev = ds.put("a", "new"); // should overwrite and return "old"
+        // THEN: The returned previous value is correct, underlying attribute updated, and view reflects new value
+        assertEquals("old", prev, "put should return the old value 'old'");
+        assertEquals("new", el.attr("data-a"), "Underlying attribute data-a should be updated to 'new'");
+        assertEquals("new", ds.get("a"), "Dataset view should reflect the new value 'new'");
+    }
+
+    @Test
+    @DisplayName("TC12: dataset.put with null value throws NullPointerException (put-null-value exception branch)")
+    public void test_TC12() {
+        // GIVEN: An element without data- attributes to test null value handling
+        Element el = new Element("span");
+        Map<String, String> ds = el.dataset();
+        // WHEN / THEN: Putting a null value should throw NullPointerException
+        assertThrows(NullPointerException.class, () -> ds.put("x", null),
+            "Putting a null value into dataset should throw NullPointerException");
+    }
+}

@@ -1,0 +1,34 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parseBodyFragment_1_Test {
+
+    @Test
+    @DisplayName("Passing null bodyHtml should throw NullPointerException before parsing")
+    void test_TC07() {
+        // Scenario TC07: bodyHtml is null, so we expect a NullPointerException before any parsing logic.
+        String baseUri = "http://example.com";
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(null, baseUri);
+        }, "Expected NullPointerException when bodyHtml is null");
+    }
+
+    @Test
+    @DisplayName("Passing null baseUri should throw IllegalArgumentException or NullPointerException")
+    void test_TC08() {
+        // Scenario TC08: baseUri is null, intended contract forbids null baseUri.
+        String bodyHtml = "<p>Test</p>";
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> {
+            Jsoup.parseBodyFragment(bodyHtml, null);
+        }, "Expected either IllegalArgumentException or NullPointerException when baseUri is null");
+        // Verify that the thrown exception is one of the accepted types
+        assertTrue(
+                ex instanceof IllegalArgumentException || ex instanceof NullPointerException,
+                "Exception should be IllegalArgumentException or NullPointerException, but was: " + ex.getClass().getSimpleName()
+        );
+    }
+}

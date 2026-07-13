@@ -1,0 +1,88 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_2_Test {
+
+    @Test
+    @DisplayName("TC05: clone() preserves explicit connection field so connection() returns the same instance branch")
+    public void test_TC05() {
+        // GIVEN an original Document with an explicit Connection set
+        Document original = Document.createShell("http://x");
+        Connection conn = Jsoup.newSession();
+        original.connection(conn); // set non-null connection to test B0→B1→B3 branch
+        
+        // WHEN cloning
+        Document cloned = original.clone();
+        
+        // THEN the cloned document should return the exact same Connection instance
+        assertSame(conn, cloned.connection(), "Expected cloned.connection() to return the same instance as original.connection");
+    }
+
+    @Test
+    @DisplayName("TC06: connection() on clone with null connection returns new session branch")
+    public void test_TC06() {
+        // GIVEN a new Document with no connection set (original.connection is null) to test B0→B1→B2 branch
+        Document original = new Document("http://u");
+        
+        // WHEN cloning
+        Document cloned = original.clone();
+        
+        // THEN each call to connection() should return a new, non-null Connection different from previous ones
+        Connection c1 = cloned.connection();
+        Connection c2 = cloned.connection();
+        assertNotNull(c1, "First connection() call should not return null");
+        assertNotNull(c2, "Second connection() call should not return null");
+        assertNotSame(c1, c2, "Each connection() invocation should return a fresh Connection when none was set");
+    }
+
+    @Test
+    @DisplayName("TC07: clone() copies quirksMode field value branch")
+    public void test_TC07() {
+        // GIVEN an original Document with quirksMode set to quirks to test B0→B1→B4 branch
+        Document original = Document.createShell("u");
+        original.quirksMode(Document.QuirksMode.quirks);
+        
+        // WHEN cloning
+        Document cloned = original.clone();
+        
+        // THEN the cloned document should have the same quirksMode value
+        assertEquals(Document.QuirksMode.quirks, cloned.quirksMode(),
+                "Expected cloned.quirksMode() to match original quirksMode value");
+    }
+
+    @Test
+    @DisplayName("TC08: clone() deep-copies comment and text child nodes that are not Element subclass branch")
+    public void test_TC08() {
+        // GIVEN an original Document with a Comment child and text in body to test B0→B1→B5 deep-copy
+        Document original = Document.createShell("u");
+        org.jsoup.nodes.Comment comment = new org.jsoup.nodes.Comment("cmt"); // Changed constructor to match expected signature
+        original.appendChild(comment);
+        original.body().text("text");
+        
+        // WHEN cloning and modifying cloned nodes
+        Document cloned = original.clone();
+        // find and modify the cloned comment
+        Optional<org.jsoup.nodes.Comment> clonedCommentOpt = cloned.childNodes().stream()
+                .filter(n -> n instanceof org.jsoup.nodes.Comment)
+                .map(n -> (org.jsoup.nodes.Comment) n)
+                .findFirst();
+        assertTrue(clonedCommentOpt.isPresent(), "Cloned document should contain a Comment node");
+        org.jsoup.nodes.Comment clonedComment = clonedCommentOpt.get();
+        clonedComment.setData("changed");
+        // modify cloned body text
+        cloned.body().text("changedText");
+        
+        // THEN original comment and body text should remain unchanged
+        assertEquals("cmt", comment.getData(),
+                "Original comment data should not change after modifying clone");
+        assertEquals("text", original.body().text(),
+                "Original body text should not change after modifying clone");
+    }
+}

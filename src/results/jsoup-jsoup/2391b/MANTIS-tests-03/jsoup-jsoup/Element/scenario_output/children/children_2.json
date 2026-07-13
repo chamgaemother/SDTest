@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "children() creates and stores cache when none exists (cache-stash path)",
+      "path": "B0→B2→B3→B4→B5→B6",
+      "precondition": "Element el with one Element child and attributes==null",
+      "expectedResult": "attributes.userData contains entries for jsoup.childEls and jsoup.childElsMod matching current modCount",
+      "tags": [
+        "positive",
+        "cache-stash"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 children implicit cache creation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    // attributes not yet created",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "  THEN",
+        "    // Ensure one child returned",
+        "    assert first.size() == 1;",
+        "    // Attributes user data now contains cache keys",
+        "    Map<String,Object> ud = el.attributes().userData();",
+        "    assert ud.containsKey(\"jsoup.childEls\");",
+        "    assert ud.containsKey(\"jsoup.childElsMod\");",
+        "    // Mod count matches childNodes.modCount()",
+        "    assert ud.get(\"jsoup.childElsMod\").equals(el.childNodes.modCount());"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Second children() call hits implicit cache (cache-hit after stash)",
+      "path": "B0→B2→B3→B4→B7",
+      "precondition": "Element el with one Element child, has cached userData from prior children()",
+      "expectedResult": "second call returns same internal cached list instance",
+      "tags": [
+        "positive",
+        "cache-hit",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 children cache hit implicitly",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    // initial call to create cache",
+        "    Elements first = el.children();",
+        "    Field f = Elements.class.getDeclaredField(\"elements\");",
+        "    f.setAccessible(true);",
+        "    Object cachedList = f.get(first);",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    // Should reuse same list instance",
+        "    Object secondList = f.get(second);",
+        "    assert secondList == cachedList;"
+      ]
+    }
+  ]
+}

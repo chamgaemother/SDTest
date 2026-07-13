@@ -1,0 +1,111 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.davidmoten.text.utils.WordWrap;
+import org.davidmoten.text.utils.IORuntimeException;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("TC11: fromClasspathUtf8 with missing resource throws NullPointerException on InputStreamReader")
+    public void test_TC11() {
+        // Missing resource leads getResourceAsStream to return null, causing NPE in InputStreamReader ctor
+        String resource = "/no-resource.txt";
+        assertThrows(NullPointerException.class, () -> {
+            WordWrap.fromClasspathUtf8(resource).wrap();
+        });
+    }
+
+    @Test
+    @DisplayName("TC12: wrap(Writer) rethrows IOException from Writer as IORuntimeException")
+    public void test_TC12() {
+        // Custom Writer always throws IOException on write, so wrap must catch and rethrow IORuntimeException
+        Reader r = new BufferedReader(new StringReader("abc"));
+        Writer w = new Writer() {
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override
+            public void write(String str) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override
+            public void flush() throws IOException { }
+            @Override
+            public void close() throws IOException { }
+        };
+        assertThrows(IORuntimeException.class, () -> {
+            WordWrap.from(r).wrap(w);
+        });
+    }
+
+    @Test
+    @DisplayName("TC13: close(reader) IOException on Reader.close() triggers IORuntimeException in finally")
+    public void test_TC13() throws Exception {
+        // Reader.read returns -1 immediately, but close() throws IOException in finally of wrap
+        Reader r = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) {
+                return -1;
+            }
+            @Override
+            public void close() throws IOException {
+                throw new IOException("fail-close");
+            }
+        };
+        // Use reflection to invoke package-private WordWrap.from(Reader, boolean)
+        Method fromMethod = WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);
+        fromMethod.setAccessible(true);
+        Object builder = fromMethod.invoke(null, r, true);
+        assertThrows(IORuntimeException.class, () -> {
+            // invoke public wrap(Writer) on builder
+            ((WordWrap.Builder) builder).wrap(new StringWriter());
+        });
+    }
+
+    @Test
+    @DisplayName("TC14: Input containing carriage returns ignores '\\r' branch")
+    public void test_TC14() {
+        // CR should be dropped and LF become newline
+        String text = "A\r\nB";
+        String result = WordWrap.from(text).wrap();
+        assertEquals("A\nB", result);
+    }
+
+    @Test
+    @DisplayName("TC15: Default punctuation triggers word boundary and line break when too long after punctuation")
+    public void test_TC15() {
+        // comma is treated as punctuation boundary; with maxWidth 6, "word1," fits then break before word2
+        String text = "word1,word2";
+        String result = WordWrap.from(text).maxWidth(6).wrap();
+        assertTrue(result.startsWith("word1,")); // first line ends at comma
+        assertTrue(result.contains("word2"));    // second line contains word2
+    }
+
+    @Test
+    @DisplayName("TC16: from(InputStream, Charset) wraps input from stream like CharSequence")
+    public void test_TC16() {
+        // ByteArrayInputStream with UTF-8 bytes should produce same wrap output as CharSequence source
+        byte[] data = "hello stream test".getBytes(StandardCharsets.UTF_8);
+        InputStream in = new ByteArrayInputStream(data);
+        String s1 = WordWrap.from(in, StandardCharsets.UTF_8).wrap();
+        String s2 = WordWrap.from("hello stream test").wrap();
+        assertEquals(s2, s1);
+    }
+
+    @Test
+    @DisplayName("TC17: from(File, Charset) with non-existent file throws IORuntimeException")
+    public void test_TC17() {
+        // Non-existent file should cause FileNotFoundException caught and rethrown as IORuntimeException
+        File f = new File("does_not_exist.txt");
+        assertThrows(IORuntimeException.class, () -> {
+            WordWrap.from(f, StandardCharsets.UTF_8).wrap();
+        });
+    }
+}

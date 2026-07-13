@@ -1,0 +1,107 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException for null child",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no child added",
+      "tags": [
+        "branch-false",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild(firstChild) creates childNodes list and adds the child with index 0",
+      "path": "B0→B1→B2(true)→B3→B4",
+      "precondition": "parent.childNodes == EmptyNodes",
+      "expectedResult": "return value is parent; parent.childNodes.size() == 1; child.siblingIndex == 0; child.parent() == parent",
+      "tags": [
+        "branch-true",
+        "first-call",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-add",
+        "  GIVEN",
+        "    Element parent = new Element(\"span\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent; assert parent.childNodeSize() == 1; assert child.siblingIndex() == 0; assert child.parent() == parent;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild(secondChild) skips list creation and adds a second child with index 1",
+      "path": "B0→B1→B2(false)→B3→B4",
+      "precondition": "parent.childNodes already initialized with one child",
+      "expectedResult": "parent.childNodeSize() == 2; secondChild.siblingIndex == 1; siblings are in insertion order",
+      "tags": [
+        "branch-false",
+        "subsequent-call",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild subsequent-add",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    TextNode first = new TextNode(\"one\"); parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2; assert second.siblingIndex() == 1; assert parent.childNodes.get(0) == first; assert parent.childNodes.get(1) == second;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild(childWithParent) reparents node from its old parent to new parent",
+      "path": "B0→B1→B2(true)→B3→B4",
+      "precondition": "child exists with parent oldParent",
+      "expectedResult": "child.parent() == newParent; oldParent.childNodeSize() decremented by 1; newParent.childNodeSize() incremented by 1",
+      "tags": [
+        "branch-true",
+        "reparent",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent-existing",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"ul\");",
+        "    Element child = new Element(\"li\"); oldParent.appendChild(child);",
+        "    Element newParent = new Element(\"ol\");",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert child.parent() == newParent; assert oldParent.childNodeSize() == 0; assert newParent.childNodeSize() == 1;",
+        "END"
+      ]
+    }
+  ]
+}

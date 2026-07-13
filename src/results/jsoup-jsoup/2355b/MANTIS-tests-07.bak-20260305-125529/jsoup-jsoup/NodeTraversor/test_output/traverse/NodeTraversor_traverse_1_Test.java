@@ -1,0 +1,95 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class NodeTraversor_traverse_1_Test {
+    // A simple visitor to record head and tail calls
+    private static class TrackVisitor implements NodeVisitor {
+        List<String> headCalls = new ArrayList<>();
+        List<String> tailCalls = new ArrayList<>();
+
+        @Override
+        public void head(Node node, int depth) {
+            headCalls.add(node.nodeName() + ":" + depth);
+        }
+
+        @Override
+        public void tail(Node node, int depth) {
+            tailCalls.add(node.nodeName() + ":" + depth);
+        }
+    }
+
+    @Test
+    @DisplayName("deep two-level tree with a single child triggers inner-while ascend branch (B16→B17→B19)")
+    public void test_TC13() {
+        // Arrange a root with one child, and that child with one grandchild
+        Element root = new Element("root");
+        Element child = new Element("child");
+        Element grand = new Element("grand");
+        root.appendChild(child);
+        child.appendChild(grand);
+        TrackVisitor visitor = new TrackVisitor();
+        // WHEN: traverse triggers inner ascend loop when grand has no siblings and depth>0
+        NodeTraversor.traverse(visitor, root);
+        // THEN: head called in preorder, tail called in reverse to root
+        List<String> expectedHead = Arrays.asList("root:0", "child:1", "grand:2");
+        List<String> expectedTail = Arrays.asList("grand:2", "child:1", "root:0");
+        assertEquals(expectedHead, visitor.headCalls, "Head calls should match preorder depths");
+        assertEquals(expectedTail, visitor.tailCalls, "Tail calls should match ascend in inner loop");
+    }
+
+    @Test
+    @DisplayName("visitor.head replaces a middle child in three siblings triggers replace path (B7→B8) mid-traversal")
+    public void test_TC14() {
+        // Arrange root with three children; replacing middle 'b' in head triggers B7→B8 path
+        Element root = new Element("list");
+        Element a = new Element("a");
+        Element b = new Element("b");
+        Element c = new Element("c");
+        root.appendChild(a);
+        root.appendChild(b);
+        root.appendChild(c);
+        TrackVisitor visitor = new TrackVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                super.head(node, depth);
+                // Replace only the middle node to trigger replace branch
+                if (node == b) {
+                    node.replaceWith(new Element("x"));
+                }
+            }
+        };
+        // WHEN: traverse should replace 'b' with 'x' and continue on new node
+        NodeTraversor.traverse(visitor, root);
+        // THEN: ensure replacement and visitation of 'x'
+        assertEquals("x", root.childNode(1).nodeName(), "Middle child should be replaced with 'x'");
+        assertTrue(visitor.headCalls.contains("x:1"), "Visitor should have visited the new node 'x' at depth 1");
+    }
+
+    @Test
+    @DisplayName("traverse over Elements with early break when elements list contains null element")
+    public void test_TC15() {
+        // Arrange Elements with a null element to cause Validate.notNull in recursive traverse
+        Elements elements = new Elements();
+        elements.add(new Element("ok"));
+        elements.add(null); // null should trigger IllegalArgumentException
+        elements.add(new Element("skip"));
+        NodeVisitor visitor = (node, depth) -> {
+            // no-op
+        };
+        // Act & Assert: should throw IllegalArgumentException due to null element
+        assertThrows(IllegalArgumentException.class,
+            () -> NodeTraversor.traverse(visitor, elements),
+            "Traversing Elements containing null must throw IllegalArgumentException");
+    }
+}

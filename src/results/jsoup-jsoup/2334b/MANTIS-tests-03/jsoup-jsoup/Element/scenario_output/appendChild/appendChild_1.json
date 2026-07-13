@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild returns this element (fluent API) when adding a new child",
+      "path": "B0→B1(false)→B2→B3",
+      "precondition": "parent has no children, child is non-null and orphan",
+      "expectedResult": "returned object is same as parent, child appended at index 0",
+      "tags": [
+        "positive",
+        "fluent",
+        "return-value"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild fluent-return",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"hello\");",
+        "  WHEN",
+        "    Element returned = parent.appendChild(child);",
+        "  THEN",
+        "    assert returned == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild same child twice moves it and re-adds, exercising reparent and ensureChildNodes both times",
+      "path": "B0→B1(false)→B2→B3 (first) → B1(false)→B2(false)→B3 (second)",
+      "precondition": "orphan child, then child is already child of parent",
+      "expectedResult": "after second append: only one child, siblingIndex reset to 0",
+      "tags": [
+        "positive",
+        "reparent",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild same-child-twice",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = new Element(\"li\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert parent.child(0) == child;",
+        "    assert child.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

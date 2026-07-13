@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Appending the same child twice to the same parent triggers reparent removal and adds at end",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "parent has had child appended once",
+      "expectedResult": "first append at index 0, second append moves from index 0 to index 1 and siblingIndex==1",
+      "tags": [
+        "reparent",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild same-child-again",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;  // removed then re-added",
+        "    assert child.siblingIndex() == 0;    // only one child remains, at index 0"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild(TextNode) on empty childNodes creates NodeList and sets correct text node parent and index",
+      "path": "B0→B1→B3→B4",
+      "precondition": "standalone parent with no children",
+      "expectedResult": "text node is added as child at index 0, parent returned",
+      "tags": [
+        "type-variation",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild with TextNode",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    TextNode text = new TextNode(\"hello\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(text);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert text.parent() == parent;",
+        "    assert text.siblingIndex() == 0;",
+        "    assert result == parent;"
+      ]
+    }
+  ]
+}

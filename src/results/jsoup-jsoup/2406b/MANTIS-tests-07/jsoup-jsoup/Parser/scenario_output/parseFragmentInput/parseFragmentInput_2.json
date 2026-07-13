@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "String overload with null fragment throws NullPointerException before parse",
+      "path": "B0→B1→B2→B7",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseFragmentInput null-string-fragment",
+        "  GIVEN",
+        "    String fragment = null;",
+        "    Element context = Document.createShell(\"http://x\").body();",
+        "  WHEN",
+        "    call Parser.htmlParser().parseFragmentInput(fragment, context, \"http://x\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Reader overload with null Reader throws NullPointerException inside parseFragmentInput",
+      "path": "B0→B1→B2→B7",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput null-reader-fragment",
+        "  GIVEN",
+        "    Reader fragment = null;",
+        "    Element context = null;",
+        "  WHEN",
+        "    call Parser.htmlParser().parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "XML parser Reader overload returns nested elements according to XML rules",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "using Parser.xmlParser()",
+      "expectedResult": "single root Element with tagName 'a', containing child 'b'",
+      "tags": [
+        "positive",
+        "xml",
+        "nested"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 xmlParser nested-fragment",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<a><b/></a>\");",
+        "    Element context = null;",
+        "  WHEN",
+        "    List<Node> result = Parser.xmlParser().parseFragmentInput(fragment, context, \"urn:xml\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element root = (Element) result.get(0);",
+        "    assert root.tagName().equals(\"a\");",
+        "    assert root.child(0).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "XML parser String overload with mixed text and tags returns text node before element",
+      "path": "B0→B1→B2→B6",
+      "precondition": "using Parser.xmlParser()",
+      "expectedResult": "first node is TextNode 'hi', second node is Element 'br'",
+      "tags": [
+        "positive",
+        "xml",
+        "mixed-content"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xmlParser mixed-content-string",
+        "  GIVEN",
+        "    String fragment = \"hi<br/>\";",
+        "    Element context = Document.createShell(\"u\").body();",
+        "  WHEN",
+        "    List<Node> result = Parser.xmlParser().parseFragmentInput(fragment, context, \"u\");",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).toString().equals(\"hi\");",
+        "    assert ((Element) result.get(1)).tagName().equals(\"br\");",
+        "END"
+      ]
+    }
+  ]
+}

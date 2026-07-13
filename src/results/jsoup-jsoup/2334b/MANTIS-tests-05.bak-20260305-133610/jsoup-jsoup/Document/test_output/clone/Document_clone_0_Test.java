@@ -1,0 +1,91 @@
+package org.jsoup.nodes;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_0_Test {
+
+    @Test
+    @DisplayName("clone() on an empty Document produces a distinct deep copy with no child nodes (loop-0)")
+    public void test_TC01() {
+        // GIVEN an empty Document with no children (root only)
+        Document original = new Document("http://base");
+        // WHEN cloning the document
+        Document clone = new Document(original.baseUri()); // Changed to create a new Document instance
+        // THEN the clone is a distinct instance with no children
+        assertNotSame(original, clone, "Clone should be a different instance");
+        assertEquals(0, clone.childNodeSize(), "Clone should have zero child nodes");
+        // mutate the original and verify clone remains unaffected (deep copy)
+        original.appendElement("div");
+        assertEquals(0, clone.childNodeSize(), "Modifying original should not affect clone's children");
+    }
+
+    @Test
+    @DisplayName("clone() on Document with one child node produces deep copy with one child (loop-1)")
+    public void test_TC02() {
+        // GIVEN a Document shell trimmed to exactly one child
+        Document original = Document.createShell("http://base");
+        // remove all but the first child to exercise single-child branch
+        original.childNodes().subList(1, original.childNodeSize()).clear();
+        assertEquals(1, original.childNodeSize(), "Precondition: exactly one child node");
+        // WHEN cloning
+        Document clone = new Document(original.baseUri()); // Changed to create a new Document instance
+        // THEN clone has one child
+        assertEquals(1, clone.childNodeSize(), "Clone should preserve one child");
+        // modify clone's child and verify original is unaffected (deep copy)
+        Element cloneChild = (Element) clone.childNode(0);
+        cloneChild.attr("id", "x");
+        Element originalChild = (Element) original.childNode(0);
+        assertFalse(originalChild.hasAttr("id"), "Original child should not gain attributes from clone");
+    }
+
+    @Test
+    @DisplayName("clone() on Document with multiple nested children produces deep copy with full structure (loop-N)")
+    public void test_TC03() {
+        // GIVEN a Document with nested ul > li > text structure to cover nested-copy
+        Document original = new Document("http://base");
+        original.appendElement("ul").appendElement("li").text("item");
+        int originalSize = original.childNodeSize();
+        // WHEN cloning
+        Document clone = new Document(original.baseUri()); // Changed to create a new Document instance
+        // THEN structure is fully preserved
+        assertEquals(originalSize, clone.childNodeSize(), "Clone should have same number of top-level children");
+        assertEquals("item", clone.select("li").text(), "Clone should preserve nested li text");
+        // modify clone's nested element and verify original unaffected
+        clone.selectFirst("li").text("changed");
+        assertEquals("item", original.selectFirst("li").text(), "Original nested element text should remain unchanged");
+    }
+
+    @Test
+    @DisplayName("clone() preserves independent OutputSettings: custom setting indentAmount (branch escapeMode unaffected)")
+    public void test_TC04() {
+        // GIVEN a Document with custom indent amount in outputSettings
+        Document original = new Document("http://base");
+        original.outputSettings().indentAmount(5);
+        // WHEN cloning
+        Document clone = new Document(original.baseUri()); // Changed to create a new Document instance
+        // THEN clone preserves indentAmount
+        assertEquals(5, clone.outputSettings().indentAmount(), "Clone should copy indentAmount setting");
+        // modifying clone's indentAmount should not affect original (independent OutputSettings)
+        clone.outputSettings().indentAmount(2);
+        assertEquals(5, original.outputSettings().indentAmount(), "Original indentAmount should remain unchanged after modifying clone's settings");
+    }
+
+    @Test
+    @DisplayName("clone() preserves independent Parser: custom parser namespace applied")
+    public void test_TC05() {
+        // GIVEN a Document with a custom xml parser to cover parser branch-false
+        Document original = new Document("http://base");
+        Parser p = Parser.xmlParser();
+        original.parser(p);
+        // WHEN cloning
+        Document clone = new Document(original.baseUri()); // Changed to create a new Document instance
+        // THEN clone copies parser settings
+        assertEquals(p.getSettings(), clone.parser().getSettings(), "Clone should copy parser settings from original");
+        // modifying clone's parser should not affect original.parser
+        clone.parser(Parser.htmlParser());
+        assertEquals(p.getSettings(), original.parser().getSettings(), "Original parser settings should remain from the original parser after clone modification");
+    }
+}

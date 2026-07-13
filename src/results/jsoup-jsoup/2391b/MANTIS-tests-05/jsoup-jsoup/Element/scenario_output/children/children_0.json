@@ -1,0 +1,120 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when no child nodes exist (childNodeSize==0)",
+      "path": "B0→B1→B2",
+      "precondition": "Create an Element with no children; childNodes is EmptyNodeList",
+      "expectedResult": "returned Elements list is empty (size 0)",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "empty",
+        "P0",
+        "Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns one-element Elements when exactly one Element child exists",
+      "path": "B0→B1→B3→B4(loop×1)→B5",
+      "precondition": "Element el has one Element child appended via appendChild",
+      "expectedResult": "returned Elements list contains exactly that one child element",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "single-element",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children one element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1 && result.get(0) == child;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() filters out non-Element nodes and returns only Element children",
+      "path": "B0→B1→B3→B4(loop×N)→B5",
+      "precondition": "Element el has mixed children: TextNode, two Element children, Comment via appendChild; uses real implementations",
+      "expectedResult": "returned Elements list contains exactly the two Element children in original order",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "mixed-nodes",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed node types",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode t = new TextNode(\"text\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Comment comment = new Comment(\"cmt\");",
+        "    Element c2 = new Element(\"span\");",
+        "    parent.appendChild(t);",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(comment);",
+        "    parent.appendChild(c2);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2 && result.get(0) == c1 && result.get(1) == c2;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() returns unmodifiable Elements list independent of later child modifications",
+      "path": "B0→B1→B3→B4(loop×N)→B5",
+      "precondition": "Element parent has two child Elements; use real objects; after calling children(), modify parent by appending another child",
+      "expectedResult": "original Elements result remains size 2 and does not include appended third child",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "immutability",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children unmodifiable snapshot",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"span\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "    Elements snapshot = parent.children();",
+        "  WHEN",
+        "    parent.appendChild(new Element(\"b\"));",
+        "  THEN",
+        "    assert snapshot.size() == 2 && snapshot.get(0) == c1 && snapshot.get(1) == c2;"
+      ]
+    }
+  ]
+}

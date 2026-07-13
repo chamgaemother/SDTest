@@ -1,0 +1,262 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(html, baseUri) preserves body fragment and sets baseUri",
+      "path": "B0→B28→B29",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() contains fragment and baseUri is set",
+      "tags": [
+        "positive",
+        "overload",
+        "fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<p>F</p>\";",
+        "    String baseUri = \"http://f.test/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>F</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(html) uses empty baseUri by default",
+      "path": "B0→B28→B30",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() contains fragment and baseUri is empty",
+      "tags": [
+        "boundary",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment default baseUri",
+        "  GIVEN",
+        "    String fragment = \"<div>X</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<div>X</div>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "clean(html, baseUri, safelist) removes disallowed tags and preserves allowed ones",
+      "path": "B0→B31→B32→B33",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML does not contain <script> and retains <b>",
+      "tags": [
+        "positive",
+        "security",
+        "clean"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 clean with baseUri and safelist",
+        "  GIVEN",
+        "    String dirty = \"<b>Ok</b><script>alert()</script>\";",
+        "    String baseUri = \"http://clean.test/\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    String clean = Jsoup.clean(dirty, baseUri, safelist);",
+        "  THEN",
+        "    assert clean.contains(\"<b>Ok</b>\");",
+        "    assert !clean.contains(\"script\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "clean(html, safelist) delegates to clean(html, \"\", safelist)",
+      "path": "B0→B31→B34",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML uses empty baseUri",
+      "tags": [
+        "overload",
+        "clean",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 clean overload without baseUri",
+        "  GIVEN",
+        "    String dirty = \"<i>Ital</i><img src='/r.png'>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "  WHEN",
+        "    String clean = Jsoup.clean(dirty, safelist);",
+        "  THEN",
+        "    assert clean.contains(\"<i>Ital</i>\");",
+        "    assert !clean.contains(\"img\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "clean(html, baseUri, safelist, outputSettings) applies custom outputSettings",
+      "path": "B0→B31→B32→B35",
+      "precondition": "none",
+      "expectedResult": "output respects no pretty-print and returns single-line HTML",
+      "tags": [
+        "overload",
+        "clean",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 clean with outputSettings",
+        "  GIVEN",
+        "    String dirty = \"<div> A </div>\";",
+        "    String baseUri = \"buri\";",
+        "    Safelist safelist = Safelist.none();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String clean = Jsoup.clean(dirty, baseUri, safelist, os);",
+        "  THEN",
+        "    assert clean.equals(\"A\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "isValid(html, safelist) returns true when content conforms",
+      "path": "B0→B36",
+      "precondition": "none",
+      "expectedResult": "returns true for safe HTML",
+      "tags": [
+        "positive",
+        "validation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 isValid returns true",
+        "  GIVEN",
+        "    String safe = \"<p>Text</p>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean ok = Jsoup.isValid(safe, safelist);",
+        "  THEN",
+        "    assert ok == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "isValid(html, safelist) returns false when disallowed tags present",
+      "path": "B0→B37",
+      "precondition": "none",
+      "expectedResult": "returns false for HTML containing <iframe>",
+      "tags": [
+        "negative",
+        "validation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 isValid returns false",
+        "  GIVEN",
+        "    String unsafe = \"<iframe src=\\\"x\\\"></iframe>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean ok = Jsoup.isValid(unsafe, safelist);",
+        "  THEN",
+        "    assert ok == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(File, invalid charset) throws IOException on bad charsetName",
+      "path": "B0→B10→B11(IOException)",
+      "precondition": "temp file exists",
+      "expectedResult": "IOException is thrown for invalid charsetName",
+      "tags": [
+        "negative",
+        "exception",
+        "file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse file with bad charset",
+        "  GIVEN",
+        "    File f = File.createTempFile(\"badcs\",\".html\");",
+        "    Files.write(f.toPath(), \"<p>X</p>\".getBytes(\"UTF-8\"));",
+        "    String badCs = \"UNKNOWN_CHARSET\";",
+        "    String baseUri = \"bu\";",
+        "  WHEN",
+        "    call Jsoup.parse(f, badCs, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "connect(http URL) returns a HttpConnection instance",
+      "path": "B0→B38→B39",
+      "precondition": "none",
+      "expectedResult": "instanceof HttpConnection and default settings",
+      "tags": [
+        "positive",
+        "connection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 connect returns HttpConnection",
+        "  GIVEN",
+        "    String url = \"http://example.com\";",
+        "  WHEN",
+        "    Connection con = Jsoup.connect(url);",
+        "  THEN",
+        "    assert con instanceof HttpConnection;",
+        "    assert con.request().url().equals(url);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "newSession() returns independent HttpConnection session",
+      "path": "B0→B40",
+      "precondition": "none",
+      "expectedResult": "returned Connection maintains session state separately",
+      "tags": [
+        "positive",
+        "session",
+        "connection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 newSession state isolation",
+        "  GIVEN",
+        "    Connection s1 = Jsoup.newSession();",
+        "    Connection s2 = Jsoup.newSession();",
+        "  WHEN",
+        "    s1.userAgent(\"A\").timeout(100);",
+        "    s2.userAgent(\"B\").timeout(200);",
+        "  THEN",
+        "    assert !s1.request().userAgent().equals(s2.request().userAgent());",
+        "    assert s1.request().timeoutMillis() == 100;",
+        "    assert s2.request().timeoutMillis() == 200;",
+        "END"
+      ]
+    }
+  ]
+}

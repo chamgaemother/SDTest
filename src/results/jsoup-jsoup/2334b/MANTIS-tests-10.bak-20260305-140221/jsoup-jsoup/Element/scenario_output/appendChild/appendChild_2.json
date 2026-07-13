@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Reparent first of two children updates remaining siblingIndex in original parent (reparentChild true & removeChild sibling-reindex branch)",
+      "path": "B0→B1(reparentChild)→B2(removeChild)→B3(updateIndices)→B4(ensureChildNodes)→B5(add)→B6(setSiblingIndex)→B7(return)",
+      "precondition": "parent1 has two appended child elements [A,B], parent2 is fresh",
+      "expectedResult": "After parent2.appendChild(A): parent1.childrenSize()==1, remaining child B siblingIndex==0; parent2.childrenSize()==1; append returns parent2",
+      "tags": [
+        "positive",
+        "reparent",
+        "sibling-reindex"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 reparent-first-of-two updates old-parent indices",
+        "  GIVEN",
+        "    Element parent1 = new Element(\"div\");",
+        "    Element parent2 = new Element(\"section\");",
+        "    Element A = new Element(\"span\");",
+        "    Element B = new Element(\"em\");",
+        "    parent1.appendChild(A);",
+        "    parent1.appendChild(B);",
+        "    assert parent1.childrenSize() == 2;",
+        "  WHEN",
+        "    Element result = parent2.appendChild(A);",
+        "  THEN",
+        "    assert parent1.childrenSize() == 1;",
+        "    assert B.getSiblingIndex() == 0;",
+        "    assert parent2.childrenSize() == 1;",
+        "    assert result == parent2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild returns this allowing chaining multiple adds on fresh element (return-this branch)",
+      "path": "B0→B1(reparentChild false)→B4(ensureChildNodes)→B5(add)→B6(setSiblingIndex)→B7(return)→reuse(B4→B5→B6→B7)→return",
+      "precondition": "fresh Element with no children",
+      "expectedResult": "parent.appendChild(C1).appendChild(C2) returns same parent; childNodeSize()==2; indices 0 and 1",
+      "tags": [
+        "positive",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild chaining returns this",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    TextNode C1 = new TextNode(\"one\");",
+        "    TextNode C2 = new TextNode(\"two\");",
+        "  WHEN",
+        "    Element chained = parent.appendChild(C1).appendChild(C2);",
+        "  THEN",
+        "    assert chained == parent;",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert C1.getSiblingIndex() == 0;",
+        "    assert C2.getSiblingIndex() == 1;",
+        "END"
+      ]
+    }
+  ]
+}

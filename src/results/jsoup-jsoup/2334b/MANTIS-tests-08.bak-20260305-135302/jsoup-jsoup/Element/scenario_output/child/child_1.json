@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "child(1) returns second Element from mixed node list with two Elements after filtering non-Elements",
+      "path": "B0→B3→B5(loop×4)→B7→B8",
+      "precondition": "parent has children: TextNode, span1, Comment, span2",
+      "expectedResult": "returns span2 for child(1)",
+      "tags": [
+        "positive",
+        "filter",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 child mixed nodes second element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode t = new TextNode(\"a\");",
+        "    Element span1 = new Element(\"span\");",
+        "    Comment c = new Comment(\"c\");",
+        "    Element span2 = new Element(\"span\");",
+        "    parent.appendChild(t);",
+        "    parent.appendChild(span1);",
+        "    parent.appendChild(c);",
+        "    parent.appendChild(span2);",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(span2, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "child(0) second call uses cached shadowChildrenRef without rebuilding list",
+      "path": "B0→B3→B5(loop×2)→B6(cache not null)→B8",
+      "precondition": "parent has two Element children, cache built by first child() call",
+      "expectedResult": "second child(0) returns first element via cached list",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 child uses cached list on repeated call",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li1 = new Element(\"li\");",
+        "    Element li2 = new Element(\"li\");",
+        "    parent.appendChild(li1);",
+        "    parent.appendChild(li2);",
+        "    // build cache",
+        "    Element first = parent.child(0);",
+        "  WHEN",
+        "    Element secondCall = parent.child(0);",
+        "  THEN",
+        "    assertSame(li1, secondCall);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "child(0) with pre-set empty cache does not rebuild and throws IndexOutOfBoundsException",
+      "path": "B0→B3→B5(loop×0: cached empty list)→B6(cache not null)→B7→B9",
+      "precondition": "parent has one TextNode child only, shadowChildrenRef set via reflection to empty list",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "cache",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 child with stale empty cache throws",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"x\"));",
+        "    // reflectively set empty cache",
+        "    Field f = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    f.setAccessible(true);",
+        "    f.set(parent, new WeakReference<>(Collections.emptyList()));",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    }
+  ]
+}

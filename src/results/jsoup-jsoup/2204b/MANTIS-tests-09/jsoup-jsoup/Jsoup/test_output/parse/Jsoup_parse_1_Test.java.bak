@@ -1,0 +1,207 @@
+package org.jsoup;
+
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC12: parse(File,charsetName) loads file with explicit charset and resolves baseUri from file path")
+    public void test_TC12() throws IOException {
+        // GIVEN: a temp HTML file with known content
+        File file = File.createTempFile("f", ".html");
+        file.deleteOnExit();
+        String html = "<h1>t</h1>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+
+        // WHEN: parse with explicit charset
+        Document doc = Jsoup.parse(file, charset);
+
+        // THEN: content parsed and baseUri equals absolute path
+        assertEquals("t", doc.select("h1").text());
+        assertEquals(file.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC13: parse(File) loads file with default charset detection and resolves baseUri from file path")
+    public void test_TC13() throws IOException {
+        // GIVEN: a temp HTML file with known content
+        File file = File.createTempFile("g", ".html");
+        file.deleteOnExit();
+        String html = "<div>d</div>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"));
+
+        // WHEN: parse using no charset overload
+        Document doc = Jsoup.parse(file);
+
+        // THEN: content parsed and baseUri equals absolute path
+        assertEquals("d", doc.select("div").text());
+        assertEquals(file.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC14: parse(File,charsetName,baseUri,Parser) uses provided parser for file content")
+    public void test_TC14() throws IOException {
+        // GIVEN: a temp HTML file with XML-compatible self-closing tag
+        File file = File.createTempFile("x", ".html");
+        file.deleteOnExit();
+        String html = "<item/>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://x/";
+        Parser parser = Parser.xmlParser();
+
+        // WHEN: parse with xmlParser
+        Document doc = Jsoup.parse(file, charset, baseUri, parser);
+
+        // THEN: xml self-closing element recognized and baseUri preserved
+        assertEquals(1, doc.select("item").size());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC15: parse(InputStream,charsetName,baseUri,Parser) parses stream with HTML parser overload")
+    public void test_TC15() throws IOException {
+        // GIVEN: InputStream with italic tag content
+        byte[] bytes = "<i>italic</i>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(bytes);
+        String charset = "UTF-8";
+        String baseUri = "base";
+        Parser parser = Parser.htmlParser();
+
+        // WHEN: parse InputStream with htmlParser
+        Document doc = Jsoup.parse(in, charset, baseUri, parser);
+
+        // THEN: italic element recognized
+        assertEquals("italic", doc.select("i").text());
+    }
+
+    @Test
+    @DisplayName("TC16: parse(Path,charsetName,baseUri) loads file via Path with explicit charset")
+    public void test_TC16() throws IOException {
+        // GIVEN: a temp HTML file at Path
+        Path path = Files.createTempFile("p", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<span>s</span>";
+        Files.write(path, html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://p/";
+
+        // WHEN: parse via Path with explicit charset and baseUri
+        Document doc = Jsoup.parse(path, charset, baseUri);
+
+        // THEN: span parsed and baseUri matches provided
+        assertEquals("s", doc.select("span").text());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC17: parse(Path,charsetName) loads file via Path with explicit charset and derives baseUri from path")
+    public void test_TC17() throws IOException {
+        // GIVEN: a temp HTML file at Path
+        Path path = Files.createTempFile("q", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<b>bold</b>";
+        Files.write(path, html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+
+        // WHEN: parse via Path with explicit charset only
+        Document doc = Jsoup.parse(path, charset);
+
+        // THEN: bold parsed and baseUri is absolute path
+        assertEquals("bold", doc.select("b").text());
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC18: parse(Path) loads file via Path with default charset and derives baseUri from path")
+    public void test_TC18() throws IOException {
+        // GIVEN: a temp HTML file at Path
+        Path path = Files.createTempFile("r", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<u>u</u>";
+        Files.write(path, html.getBytes("UTF-8"));
+
+        // WHEN: parse via Path with no charset argument
+        Document doc = Jsoup.parse(path);
+
+        // THEN: underline parsed and baseUri is absolute path
+        assertEquals("u", doc.select("u").text());
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC19: parse(Path,charsetName,baseUri,Parser) uses XML parser for Path-based input")
+    public void test_TC19() throws IOException {
+        // GIVEN: a temp HTML file containing self-closed <z/>
+        Path path = Files.createTempFile("z", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<z/>";
+        Files.write(path, html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://z/";
+        Parser parser = Parser.xmlParser();
+
+        // WHEN: parse via Path with xmlParser
+        Document doc = Jsoup.parse(path, charset, baseUri, parser);
+
+        // THEN: self-closed element parsed
+        assertEquals(1, doc.select("z").size());
+    }
+
+    @Test
+    @DisplayName("TC20: parse((String)null) throws NullPointerException when html is null in single-arg overload")
+    public void test_TC20() {
+        // GIVEN: html argument is null
+        String html = null;
+        // WHEN/THEN: calling parse(html) should throw NPE
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html));
+    }
+
+    @Test
+    @DisplayName("TC21: parse(URL,timeoutMillis) successfully fetches and parses an HTTP URL with stub server")
+    public void test_TC21() throws Exception {
+        // GIVEN: start a local HTTP stub returning "<p>ok</p>"
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange exchange) throws IOException {
+                byte[] resp = "<p>ok</p>".getBytes("UTF-8");
+                exchange.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                exchange.sendResponseHeaders(200, resp.length);
+                exchange.getResponseBody().write(resp);
+                exchange.close();
+            }
+        });
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://localhost:" + port + "/");
+
+        // WHEN: parse the URL with timeout
+        Document doc = Jsoup.parse(url, 5000);
+
+        // THEN: paragraph is parsed
+        assertEquals("ok", doc.select("p").text());
+
+        // cleanup stub
+        server.stop(0);
+    }
+}

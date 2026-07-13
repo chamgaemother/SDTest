@@ -1,0 +1,77 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.internal.SharedConstants;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parseBodyFragment_2_Test {
+
+    @Test
+    @DisplayName("clean(html, empty baseUri, safelist that preserves relative links) uses DummyUri placeholder")
+    public void test_TC10() {
+        // B0→B1(true)→B2→B3→B4: empty baseUri and preserveRelativeLinks(true) triggers DummyUri assignment
+        String html = "<a href=\"img.png\">pic</a>";
+        Safelist list = Safelist.relaxed();
+        list.preserveRelativeLinks(true);
+
+        String out = Jsoup.clean(html, list);
+
+        // Expect the href to be resolved against DummyUri from SharedConstants
+        String expectedHref = SharedConstants.DummyUri + "/img.png";
+        assertTrue(out.contains("href=\"" + expectedHref + "\""),
+            "Output should contain href resolved with DummyUri: " + expectedHref);
+    }
+
+    @Test
+    @DisplayName("clean(html, empty baseUri, safelist that does not preserve relative links) removes relative URLs")
+    public void test_TC11() {
+        // B0→B1(false)→B3→B4: empty baseUri and preserveRelativeLinks(false) should remove or blank href
+        String html = "<a href=\"x.html\">link</a>";
+        Safelist list = Safelist.none();
+        list.preserveRelativeLinks(false);
+
+        String out = Jsoup.clean(html, list);
+
+        // Should either remove href attribute or leave it empty
+        boolean noHref = out.contains("<a>");
+        boolean emptyHref = out.contains("href=\"\"");
+        assertTrue(noHref || emptyHref,
+            "Output should not preserve relative link: " + out);
+    }
+
+    @Test
+    @DisplayName("clean(html, non-empty baseUri, safelist that preserves relative links) skips DummyUri assignment")
+    public void test_TC12() {
+        // B0→B1(false by non-empty baseUri)→B3→B4: non-empty baseUri used for resolution
+        String html = "<img src=\"pic.png\">";
+        String baseUri = "http://ex.com/dir/";
+        Safelist list = Safelist.relaxed();
+        list.preserveRelativeLinks(true);
+
+        String out = Jsoup.clean(html, baseUri, list);
+
+        // Expect src resolved against provided baseUri
+        String expectedSrc = "http://ex.com/dir/pic.png";
+        assertTrue(out.contains("src=\"" + expectedSrc + "\""),
+            "Output should contain src resolved against baseUri: " + expectedSrc);
+    }
+
+    @Test
+    @DisplayName("clean(html, baseUri, safelist, with custom OutputSettings applies settings without altering cleaning")
+    public void test_TC13() {
+        // B0→B1(false)→B3→B5→B6: using overload with outputSettings, ensure settings applied and tags filtered by safelist
+        String html = "<b>Bold</b><script>alert(1)</script>";
+        String baseUri = "";
+        Safelist list = Safelist.simpleText();
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+
+        String out = Jsoup.clean(html, baseUri, list, os);
+
+        // simpleText safelist allows only textual content; script and tags removed, prettyPrint=false suppresses formatting
+        assertEquals("Bold", out, "Output should be plain 'Bold' without HTML tags or scripts");
+    }
+}

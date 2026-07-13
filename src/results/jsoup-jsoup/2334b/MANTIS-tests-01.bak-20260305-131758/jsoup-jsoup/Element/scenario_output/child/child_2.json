@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "child(-1) on element with two child Elements throws IndexOutOfBoundsException for negative index on non-empty filtered list",
+      "path": "B0→B3→B5(loop×2)→B6(IndexOutOfBoundsException)",
+      "precondition": "parent with two Element children",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "filtered"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 child negative-index non-empty",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"a\"));",
+        "    parent.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    call parent.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "child(1) after prependChild invalidation rebuilds shadowChildrenRef and returns correct second Element",
+      "path": "B0→B3(first build)→B5(loop×1)→B8(cache set) then B3(cache invalid null)→B5(loop×2)→B8(return)",
+      "precondition": "parent with one Element child and built cache",
+      "expectedResult": "returns newly prepended second element at filtered index 1",
+      "tags": [
+        "cache",
+        "iteration",
+        "rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 child rebuild from prepend invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"p\");",
+        "    parent.appendChild(first);",
+        "    // build cache",
+        "    parent.child(0);",
+        "    Element second = new Element(\"span\");",
+        "  WHEN",
+        "    // invalidate via prependChild",
+        "    parent.prependChild(second);",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(first, result)",
+        "    // the filtered elements are [second, first], so index 1 is first",
+        "END"
+      ]
+    }
+  ]
+}

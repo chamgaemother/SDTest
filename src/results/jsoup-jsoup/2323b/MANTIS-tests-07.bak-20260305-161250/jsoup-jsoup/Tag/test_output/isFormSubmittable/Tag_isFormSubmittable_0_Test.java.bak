@@ -1,0 +1,46 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Tag;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("TC01_O1: Default overload on known submittable tag returns true (formSubmit==true)")
+    public void test_TC01_O1() {
+        // GIVEN: a known submittable tag "input" (pre-registered with formSubmit = true)
+        Tag tag = Tag.valueOf("input");
+        // WHEN: calling isFormSubmittable()
+        boolean result = tag.isFormSubmittable();
+        // THEN: it should return true because 'input' is a known tag marked submittable
+        assertTrue(result, "Expected 'input' tag to be submittable by default");
+    }
+
+    @Test
+    @DisplayName("TC02_O2: Overload with ParseSettings on known non-submittable tag returns false (formSubmit==false)")
+    public void test_TC02_O2() {
+        // GIVEN: a known non-submittable tag "div" (formSubmit defaults to false)
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf("div", settings);
+        // WHEN: calling isFormSubmittable()
+        boolean result = tag.isFormSubmittable();
+        // THEN: it should return false because 'div' is not in the submittable list
+        assertFalse(result, "Expected 'div' tag to not be submittable even with custom ParseSettings");
+    }
+
+    @Test
+    @DisplayName("TC03_O3: Overload with namespace and settings on unknown tag returns false (default new generic tag formSubmit==false)")
+    public void test_TC03_O3() {
+        // GIVEN: an unknown tag "mytag" in custom namespace, default generic tags have formSubmit = false
+        ParseSettings settings = ParseSettings.preserveCase;
+        String ns = "custom";
+        Tag tag = Tag.valueOf("mytag", ns, settings);
+        // WHEN: calling isFormSubmittable()
+        boolean result = tag.isFormSubmittable();
+        // THEN: it should return false because new generic tags are not submittable by default
+        assertFalse(result, "Expected unknown tag 'mytag' to not be submittable by default");
+    }
+}

@@ -1,0 +1,44 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "String overload propagates RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B3",
+      "precondition": "TreeBuilder.parse(StringReader) throws RuntimeException(\"stub fail\")",
+      "expectedResult": "RuntimeException(\"stub fail\") is propagated",
+      "tags": [
+        "exception",
+        "delegation",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput string-propagates-exception",
+        "  GIVEN",
+        "    // Arrange a stub TreeBuilder whose parse throws",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      @Override public Parser newInstance() { return new Parser(this); }",
+        "      @Override public Document parse(Reader input, String baseUri, Parser parser) {",
+        "        throw new RuntimeException(\"stub fail\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) { throw new UnsupportedOperationException(); }",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }",
+        "      @Override public boolean isContentForTagData(String normalName) { return false; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token token) { }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    // Act: call string overload triggering stub exception",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    // Assert: exception message matches stub",
+        "    throws RuntimeException with message \"stub fail\";",
+        "END"
+      ]
+    }
+  ]
+}

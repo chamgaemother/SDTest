@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Element.NodeList;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_2_Test {
+
+    @Test
+    @DisplayName("TC12: children() creates and stores cache when none exists (cache-stash path)")
+    public void test_TC12() throws Exception {
+        // GIVEN: an Element with no attributes and one child Element
+        Element el = new Element("div");
+        Element child = new Element("span");
+        el.appendChild(child);
+        // At this point, attributes == null so hasChildNodes() true but no cache yet
+
+        // WHEN: call children() first time to create and stash cache
+        Elements children = el.children();
+        // this traverses B0→B2→B3→B4→B5→B6: triggers stashChildren
+
+        // THEN: confirm one child returned
+        assertEquals(1, children.size(), "Should return exactly one child element");
+        // THEN: confirm attributes.userData contains stash entries
+        Attributes attrs = el.attributes();
+        Map<String, Object> userData = attrs.userData();
+        assertTrue(userData.containsKey("jsoup.childEls"), "Cache key jsoup.childEls should be present");
+        assertTrue(userData.containsKey("jsoup.childElsMod"), "Cache key jsoup.childElsMod should be present");
+
+        // THEN: confirm mod count matches childNodes.modCount()
+        // reflectively get private childNodes field
+        Field cnField = Element.class.getDeclaredField("childNodes");
+        cnField.setAccessible(true);
+        Object nodeList = cnField.get(el);
+        // reflectively invoke modCount()
+        Method modCountMethod = nodeList.getClass().getDeclaredMethod("modCount");
+        modCountMethod.setAccessible(true);
+        int actualModCount = (int) modCountMethod.invoke(nodeList);
+        Object storedMod = userData.get("jsoup.childElsMod");
+        assertEquals(actualModCount, storedMod, "Stored mod count should match childNodes.modCount()");
+    }
+
+    @Test
+    @DisplayName("TC13: Second children() call hits implicit cache (cache-hit after stash)")
+    public void test_TC13() throws Exception {
+        // GIVEN: an Element with one child and initial cache populated by first children()
+        Element el = new Element("div");
+        Element child = new Element("span");
+        el.appendChild(child);
+        // initial call to create and stash cache
+        Elements first = el.children();
+
+        // reflectively access the internal 'elements' field of Elements
+        Field elementsField = Elements.class.getDeclaredField("elements");
+        elementsField.setAccessible(true);
+        Object firstList = elementsField.get(first);
+        assertNotNull(firstList, "First elements internal list should not be null");
+
+        // WHEN: call children() second time, should hit cache B0→B2→B3→B4→B7
+        Elements second = el.children();
+        Object secondList = elementsField.get(second);
+
+        // THEN: the internal list instance should be identical (cache hit)
+        assertSame(firstList, secondList, "Second children() should reuse the same cached list instance");
+    }
+}

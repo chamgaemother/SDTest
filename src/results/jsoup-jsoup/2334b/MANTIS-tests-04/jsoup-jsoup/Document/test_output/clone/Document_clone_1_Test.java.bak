@@ -1,0 +1,57 @@
+package org.jsoup.nodes;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Test class for Document.clone() ensuring deep copy semantics for outputSettings and parser.
+ */
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() produces independent outputSettings and parser clones such that modifying original does not affect clone")
+    public void test_TC02() {
+        // GIVEN a new Document shell with default settings
+        Document doc = Document.createShell("/base");
+        // WHEN we clone the document
+        Document copy = doc.clone();
+
+        // Mutate the original's outputSettings charset and parser error tracking
+        doc.outputSettings().charset(Charset.forName("UTF-16"));
+        Parser origParser = doc.parser();
+        origParser.setTrackErrors(5);  // change original parser's error threshold
+        doc.parser(origParser);
+
+        // THEN the clone should retain the original default charset (UTF-8) and trackErrors (0)
+        assertEquals("UTF-8", copy.outputSettings().charset().name(),
+                "The cloned document's charset should remain UTF-8 after original charset mutation");
+        assertEquals(0, copy.parser().getTrackErrors(),
+                "The cloned document's parser should retain trackErrors=0 after original parser mutation");
+    }
+
+    @Test
+    @DisplayName("clone() modifications to clone do not affect original's outputSettings and parser")
+    public void test_TC03() {
+        // GIVEN a new Document shell with default settings
+        Document doc = Document.createShell("/doc");
+        // WHEN we clone the document
+        Document copy = doc.clone();
+
+        // Mutate the clone's outputSettings syntax and parser error tracking
+        copy.outputSettings().syntax(Document.OutputSettings.Syntax.xml);  // switch clone to XML
+        Parser copyParser = copy.parser();
+        copyParser.setTrackErrors(7);  // modify clone parser
+        copy.parser(copyParser);
+
+        // THEN the original should remain at default HTML syntax and trackErrors=0
+        assertEquals(Document.OutputSettings.Syntax.html, doc.outputSettings().syntax(),
+                "The original document's syntax should remain HTML after clone syntax mutation");
+        assertEquals(0, doc.parser().getTrackErrors(),
+                "The original document's parser should retain trackErrors=0 after clone parser mutation");
+    }
+}

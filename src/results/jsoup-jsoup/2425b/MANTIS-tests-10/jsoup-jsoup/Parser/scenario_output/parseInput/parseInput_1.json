@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "parseInput(Reader, baseUri) propagates a runtime exception from custom TreeBuilder.parse and still unlocks",
+      "path": "B0→B1→B2→B3(exception)→B4→B5",
+      "precondition": "Parser created with a TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is propagated",
+      "tags": [
+        "exception",
+        "unlock",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseInput Reader overload unlock-on-exception",
+        "  GIVEN",
+        "    // Arrange a Parser with a stub TreeBuilder that always throws",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"parse failure\");",
+        "      }",
+        "      public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return null; }",
+        "      public TagSet defaultTagSet() { return TagSet.HTML(); }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    Reader reader = new StringReader(\"<ok/>\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"uri\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"parse failure\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(String, baseUri) propagates a runtime exception from custom TreeBuilder.parse and still unlocks",
+      "path": "B0→B1→B2→B3(exception)→B4→B5",
+      "precondition": "Parser.htmlParser replaced via reflection to use a stub TreeBuilder that throws",
+      "expectedResult": "IllegalArgumentException is propagated",
+      "tags": [
+        "exception",
+        "unlock",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseInput String overload unlock-on-exception",
+        "  GIVEN",
+        "    // Arrange a Parser with a stub TreeBuilder that always throws",
+        "    TreeBuilder stubBuilder = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new IllegalArgumentException(\"string parse fail\");",
+        "      }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException with message \"string parse fail\";",
+        "END"
+      ]
+    }
+  ]
+}

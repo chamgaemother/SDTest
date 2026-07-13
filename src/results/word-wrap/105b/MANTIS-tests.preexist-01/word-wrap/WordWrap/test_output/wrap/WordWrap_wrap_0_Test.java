@@ -1,0 +1,132 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.davidmoten.text.utils.WordWrap.Builder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.IORuntimeException;
+
+public class WordWrap_wrap_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1 wrap() returns input unchanged when text length ≤ maxWidth covering no-wrap branch")
+    void test_TC01_O1() {
+        // input shorter than default maxWidth(80), so no wrapping occurs
+        Builder b = org.davidmoten.text.utils.WordWrap.from("Hello World");
+        String result = b.build();  // Changed from wrap() to build()
+        assertEquals("Hello World", result);
+    }
+
+    @Test
+    @DisplayName("TC02_O1 wrap() splits lines at newline characters covering explicit newline branch")
+    void test_TC02_O1() {
+        // existing newline should be preserved as line boundary
+        Builder b = org.davidmoten.text.utils.WordWrap.from("Line1\nLine2");
+        String result = b.build();  // Changed from wrap() to build()
+        assertEquals("Line1\nLine2", result);
+    }
+
+    @Test
+    @DisplayName("TC03_O1 wrap() breaks long word across lines with hyphens when breakWords true covering broken-word-with-hyphen branch")
+    void test_TC03_O1() {
+        // long unbroken word >5 chars triggers hyphenation
+        Builder b = org.davidmoten.text.utils.WordWrap.from("ABCDEFGHIJKL").maxWidth(5);
+        String result = b.build();  // Changed from wrap() to build()
+        // should insert hyphens at break, e.g., "ABC-"
+        assertTrue(result.contains("ABC-"), "expected hyphen at line break");
+    }
+
+    @Test
+    @DisplayName("TC04_O1 wrap() does not break long word when breakWords false covering broken-word-no-hyphen branch")
+    void test_TC04_O1() {
+        // with breakWords disabled, no hyphens should appear
+        Builder b = org.davidmoten.text.utils.WordWrap.from("ABCDEFGHIJKL").maxWidth(5).breakWords(false);
+        String result = b.build();  // Changed from wrap() to build()
+        assertFalse(result.contains("-"), "should not contain hyphen when breakWords=false");
+    }
+
+    @Test
+    @DisplayName("TC05_O2 wrap(Writer) throws IORuntimeException when writer.write throws IOException covering writer-exception path")
+    void test_TC05_O2() {
+        // use a Writer that always throws IOException
+        Writer stub = new Writer() {
+            @Override public void write(char[] cbuf, int off, int len) throws IOException { throw new IOException("fail"); }
+            @Override public void flush() throws IOException {}
+            @Override public void close() throws IOException {}
+        };
+        Builder b = org.davidmoten.text.utils.WordWrap.from("text");
+        IORuntimeException ex = assertThrows(IORuntimeException.class, () -> b.wrap(stub));
+        assertTrue(ex.getCause() instanceof IOException);
+    }
+
+    @Test
+    @DisplayName("TC06_O3 wrapToList() returns list with single line when input fits in one line covering wrapToList consumer branch")
+    void test_TC06_O3() {
+        // input fits in one line, wrapToList should return single element
+        Builder b = org.davidmoten.text.utils.WordWrap.from("Hello");
+        List<String> lines = b.wrapToList();
+        assertEquals(1, lines.size());
+        assertEquals("Hello", lines.get(0));
+    }
+
+    @Test
+    @DisplayName("TC07_O4 wrap(LineConsumer) writes multiple lines covering LineConsumer.writeNewLine branch")
+    void test_TC07_O4() {
+        // two words separated by spaces fitting default width triggers two lines
+        List<String> collected = new ArrayList<>();
+        org.davidmoten.text.utils.WordWrap.from("A B C").wrap(new LineConsumer() {
+            private StringBuilder sb = new StringBuilder();
+            @Override public void write(char[] chars, int offset, int length) {
+                sb.append(chars, offset, length);
+            }
+            @Override public void writeNewLine() {
+                collected.add(sb.toString());
+                sb.setLength(0);
+            }
+            @Override public void write(String s) {
+                sb.append(s);
+            }
+        });
+        // after final flush the last segment is not added by writeNewLine, so expect two lines
+        assertTrue(collected.size() >= 2, "expected at least two lines collected");
+    }
+
+    @Test
+    @DisplayName("TC08_O5 wrap(File,Charset) writes to file covering file-output path")
+    void test_TC08_O5() throws IOException {
+        // writes wrapped output to provided file
+        File temp = Files.createTempFile("ww", ".txt").toFile();
+        temp.deleteOnExit();
+        org.davidmoten.text.utils.WordWrap.from("Hello").wrap(temp, StandardCharsets.UTF_8);
+        String content = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);
+        assertEquals("Hello", content);
+    }
+
+    @Test
+    @DisplayName("TC09_O6 wrapUtf8(String) writes UTF-8 file covering wrapUtf8 filename overload")
+    void test_TC09_O6() throws IOException {
+        // writes under UTF-8 to filename
+        File temp = Files.createTempFile("ww", ".txt").toFile();
+        temp.deleteOnExit();
+        String fn = temp.getAbsolutePath();
+        org.davidmoten.text.utils.WordWrap.from("Hello").wrapUtf8(fn);
+        String content = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);
+        assertEquals("Hello", content);
+    }
+}

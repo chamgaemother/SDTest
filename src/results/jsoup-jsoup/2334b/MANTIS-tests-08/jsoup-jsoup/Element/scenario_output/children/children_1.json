@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() reuses cached element list when no mutation occurs (shadowChildrenRef non-null branch)",
+      "path": "childNodeSize()>0→shadowChildrenRef==null first→shadowChildrenRef.get()!=null subsequent",
+      "precondition": "Element has one child Element and no intervening mutations",
+      "expectedResult": "second children() returns same underlying element list (size==1)",
+      "tags": [
+        "cache",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children caching without mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    Elements first = el.children(); // builds and caches list",
+        "    Elements second = el.children(); // should use cached list",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert second.size() == 1;",
+        "    // verify same backing list reused: mutations to returned Elements do not affect cache",
+        "    first.remove(0);",
+        "    assert second.size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() rebuilds after removal mutation (nodelistChanged on removal branch)",
+      "path": "childNodeSize()>0→shadowChildrenRef non-null→nodelistChanged→shadowChildrenRef cleared→rebuild",
+      "precondition": "Element with two child Elements, cache populated",
+      "expectedResult": "after removing one child and triggering nodelistChanged, children() returns updated list size==1",
+      "tags": [
+        "mutation",
+        "negative",
+        "iteration"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 children after child removal",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element a = new Element(\"li\");",
+        "    Element b = new Element(\"li\");",
+        "    el.appendChild(a); el.appendChild(b);",
+        "    el.children(); // populate cache",
+        "  WHEN",
+        "    el.childNodes().remove(a);",
+        "    el.nodelistChanged();",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"li\");",
+        "END"
+      ]
+    }
+  ]
+}

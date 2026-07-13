@@ -1,0 +1,76 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("attr(String key, String value) sets a new attribute when none existed")
+    void test_TC01_O1() {
+        // Branch B0→B1→B3: no existing attributes (attributes initially null), adding new key
+        Element el = new Element("div");
+        el.attr("foo", "bar");
+        Attributes attrs = el.attributes();
+        assertTrue(attrs.hasKey("foo"), "New attribute 'foo' should be present");
+        assertEquals("bar", attrs.get("foo"), "Attribute 'foo' value should be 'bar'");
+    }
+
+    @Test
+    @DisplayName("attr(String key, String value) replaces existing attribute value")
+    void test_TC02_O1() {
+        // Branch B0→B1→B3: existing attribute present, should replace value
+        Element el = new Element("div");
+        el.attr("foo", "old");  // precondition: existing attribute
+        el.attr("foo", "new");
+        Attributes attrs = el.attributes();
+        assertTrue(attrs.hasKey("foo"), "Attribute 'foo' should still be present after replacement");
+        assertEquals("new", attrs.get("foo"), "Attribute 'foo' value should be updated to 'new'");
+    }
+
+    @Test
+    @DisplayName("attr(String key, String value) throws IllegalArgumentException when key is null")
+    void test_TC03_O1() {
+        // Branch B0→B1→B2: null key should trigger validation exception
+        Element el = new Element("div");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> el.attr(null, "value"),
+            "Passing null key must throw IllegalArgumentException");
+        // No state change: attributes should remain null or empty
+        assertFalse(el.hasAttributes(), "No attributes should be set after exception");
+    }
+
+    @Test
+    @DisplayName("attr(String key, boolean value) adds boolean attribute when value true")
+    void test_TC04_O2() {
+        // Branch B0→B1→B4: boolean overload with true should add attribute with empty string value
+        Element el = new Element("span");
+        el.attr("checked", true);
+        Attributes attrs = el.attributes();
+        assertTrue(attrs.hasKey("checked"), "Boolean attribute 'checked' should be present when value is true");
+        assertEquals("", attrs.get("checked"), "Boolean attribute 'checked' should have empty string as its value");
+    }
+
+    @Test
+    @DisplayName("attr(String key, boolean value) removes existing attribute when value false")
+    void test_TC05_O2() {
+        // Branch B0→B1→B5: boolean overload with false should remove existing attribute
+        Element el = new Element("span");
+        el.attr("foo", "bar"); // precondition: existing attribute
+        el.attr("foo", false);
+        Attributes attrs = el.attributes();
+        assertFalse(attrs.hasKey("foo"), "Attribute 'foo' should be removed when boolean value is false");
+    }
+
+    @Test
+    @DisplayName("attr(String key, boolean value) leaves absent attribute when value false")
+    void test_TC06_O2() {
+        // Branch B0→B1→B5: boolean overload with false on non-existent attribute should have no effect
+        Element el = new Element("span");
+        el.attr("foo", false);
+        Attributes attrs = el.attributes();
+        assertFalse(attrs.hasKey("foo"), "Attribute 'foo' should remain absent when boolean value is false and attribute did not exist");
+    }
+}

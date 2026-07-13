@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() recomputes filtered list after childNodes change invalidates cache",
+      "path": "B0→B1[>0]→B3[ref==null]→loop→B5→nodelistChanged→B1[>0]→B3[ref==null]→loop→B5",
+      "precondition": "Element has no initial children",
+      "expectedResult": "Initial children() returns empty; after appendChild, children() returns list with the new Element",
+      "tags": [
+        "cache",
+        "mutation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children recompute after mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements first = el.children();      // populates shadowChildrenRef with empty list",
+        "    el.appendChild(new Element(\"span\")); // triggers onContentsChanged -> shadowChildrenRef cleared",
+        "    Elements second = el.children();     // recomputes childElementsList",
+        "  THEN",
+        "    assert first.isEmpty();",
+        "    assertEquals(1, second.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() short-circuits to empty when all elements removed, even if cache was previously populated",
+      "path": "B0→B1[>0]→B3[ref==null]→loop→B5→nodelistChanged→B1[==0]→B2[return EmptyChildren]",
+      "precondition": "Element has one Element child",
+      "expectedResult": "After empty(), children() returns empty list without loop",
+      "tags": [
+        "cache",
+        "empty",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children empty after removal",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    el.appendChild(li);               // initial list has one element",
+        "    el.children();                    // populate shadowChildrenRef",
+        "  WHEN",
+        "    el.empty();                       // removes all childNodes and triggers nodelistChanged",
+        "    Elements result = el.children();  // childNodeSize==0 shortcut",
+        "  THEN",
+        "    assertTrue(result.isEmpty());",
+        "END"
+      ]
+    }
+  ]
+}

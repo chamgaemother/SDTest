@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "static parse(html, baseUri) returns a Document with parsed elements",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body() contains a <p> element with correct text",
+      "tags": [
+        "static",
+        "positive",
+        "parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 static-parse returns document",
+        "  GIVEN",
+        "    String html = \"<html><body><p>Hello</p></body></html>\";",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.parse(html, base);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    assertEquals(\"Hello\", doc.selectFirst(\"p\").text());"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "static parseFragment(fragment, context, baseUri, errorList) tracks errors when provided",
+      "path": "B0→B1→B4→B6→B8",
+      "precondition": "none",
+      "expectedResult": "returns list of nodes and errors list populated for malformed HTML",
+      "tags": [
+        "static",
+        "error-tracking",
+        "fragment"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 fragment-parse with errorList",
+        "  GIVEN",
+        "    String fragment = \"<div><span></div>\"; // mismatched tags",
+        "    Element ctx = new Document(\"\").body();",
+        "    ParseErrorList errs = ParseErrorList.tracking(10);",
+        "    String base = \"\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragment(fragment, ctx, base, errs);",
+        "  THEN",
+        "    assertFalse(nodes.isEmpty());",
+        "    assertTrue(errs.size() > 0, \"Expected at least one parse error\");"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "static parseXmlFragment(xml, baseUri) returns node list with XML element",
+      "path": "B0→B2→B4→B7",
+      "precondition": "none",
+      "expectedResult": "single Element <root> in returned list",
+      "tags": [
+        "static",
+        "positive",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xml-fragment-parse",
+        "  GIVEN",
+        "    String xml = \"<root><child/></root>\";",
+        "    String base = \"urn:dummy\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, base);",
+        "  THEN",
+        "    assertEquals(1, nodes.size());",
+        "    assertEquals(\"root\", ((Element)nodes.get(0)).tagName());"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "static parseBodyFragment populates body with only first of multiple nodes after re-parenting loop",
+      "path": "B0→B3→B5(loop×1)→B6→B8",
+      "precondition": "none",
+      "expectedResult": "Document.body() contains both <a> and <b> in order",
+      "tags": [
+        "static",
+        "loop",
+        "fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 body-fragment-multiple-nodes",
+        "  GIVEN",
+        "    String fragment = \"<a>one</a><b>two</b>\";",
+        "    String base = \"http://test\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    List<Element> children = doc.body().children();",
+        "    assertEquals(2, children.size());",
+        "    assertEquals(\"a\", children.get(0).tagName());",
+        "    assertEquals(\"b\", children.get(1).tagName());"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "unescapeEntities returns correct unescaped string for attribute and text contexts",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "both inAttribute=true and false return expected strings",
+      "tags": [
+        "static",
+        "positive",
+        "entities"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 unescape-entities both-modes",
+        "  GIVEN",
+        "    String ent = \"&lt;tag&gt; &amp; &quot;\\'\";\";",
+        "  WHEN",
+        "    String t1 = Parser.unescapeEntities(ent, false);",
+        "    String t2 = Parser.unescapeEntities(ent, true);",
+        "  THEN",
+        "    assertTrue(t1.contains(\"<tag> & \\\"'\"));",
+        "    assertTrue(t2.contains(\"<tag> & \\\"'\"));"
+      ]
+    }
+  ]
+}

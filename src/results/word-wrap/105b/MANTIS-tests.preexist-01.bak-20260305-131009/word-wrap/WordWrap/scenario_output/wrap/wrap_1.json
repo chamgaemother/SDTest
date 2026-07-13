@@ -1,0 +1,171 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "maxWidth ≤ 0 triggers IllegalArgumentException in Builder.maxWidth",
+      "path": "B0→B1→B2",
+      "precondition": "WordWrap.Builder b = WordWrap.from(\"irrelevant\");",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "parameter-validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 maxWidth validation throws",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"text\");",
+        "  WHEN",
+        "    call b.maxWidth(0);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Carriage return characters are ignored and only line feed triggers wrap",
+      "path": "B0→B3(loop with ch='\\r')→B3(loop with ch='\\n')→B4→B5",
+      "precondition": "none",
+      "expectedResult": "CR is skipped, LF causes line break",
+      "tags": [
+        "positive",
+        "loop",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 ignore carriage return",
+        "  GIVEN",
+        "    String input = \"A\\r\\nB\";",
+        "    Builder b = WordWrap.from(input).maxWidth(10);",
+        "  WHEN",
+        "    String output = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"A\\nB\", output);"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Punctuation not in extraWordChars triggers wrapping at punctuation boundary",
+      "path": "B0→B3→B6(punctuation path)→B7→B8",
+      "precondition": "Builder.extraWordChars set to empty",
+      "expectedResult": "Text splits before punctuation mark",
+      "tags": [
+        "boundary",
+        "punctuation",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 wrap at punctuation when excluded",
+        "  GIVEN",
+        "    String text = \"foo,bar\";",
+        "    Builder b = WordWrap.from(text).extraWordChars(\"\").maxWidth(3);",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"foo\\n,bar\", out);"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrapToList returns correct list of lines for multi-line input",
+      "path": "B0→B3(loop)→B9→B10",
+      "precondition": "none",
+      "expectedResult": "List has individual wrapped lines",
+      "tags": [
+        "positive",
+        "wrapToList",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 wrapToList multi-line",
+        "  GIVEN",
+        "    String input = \"one two three\";",
+        "    Builder b = WordWrap.from(input).maxWidth(4);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"one\",\"two\",\"three\"));"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Non-existent File in wrap(File,charset) throws IORuntimeException",
+      "path": "B0→B11(FileNotFoundException)→B12",
+      "precondition": "File f = new File(\"no-such-file.txt\");",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 wrap with missing file",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8).wrap();",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Reader.close() throws IOException leads to IORuntimeException in wrap",
+      "path": "B0→B1→B13(reader.close throws)→B14",
+      "precondition": "Stub Reader that throws on close, closeReader=true via reflection",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reflection",
+        "cleanup"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 reader close exception",
+        "  GIVEN",
+        "    Reader r stubbed to throw IOException on close;",
+        "    Builder b = reflectively invoke WordWrap.from(r, true);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "writeBrokenWord without hyphens when word length ≤2",
+      "path": "B0→B3→B6(word build)→B7(tooLong→breakWords→writeBrokenWord else branch)→B8",
+      "precondition": "none",
+      "expectedResult": "Word of length 2 splits one char per line without hyphens",
+      "tags": [
+        "positive",
+        "broken-word",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 broken word fallback no hyphen",
+        "  GIVEN",
+        "    String text = \"ab\";",
+        "    Builder b = WordWrap.from(text).maxWidth(1).breakWords(true).insertHyphens(true);",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"a\\nb\", out);"
+      ]
+    }
+  ]
+}

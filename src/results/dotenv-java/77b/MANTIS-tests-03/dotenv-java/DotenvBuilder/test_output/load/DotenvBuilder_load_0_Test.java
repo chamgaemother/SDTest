@@ -1,0 +1,116 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Properties;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class DotenvBuilder_load_0_Test {
+
+    @Test
+    @DisplayName("When systemProperties is false and .env contains two entries, load returns Dotenv without setting system properties (branch-false)")
+    void test_TC01(@TempDir Path tempDir) throws IOException {
+        // GIVEN a .env file with two entries and systemProperties disabled (default)
+        Path envFile = tempDir.resolve(".env");
+        try (PrintWriter w = new PrintWriter(Files.newBufferedWriter(envFile))) {
+            w.println("KEY1=VAL1");
+            w.println("KEY2=VAL2");
+        }
+        // Ensure no prior system properties exist for these keys
+        System.clearProperty("KEY1");
+        System.clearProperty("KEY2");
+
+        // WHEN calling load() with default systemProperties=false => skip setting System properties (branch-false -> B2)
+        Dotenv dotenv = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .load();
+
+        // THEN returned Dotenv.get(...) yields our values, and no System properties were set
+        assertEquals("VAL1", dotenv.get("KEY1"));
+        assertEquals("VAL2", dotenv.get("KEY2"));
+        assertNull(System.getProperty("KEY1"));
+        assertNull(System.getProperty("KEY2"));
+    }
+
+    @Test
+    @DisplayName("When systemProperties is true and .env contains one entry, load sets exactly one system property (branch-true, loop-1)")
+    void test_TC02(@TempDir Path tempDir) throws IOException {
+        // GIVEN a .env file with one entry and systemProperties enabled (branch-true -> B1)
+        Path envFile = tempDir.resolve(".env");
+        try (PrintWriter w = new PrintWriter(Files.newBufferedWriter(envFile))) {
+            w.println("A=1");
+        }
+        System.clearProperty("A");
+
+        // WHEN calling load() with systemProperties=true => loop over 1 entry
+        Dotenv dotenv = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties()
+                .load();
+
+        // THEN returned Dotenv.get("A") == "1" and exactly one System property set
+        assertEquals("1", dotenv.get("A"));
+        assertEquals("1", System.getProperty("A"));
+    }
+
+    @Test
+    @DisplayName("When systemProperties is true and .env contains zero entries, load returns Dotenv without system property loop (branch-true, loop-0)")
+    void test_TC03(@TempDir Path tempDir) throws IOException {
+        // GIVEN an empty .env file and systemProperties enabled (branch-true -> B1) but no entries => loop-0
+        Path envFile = tempDir.resolve(".env");
+        Files.createFile(envFile);
+        // Capture current properties snapshot
+        Properties before = (Properties) System.getProperties().clone();
+
+        // WHEN calling load()
+        new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties()
+                .load();
+
+        // THEN no new System properties are added
+        Properties after = System.getProperties();
+        assertEquals(before, after, "No new system properties should have been added for zero-loop");
+    }
+
+    @Test
+    @DisplayName("When systemProperties is true and .env contains multiple entries, load sets multiple properties (branch-true, loop-N)")
+    void test_TC04(@TempDir Path tempDir) throws IOException {
+        // GIVEN a .env file with two entries and systemProperties enabled (branch-true -> B1, loop-N)
+        Path envFile = tempDir.resolve(".env");
+        try (PrintWriter w = new PrintWriter(Files.newBufferedWriter(envFile))) {
+            w.println("X=foo");
+            w.println("Y=bar");
+        }
+        System.clearProperty("X");
+        System.clearProperty("Y");
+
+        // WHEN calling load()
+        new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties()
+                .load();
+
+        // THEN System properties X and Y are set accordingly
+        assertEquals("foo", System.getProperty("X"));
+        assertEquals("bar", System.getProperty("Y"));
+    }
+
+    @Test
+    @DisplayName("When DotenvParser.parse throws DotenvException, load propagates the exception (exception)")
+    void test_TC05_nonexistentFileThrows() {
+        // GIVEN a non-existent file and default throwIfMissing=true => DotenvReader.parse will throw DotenvException (branch B0)
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory("does_not_exist_dir")
+                .filename("no_such_file.env");
+        // WHEN & THEN load() should throw DotenvException
+        assertThrows(DotenvException.class, builder::load);
+    }
+}

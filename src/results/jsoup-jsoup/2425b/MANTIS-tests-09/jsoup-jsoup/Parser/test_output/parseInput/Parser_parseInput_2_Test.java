@@ -1,0 +1,59 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class Parser_parseInput_2_Test {
+
+    @Test
+    @DisplayName("parseInput(String, baseUri) propagates RuntimeException from TreeBuilder.parse")
+    void test_TC11() {
+        // GIVEN: a stub TreeBuilder that always throws IllegalStateException to exercise exception path B0→B2→B3→exception
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public Document parse(Reader in, String uri, Parser p) {
+                throw new IllegalStateException("stub error");
+            }
+            @Override public void process(org.jsoup.parser.Token token) { /* correct implementation */ }
+            @Override public Document parseFragment(Reader in, org.jsoup.nodes.Element context, String uri) { return null; }
+            @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public org.jsoup.nodes.TagSet defaultTagSet() { return null; }
+            @Override public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(stub);
+        String html = "<a/>";
+        // WHEN & THEN: invoking parseInput(String, String) should propagate the stub exception
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(html, "base"));
+        assertEquals("stub error", ex.getMessage(), "Expected original stub message to propagate");
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, baseUri) propagates RuntimeException from TreeBuilder.parse")
+    void test_TC12() {
+        // GIVEN: a stub TreeBuilder that always throws IllegalStateException to hit exception path B0→B2→B3→exception
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public Document parse(Reader in, String uri, Parser p) {
+                throw new IllegalStateException("fail parse");
+            }
+            @Override public void process(org.jsoup.parser.Token token) { /* correct implementation */ }
+            @Override public Document parseFragment(Reader in, org.jsoup.nodes.Element context, String uri) { return null; }
+            @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public org.jsoup.nodes.TagSet defaultTagSet() { return null; }
+            @Override public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<b>test</b>");
+        // WHEN & THEN: invoking parseInput(Reader, String) should propagate the stub exception
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(reader, "base"));
+        assertEquals("fail parse", ex.getMessage(), "Expected original stub message to propagate");
+    }
+}

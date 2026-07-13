@@ -1,0 +1,118 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseFragmentInput_1_Test {
+
+    /**
+     * Scenario TC07: parseFragmentInput(Reader, context) propagates UncheckedIOException when
+     * StubTreeBuilderFail.parseFragment throws an IOException wrapped in UncheckedIOException.
+     * Path B0→B1→B2(ex)→B3: ensure the lock is acquired (B1) and treeBuilder.parseFragment throws (B2).  
+     */
+    @Test
+    @DisplayName("TC07: parseFragmentInput(Reader, context) propagates UncheckedIOException when TreeBuilder.parseFragment throws")
+    public void test_TC07() {
+        // Arrange: use a stub TreeBuilder that fails on parseFragment to trigger exception path
+        Parser parser = new Parser(new StubTreeBuilderFail());
+        Reader reader = new StringReader("<tag>");
+        Element context = new Element("div");
+        String baseUri = "http://example.com";
+        // Act & Assert: expect the UncheckedIOException thrown from our stub
+        assertThrows(UncheckedIOException.class, () -> parser.parseFragmentInput(reader, context, baseUri));
+    }
+
+    /**
+     * Scenario TC08: parseFragmentInput(String, baseUri) throws NullPointerException when html input is null.
+     * Path B0→B1(ex): the StringReader constructor will throw NPE before locking.
+     */
+    @Test
+    @DisplayName("TC08: parseFragmentInput(String, baseUri) throws NullPointerException when html input is null")
+    public void test_TC08() {
+        // Arrange: stub builder not used because we never reach parsing
+        Parser parser = new Parser(new StubTreeBuilderEmpty());
+        String fragment = null;
+        Element context = null;
+        String baseUri = "";
+        // Act & Assert: creating a StringReader with null should raise NullPointerException
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(fragment, context, baseUri));
+    }
+
+    /**
+     * Stub TreeBuilder that fails on parseFragment by throwing IOException wrapped in UncheckedIOException.
+     */
+    static class StubTreeBuilderFail extends TreeBuilder {
+        @Override
+        public org.jsoup.parser.ParseSettings defaultSettings() {
+            return new ParseSettings(org.jsoup.parser.ParseSettings.preserveCase); // Use correct constructor
+        }
+
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.Html();
+        }
+
+        @Override
+        public TreeBuilder newInstance() {
+            return this; // Return this instance
+        }
+
+        @Override
+        public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+            throw new IllegalStateException("Should not be called");
+        }
+
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            // Simulate an I/O failure inside parseFragment
+            throw new UncheckedIOException(new java.io.IOException("stub failure"));
+        }
+
+        @Override
+        public void process(Token token) { /* No operation */ } // Implement the abstract method
+    }
+
+    /**
+     * Stub TreeBuilder that does nothing; used to construct Parser but not invoked in null-input scenario.
+     */
+    static class StubTreeBuilderEmpty extends TreeBuilder {
+        @Override
+        public org.jsoup.parser.ParseSettings defaultSettings() {
+            return new ParseSettings(org.jsoup.parser.ParseSettings.preserveCase); // Use correct constructor
+        }
+
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.Html();
+        }
+
+        @Override
+        public TreeBuilder newInstance() {
+            return this; // Return this instance
+        }
+
+        @Override
+        public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+            return new org.jsoup.nodes.Document(baseUri);
+        }
+
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            return List.of();
+        }
+
+        @Override
+        public void process(Token token) { /* No operation */ } // Implement the abstract method
+    }
+}

@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "clone() produces a parser instance independent of original when trackErrors is modified on clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original.parser().getErrors().isEmpty()",
+      "expectedResult": "original.parser().getTrackErrors()==0 and clone.parser().getTrackErrors()==10",
+      "tags": [
+        "positive",
+        "independence",
+        "parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone parser independence",
+        "  GIVEN",
+        "    Document original = new Document(\"http://test\");",
+        "    assertTrue(original.parser().getErrors().isEmpty());",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    clone.parser().setTrackErrors(10);",
+        "  THEN",
+        "    assertEquals(0, original.parser().getTrackErrors());",
+        "    assertEquals(10, clone.parser().getTrackErrors());"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() on document with null connection yields clone.connection() as new session not same as original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original.connection field is null",
+      "expectedResult": "clone.connection() != original.connection and is a valid Jsoup session",
+      "tags": [
+        "positive",
+        "branch",
+        "connection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone null-connection branch",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "    // precondition: connection() will return a new session",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    Connection conn1 = original.connection();",
+        "    Connection conn2 = clone.connection();",
+        "  THEN",
+        "    assertNotSame(conn1, conn2);",
+        "    assertNotNull(conn2.newRequest());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() yields deep childNodes independence: modifying clone children does not affect original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original = Document.createShell(\"u\"); original.body().appendElement(\"p\");",
+      "expectedResult": "original.select(\"p\").size()==1 and clone.select(\"p\").size()==1; after clone.body().appendElement(\"div\"), original.select(\"div\").isEmpty()",
+      "tags": [
+        "positive",
+        "independence",
+        "children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone childNodes independence",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"u\");",
+        "    original.body().appendElement(\"p\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    clone.body().appendElement(\"div\");",
+        "  THEN",
+        "    assertEquals(1, original.select(\"p\").size());",
+        "    assertEquals(1, clone.select(\"p\").size());",
+        "    assertTrue(original.select(\"div\").isEmpty());",
+        "    assertEquals(1, clone.select(\"div\").size());"
+      ]
+    }
+  ]
+}

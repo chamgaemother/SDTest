@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() on element with only non-Element children (childNodeSize>0, loop with zero element matches) returns empty Elements",
+      "path": "B0→B3→B5",
+      "precondition": "parent has only TextNode children",
+      "expectedResult": "result.size()==0",
+      "tags": [
+        "positive",
+        "filter",
+        "iteration-zero-match"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children only text nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"hello\");",
+        "    parent.appendText(\"world\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() reflects removal of children via empty() invalidates cache and returns updated empty list",
+      "path": "B0→B3→B5",
+      "precondition": "parent has element children cached then emptied",
+      "expectedResult": "second children() returns size 0 after empty()",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "nodelistChanged"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children after empty invalidates cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"p\");",
+        "    Elements first = parent.children(); // caches [p]",
+        "  WHEN",
+        "    parent.empty(); // removes and nodelistChanged",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert second.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "childElementsList() cache is invalidated after appending TextNode via prependChild() and rebuilds new list instance",
+      "path": "B0→B3→B5",
+      "precondition": "use reflection to access package-private childElementsList",
+      "expectedResult": "after mutate, two childElementsList calls return different instances",
+      "tags": [
+        "private",
+        "reflection",
+        "cache-invalidation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 reflective childElementsList invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"span\");",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    List<Element> firstList = (List<Element>) m.invoke(parent);",
+        "  WHEN",
+        "    parent.prependChild(new TextNode(\"txt\")); // invokes nodelistChanged",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    List<Element> secondList = (List<Element>) m.invoke(parent);",
+        "  THEN",
+        "    assertNotSame(firstList, secondList);",
+        "    assertEquals(1, secondList.size());",
+        "    assertEquals(\"span\", secondList.get(0).tagName());"
+      ]
+    }
+  ]
+}

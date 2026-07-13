@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader, String) propagates exception when TreeBuilder.parse throws IllegalStateException",
+      "path": "B0→B3→B5",
+      "precondition": "parser with stubbed TreeBuilder that throws IllegalStateException in parse(Reader,baseUri,parser)",
+      "expectedResult": "IllegalStateException is thrown with stub message",
+      "tags": [
+        "exception",
+        "negative",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput Reader-propagates-stub-exception",
+        "  GIVEN",
+        "    // Arrange a Parser with a TreeBuilder stub that throws IllegalStateException",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        throw new IllegalStateException(\"stub fail\");",
+        "      }",
+        "      @Override public ParseSettings defaultSettings() { return parser.settings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(String html, String baseUri, Parser parser) { throw new UnsupportedOperationException(); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String uri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public void process(Token token) { }",
+        "    };",
+        "    parser.setTreeBuilder(stub);",
+        "    Reader reader = new StringReader(\"irrelevant\");",
+        "  WHEN",
+        "    // Act & Assert propagation",
+        "    call parser.parseInput(reader, \"http://base\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub fail\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(String, String) propagates exception when TreeBuilder.parse throws IllegalStateException",
+      "path": "B0→B1→B3→B5",
+      "precondition": "parser with stubbed TreeBuilder that throws IllegalStateException in parse(Reader,baseUri,parser)",
+      "expectedResult": "IllegalStateException is thrown with stub message",
+      "tags": [
+        "exception",
+        "negative",
+        "propagation",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput String-overload-propagates-stub-exception",
+        "  GIVEN",
+        "    // Arrange a Parser with a TreeBuilder stub that throws IllegalStateException on parse(Reader)",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        throw new IllegalStateException(\"stub fail string\");",
+        "      }",
+        "      @Override public ParseSettings defaultSettings() { return parser.settings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(String html, String baseUri, Parser parser) { throw new UnsupportedOperationException(); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String uri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public void process(Token token) { }",
+        "    };",
+        "    parser.setTreeBuilder(stub);",
+        "    String html = \"<p>x</p>\";",
+        "    String base = \"http://base\";",
+        "  WHEN",
+        "    // Act & Assert propagation via String overload",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub fail string\"",
+        "END"
+      ]
+    }
+  ]
+}

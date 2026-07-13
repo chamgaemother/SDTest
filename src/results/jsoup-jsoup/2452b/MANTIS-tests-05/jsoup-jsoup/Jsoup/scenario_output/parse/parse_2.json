@@ -1,0 +1,182 @@
+{
+  "scenarios": [
+    {
+      "id": "TC22",
+      "description": "parse(String, String, Parser) throws NullPointerException when parser is null",
+      "path": "B0→B1→B2(exception)",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse with null parser throws NPE",
+        "  GIVEN",
+        "    String html = \"<p>X</p>\";",
+        "    String baseUri = \"http://a/\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(String, Parser) throws NullPointerException when parser is null",
+      "path": "B0→B1→B3(exception)",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse(html, null parser) throws NPE",
+        "  GIVEN",
+        "    String html = \"<b>Y</b>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "clean(bodyHtml, Safelist) returns escaped HTML when preserveRelativeLinks is false",
+      "path": "B0→B4→B5→B6→B7",
+      "precondition": "none",
+      "expectedResult": "returns cleaned HTML with entities escaped",
+      "tags": [
+        "positive",
+        "clean",
+        "safelist"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 clean without relative link preservation",
+        "  GIVEN",
+        "    String html = \"<p>5 is < 6</p>\";",
+        "    Safelist safelist = Safelist.none();",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, safelist);",
+        "  THEN",
+        "    assert result.contains(\"5 is &lt; 6\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "clean(bodyHtml, \"\", Safelist) returns unmodified HTML when preserveRelativeLinks is true and baseUri empty",
+      "path": "B0→B1→B2(branch)→B3→B5→B6→B7",
+      "precondition": "none",
+      "expectedResult": "returns cleaned HTML preserving relative links",
+      "tags": [
+        "positive",
+        "clean",
+        "safelist",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 clean with preserveRelativeLinks and empty baseUri",
+        "  GIVEN",
+        "    String html = \"<a href='x.html'>Link</a>\";",
+        "    Safelist safelist = Safelist.relaxed().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, \"\", safelist);",
+        "  THEN",
+        "    assert result.contains(\"href=\\\"x.html\\\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "clean(bodyHtml, baseUri, Safelist, OutputSettings) applies outputSettings changes",
+      "path": "B0→B4→B5→B6→B8",
+      "precondition": "none",
+      "expectedResult": "returns HTML using provided outputSettings",
+      "tags": [
+        "positive",
+        "clean",
+        "outputSettings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 clean with custom OutputSettings",
+        "  GIVEN",
+        "    String html = \"<p>Text</p>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, \"http://u/\", safelist, os);",
+        "  THEN",
+        "    assert result.equals(\"<p>Text</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "isValid returns true when input HTML conforms to the safelist",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returns true for valid HTML",
+      "tags": [
+        "positive",
+        "validation",
+        "isValid"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 isValid returns true for conforming HTML",
+        "  GIVEN",
+        "    String html = \"<p>Okay</p>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean ok = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert ok == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "isValid returns false when input HTML has disallowed tags",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "returns false for invalid HTML",
+      "tags": [
+        "negative",
+        "validation",
+        "isValid"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC28 isValid returns false for non-conforming HTML",
+        "  GIVEN",
+        "    String html = \"<script>alert(1)</script>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean ok = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert ok == false;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty list when element has no child nodes (childNodeSize()==0 branch)",
+      "path": "B0→B1",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns single-element list when one Element child present (childNodeSize()>0 and one loop iteration)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"p\"));",
+      "expectedResult": "returned Elements contains exactly the child <p> element",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-element",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendChild(new Element(\"p\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; result.get(0).tagName().equals(\"p\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() filters out non-Element nodes: only Element children returned when mixed nodes present",
+      "path": "B0→B1→B2(loop×2)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"text\")); el.appendChild(new Element(\"span\"));",
+      "expectedResult": "returned Elements contains only the <span> element and excludes TextNode",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendChild(new TextNode(\"x\")); el.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() invalidates and rebuilds cache after node list change (nodelistChanged resets shadowChildrenRef)",
+      "path": "B0→B1→B2(loop×1)→B4→B1→B2(loop×2)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"a\")); el.children(); // prime cache",
+      "expectedResult": "after appending new child <b>, el.children() returns two elements in correct order",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-invalidation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendChild(new Element(\"a\")); el.children();",
+        "  WHEN",
+        "    el.appendChild(new Element(\"b\")); Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2; assert result.get(0).tagName().equals(\"a\"); assert result.get(1).tagName().equals(\"b\");",
+        "END"
+      ]
+    }
+  ]
+}

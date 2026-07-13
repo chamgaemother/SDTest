@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "child(2) returns third Element when three Element children exist (loop-3 branch)",
+      "path": "B0→B1→B2(loop×3)→B3→B4",
+      "precondition": "Element has exactly three direct Element children",
+      "expectedResult": "returns the third element without exception",
+      "tags": [
+        "positive",
+        "iteration",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 child index at upper valid bound",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"span\"); parent.appendChild(e1);",
+        "    Element e2 = new Element(\"b\");    parent.appendChild(e2);",
+        "    Element e3 = new Element(\"i\");    parent.appendChild(e3);",
+        "  WHEN",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assert result == e3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "child(1) uses cached shadowChildrenRef on second call (cache-hit branch)",
+      "path": "B0→B1→B2→B3(first call)→B0→B1→B2→B4(cache branch)",
+      "precondition": "Element has two Element children and shadow cache uninitialized",
+      "expectedResult": "both calls return same second element and second call hits cache branch",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 child cached shadow children list",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = new Element(\"li\");  parent.appendChild(first);",
+        "    Element second = new Element(\"li\"); parent.appendChild(second);",
+        "  WHEN",
+        "    Element firstCall  = parent.child(1);",
+        "    Element secondCall = parent.child(1);",
+        "  THEN",
+        "    assert firstCall == second;",
+        "    assert secondCall == second;",
+        "END"
+      ]
+    }
+  ]
+}

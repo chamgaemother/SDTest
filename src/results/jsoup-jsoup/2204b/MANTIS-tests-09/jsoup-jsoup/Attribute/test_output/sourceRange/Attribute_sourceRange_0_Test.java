@@ -1,0 +1,40 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Range.AttributeRange;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class Attribute_sourceRange_0_Test {
+
+    @Test
+    @DisplayName("sourceRange returns UntrackedAttr when parent is null (parent == null branch)")
+    public void test_TC01() {
+        // Scenario TC01: parent is null, so branch B0->B1 should return UntrackedAttr
+        Attribute attr = new Attribute("key", "value", null);
+        AttributeRange result = attr.sourceRange();
+        assertEquals(AttributeRange.UntrackedAttr, result,
+            "Expected UntrackedAttr when parent is null");
+    }
+
+    @Test
+    @DisplayName("sourceRange returns parent.sourceRange(key) when parent is non-null (parent != null branch)")
+    public void test_TC02() {
+        // Scenario TC02: parent is non-null, so branch B0->B2 should call parent.sourceRange(key)
+        Attributes stubParent = new Attributes() {
+            @Override
+            public AttributeRange sourceRange(String k) {
+                // Return a fixed range with the correct constructor parameters
+                return new AttributeRange(1, 2, 3, 4); // Fixed to use the correct constructor
+            }
+        };
+        Attribute attr = new Attribute("attrKey", "val", stubParent);
+        AttributeRange result = attr.sourceRange();
+        // Verify that the returned range matches the stubbed values
+        assertEquals(1, result.startTagStart(), "Expected startTagStart to be 1");
+        assertEquals(2, result.startTagEnd(), "Expected startTagEnd to be 2");
+        assertEquals(3, result.endTagStart(), "Expected endTagStart to be 3");
+        assertEquals(4, result.endTagEnd(), "Expected endTagEnd to be 4");
+    }
+}

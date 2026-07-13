@@ -1,0 +1,107 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "String overload with real htmlParser and null context returns parsed nodes at fragment root",
+      "path": "B0→B3→B5→B7→B8",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "two elements <a> and <b> parsed",
+      "tags": [
+        "positive",
+        "string-overload",
+        "null-context",
+        "html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 htmlParser string overload null context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String fragment = \"<a></a><b></b>\";",
+        "    Element ctx = null;",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, ctx, baseUri);",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"a\");",
+        "    assert ((Element)result.get(1)).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "String overload with real xmlParser and non-null context ignores context and returns XML nodes",
+      "path": "B0→B3→B5→B7→B8",
+      "precondition": "Parser.xmlParser()",
+      "expectedResult": "one <item> element with id=\"1\"",
+      "tags": [
+        "positive",
+        "string-overload",
+        "xml",
+        "context-ignored"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 xmlParser string overload with non-null context",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<item id=\\\"1\\\">X</item>\";",
+        "    Element ctx = new Element(\"ignore\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(xml, ctx, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element item = (Element) result.get(0);",
+        "    assert item.tagName().equals(\"item\");",
+        "    assert item.attr(\"id\").equals(\"1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Reader overload when TreeBuilder.parseFragment throws runtime exception ensures lock is released",
+      "path": "B0→B1→B3(EXN)→finally→unlock",
+      "precondition": "StubTreeBuilder throwing RuntimeException in parseFragment",
+      "expectedResult": "RuntimeException propagates and lock is unlocked",
+      "tags": [
+        "exception",
+        "unlock",
+        "lock",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parseFragmentInput unlock on exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public List<Node> parseFragment(Reader r, Element c, String b, Parser p) {",
+        "        throw new IllegalStateException(\"fail\");",
+        "      }",
+        "      // implement defaults",
+        "      @Override public ParseSettings defaultSettings() {return new ParseSettings(true,true);} ",
+        "      @Override public TreeBuilder newInstance() {return this;} ",
+        "      @Override public Document parse(Reader i, String u, Parser p){throw new UnsupportedOperationException();} ",
+        "      @Override public TagSet defaultTagSet(){return new TagSet();} ",
+        "      @Override public String defaultNamespace(){return \"\";} ",
+        "      @Override public void initialiseParse(Reader r, String u, Parser p){} ",
+        "      @Override public void process(org.jsoup.parser.Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<x>\");",
+        "    Element ctx = new Element(\"x\");",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, ctx, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\";",
+        "    // after exception, lock.isLocked() == false",
+        "END"
+      ]
+    }
+  ]
+}

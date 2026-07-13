@@ -1,0 +1,82 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for DateSchemaColumn.parseAndAddToColumn based on provided scenarios.
+ */
+public class DateSchemaColumn_parseAndAddToColumn_Test
+{
+    /**
+     * A minimal stub implementation of DfColumn to capture added objects.
+     */
+    private static class StubColumn implements DfColumn
+    {
+        private Object addedObject;
+
+        @Override
+        public void addObject(Object obj)
+        {
+            this.addedObject = obj;
+        }
+
+        public Object getAddedObject()
+        {
+            return this.addedObject;
+        }
+
+        // Other DfColumn methods are not required for these tests and can remain unimplemented or default.
+    }
+
+    @Test
+    @DisplayName("TC05: Constructor default-pattern branch when newPattern is null and parsing valid date")
+    public void test_TC05()
+    {
+        // Arrange:
+        //  - Passing null for newPattern triggers default pattern "uuuu-M-d" in constructor (path B1 newPattern==null).
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", null);
+        StubColumn stub = new StubColumn();
+        String aString = "2021-12-31"; // no whitespace, trimmed.isEmpty()==false (path B3)
+
+        // Act:
+        column.parseAndAddToColumn(aString, stub);
+
+        // Assert:
+        // Expect that stub.addedObject equals LocalDate.of(2021,12,31) (path B4→B5)
+        assertEquals(
+            LocalDate.of(2021, 12, 31),
+            stub.getAddedObject(),
+            "Expected parsed LocalDate.of(2021,12,31) added to stub"
+        );
+    }
+
+    @Test
+    @DisplayName("TC06: Whitespace-trimmed non-empty input branch with leading/trailing spaces")
+    public void test_TC06()
+    {
+        // Arrange:
+        //  - Providing explicit pattern "uuuu-M-d" (path B1 newPattern!=null).
+        //  - Input has leading/trailing spaces so trimmed.isEmpty()==false (path B3).
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        StubColumn stub = new StubColumn();
+        String aString = "  1999-1-1  "; // will be trimmed to "1999-1-1"
+
+        // Act:
+        column.parseAndAddToColumn(aString, stub);
+
+        // Assert:
+        // Expect that stub.addedObject equals LocalDate.of(1999,1,1) after trimming and parsing (path B4→B5)
+        assertEquals(
+            LocalDate.of(1999, 1, 1),
+            stub.getAddedObject(),
+            "Expected trimmed and parsed LocalDate.of(1999,1,1) added to stub"
+        );
+    }
+}

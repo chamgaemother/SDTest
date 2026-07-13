@@ -1,0 +1,126 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty expression returns empty token list (no tokens, braceBalance=0,arrayBalance=0)",
+      "path": "B0→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings (implicit multiplication allowed, arrays and structures allowed)",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "loop-0",
+        "normal-return"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-expression",
+        "  GIVEN",
+        "    String expr = \"\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single decimal number literal produces one NUMBER_LITERAL token",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings; no mocks",
+      "expectedResult": "returned list size 1 and tokens.get(0).getType()==NUMBER_LITERAL and tokens.get(0).getToken().equals(\"123\")",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-number",
+        "  GIVEN",
+        "    String expr = \"123\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Implicit multiplication allowed inserts '*' between number and '('",
+      "path": "B0→B1→B2→B4→B6→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with isImplicitMultiplicationAllowed=true; no mocks",
+      "expectedResult": "tokens sequence: NUMBER_LITERAL \"2\", INFIX_OPERATOR \"*\", BRACE_OPEN \"(\", NUMBER_LITERAL \"3\", BRACE_CLOSE \")\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "implicit-multiplication",
+        "normal-return"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse implicit-multiplication",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.get(1).getToken().equals(\"*\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Implicit multiplication disallowed throws Missing operator when number followed by '('",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "ExpressionConfiguration with isImplicitMultiplicationAllowed=false; no mocks",
+      "expectedResult": "throws ParseException with message \"Missing operator\"",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "exception",
+        "implicit-multiplication"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse missing-operator",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configNoImplicit).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Unclosed brace throws Closing brace not found for input \"(1\"",
+      "path": "B0→B1→B2→B6→B1→B7→B8",
+      "precondition": "ExpressionConfiguration with default settings; no mocks",
+      "expectedResult": "throws ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "loop-1",
+        "exception",
+        "brace-balance"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse unclosed-brace",
+        "  GIVEN",
+        "    String expr = \"(1\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "handles selectors==null branch when selector parsing fails",
+      "path": "B0→B1→B2→B4(handleRuleSet)→selectors==null→iter.next→return→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "no selectors emitted, parse completes normally",
+      "tags": [
+        "negative",
+        "selectors-null",
+        "rule-set"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 selector-failure forwards-closebrace",
+        "  GIVEN",
+        "    // Arrange invalid selector to force selectors==null",
+        "    String css = \":invalid{}\";",
+        "    CssParser parser = new CssParser();",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "    StringReader reader = new StringReader(css);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    // Assert",
+        "    assert doc.selectorsList.isEmpty();",
+        "    assertEquals(1, doc.startDocumentCount);",
+        "    assertEquals(1, doc.endDocumentCount);"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "handles unexpected ')' before '{' in rule-set (GRAMMAR_UNEXPECTED_TOKEN)",
+      "path": "B0→B1→B2→B4(handleRuleSet)→if(MATCH_CLOSEPAREN)→err.error→iter.next→return→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "CssGrammarException(GRAMMAR_UNEXPECTED_TOKEN) reported, parse completes",
+      "tags": [
+        "negative",
+        "unexpected-token",
+        "rule-set"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 unexpected-closeparen-before-block",
+        "  GIVEN",
+        "    // Arrange selector then ')' token to hit MATCH_CLOSEPAREN",
+        "    String css = \"h1){}\";",
+        "    CssParser parser = new CssParser();",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "    StringReader reader = new StringReader(css);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    // Assert",
+        "    assertTrue(err.errors.contains(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN));",
+        "    assertEquals(1, doc.startDocumentCount);",
+        "    assertEquals(1, doc.endDocumentCount);"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "premature EOF inside at-rule parameters triggers PrematureEOFException and ends document",
+      "path": "B0→B1→B2→B3(handleAtRule)→NoSuchElementException→catch→doc.startAtRule→err.error(GRAMMAR_PREMATURE_EOF)→doc.endAtRule→throw PrematureEOFException→B6→B8",
+      "precondition": "none",
+      "expectedResult": "handler receives GRAMMAR_PREMATURE_EOF, document end called, no exception escapes parse",
+      "tags": [
+        "negative",
+        "premature-EOF",
+        "at-rule"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 premature-EOF-in-atrule-params",
+        "  GIVEN",
+        "    // Arrange incomplete at-rule missing ';' or '{'",
+        "    String css = \"@x\";",
+        "    CssParser parser = new CssParser();",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "    StringReader reader = new StringReader(css);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    // Assert",
+        "    assertTrue(err.errors.contains(CssErrorCode.GRAMMAR_PREMATURE_EOF));",
+        "    assertEquals(List.of(\"x\"), doc.startedAtRuleNames);",
+        "    assertEquals(List.of(\"x\"), doc.endedAtRuleNames);",
+        "    assertEquals(1, doc.endDocumentCount);"
+      ]
+    }
+  ]
+}

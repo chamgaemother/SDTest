@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() after cache build and structural change should invalidate cache and rebuild filtered list",
+      "path": "B0→B3→B8(loop)→B9→B3→B8(loop)",
+      "precondition": "Element el has one Element child, shadowChildrenRef populated",
+      "expectedResult": "second children() call returns updated list with two Element children",
+      "tags": [
+        "cache",
+        "invalidate",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children cache invalidation on nodelistChanged",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"span\");",
+        "    parent.appendChild(first);",
+        "    // build cache",
+        "    Elements initial = parent.children();",
+        "  WHEN",
+        "    // structural change triggers nodelistChanged and clears shadowChildrenRef",
+        "    Element secondChild = new Element(\"a\");",
+        "    parent.appendChild(secondChild);",
+        "    Elements updated = parent.children();",
+        "  THEN",
+        "    assert updated.size() == 2;",
+        "    assert updated.get(0) == first;",
+        "    assert updated.get(1) == secondChild;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() when shadowChildrenRef exists but referent was GCed should rebuild filtered list",
+      "path": "B0→B3→B8(loop)→B3→B8(loop)",
+      "precondition": "Element el has two Element children and a synthetic cleared WeakReference",
+      "expectedResult": "children() returns list of both Element children after detecting null referent",
+      "tags": [
+        "cache",
+        "weakref",
+        "iteration",
+        "positive",
+        "reflection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children rebuild when weakref cleared",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li1 = new Element(\"li\");",
+        "    Element li2 = new Element(\"li\");",
+        "    parent.appendChild(li1);",
+        "    parent.appendChild(li2);",
+        "    // simulate GC clearing: assign shadowChildrenRef to new WeakReference<>(null) via reflection",
+        "    reflectively set parent.shadowChildrenRef = new WeakReference<List<Element>>(null);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.contains(li1) && result.contains(li2);",
+        "END"
+      ]
+    }
+  ]
+}

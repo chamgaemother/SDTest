@@ -1,0 +1,65 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parseBodyFragment_1_Test {
+
+    @Test
+    @DisplayName("unbalanced nested tags are auto-closed to a balanced structure")
+    void test_TC11() {
+        // Scenario TC11: unclosed <span> should be auto-closed by parser
+        String html = "<div><span>Test";
+        // baseUri non-empty to follow branch for resolving base URI
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        // Expect auto-closed tags: <span> then <div>
+        assertEquals("<div><span>Test</span></div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("self-closing tags remain self-closed in the fragment output")
+    void test_TC12() {
+        // Scenario TC12: self-closing <img/> should be preserved as-is
+        String html = "<img src='foo.png'/>";
+        // Empty baseUri to trigger branch without base URI adjustments
+        Document doc = Jsoup.parseBodyFragment(html, "");
+        assertEquals("<img src=\"foo.png\"/>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("script tag content containing '<' is not parsed as markup")
+    void test_TC13() {
+        // Scenario TC13: inside <script>, '<' should be treated as raw text, not a tag
+        String html = "<script>if (a < b) alert('x');</script>";
+        // Non-empty baseUri to choose raw-text parsing branch
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        String bodyHtml = doc.body().html();
+        // Expect the literal "a < b" to appear inside script content
+        assertTrue(bodyHtml.contains("a < b"), "Script content should not be parsed as HTML markup");
+    }
+
+    @Test
+    @DisplayName("mismatched closing tag closes innermost open tag first")
+    void test_TC14() {
+        // Scenario TC14: mismatched </div> should close <span> then <div>
+        String html = "<div><span>Test</div>";
+        // Empty baseUri branch for simple fragment
+        Document doc = Jsoup.parseBodyFragment(html, "");
+        // Expected recovery: <span> closed on mismatched </div>, then <div> closed
+        assertEquals("<div><span>Test</span></div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("uppercase tags are normalized to lowercase in output")
+    void test_TC15() {
+        // Scenario TC15: uppercase tags should be normalized to lowercase by the parser
+        String html = "<DIV><P>Test</P></DIV>";
+        // Empty baseUri to choose default branch
+        Document doc = Jsoup.parseBodyFragment(html, "");
+        // Expect tag names normalized to lowercase
+        assertEquals("<div><p>Test</p></div>", doc.body().html());
+    }
+}

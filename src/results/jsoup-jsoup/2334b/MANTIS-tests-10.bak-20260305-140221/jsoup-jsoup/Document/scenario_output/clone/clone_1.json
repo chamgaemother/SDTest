@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "clone() preserves a non-null connection field so clone.connection() returns the same instance",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original Document has connection set via connection(Connection)",
+      "expectedResult": "cloned.connection() returns the exact same Connection instance",
+      "tags": [
+        "positive",
+        "connection",
+        "clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 clone preserves non-null connection",
+        "  GIVEN",
+        "    Document original = new Document(\"http://site\");",
+        "    Connection session = Jsoup.newSession();",
+        "    original.connection(session);",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    assertSame(session, cloned.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "clone() deep-clones OutputSettings syntax=xml so subsequent changes to original.settings do not affect clone",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "original Document outputSettings.syntax set to xml and escapeMode extended",
+      "expectedResult": "cloned.outputSettings retains xml syntax and extended escapeMode even after original changes",
+      "tags": [
+        "positive",
+        "outputSettings",
+        "clone",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 clone deep-copies xml syntax settings",
+        "  GIVEN",
+        "    Document original = new Document(\"base\");",
+        "    original.outputSettings()",
+        "            .syntax(Document.OutputSettings.Syntax.xml)",
+        "            .escapeMode(Entities.EscapeMode.extended);",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "    original.outputSettings().syntax(Document.OutputSettings.Syntax.html);",
+        "    original.outputSettings().escapeMode(Entities.EscapeMode.base);",
+        "  THEN",
+        "    assertEquals(Document.OutputSettings.Syntax.xml, cloned.outputSettings().syntax());",
+        "    assertEquals(Entities.EscapeMode.xhtml, cloned.outputSettings().escapeMode());",
+        "END"
+      ]
+    }
+  ]
+}

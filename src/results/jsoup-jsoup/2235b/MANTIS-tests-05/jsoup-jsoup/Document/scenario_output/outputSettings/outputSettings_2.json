@@ -1,0 +1,109 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "outputSettings(OutputSettings) assigns new settings instance and allows chaining in call expression",
+      "path": "B1→B2→B4",
+      "precondition": "Document has default OutputSettings before setter",
+      "expectedResult": "setter returns same Document instance and getter returns the passed settings",
+      "tags": [
+        "positive",
+        "setter",
+        "chaining"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 setter-chaining-and-assignment",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    Document.OutputSettings custom = new Document.OutputSettings()",
+        "        .escapeMode(Entities.EscapeMode.extended)",
+        "        .outline(true);",
+        "  WHEN",
+        "    Document returned = doc.outputSettings(custom).quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  THEN",
+        "    assertSame(doc, returned);",
+        "    assertSame(custom, doc.outputSettings());",
+        "    assertEquals(Entities.EscapeMode.extended, doc.outputSettings().escapeMode());",
+        "    assertTrue(doc.outputSettings().outline());"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "outputSettings(null) throws IllegalArgumentException when called second time after valid setter",
+      "path": "B1→B3",
+      "precondition": "Document had a prior non-null OutputSettings set",
+      "expectedResult": "IllegalArgumentException thrown due to null validation",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 null-after-valid-setter",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    Document.OutputSettings custom = new Document.OutputSettings();",
+        "    doc.outputSettings(custom);",
+        "  WHEN",
+        "    call doc.outputSettings(null);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "outputSettings(OutputSettings) with custom indent and maxPaddingWidth retains numeric properties",
+      "path": "B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "Document.outputSettings() returns settings with specified indent and padding values",
+      "tags": [
+        "positive",
+        "boundary",
+        "setter"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 setter-indentation-properties",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    Document.OutputSettings os = new Document.OutputSettings()",
+        "        .indentAmount(0)    // boundary zero indent",
+        "        .maxPaddingWidth(-1); // unlimited padding boundary",
+        "  WHEN",
+        "    doc.outputSettings(os);",
+        "  THEN",
+        "    assertSame(os, doc.outputSettings());",
+        "    assertEquals(0, doc.outputSettings().indentAmount());",
+        "    assertEquals(-1, doc.outputSettings().maxPaddingWidth());"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "outputSettings() getter consistently returns same instance after multiple calls",
+      "path": "B1→B2→B4 (getter)",
+      "precondition": "none",
+      "expectedResult": "Repeated calls to getter yield identical instance",
+      "tags": [
+        "positive",
+        "getter",
+        "idempotence"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 getter-idempotence-after-setter",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document.OutputSettings firstGet = doc.outputSettings();",
+        "    Document.OutputSettings secondGet = doc.outputSettings();",
+        "  THEN",
+        "    assertSame(firstGet, secondGet);"
+      ]
+    }
+  ]
+}

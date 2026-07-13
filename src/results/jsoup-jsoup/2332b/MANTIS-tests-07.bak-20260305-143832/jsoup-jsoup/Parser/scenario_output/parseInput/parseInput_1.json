@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(reader, baseUri) throws NullPointerException when reader is null",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput reader-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(reader, baseUri) throws IllegalArgumentException when baseUri is null",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput reader-valid baseUri-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<p>x</p>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(reader, baseUri) with real Reader and HTML parser returns parsed Document",
+      "path": "B0→B1→B2",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "Document contains correct elements and baseUri",
+      "tags": [
+        "positive",
+        "reader-overload",
+        "integration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput reader-valid html-parser",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<ul><li>one</li><li>two</li></ul>\");",
+        "    String baseUri = \"http://site\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assertEquals(2, doc.select(\"li\").size());",
+        "    assertEquals(\"one\", doc.select(\"li\").first().text());",
+        "END"
+      ]
+    }
+  ]
+}

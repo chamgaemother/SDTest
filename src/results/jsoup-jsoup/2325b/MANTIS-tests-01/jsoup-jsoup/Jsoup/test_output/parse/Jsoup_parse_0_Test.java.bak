@@ -1,0 +1,133 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(html, baseUri) with non-empty HTML and non-empty baseUri returns a Document with correct title")
+    public void test_TC01() {
+        // non-empty html and baseUri should parse title and set baseUri
+        String html = "<html><head><title>Hi</title></head><body></body></html>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertEquals("Hi", doc.title()),
+            () -> assertEquals(baseUri, doc.baseUri())
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with empty HTML yields an empty document with given baseUri")
+    public void test_TC02() {
+        // empty html should produce empty body
+        String html = "";
+        String baseUri = "https://test/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertTrue(doc.body().html().isEmpty()),
+            () -> assertEquals(baseUri, doc.baseUri())
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with HTML missing head/title yields document with empty title")
+    public void test_TC03() {
+        // missing <title> should give empty title
+        String html = "<html><body>Hi</body></html>";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("", doc.title());
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) with custom parser delegates to parser.parseInput")
+    public void test_TC04() {
+        // stub parser to record inputs and return dummy Document
+        final String[] recorded = new String[2];
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(String inputHtml, String inputBaseUri) {
+                recorded[0] = inputHtml;
+                recorded[1] = inputBaseUri;
+                return new Document("stub");
+            }
+        };
+        String html = "<p>one</p>";
+        Document result = Jsoup.parse(html, stub);
+        assertAll(
+            () -> assertEquals(html, recorded[0]),  // html passed through
+            () -> assertEquals("", recorded[1]),    // default empty baseUri
+            () -> assertNotNull(result)              // stub returned non-null
+        );
+    }
+
+    @Test
+    @DisplayName("parse(html) default no baseUri delegates to Parser.parse(html,"")")
+    public void test_TC05() {
+        // single-arg parse uses empty baseUri
+        String html = "<div>x</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with null html throws IllegalArgumentException")
+    public void test_TC06() {
+        // null html should be rejected
+        String html = null;
+        String baseUri = "https://a/";
+        Parser parser = Parser.htmlParser();
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with null parser throws IllegalArgumentException")
+    public void test_TC07() {
+        // null parser should be rejected
+        String html = "<p></p>";
+        String baseUri = "";
+        Parser parser = null;
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with UTF-8 special chars maintains text")
+    public void test_TC08() {
+        // unicode in html body should remain
+        String html = "<p>😊</p>";
+        String baseUri = "url";
+        Parser parser = Parser.htmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertEquals("😊", doc.body().text());
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) with HTML containing relative URLs uses empty baseUri")
+    public void test_TC09() {
+        // relative link without baseUri => absUrl should be empty
+        String html = "<a href=foo.html>link</a>";
+        Parser parser = Parser.htmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        Element a = doc.select("a").first();
+        assertNotNull(a);
+        assertTrue(a.absUrl("href").isEmpty());
+    }
+
+    @Test
+    @DisplayName("parse(html) with null html throws IllegalArgumentException")
+    public void test_TC10() {
+        // null html should be rejected in single-arg parse
+        String html = null;
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html));
+    }
+}

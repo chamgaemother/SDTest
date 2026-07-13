@@ -1,0 +1,144 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import com.thealgorithms.geometry.ConvexHull;
+import com.thealgorithms.geometry.Point;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class ConvexHull_convexHullRecursive_Test {
+
+    @Test
+    @DisplayName("null input throws NullPointerException at entry")
+    public void test_TC01() {
+        // GIVEN
+        List<Point> points = null;
+        // WHEN & THEN: entry should NPE before any logic
+        assertThrows(NullPointerException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("empty list throws IndexOutOfBoundsException when accessing first element")
+    public void test_TC02() {
+        // GIVEN an empty list so points.get(0) fails
+        List<Point> points = new ArrayList<>();
+        // WHEN & THEN
+        assertThrows(IndexOutOfBoundsException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("single-point list returns that point (loop-0 interior)")
+    public void test_TC03() {
+        // GIVEN a single point; loop from 1 to size-1 is skipped
+        Point p0 = new Point(0, 0);
+        List<Point> input = Arrays.asList(p0);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN only that point is on hull
+        assertEquals(Arrays.asList(p0), result);
+    }
+
+    @Test
+    @DisplayName("two-point list returns both sorted (loop-0 interior)")
+    public void test_TC04() {
+        // GIVEN two points in reverse order; no loop iterations
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 1);
+        List<Point> input = Arrays.asList(p1, p0);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN sorted by natural order => p0, p1
+        assertEquals(Arrays.asList(p0, p1), result);
+    }
+
+    @Test
+    @DisplayName("three collinear points returns only endpoints (det == 0 branches)")
+    public void test_TC05() {
+        // GIVEN three collinear points P0 < P1 < P2
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(2, 2);
+        List<Point> input = Arrays.asList(p0, p1, p2);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN only endpoints remain
+        assertEquals(Arrays.asList(p0, p2), result);
+    }
+
+    @Test
+    @DisplayName("three points forming triangle returns all three (one upper, one lower)")
+    public void test_TC06() {
+        // GIVEN A(0,0), B(1,1), C(2,0) form a triangle: one point above and one below the base
+        Point a = new Point(0, 0);
+        Point b = new Point(1, 1);
+        Point c = new Point(2, 0);
+        List<Point> input = Arrays.asList(a, b, c);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN all three sorted
+        assertEquals(Arrays.asList(a, b, c), result);
+    }
+
+    @Test
+    @DisplayName("convex hull of concave pentagon excludes interior concave point")
+    public void test_TC07() {
+        // GIVEN concave pentagon with P2 interior
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(2, 0);
+        Point p2 = new Point(1, 1); // interior concave
+        Point p3 = new Point(2, 2);
+        Point p4 = new Point(0, 2);
+        List<Point> input = Arrays.asList(p0, p1, p2, p3, p4);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN sorted hull excludes p2
+        assertEquals(Arrays.asList(p0, p1, p3, p4), result);
+    }
+
+    @Test
+    @DisplayName("duplicate points input returns unique hull vertices")
+    public void test_TC08() {
+        // GIVEN duplicates A and noncollinear with B,C
+        Point a = new Point(0, 0);
+        Point b = new Point(1, 1);
+        Point c = new Point(2, 0);
+        List<Point> input = Arrays.asList(a, b, a, c);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN duplicates removed and sorted
+        assertEquals(Arrays.asList(a, b, c), result);
+    }
+
+    @Test
+    @DisplayName("unsorted input returns sorted hull vertices")
+    public void test_TC09() {
+        // GIVEN random order C,A,B,D
+        Point a = new Point(0, 0);
+        Point b = new Point(1, 1);
+        Point c = new Point(2, 0);
+        Point d = new Point(3, 0);
+        List<Point> input = Arrays.asList(c, a, b, d);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN sorted by x then y
+        assertEquals(Arrays.asList(a, b, c, d), result);
+    }
+
+    @Test
+    @DisplayName("collinear with interior duplicates yields only two endpoints unique")
+    public void test_TC10() {
+        // GIVEN [P0, P2, P1, P1] with collinear P0<P1<P2
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(2, 2);
+        List<Point> input = Arrays.asList(p0, p2, p1, p1);
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(new ArrayList<>(input));
+        // THEN only endpoints unique
+        assertEquals(Arrays.asList(p0, p2), result);
+    }
+}

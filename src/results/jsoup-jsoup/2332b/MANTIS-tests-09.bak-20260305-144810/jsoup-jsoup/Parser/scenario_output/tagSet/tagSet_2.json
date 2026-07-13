@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "htmlParser().tagSet() returns default lowercase HTML tag names (HTML branch)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Set contains known HTML tags such as \"div\" and \"span\", and all are lowercase",
+      "tags": [
+        "positive",
+        "default",
+        "html",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 htmlParser default tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.contains(\"div\");",
+        "    assert tags.contains(\"span\");",
+        "    assert tags.stream().allMatch(s -> s.equals(s.toLowerCase()));"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "xmlParser().tagSet() returns an empty set (XML branch)",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Returned Set is empty",
+      "tags": [
+        "positive",
+        "default",
+        "xml",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 xmlParser default tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assertNotNull(tags);",
+        "    assertTrue(tags.isEmpty());"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Custom case-sensitive settings preserve uppercase tag names in tagSet (settings branch)",
+      "path": "B0→B1→B3→B6→B5",
+      "precondition": "none",
+      "expectedResult": "Returned Set contains uppercase tag \"MyTag\" as added via settings override",
+      "tags": [
+        "positive",
+        "settings",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 preserve-case tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().settings(ParseSettings.preserveTagCase);\n    // Manually add a made-up tag to settings tagSet\n    parser.settings().tagSet().add(\"MyTag\");",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assertTrue(tags.contains(\"MyTag\"));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Clone of parser retains its tagSet settings (clone/ newInstance branch)",
+      "path": "B0→B1→B3→B6→B7→B5",
+      "precondition": "Parser has custom tag in settings",
+      "expectedResult": "Cloned parser.tagSet() contains the custom tag and matches original",
+      "tags": [
+        "positive",
+        "clone",
+        "newInstance",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone retains tagSet",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser();\n    original.settings().tagSet().add(\"custom\");",
+        "  WHEN",
+        "    Parser clone = original.clone();\n    Set<String> tags = clone.tagSet();",
+        "  THEN",
+        "    assertTrue(tags.contains(\"custom\"));\n    assertEquals(original.tagSet(), tags);"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for org.jsoup.parser.Parser.parseInput methods.
+ */
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC05: parseInput(String, null) throws NullPointerException when baseUri is null")
+    public void test_TC05() {
+        // GIVEN a HTML parser and a valid HTML string
+        Parser parser = Parser.htmlParser();
+        String html = "<div>test</div>";
+        String baseUri = null;
+        // WHEN/THEN: calling parseInput(String, null) must throw NullPointerException
+        // Path B0→B1→B2→B6: direct String overload, baseUri null check
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC06: parseInput(Reader, null) throws NullPointerException when baseUri is null")
+    public void test_TC06() {
+        // GIVEN a HTML parser and a valid Reader
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("<span/>");
+        String baseUri = null;
+        // WHEN/THEN: calling parseInput(Reader, null) must throw NullPointerException
+        // Path B0→B1→B3→B7: Reader overload, baseUri null check
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC07: parseInput(String, String) using real HtmlTreeBuilder returns a Document with expected element")
+    public void test_TC07() {
+        // GIVEN a HTML parser, a simple paragraph HTML, and a non-null baseUri
+        Parser parser = Parser.htmlParser();
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example/";
+        // WHEN parsing input
+        Document doc = parser.parseInput(html, baseUri);
+        // THEN the resulting Document must contain a <p> element with text "Hello"
+        // Path B0→B1→B2→B4→B5: String overload, non-null baseUri, real HtmlTreeBuilder usage
+        Elements paragraphs = doc.select("p");
+        assertAll(
+            () -> assertFalse(paragraphs.isEmpty(), "Expected at least one <p> element"),
+            () -> {
+                Element p = paragraphs.first();
+                assertNotNull(p, "First <p> element should not be null");
+                assertEquals("Hello", p.text(), "The <p> text content must be 'Hello'");
+            }
+        );
+    }
+}

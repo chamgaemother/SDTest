@@ -1,0 +1,179 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parse(File, charsetName, baseUri) throws IOException on invalid charsetName",
+      "path": "B0→B1→B3→B6",
+      "precondition": "tmpFile exists with valid HTML",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "exception",
+        "file",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse file invalid-charset",
+        "  GIVEN",
+        "    File tmp = createTempHtmlFile(\"<p>X</p>\");",
+        "    String badCharset = \"INVALID-CHARSET\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    call Jsoup.parse(tmp, badCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File, charsetName) throws IOException on invalid charsetName",
+      "path": "B0→B1→B3→B6",
+      "precondition": "tmpFile exists with valid HTML",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "exception",
+        "file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse file invalid-charset default-base",
+        "  GIVEN",
+        "    File tmp = createTempHtmlFile(\"<span>Y</span>\");",
+        "    String badCharset = \"NO-SUCH-ENCODING\";",
+        "  WHEN",
+        "    call Jsoup.parse(tmp, badCharset);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path, charsetName, baseUri) throws IOException on invalid charsetName",
+      "path": "B0→B1→B3→B6",
+      "precondition": "tmp Path exists with valid HTML",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "exception",
+        "path"
+      ],
+      "priority": "P0",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC22 parse path invalid-charset",
+        "  GIVEN",
+        "    Path p = createTempHtmlPath(\"<p>Z</p>\");",
+        "    String badCharset = \"UNKNOWN-ENC\";",
+        "    String baseUri = \"http://host/\";",
+        "  WHEN",
+        "    call Jsoup.parse(p, badCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(Path, charsetName) throws IOException on invalid charsetName",
+      "path": "B0→B1→B3→B6",
+      "precondition": "tmp Path exists with valid HTML",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "exception",
+        "path"
+      ],
+      "priority": "P0",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC23 parse path-invalid-charset default-base",
+        "  GIVEN",
+        "    Path p = createTempHtmlPath(\"<h1>H</h1>\");",
+        "    String badCharset = \"BAD-CHARSET\";",
+        "  WHEN",
+        "    call Jsoup.parse(p, badCharset);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(InputStream, charsetName, baseUri) throws IOException on invalid charsetName",
+      "path": "B0→B1→B3→B6",
+      "precondition": "InputStream has valid HTML data",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "exception",
+        "stream"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse stream invalid-charset",
+        "  GIVEN",
+        "    InputStream in = toStream(\"<li>L</li>\");",
+        "    String badCharset = \"UNKNOWN\";",
+        "    String baseUri = \"http://u/\";",
+        "  WHEN",
+        "    call Jsoup.parse(in, badCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(String, Parser) with htmlParser resolves relative links via empty baseUri",
+      "path": "B0→B2→B5→B7",
+      "precondition": "none",
+      "expectedResult": "empty baseUri yields no absUrl, href remains relative",
+      "tags": [
+        "positive",
+        "parser",
+        "relative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse string with htmlParser",
+        "  GIVEN",
+        "    String html = \"<a href='r.html'>R</a>\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().attr(\"href\").equals(\"r.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(String, String, Parser) with htmlParser resolves baseUri on no <base> tag",
+      "path": "B0→B2→B6→B8",
+      "precondition": "none",
+      "expectedResult": "href is resolved against provided baseUri",
+      "tags": [
+        "positive",
+        "parser",
+        "absolute"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 parse string baseUri htmlParser",
+        "  GIVEN",
+        "    String html = \"<a href='a.html'>A</a>\";",
+        "    String baseUri = \"http://base/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().absUrl(\"href\").equals(\"http://base/a.html\");",
+        "END"
+      ]
+    }
+  ]
+}

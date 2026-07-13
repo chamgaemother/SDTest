@@ -1,0 +1,32 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Test class for Element.appendChild method, covering scenario TC06:
+ * appendChild assigns correct siblingIndex for each child after multiple appends.
+ */
+public class Element_appendChild_1_Test {
+
+    @Test
+    @DisplayName("TC06: appendChild assigns correct siblingIndex for each child after multiple appends")
+    public void test_TC06() {
+        // GIVEN: a parent element with one existing TextNode child
+        Element parent = new Element("div");
+        TextNode first = new TextNode("one");
+        // Path B0->B3: childNodes is EmptyNodes, ensureChildNodes should create a new NodeList
+        parent.appendChild(first);
+        // At this point, first should have siblingIndex 0
+        // WHEN: appending a second child triggers siblingIndex assignment path B4->B5
+        TextNode second = new TextNode("two");
+        parent.appendChild(second);
+        // THEN: verify siblingIndex values reflect intended ordering
+        // first was the original child, so index remains 0
+        assertEquals(0, first.siblingIndex(), "First child should have siblingIndex 0");
+        // second should be appended after first, so index should be 1
+        assertEquals(1, second.siblingIndex(), "Second child should have siblingIndex 1");
+    }
+}

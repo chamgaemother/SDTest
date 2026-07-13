@@ -1,0 +1,79 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "rightTrim() removes trailing whitespace from end of CharSequence",
+      "path": "B0→B1(loop)→B3",
+      "precondition": "none",
+      "expectedResult": "returns substring without trailing spaces",
+      "tags": [
+        "utility",
+        "boundary",
+        "visibleForTesting"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 rightTrim trims trailing spaces",
+        "  GIVEN",
+        "    CharSequence s = \"abc   \";",
+        "  WHEN",
+        "    CharSequence r = WordWrap.rightTrim(s);",
+        "  THEN",
+        "    assertEquals(\"abc\", r.toString());"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "wrap() breaks 2-char word into lines without hyphens when maxWidth=1 (writeBrokenWord else branch)",
+      "path": "B0→B2→B4→B5→B7→writeBrokenWord→else→EOF→final-else",
+      "precondition": "none",
+      "expectedResult": "output is \"A\\nB\"",
+      "tags": [
+        "positive",
+        "breakWords",
+        "writeBrokenWord",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 wrap two-char word no hyphen prefix ≤2",
+        "  GIVEN",
+        "    String text = \"AB\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(1);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assertEquals(\"A\\nB\", result);"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "wrap() treats '?' as word character when included via includeExtraWordChars (isPunctuation avoided)",
+      "path": "B0→B2→B4→loop-all-chars→no-split→final-return",
+      "precondition": "none",
+      "expectedResult": "single line \"a?b\" with no splits",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "punctuation",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 wrap includeExtraWordChars prevents splitting at punctuation",
+        "  GIVEN",
+        "    String text = \"a?b\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(1)",
+        "        .includeExtraWordChars(\"?\");",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assertEquals(1, lines.size());",
+        "    assertEquals(\"a?b\", lines.get(0));"
+      ]
+    }
+  ]
+}

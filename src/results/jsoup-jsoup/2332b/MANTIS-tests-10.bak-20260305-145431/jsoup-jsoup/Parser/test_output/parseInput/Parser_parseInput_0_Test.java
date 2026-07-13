@@ -1,0 +1,102 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: Overload parseInput(String, String) delegates to treeBuilder.parse with non-null html and baseUri")
+    public void test_TC01_O1() {
+        final Document dummyDoc = new Document("http://ignored");
+        TreeBuilder fakeBuilder = new TreeBuilder() {
+            @Override
+            public Document parse(Reader input, String baseUri, Parser parser) {
+                assertTrue(input instanceof StringReader, "Expected a StringReader for delegation.");
+                return dummyDoc;
+            }
+            @Override
+            public Document parse(Reader input, String baseUri) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            protected void initialiseParse(Reader input, String baseUri, Parser parser) { }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public boolean process(Token token) { return false; }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return org.jsoup.parser.ParseSettings.htmlDefault; }
+        };
+        Parser parser = new Parser(fakeBuilder);
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+
+        Document result = parser.parseInput(html, baseUri);
+
+        assertSame(dummyDoc, result, "The result should be the dummy document from fakeBuilder.parse");
+    }
+
+    @Test
+    @DisplayName("TC02_O2: Overload parseInput(Reader, String) delegates to treeBuilder.parse with non-null Reader and baseUri")
+    public void test_TC02_O2() {
+        final Document docX = new Document("http://ignored2");
+        TreeBuilder fakeBuilder = new TreeBuilder() {
+            @Override
+            public Document parse(Reader input, String baseUri, Parser parser) {
+                assertEquals("http://site/", baseUri, "Base URI passed should match");
+                return docX;
+            }
+            @Override
+            public Document parse(Reader input, String baseUri) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            protected void initialiseParse(Reader input, String baseUri, Parser parser) { }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public boolean process(Token token) { return false; }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return org.jsoup.parser.ParseSettings.htmlDefault; }
+        };
+        Parser parser = new Parser(fakeBuilder);
+        Reader reader = new StringReader("<div/>"); // Fixed unclosed string literal
+        String baseUri = "http://site/";
+
+        Document result = parser.parseInput(reader, baseUri);
+
+        assertSame(docX, result, "The result should be the DocumentX instance returned by fakeBuilder.parse");
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseInput(String, String) throws NullPointerException when html parameter is null")
+    public void test_TC03_O1() {
+        Parser parser = Parser.htmlParser();
+        String html = null;
+        String baseUri = "http://a/";
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri),
+                "Passing null html should cause NullPointerException");
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseInput(Reader, String) throws NullPointerException when Reader is null")
+    public void test_TC04_O2() {
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        String baseUri = "http://b/";
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri),
+                "Passing null Reader should cause NullPointerException");
+    }
+}

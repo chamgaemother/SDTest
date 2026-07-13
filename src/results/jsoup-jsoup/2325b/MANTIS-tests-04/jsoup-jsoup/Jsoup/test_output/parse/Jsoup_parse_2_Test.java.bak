@@ -1,0 +1,153 @@
+import org.jsoup.Jsoup;
+import org.jsoup.helper.DataUtil;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static com.sun.net.httpserver.HttpServer.create;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    /** Helper stub parser that records the html and baseUri passed into parseInput, and returns a preset Document. */
+    static class StubParser extends Parser {
+        String lastHtml;
+        String lastBaseUri;
+        final Document returnDoc;
+        public StubParser(Document returnDoc) {
+            super();
+            this.returnDoc = returnDoc;
+        }
+        @Override
+        public Document parseInput(String html, String baseUri) {
+            this.lastHtml = html;
+            this.lastBaseUri = baseUri;
+            return returnDoc;
+        }
+    }
+
+    @Test
+    @DisplayName("parse(File, String, String, Parser) delegates to DataUtil.load with provided parser")
+    public void test_TC21() throws Exception {
+        // DESIGN: Use a temp file containing "<p>X</p>" so that DataUtil.load reads that content and stubParser.parseInput is called.
+        File temp = File.createTempFile("jsoup_test", ".html");
+        temp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(temp)) {
+            fw.write("<p>X</p>");
+        }
+        Document stubDoc = new Document("stub");
+        StubParser stubParser = new StubParser(stubDoc);
+        // WHEN
+        Document result = Jsoup.parse(temp, "UTF-8", "http://base/", stubParser);
+        // THEN: stubParser should have recorded the file HTML and baseUri, and returned the stubDoc
+        assertTrue(stubParser.lastHtml.contains("<p>X</p>"), "Should read the file content into html");
+        assertEquals("http://base/", stubParser.lastBaseUri, "Base URI passed to parser should match");
+        assertSame(stubDoc, result, "Returned document should be the stub document");
+    }
+
+    @Test
+    @DisplayName("parse(Path, String, String, Parser) delegates to DataUtil.load with provided parser")
+    public void test_TC22() throws Exception {
+        // DESIGN: Write "<div>Z</div>" to a temp file, convert to Path, ensure stubParser.parseInput is invoked with that content.
+        File temp = File.createTempFile("jsoup_test_path", ".html");
+        temp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(temp)) {
+            fw.write("<div>Z</div>");
+        }
+        Path path = temp.toPath();
+        Document stubDoc = new Document("stub2");
+        StubParser stubParser = new StubParser(stubDoc);
+        // WHEN
+        Document result = Jsoup.parse(path, "UTF-8", "http://base2/", stubParser);
+        // THEN
+        assertTrue(stubParser.lastHtml.contains("<div>Z</div>"), "Should read the path file content into html");
+        assertEquals("http://base2/", stubParser.lastBaseUri, "Base URI passed to parser should match");
+        assertSame(stubDoc, result, "Returned document should be the stub document");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, String, String, Parser) delegates to DataUtil.load with provided parser")
+    public void test_TC23() throws Exception {
+        // DESIGN: Create an InputStream over "<span>Y</span>" so DataUtil.load(in,...) calls stubParser.parseInput.
+        String fragment = "<span>Y</span>";
+        InputStream in = new ByteArrayInputStream(fragment.getBytes("UTF-8"));
+        Document stubDoc = new Document("stub3");
+        StubParser stubParser = new StubParser(stubDoc);
+        // WHEN
+        Document result = Jsoup.parse(in, "UTF-8", "http://stream/", stubParser);
+        // THEN
+        assertTrue(stubParser.lastHtml.contains(fragment), "Should read the stream content into html");
+        assertEquals("http://stream/", stubParser.lastBaseUri, "Base URI passed to parser should match");
+        assertSame(stubDoc, result, "Returned document should be the stub document");
+    }
+
+    @Test
+    @DisplayName("clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=true uses DummyUri to preserve link")
+    public void test_TC24() {
+        // DESIGN: Use empty baseUri and safelist with preserveRelativeLinks enabled; DummyUri substitution ensures link preserved.
+        String html = "<a href='/r'>r</a>";
+        Safelist sl = Safelist.basic().preserveRelativeLinks(true);
+        // WHEN
+        String out = Jsoup.clean(html, "", sl);
+        // THEN: the relative href should remain present
+        assertTrue(out.contains("href=\"/r\""), "Relative link '/r' should be preserved when preserveRelativeLinks is true");
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeout) throws HttpStatusException on non-OK HTTP status")
+    public void test_TC25() throws Exception {
+        // DESIGN: Spin up a simple HTTP server that always responds 404 to GET "/"
+        HttpServer server = create(new InetSocketAddress(0), 0);
+        server.createContext("/", exchange -> {
+            exchange.sendResponseHeaders(404, -1);
+            exchange.close();
+        });
+        server.start();
+        try {
+            URL url = new URL("http://localhost:" + server.getAddress().getPort() + "/");
+            // THEN: should throw HttpStatusException for 404 response
+            assertThrows(org.jsoup.HttpStatusException.class,
+                    () -> Jsoup.parse(url, 1000),
+                    "Expected HttpStatusException on 404 response");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeout) throws UnsupportedMimeTypeException on unsupported Content-Type")
+    public void test_TC26() throws Exception {
+        // DESIGN: HTTP server responds 200 with Content-Type image/png, which is unsupported by Jsoup.parse
+        HttpServer server = create(new InetSocketAddress(0), 0);
+        server.createContext("/", exchange -> {
+            exchange.getResponseHeaders().set("Content-Type", "image/png");
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().close();
+            exchange.close();
+        });
+        server.start();
+        try {
+            URL url = new URL("http://localhost:" + server.getAddress().getPort() + "/");
+            // THEN: should throw UnsupportedMimeTypeException for image/png
+            assertThrows(org.jsoup.UnsupportedMimeTypeException.class,
+                    () -> Jsoup.parse(url, 1000),
+                    "Expected UnsupportedMimeTypeException on image/png response");
+        } finally {
+            server.stop(0);
+        }
+    }
+}

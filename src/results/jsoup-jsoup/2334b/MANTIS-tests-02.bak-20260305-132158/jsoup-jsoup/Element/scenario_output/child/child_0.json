@@ -1,0 +1,147 @@
+{
+  "method": "child",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "call child(0) on element with no child nodes (childNodeSize()==0) throws IndexOutOfBoundsException",
+      "path": "B0→B1_zero→B2_exception",
+      "precondition": "Element parent = new Element(\"div\"); // no children",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 child no-children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "call child(0) on element with exactly one Element child returns that child (loop iterates once)",
+      "path": "B0→B1_nonzero→B3_loop(1)→B4_return",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendElement(\"li\");",
+      "expectedResult": "return value is the only child element",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 child single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == child;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "call child(0) on element with mixed nodes (TextNode then Element) returns first Element child (loop filters non-Element)",
+      "path": "B0→B1_nonzero→B3_loop(2)→B4_return",
+      "precondition": "Element parent = new Element(\"p\"); parent.appendText(\"Hello\"); parent.appendElement(\"span\");",
+      "expectedResult": "return value is the span element",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 child mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    TextNode t = new TextNode(\"Hello\"); parent.appendChild(t);",
+        "    Element span = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == span;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "call child(1) on element with two Element children returns second child (loop iterates twice)",
+      "path": "B0→B1_nonzero→B3_loop(2)→B4_return",
+      "precondition": "Element parent = new Element(\"ol\"); Element a = parent.appendElement(\"li\"); Element b = parent.appendElement(\"li\");",
+      "expectedResult": "return value is the second child element (b)",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 child two-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"ol\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    Element second = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assert result == second;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "call child(5) on element with two Element children throws IndexOutOfBoundsException",
+      "path": "B0→B1_nonzero→B3_loop(2)→B5_exception",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendElement(\"li\"); parent.appendElement(\"li\");",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 child index-out-of-range",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    parent.appendElement(\"li\"); parent.appendElement(\"li\");",
+        "  WHEN",
+        "    call parent.child(5);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "call child(-1) on element with one Element child throws IndexOutOfBoundsException for negative index",
+      "path": "B0→B1_nonzero→B3_loop(1)→B5_exception",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\");",
+      "expectedResult": "throws IndexOutOfBoundsException; no state mutated",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child negative-index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"span\");",
+        "  WHEN",
+        "    call parent.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    }
+  ]
+}

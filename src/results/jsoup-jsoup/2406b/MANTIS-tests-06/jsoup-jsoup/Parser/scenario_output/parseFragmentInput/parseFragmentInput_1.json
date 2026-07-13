@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseFragmentInput on HTML parser with text-only fragment returns a TextNode (no element branch)",
+      "path": "B0→B3→B5→B6",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "return list size is 1 with a TextNode instance",
+      "tags": [
+        "positive",
+        "text-node",
+        "branch-text"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseFragmentInput text-only fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String fragment = \"just text\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0).nodeName().equals(\"#text\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseFragmentInput on XML parser returns multiple element nodes via XmlTreeBuilder",
+      "path": "B0→B3→B5→B6",
+      "precondition": "Parser.xmlParser()",
+      "expectedResult": "return list size is 2 with Element nodes tagged 'a' and 'b'",
+      "tags": [
+        "positive",
+        "xml",
+        "branch-xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseFragmentInput xml parser multiple elements",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String fragment = \"<a/><b/>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://xml.example\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 2;",
+        "    assert nodes.get(0).nodeName().equals(\"a\");",
+        "    assert nodes.get(1).nodeName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseFragmentInput propagates unchecked RuntimeException from TreeBuilder.parseFragment",
+      "path": "B0→B3→B4→B6",
+      "precondition": "Parser created with stub TreeBuilder whose parseFragment throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 propagate runtime exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public <N extends Node> List<N> parseFragment(Reader in, @Nullable Element ctx, String uri, Parser parser) {",
+        "        throw new IllegalStateException(\"stub error\");",
+        "      }",
+        "      // other TreeBuilder methods no-op or return defaults",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader fragment = new StringReader(\"<p/>\");",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException;",
+        "END"
+      ]
+    }
+  ]
+}

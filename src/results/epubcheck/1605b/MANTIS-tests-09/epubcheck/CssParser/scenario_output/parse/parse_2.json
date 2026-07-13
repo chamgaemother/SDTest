@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "ATKEYWORD with block and only declarations exercises hasRuleSet==false path in handleAtRule",
+      "path": "B0→B1→B2→B3→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "contentHandler events: startDocument, startAtRule(font-face), declaration, endAtRule(font-face), endDocument",
+      "tags": [
+        "positive",
+        "atrule",
+        "declaration-block",
+        "hasRuleSet-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 atrule-with-declarations-no-nested-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@font-face{font-family:Arial;}\\n\");",
+        "    CssParser parser = new CssParser();",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.getLastException() == null;",
+        "    assert doc.events == List.of(\"startDocument\",\"startAtRule(font-face)\",\"declaration\",\"endAtRule(font-face)\",\"endDocument\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Premature EOF inside at-rule block after nested ruleset triggers EOF catch in parse loop",
+      "path": "B0→B1→B2→B3→B7→B1→B6→B8",
+      "precondition": "none",
+      "expectedResult": "RecordingErrorHandler reports GRAMMAR_PREMATURE_EOF; doc.events contains startDocument, startAtRule(media), selectors, declaration, endSelectors, endDocument",
+      "tags": [
+        "negative",
+        "exception",
+        "atrule",
+        "premature-eof"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 eof-during-nested-at-rule-block",
+        "  GIVEN",
+        "    // nested at-rule with missing closing '}'",
+        "    Reader reader = new StringReader(\"@media { h1{color:blue;} \");",
+        "    CssParser parser = new CssParser();",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.getLastException().getErrorCode() == CssErrorCode.GRAMMAR_PREMATURE_EOF;",
+        "    assertTrue(doc.events.contains(\"startAtRule(media)\"));",
+        "    assertTrue(doc.events.contains(\"selectors\"));",
+        "    assertTrue(doc.events.contains(\"declaration\"));",
+        "    assertTrue(doc.events.contains(\"endSelectors\"));",
+        "    assertEquals(\"endDocument\", doc.events.get(doc.events.size()-1));",
+        "END"
+      ]
+    }
+  ]
+}

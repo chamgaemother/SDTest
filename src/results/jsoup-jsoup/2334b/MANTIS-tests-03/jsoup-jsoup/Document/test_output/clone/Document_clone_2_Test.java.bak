@@ -1,0 +1,106 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Document.clone() covering deep copy of doctype, quirksMode, attributes, and XML declaration.
+ */
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("TC08 clone() on a Document parsed from HTML with a doctype retains and deep‐copies the DocumentType node")
+    public void test_TC08() {
+        // GIVEN a parsed document with a doctype and a paragraph
+        Document original = Jsoup.parse("<!DOCTYPE html><p>text</p>");
+        DocumentType origDt = original.documentType();
+        assertNotNull(origDt, "Precondition: original documentType should not be null");
+
+        // WHEN cloning the document (should invoke super.clone and copy DocumentType into childNodes)
+        Document clone = original.clone();
+        DocumentType cloneDt = clone.documentType();
+
+        // THEN both original and clone have non-null DocumentType; clone is a distinct instance but same name
+        assertNotNull(cloneDt, "Clone should have a DocumentType");
+        assertNotSame(origDt, cloneDt, "Clone's DocumentType instance should be distinct from original");
+        assertEquals(origDt.name(), cloneDt.name(), "Clone's DocumentType name should equal original's");
+    }
+
+    @Test
+    @DisplayName("TC09 clone() retains non-default QuirksMode and deep-copies it")
+    public void test_TC09() {
+        // GIVEN a new document with custom quirksMode set to quirks
+        Document original = new Document("baseUri");
+        original.quirksMode(Document.QuirksMode.quirks);
+
+        // WHEN cloning the document (super.clone must copy quirksMode field)
+        Document clone = original.clone();
+
+        // THEN the clone's quirks mode matches the original's custom setting
+        assertEquals(Document.QuirksMode.quirks, clone.quirksMode(),
+            "Clone should preserve the custom quirksMode setting");
+    }
+
+    @Test
+    @DisplayName("TC10 clone() deep-copies document and element attributes on root and body")
+    public void test_TC10() {
+        // GIVEN a shell document with attributes on the document root and body
+        Document original = Document.createShell("uri");
+        original.attr("data-root", "r");
+        original.body().attr("data-body", "b");
+        // verify preconditions
+        assertEquals("r", original.attr("data-root"));
+        assertEquals("b", original.body().attr("data-body"));
+
+        // WHEN cloning the document (super.clone and copies attributes)
+        Document clone = original.clone();
+
+        // THEN root-level attributes are equal in value but stored in distinct maps
+        assertEquals(original.attr("data-root"), clone.attr("data-root"));
+        assertNotSame(original.attributes(), clone.attributes(),
+            "Root Attributes instance should be deep-copied");
+
+        // THEN body-level attributes are equal in value but stored in distinct maps
+        Element origBody = original.body();
+        Element cloneBody = clone.body();
+        assertEquals(origBody.attr("data-body"), cloneBody.attr("data-body"));
+        assertNotSame(origBody.attributes(), cloneBody.attributes(),
+            "Body Attributes instance should be deep-copied");
+    }
+
+    @Test
+    @DisplayName("TC11 clone() after switching to XML syntax and generating XmlDeclaration deep-copies the declaration node")
+    public void test_TC11() {
+        // GIVEN a shell document set to XML syntax and charset generating an XmlDeclaration as first child
+        Document original = Document.createShell("uri");
+        // switch syntax to xml to ensure ensureMetaCharsetElement uses XmlDeclaration
+        original.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        // setting charset triggers ensureMetaCharsetElement to prepend an XmlDeclaration node
+        original.charset(Charset.forName("UTF-16"));
+
+        List<Node> origChildren = original.childNodes();
+        assertFalse(origChildren.isEmpty(), "Original should have child nodes after XML declaration");
+        Node origFirst = origChildren.get(0);
+        assertTrue(origFirst instanceof XmlDeclaration, "First child must be XmlDeclaration");
+
+        // WHEN cloning the document (super.clone should clone XmlDeclaration)
+        Document clone = original.clone();
+        List<Node> cloneChildren = clone.childNodes();
+        assertFalse(cloneChildren.isEmpty(), "Clone should have child nodes after cloning XML declaration");
+        Node cloneFirst = cloneChildren.get(0);
+
+        // THEN the first child in clone is a distinct XmlDeclaration with same encoding attribute
+        assertTrue(cloneFirst instanceof XmlDeclaration, "Clone's first child must be XmlDeclaration");
+        assertNotSame(origFirst, cloneFirst, "XmlDeclaration instance should be deep-copied, not the same reference");
+        XmlDeclaration declClone = (XmlDeclaration) cloneFirst;
+        assertEquals("UTF-16", declClone.attr("encoding"),
+            "Cloned XmlDeclaration should retain the same encoding attribute");
+    }
+}

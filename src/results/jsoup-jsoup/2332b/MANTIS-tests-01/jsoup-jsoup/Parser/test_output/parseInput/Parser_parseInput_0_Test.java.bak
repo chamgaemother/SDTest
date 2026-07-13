@@ -1,0 +1,92 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    // A stub TreeBuilder that returns a Document with title "stub"
+    static class StubTreeBuilder extends TreeBuilder {
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            Document doc = new Document(baseUri);
+            doc.title("stub");
+            return doc;
+        }
+    }
+
+    // A stub TreeBuilder that always throws IllegalArgumentException
+    static class ExceptionTreeBuilder extends TreeBuilder {
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            throw new IllegalArgumentException("parse failed");
+        }
+    }
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String, String) delegates to parseInput(Reader, String) with non-null html and baseUri")
+    void test_TC01_O1() {
+        // GIVEN a Parser with a stubbed TreeBuilder that returns a Document titled "stub"
+        Parser parser = new Parser(new StubTreeBuilder());
+        String html = "<div/>";
+        String baseUri = "http://example.com";
+        // WHEN delegating overload parseInput(String, String)
+        Document doc = parser.parseInput(html, baseUri);
+        // THEN the returned Document should have title "stub" (verifies delegation to Reader overload)
+        assertEquals("stub", doc.title());
+    }
+
+    @Test
+    @DisplayName("TC02_O2: parseInput(Reader, String) returns parsed Document from TreeBuilder.parse for valid input")
+    void test_TC02_O2() {
+        // GIVEN a Parser with a stubbed TreeBuilder that sets Document.baseUri to provided baseUri
+        Parser parser = new Parser(new StubTreeBuilder());
+        Reader rdr = new StringReader("<span/>");
+        String baseUri = "base://uri";
+        // WHEN calling parseInput(Reader, String)
+        Document doc = parser.parseInput(rdr, baseUri);
+        // THEN the returned Document should report the same baseUri (verifies correct passing of baseUri)
+        assertEquals("base://uri", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parseInput(Reader, String) propagates exception when TreeBuilder.parse throws IllegalArgumentException")
+    void test_TC03_O2() {
+        // GIVEN a Parser with a TreeBuilder that throws IllegalArgumentException on parse
+        Parser parser = new Parser(new ExceptionTreeBuilder());
+        Reader rdr = new StringReader("<invalid>");
+        String baseUri = "u";
+        // WHEN/THEN assert that IllegalArgumentException is thrown with expected message
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> parser.parseInput(rdr, baseUri));
+        assertTrue(ex.getMessage().contains("parse failed"));
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseInput(String, String) throws NullPointerException when html is null")
+    void test_TC04_O1() {
+        // GIVEN the standard HTML parser
+        Parser parser = Parser.htmlParser();
+        String html = null;
+        String baseUri = "http://x";
+        // WHEN/THEN passing null html should cause NullPointerException in overload String, String
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05_O1: parseInput(String, String) throws NullPointerException when baseUri is null")
+    void test_TC05_O1() {
+        // GIVEN the standard HTML parser
+        Parser parser = Parser.htmlParser();
+        String html = "<b/>";
+        String baseUri = null;
+        // WHEN/THEN passing null baseUri should cause NullPointerException
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+}

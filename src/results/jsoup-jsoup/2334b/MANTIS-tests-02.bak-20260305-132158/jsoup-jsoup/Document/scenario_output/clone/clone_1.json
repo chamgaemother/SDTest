@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "clone() preserves a non-null Connection reference (B0→B1→B2)",
+      "path": "B0→B1→B2",
+      "precondition": "Document with custom Connection set via connection(Connection)",
+      "expectedResult": "clone.connection() returns the same Connection instance as original",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "connection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone preserves custom connection",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "    Connection conn = Jsoup.connect(\"http://example.com\");",
+        "    doc.connection(conn);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertSame(conn, clone.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() produces independent QuirksMode so changing clone’s quirksMode doesn’t affect original",
+      "path": "B0→B1→B2",
+      "precondition": "Document with default quirksMode = noQuirks",
+      "expectedResult": "original.quirksMode remains noQuirks after clone.quirksMode is set to quirks",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "quirksMode"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone independent quirksMode",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode());",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.quirksMode(Document.QuirksMode.quirks);",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode());",
+        "    assertEquals(Document.QuirksMode.quirks, clone.quirksMode());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() produces independent attributes so adding attr to clone doesn’t affect original",
+      "path": "B0→B1→B2",
+      "precondition": "Document with no custom attributes",
+      "expectedResult": "original.hasAttr(\"key\") is false after clone.attr(\"key\",\"value\")",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "attributes"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone independent attribute map",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    assertFalse(doc.hasAttr(\"key\"));",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.attr(\"key\", \"value\");",
+        "  THEN",
+        "    assertFalse(doc.hasAttr(\"key\"));",
+        "    assertTrue(clone.hasAttr(\"key\"));",
+        "END"
+      ]
+    }
+  ]
+}

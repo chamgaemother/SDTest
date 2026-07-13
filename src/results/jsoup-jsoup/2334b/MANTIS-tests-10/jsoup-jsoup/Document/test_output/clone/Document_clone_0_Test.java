@@ -1,0 +1,61 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_0_Test {
+
+    @Test
+    @DisplayName("clone() should produce a deep copy: modifications to clone do not affect original")
+    public void test_clone() {
+        // Arrange: create a document with title, custom outputSettings, custom parser, and body text
+        Document original = Document.createShell("http://example.com");
+        original.title("Original Title");
+        original.charset(java.nio.charset.StandardCharsets.ISO_8859_1);
+        Parser customParser = Parser.htmlParser().settings(Parser.htmlParser().settings());
+        original.parser(customParser);
+        original.body().appendElement("p").text("Paragraph");
+
+        // Act: clone the document
+        Document cloned = original.clone();
+        // Sanity checks: distinct instances
+        assertAll("Instance separation",
+            () -> assertNotSame(original, cloned, "Clone should be a different object instance"),
+            () -> assertNotSame(original.outputSettings(), cloned.outputSettings(),
+                    "OutputSettings should be cloned, not referenced"),
+            () -> assertNotSame(original.parser(), cloned.parser(),
+                    "Parser should be cloned, not referenced")
+        );
+
+        // Assert equal content/state
+        assertAll("Content and settings equality",
+            () -> assertEquals(original.baseUri(), cloned.baseUri(),
+                    "Base URI should be preserved"),
+            () -> assertEquals(original.html(), cloned.html(),
+                    "HTML structure and contents should match"),
+            () -> assertEquals(original.charset(), cloned.charset(),
+                    "Charset should be preserved in outputSettings"),
+            () -> assertEquals(original.title(), cloned.title(),
+                    "Title text should be preserved")
+        );
+
+        // Modify clone and ensure original is unaffected
+        cloned.title("Clone Title");
+        cloned.charset(java.nio.charset.StandardCharsets.UTF_8);
+        cloned.body().appendElement("div").text("NewDiv");
+
+        assertAll("Original remains unchanged after clone modifications",
+            () -> assertEquals("Original Title", original.title(),
+                    "Original title should not change when clone is modified"),
+            () -> assertEquals(java.nio.charset.StandardCharsets.ISO_8859_1, original.charset(),
+                    "Original charset should not change when clone is modified"),
+            () -> assertFalse(original.body().select("div").size() > 0,
+                    "Original body should not gain new elements added to clone")
+        );
+    }
+}

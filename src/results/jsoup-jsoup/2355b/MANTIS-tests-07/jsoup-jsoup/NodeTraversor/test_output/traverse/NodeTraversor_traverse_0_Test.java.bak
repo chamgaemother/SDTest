@@ -1,0 +1,190 @@
+package org.jsoup.select;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("Null visitor throws IllegalArgumentException at entry")
+    public void test_TC01_O1() {
+        // Passing null visitor => Validate.notNull(visitor) should throw
+        NodeVisitor visitor = null;
+        Node root = new TextNode("text", "");
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("Null root throws IllegalArgumentException at entry")
+    public void test_TC02_O1() {
+        // Passing null root => Validate.notNull(root) should throw
+        NodeVisitor visitor = (n, d) -> {};
+        Node root = null;
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("Single-node tree triggers head and tail once each")
+    public void test_TC03_O1() {
+        // Single Element => one head and one tail call at depth 0
+        final int[] headCnt = {0};
+        final int[] tailCnt = {0};
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { headCnt[0]++; }
+            public void tail(Node n, int d) { tailCnt[0]++; }
+        };
+        Element root = new Element(org.jsoup.parser.Tag.valueOf("p"), "");
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(1, headCnt[0]);
+        assertEquals(1, tailCnt[0]);
+    }
+
+    @Test
+    @DisplayName("Two-level tree descends then ascends, verifying depth tracking")
+    public void test_TC04_O1() {
+        // Depth 0->1 then ascend back
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { log.add("H" + d + ":" + n.nodeName()); }
+            public void tail(Node n, int d) { log.add("T" + d + ":" + n.nodeName()); }
+        };
+        Element root = new Element(org.jsoup.parser.Tag.valueOf("div"), "");
+        Element child = new Element(org.jsoup.parser.Tag.valueOf("span"), "");
+        root.appendChild(child);
+        NodeTraversor.traverse(visitor, root);
+        List<String> expected = List.of("H0:div", "H1:span", "T1:span", "T0:div");
+        assertEquals(expected, log);
+    }
+
+    @Test
+    @DisplayName("Multi-sibling children triggers inner while for nextSibling null and ascend")
+    public void test_TC05_O1() {
+        // Root with two li siblings => test correct sequence
+        List<String> seq = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) { seq.add((d > 0 ? " " : "") + n.nodeName()); }
+            public void tail(Node n, int d) { /* ignore */ }
+        };
+        Element root = new Element(org.jsoup.parser.Tag.valueOf("ul"), "");
+        Element li1 = new Element(org.jsoup.parser.Tag.valueOf("li"), "");
+        Element li2 = new Element(org.jsoup.parser.Tag.valueOf("li"), "");
+        root.appendChild(li1);
+        root.appendChild(li2);
+        NodeTraversor.traverse(v, root);
+        List<String> expected = List.of("ul", " li", " li");
+        assertEquals(expected, seq);
+    }
+
+    @Test
+    @DisplayName("Child removed in head causes skip of tail for that node")
+    public void test_TC06_O1() {
+        // Remove child at depth==1 => skip its tail, then tail root
+        Element root = new Element(org.jsoup.parser.Tag.valueOf("div"), "");
+        Element child = new Element(org.jsoup.parser.Tag.valueOf("span"), "");
+        root.appendChild(child);
+        List<String> log = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) {
+                log.add("H" + d + n.nodeName());
+                if (d == 1) n.remove();
+            }
+            public void tail(Node n, int d) { log.add("T" + d + n.nodeName()); }
+        };
+        NodeTraversor.traverse(v, root);
+        // log should have head on div, head on span, then tail on div only
+        assertTrue(log.contains("H0div"));
+        assertTrue(log.contains("H1span"));
+        assertFalse(log.contains("T1span"));
+        assertTrue(log.contains("T0div"));
+        // child removed
+        assertFalse(root.childNodeSize() > 0);
+    }
+
+    @Test
+    @DisplayName("Child replaced in head triggers replaced branch then tail correctly")
+    public void test_TC07_O1() {
+        // Replace child in head => visit original, then replacement, then tails
+        Element root = new Element(org.jsoup.parser.Tag.valueOf("div"), "");
+        Element child = new Element(org.jsoup.parser.Tag.valueOf("p"), "");
+        root.appendChild(child);
+        Element replacement = new Element(org.jsoup.parser.Tag.valueOf("span"), "");
+        List<String> order = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) {
+                order.add("H" + n.nodeName());
+                if (n == child) n.replaceWith(replacement);
+            }
+            public void tail(Node n, int d) { order.add("T" + n.nodeName()); }
+        };
+        NodeTraversor.traverse(v, root);
+        // Expect head p, head span (replacement), tail span, tail div
+        List<String> expected = List.of("Hp", "Hspan", "Tspan", "Tdiv");
+        assertEquals(expected, order);
+    }
+
+    @Test
+    @DisplayName("Elements overload with empty list does nothing")
+    public void test_TC08_O2() {
+        // Empty Elements => traverse(visitor, elements) should not invoke visitor
+        List<String> calls = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) { calls.add("h"); }
+            public void tail(Node n, int d) { calls.add("t"); }
+        };
+        Elements elems = new Elements();
+        NodeTraversor.traverse(v, elems);
+        assertTrue(calls.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Elements overload with multiple elements stops when first STOP encountered")
+    public void test_TC09_O2() {
+        // Simulate stop: we throw a custom StopException to break out
+        class StopVisitor extends RuntimeException {}
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) {
+                throw new StopVisitor();
+            }
+            public void tail(Node n, int d) {}
+        };
+        Elements elems = new Elements(
+                new Element(org.jsoup.parser.Tag.valueOf("div"), ""),
+                new Element(org.jsoup.parser.Tag.valueOf("p"), "")
+        );
+        // Only first element should trigger head and then break
+        StopVisitor ex = assertThrows(StopVisitor.class, () -> NodeTraversor.traverse(v, elems));
+        // no exception on second
+        // test passed if only one thrown
+    }
+
+    @Test
+    @DisplayName("Elements overload iterates all elements when none returns STOP")
+    public void test_TC10_O2() {
+        // Visitor that records each root visited
+        List<String> visited = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) {
+                if (d == 0) visited.add(n.nodeName());
+            }
+            public void tail(Node n, int d) {}
+        };
+        Elements elems = new Elements(
+                new Element(org.jsoup.parser.Tag.valueOf("a"), ""),
+                new Element(org.jsoup.parser.Tag.valueOf("b"), "")
+        );
+        NodeTraversor.traverse(v, elems);
+        assertEquals(List.of("a", "b"), visited);
+    }
+}

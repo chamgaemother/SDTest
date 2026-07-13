@@ -1,0 +1,42 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Parser.newInstance deep-copy behavior, specifically propagation of trackPosition state.
+ */
+public class Parser_setTrackPosition_1_Test {
+
+    @Test
+    @DisplayName("TC03: newInstance() deep-copies a parser with trackPosition=true so the copy also has trackPosition=true")
+    public void test_TC03() {
+        // GIVEN: a parser with trackPosition enabled should propagate true to its copy
+        Parser original = Parser.htmlParser().setTrackPosition(true);
+        assertTrue(original.isTrackPosition(), "Precondition: original parser must have trackPosition=true");
+
+        // WHEN: creating a deep copy via newInstance()
+        Parser copy = original.newInstance();
+
+        // THEN: the copy is a different instance but retains trackPosition=true
+        assertNotSame(original, copy, "Deep copy must yield a distinct instance");
+        assertTrue(copy.isTrackPosition(), "Copied parser should preserve trackPosition=true");
+    }
+
+    @Test
+    @DisplayName("TC04: newInstance() deep-copies a parser with trackPosition=false so the copy also has trackPosition=false")
+    public void test_TC04() {
+        // GIVEN: a default HTML parser with trackPosition disabled by default
+        Parser original = Parser.htmlParser();
+        assertFalse(original.isTrackPosition(), "Precondition: original parser must have trackPosition=false by default");
+
+        // WHEN: creating a deep copy via newInstance()
+        Parser copy = original.newInstance();
+
+        // THEN: the copy is a different instance but retains trackPosition=false
+        assertNotSame(original, copy, "Deep copy must yield a distinct instance");
+        assertFalse(copy.isTrackPosition(), "Copied parser should preserve trackPosition=false");
+    }
+}

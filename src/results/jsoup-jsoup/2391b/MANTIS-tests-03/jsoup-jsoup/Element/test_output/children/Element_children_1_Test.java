@@ -1,0 +1,28 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("TC11: children() with attributes present but no userData skips cache and builds fresh list")
+    public void test_TC11() {
+        // GIVEN: an element with attributes object created but no userData entries
+        Element el = new Element("div"); 
+        el.attributes(); // force creation of attributes, but no userData put => attributes.hasUserData() false
+
+        // append a single child element; children() should return this child
+        Element child = new Element("span");
+        el.appendChild(child);
+
+        // WHEN: calling children(), should not use cache since hasAttributes() true but no userData
+        Elements result = el.children();
+
+        // THEN: fresh Elements list with exactly one child 'span'
+        assertEquals(1, result.size(), "Expected exactly one child element");
+        assertEquals("span", result.get(0).tagName(), 
+            "Expected the only child element to have tagName 'span'");
+    }
+}

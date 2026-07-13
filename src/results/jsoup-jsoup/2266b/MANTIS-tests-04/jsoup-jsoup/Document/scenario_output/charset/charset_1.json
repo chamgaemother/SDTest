@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "charset(html, updateMetaCharset=false) does not insert or remove any meta elements",
+      "path": "B0→B1(updateMetaCharset=false)→B2→B3(html branch skip ensureMetaCharset)→B4(return)",
+      "precondition": "Document shell created, updateMetaCharsetElement(false)",
+      "expectedResult": "no <meta charset> or <meta name=charset> elements are added or removed; outputSettings.charset updated",
+      "tags": [
+        "html",
+        "no-update",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 charset html no-updateMeta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    assert doc.select(\"meta[charset]\").isEmpty();",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "    assertEquals(Charset.forName(\"UTF-16\"), doc.charset());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "charset(html, updateMetaCharset=true) updates existing meta[charset] and removes obsolete meta[name=charset] when both present",
+      "path": "B0→B1(updateMetaCharset=true)→B2(html branch)→B3(meta[charset] exists)→B4(update charset)→B5(remove obsolete)",
+      "precondition": "Document shell has head>meta[charset=\"ISO-8859-1\"] and head>meta[name=charset]",
+      "expectedResult": "<meta charset> updated to UTF-32 and <meta name=charset> removed",
+      "tags": [
+        "html",
+        "update",
+        "obsolete-removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 html update and remove obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\", \"ISO-8859-1\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-32\"));",
+        "  THEN",
+        "    Element m = doc.selectFirst(\"meta[charset]\");",
+        "    assertEquals(Charset.forName(\"UTF-32\").displayName(), m.attr(\"charset\"));",
+        "    assertTrue(doc.select(\"meta[name=charset]\").isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "charset(xml, updateMetaCharset=false) does not prepend or update XmlDeclaration, only outputSettings updated",
+      "path": "B0→B1(updateMetaCharset=false)→B2(xml branch skip ensureMetaCharset)→B3(return)",
+      "precondition": "Document base, xml syntax, updateMetaCharsetElement(false)",
+      "expectedResult": "no XmlDeclaration node added or modified; outputSettings.charset updated",
+      "tags": [
+        "xml",
+        "no-update",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 xml no-updateMeta",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assertFalse(doc.childNodes().stream().anyMatch(n -> n instanceof XmlDeclaration));",
+        "    assertEquals(Charset.forName(\"US-ASCII\"), doc.charset());",
+        "END"
+      ]
+    }
+  ]
+}

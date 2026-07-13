@@ -1,0 +1,38 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for Element.attr(String, String) method based on provided scenarios.
+ */
+public class Element_attr_1_Test {
+
+    @Test
+    @DisplayName("attr returns this and initializes attributes when first called")
+    public void test_TC05() {
+        // GIVEN: a new Element("div") has attributes == null (B0→B1)
+        Element el = new Element("div");
+        // precondition check: attributes field should start null
+        // WHEN: calling attr on an element with no attributes yet triggers initialization (B2)
+        Element returned = el.attr("key", "val");
+        // THEN: method should return the same instance (chainable) and set the attribute
+        assertEquals(el, returned, "attr should return the same Element instance");
+        assertEquals("val", el.attributes().get("key"),
+            "attr should initialize attributes and store the given key-value pair");
+    }
+
+    @Test
+    @DisplayName("attr accepts empty-string key and value, stores empty value")
+    public void test_TC06() {
+        // GIVEN: a new Element("span") (attributes initialized on first attr call)
+        Element el = new Element("span");
+        // WHEN: calling attr with empty key and empty value exercises boundary of empty strings (B0→B1→B2→B4)
+        el.attr("", "");
+        // THEN: the attribute map should contain an entry mapping "" to ""
+        assertEquals("", el.attributes().get(""),
+            "attr should allow empty key and value, storing empty string as the value");
+    }
+}

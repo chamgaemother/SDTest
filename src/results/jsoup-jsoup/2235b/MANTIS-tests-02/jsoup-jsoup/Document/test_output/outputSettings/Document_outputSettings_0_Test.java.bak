@@ -1,0 +1,34 @@
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_outputSettings_Test {
+
+    @Test
+    @DisplayName("outputSettings() returns the default OutputSettings instance after Document construction")
+    void test_TC01() {
+        // Given: a newly constructed Document has an internally initialized OutputSettings instance
+        Document doc = new Document("http://example.com");
+        // When: retrieving the outputSettings for the first time
+        Document.OutputSettings firstRetrieval = doc.outputSettings();
+        // Then: the getter should always return the same default instance (identity check)
+        assertSame(firstRetrieval, doc.outputSettings(),
+            "Expected the default OutputSettings instance to be the same on subsequent calls");
+    }
+
+    @Test
+    @DisplayName("outputSettings() returns the updated OutputSettings instance after setting a new one via setter")
+    void test_TC02() {
+        // Given: a Document and a custom OutputSettings configured differently than the default
+        Document doc = new Document("http://example.com");
+        Document.OutputSettings custom = new Document.OutputSettings()
+            .prettyPrint(false);  // alter state from default to test setter behavior
+        // When: setting the custom OutputSettings on the document
+        doc.outputSettings(custom);
+        // Then: getter should return exactly the custom instance passed (identity check)
+        assertSame(custom, doc.outputSettings(),
+            "Expected the getter to return the same instance provided to the setter");
+    }
+}

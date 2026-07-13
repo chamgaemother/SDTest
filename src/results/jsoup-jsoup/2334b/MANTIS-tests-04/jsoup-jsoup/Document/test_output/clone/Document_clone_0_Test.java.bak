@@ -1,0 +1,58 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for org.jsoup.nodes.Document#clone()
+ */
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("TC01: clone() returns a distinct Document instance with identical content and baseUri")
+    public void test_TC01() {
+        // GIVEN a document shell with a known base URI
+        Document doc = Document.createShell("http://example.com");
+
+        // WHEN cloning the document (should hit normal clone path B0→B1→B2→B3→B4)
+        Document copy = doc.clone();
+
+        // THEN the clone must be a different instance, preserving baseUri and HTML content
+        assertAll(
+            () -> assertNotSame(doc, copy, "Clone should not be the same instance as the original"),
+            () -> assertEquals("http://example.com", copy.baseUri(), "Clone must preserve the base URI"),
+            () -> assertEquals(doc.html(), copy.html(), "Clone must have identical HTML content to the original")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02: clone() produces independent outputSettings and parser clones such that modifying original does not affect clone")
+    public void test_TC02() {
+        // GIVEN a document shell and its clone
+        Document doc = Document.createShell("/base");
+        Document copy = doc.clone();
+
+        // Design justification: By modifying the original's mutable fields (outputSettings, parser),
+        // we ensure we test independence of these clones (state-independence branch path B0→B1→B2→B3→B4).
+
+        // WHEN we change the original's outputSettings charset and parser trackErrors
+        doc.outputSettings().charset(Charset.forName("UTF-16"));
+        Parser originalParser = doc.parser();
+        originalParser.setTrackErrors(10);
+        doc.parser(originalParser); // reassigning to simulate in-place change
+
+        // THEN the clone's outputSettings charset remains default (UTF-8) and parser trackErrors remains 0
+        assertAll(
+            () -> assertEquals("UTF-8", copy.outputSettings().charset().name(),
+                "Clone's charset should remain default UTF-8 after original is modified"),
+            () -> assertEquals(0, copy.parser().getTrackErrors(),
+                "Clone's parser should have independent trackErrors state (default 0)")
+        );
+    }
+}

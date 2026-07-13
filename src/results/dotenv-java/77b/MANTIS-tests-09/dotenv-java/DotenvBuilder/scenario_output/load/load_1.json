@@ -1,0 +1,121 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env is missing and throwIfMissing=true (default)",
+      "path": "B0→B2→[EXIT]",
+      "precondition": "default builder (throwIfMissing=true), no .env file in temp dir",
+      "expectedResult": "DotenvException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "missing-file",
+        "branch-false",
+        "no-systemProperties"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 missing-env-default-throws",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");",
+        "    // do not create .env file",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load() returns Dotenv without exception when .env is missing and ignoreIfMissing() called",
+      "path": "B0→B1→B2→[EXIT]",
+      "precondition": "builder.ignoreIfMissing(), no .env in temp dir",
+      "expectedResult": "returns Dotenv instance with only system env merged",
+      "tags": [
+        "positive",
+        "boundary",
+        "missing-file",
+        "ignoreIfMissing",
+        "branch-false",
+        "no-systemProperties"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 missing-env-ignored",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() == System.getenv().size();",
+        "    assert dotenv.entries(entry -> true).isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() returns Dotenv and merges file entries when systemProperties=false and .env has entries",
+      "path": "B0→B2→[EXIT]",
+      "precondition": "builder.filename default, systemProperties=false, .env with two entries",
+      "expectedResult": "Dotenv contains file entries and system env, no system properties set",
+      "tags": [
+        "positive",
+        "branch-false",
+        "no-systemProperties",
+        "file-entries"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 merge-file-entries-no-systemProperties",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");",
+        "    Files.writeString(dir.resolve(\".env\"), \"FOO=bar\\nBAZ=qux\");",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"FOO\") == null;",
+        "    assert System.getProperty(\"BAZ\") == null;",
+        "    assert dotenv.get(\"FOO\").equals(\"bar\");",
+        "    assert dotenv.get(\"BAZ\").equals(\"qux\");",
+        "    assert dotenv.entries(entry -> true).size() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "load() throws DotenvException when .env malformed and throwIfMalformed=true (already covers exception branch but ensure no systemProperties side‐effects)",
+      "path": "B0→B2→[EXIT]",
+      "precondition": "builder.ignoreIfMissing(), default throwIfMalformed=true, malformed .env",
+      "expectedResult": "DotenvException is thrown and no system property key set",
+      "tags": [
+        "negative",
+        "exception",
+        "malformed-file",
+        "throwIfMalformed",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 malformed-env-default-throws-no-side-effects",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");",
+        "    Files.writeString(dir.resolve(\".env\"), \"BADLINE\");",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMissing();",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;",
+        "    assert System.getProperty(\"BADLINE\") == null;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,115 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "visitor.head replaces a child node on direct traverse(NodeVisitor,Node) triggers replacement and B6→B7→B8 path",
+      "path": "B0→B1→B2→B5→B11→B6→B7→B8→B11→B12→B23→B1→…→B24",
+      "precondition": "root Element with one child c1; visitor replaces c1 with c2 in head",
+      "expectedResult": "replacement node c2 visited head and tail once, then traversal returns normally",
+      "tags": [
+        "positive",
+        "replacement",
+        "direct-traverse",
+        "branch-B8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 direct-replace-child",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"span\"); root.appendChild(c1);",
+        "    Element c2 = new Element(\"em\");",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(n, d) {",
+        "        if (n.equals(c1)) n.replaceWith(c2);",
+        "        if (n.equals(c2)) events.add(\"head(\"+n.nodeName()+\",\"+d+\")\");",
+        "      }",
+        "      tail(n, d) {",
+        "        if (n.equals(c2) || n.equals(root)) events.add(\"tail(\"+n.nodeName()+\",\"+d+\")\");",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert events.contains(\"head(em,1)\");",
+        "    assert events.contains(\"tail(em,1)\");",
+        "    assert events.contains(\"tail(div,0)\");"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "visitor.head removes a middle child on direct traverse to hit removal with non-null nextSibling (B6→B7→B9→B10)",
+      "path": "B0→B1→B2→B5→B11→B6→B7→B9→B10→B1→…→B24",
+      "precondition": "root Element with two children c1,c2; visitor removes c1 in head",
+      "expectedResult": "c1 removed without tail, then traversal continues at nextSibling, and completes normally",
+      "tags": [
+        "positive",
+        "removal",
+        "direct-traverse",
+        "branch-B9",
+        "branch-B10"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 direct-remove-child-with-nextSibling",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element c1 = new Element(\"li\");",
+        "    Element c2 = new Element(\"li\");",
+        "    root.appendChild(c1); root.appendChild(c2);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(n, d) {",
+        "        if (n.equals(c1)) n.remove();",
+        "        events.add(\"head(\"+n.nodeName()+\",\"+d+\")\");",
+        "      }",
+        "      tail(n, d) {",
+        "        events.add(\"tail(\"+n.nodeName()+\",\"+d+\")\");",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertFalse(events.stream().anyMatch(e->e.contains(\"li,1)\" ) && !e.startsWith(\"tail\"));",
+        "    assertTrue(events.contains(\"head(li,1)\") || events.contains(\"tail(li,1)\"));"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "deep nested siblings covers ascend without prune when depth>0 and nextSibling==null leading to B16→B17→B18→B20",
+      "path": "B0→B1→B2→B5→B11→B12→…→B23→B1→…→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "root a->b->c where b has two children c and d and c has no siblings, depth>0",
+      "expectedResult": "visitor.tail on c at depth2 ascends then visits sibling d then completes",
+      "tags": [
+        "positive",
+        "siblings",
+        "ascend-loop",
+        "branch-B17",
+        "branch-B18"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 ascend-through-multiple-tail-for-depth>0",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element b = new Element(\"b\"); root.appendChild(b);",
+        "    Element c = new Element(\"c\");",
+        "    Element d = new Element(\"d\");",
+        "    b.appendChild(c); b.appendChild(d);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = (n, dpth) -> events.add(n.nodeName()+\"@\"+dpth);",
+        "    visitor = visitor.andThen((n,dpth)->events.add(\"/\"+n.nodeName()+\"@\"+dpth));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    // c at depth2 has no nextSibling? false since d exists, but when d finishes then ascend",
+        "    assertTrue(events.contains(\"/c@2\"));",
+        "    assertTrue(events.contains(\"c@2\"));"
+      ]
+    }
+  ]
+}

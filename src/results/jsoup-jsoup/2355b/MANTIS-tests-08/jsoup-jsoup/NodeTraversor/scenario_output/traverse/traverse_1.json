@@ -1,0 +1,39 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "three-level nested nodes triggers inner-while ascend loop when leaf has no siblings",
+      "path": "B0→B1→B2→B3→B5→B6→B11→B12→B23→(loop B1→B2→B3→B5→B11→B12→B23)×2→B1→B5→B11→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "Element root with a single child and a grandchild appended in chain",
+      "expectedResult": "visitor.head and visitor.tail called in proper depth order; no infinite loop",
+      "tags": [
+        "positive",
+        "iteration",
+        "depth-boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 deep-nested ascend-loop",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    Element grand = new Element(\"span\");",
+        "    root.appendChild(child);",
+        "    child.appendChild(grand);",
+        "    RecordingVisitor visitor = new RecordingVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert visitor.calls.equals(List.of(",
+        "      \"head:div:0\",",
+        "      \"head:p:1\",",
+        "      \"head:span:2\",",
+        "      \"tail:span:2\",     // leaf, depth>0, no sibling → ascend in inner-while",
+        "      \"tail:p:1\",",
+        "      \"tail:div:0\"));",
+        "END"
+      ]
+    }
+  ]
+}

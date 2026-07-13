@@ -1,0 +1,18 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class Jsoup_parseBodyFragment_2_Test {
+
+    @Test
+    @DisplayName("TC09: parseBodyFragment(String html, String baseUri) with null baseUri throws NullPointerException")
+    public void test_TC09() {
+        // GIVEN: a valid HTML fragment but a null baseUri to trigger the null check on the baseUri parameter
+        String html = "<p>Test</p>";
+        String baseUri = null;
+        // WHEN & THEN: calling parseBodyFragment with null baseUri should throw NullPointerException
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment(html, baseUri));
+    }
+}

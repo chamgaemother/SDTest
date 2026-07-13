@@ -1,0 +1,55 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("Known HTML input tag is recognized as form-submittable (Tags.containsKey true & formSubmit true)")
+    void test_TC01() {
+        // 'input' is predefined and listed in formSubmitTags, so should be submittable
+        Tag tag = Tag.valueOf("input");
+        boolean result = tag.isFormSubmittable();
+        assertTrue(result, "Expected known <input> tag to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("Known HTML div tag is not form-submittable (Tags.containsKey true & formSubmit false)")
+    void test_TC02() {
+        // 'div' is predefined but not in formSubmitTags, so should not be submittable
+        Tag tag = Tag.valueOf("div");
+        boolean result = tag.isFormSubmittable();
+        assertFalse(result, "Expected known <div> tag to not be form-submittable");
+    }
+
+    @Test
+    @DisplayName("Unknown custom tag returns non-form-submittable (Tags.containsKey false → new Tag.formSubmit false)")
+    void test_TC03() {
+        // 'custom' is not predefined, so a new Tag is created with formSubmit == false
+        Tag tag = Tag.valueOf("custom");
+        boolean result = tag.isFormSubmittable();
+        assertFalse(result, "Expected unknown <custom> tag to not be form-submittable");
+    }
+
+    @Test
+    @DisplayName("Known HTML textarea tag is recognized as form-submittable (case preserved vs default)")
+    void test_TC04() {
+        // 'TextArea' with preserveCase=true matches predefined 'textarea' in formSubmitTags
+        Tag tag = Tag.valueOf("TextArea", ParseSettings.preserveCase);
+        boolean result = tag.isFormSubmittable();
+        assertTrue(result, "Expected <TextArea> with preserveCase to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("Known SVG input-like tag in non-HTML namespace is not form-submittable (namespace mismatch)")
+    void test_TC05() {
+        // 'input' exists in HTML namespace, but using SVG namespace should force creation of new tag with formSubmit=false
+        String svgNs = Parser.NamespaceSvg;
+        Tag tag = Tag.valueOf("input", svgNs, ParseSettings.preserveCase);
+        boolean result = tag.isFormSubmittable();
+        assertFalse(result, "Expected <input> in SVG namespace to not be form-submittable");
+    }
+}

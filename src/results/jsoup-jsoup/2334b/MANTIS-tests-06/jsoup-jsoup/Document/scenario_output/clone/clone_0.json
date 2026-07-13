@@ -1,0 +1,58 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a deep copy with independent outputSettings, parser, and child nodes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document is not the same instance as original; returned.outputSettings != original.outputSettings; returned.parser != original.parser; returned.childNodes are distinct instances with equal content",
+      "tags": [
+        "branch-true",
+        "normal",
+        "deep-clone"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone deep-copy",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assert copy != original;",
+        "    assert copy.outputSettings() != original.outputSettings();",
+        "    assert copy.parser() != original.parser();",
+        "    assert copy.childNodes().size() == original.childNodes().size();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() propagates exception when parser.clone() throws RuntimeException",
+      "path": "B0→B1",
+      "precondition": "Document d = new Document(\"\",\"\"); d.parser(new Parser(){ @Override public Parser clone(){throw new RuntimeException(\"fail\");}}); // stub parser to simulate failure",
+      "expectedResult": "throws RuntimeException with message \"fail\"",
+      "tags": [
+        "exception",
+        "branch-false",
+        "parser-clone-fail",
+        "stub-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone parser-clone-exception",
+        "  GIVEN",
+        "    Document d = new Document(\"\");",
+        "      // stub parser clone to throw",
+        "  WHEN",
+        "    call d.clone();",
+        "  THEN",
+        "    throws RuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

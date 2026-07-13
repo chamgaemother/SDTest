@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "dataset() converts dashed data-attribute keys to camelCase property names (data-foo-bar → fooBar)",
+      "path": "B0→B1(attributes==null)→B2→B3(loop over attributes)→B4(data key prefix match)→B5(transform key)→B6(return)",
+      "precondition": "none",
+      "expectedResult": "map contains entry key 'fooBar' with value 'baz'",
+      "tags": [
+        "positive",
+        "key-transformation",
+        "camelCase"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 dataset camelCase conversion",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "    e.attr(\"data-foo-bar\", \"baz\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 1;",
+        "    assert data.containsKey(\"fooBar\");",
+        "    assert data.get(\"fooBar\").equals(\"baz\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "dataset() live view remove operation removes underlying data- attribute",
+      "path": "B0→B1(attributes!=null)→B2→B3(loop)→B4(match)→B6(return; view supports remove)",
+      "precondition": "element has one data- attribute",
+      "expectedResult": "removing key from map deletes e.attr('data-test')",
+      "tags": [
+        "positive",
+        "live-view",
+        "removal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset live-view removal",
+        "  GIVEN",
+        "    Element e = new Element(\"p\");",
+        "    e.attr(\"data-test\", \"X\");",
+        "    Map<String,String> data = e.dataset();",
+        "    assert data.containsKey(\"test\");",
+        "  WHEN",
+        "    data.remove(\"test\");",
+        "  THEN",
+        "    assertFalse(e.attributes().hasKey(\"data-test\"));",
+        "    assertFalse(data.containsKey(\"test\"));",
+        "END"
+      ]
+    }
+  ]
+}

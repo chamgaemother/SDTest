@@ -1,0 +1,58 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "When parent is null (branch r1 == null) returns UntrackedAttr constant",
+      "path": "B0→B1",
+      "precondition": "Attribute attr = new Attribute(\"key\", \"val\", null); no stubs or mocks required",
+      "expectedResult": "return value is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-false",
+        "no-parent",
+        "P0",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 sourceRange no parent",
+        "  GIVEN",
+        "    Attribute attr = new Attribute(\"key\", \"val\", null);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "When parent present (branch r1 != null) delegates to parent.sourceRange(key)",
+      "path": "B0→B2",
+      "precondition": "Attributes stubParent = new Attributes() { public int indexOfKey(String k){return 0;} public Range.AttributeRange sourceRange(String k){return new Range.AttributeRange(1,2,3,4);} }; Attribute attr = new Attribute(\"data\", \"value\", stubParent); stub simulates sourceRange",
+      "expectedResult": "return value is a Range.AttributeRange with start=1,end=2,nameStart=3,nameEnd=4",
+      "tags": [
+        "branch-true",
+        "with-parent",
+        "P1",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange with parent stub",
+        "  GIVEN",
+        "    Attributes stubParent = new Attributes() {",
+        "      public Range.AttributeRange sourceRange(String k) { return new Range.AttributeRange(1,2,3,4); }",
+        "    };",
+        "    Attribute attr = new Attribute(\"data\", \"value\", stubParent);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result.getStart() == 1 && result.getEnd() == 2 && result.getNameStart() == 3 && result.getNameEnd() == 4;",
+        "END"
+      ]
+    }
+  ]
+}

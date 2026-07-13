@@ -1,0 +1,96 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.IORuntimeException;
+
+public class WordWrap_wrap_2_Test {
+
+    @Test
+    @DisplayName("TC16: wrap(Writer) uses custom stringWidth that forces tooLong on short words and triggers writeLine then broken-word hyphenation path")
+    public void test_TC16() {
+        // GIVEN a short text "ab cd" and a width function doubling lengths so "ab" (2*2=4)>maxWidth(3)
+        CharSequence text = "ab cd";
+        Function<CharSequence, Number> width = s -> s.length() * 2;
+        StringWriter sw = new StringWriter();
+        // WHEN wrapping with maxWidth=3 and custom width => first word "ab" broken with hyphen
+        org.davidmoten.text.utils.WordWrap.from(text)  // Updated import to fully qualify WordWrap
+                .maxWidth(3)
+                .stringWidth(width)
+                .wrap(sw);
+        // THEN expect "ab-\n cd": "ab" broken (hyphen+newline), then space+remaining "cd"
+        assertEquals("ab-\n cd", sw.toString());
+    }
+
+    @Test
+    @DisplayName("TC17: wrap(Writer) with includeExtraWordChars treats punctuation '*' as word character and keeps it attached")
+    public void test_TC17() {
+        // GIVEN text "*a* b", treating '*' as word char means "*a*" stays intact under maxWidth=3
+        String text = "*a* b";
+        StringWriter sw = new StringWriter();
+        // WHEN including '*' as extra word char and wrapping
+        org.davidmoten.text.utils.WordWrap.from(text)  // Updated import to fully qualify WordWrap
+                .maxWidth(3)
+                .includeExtraWordChars("*")
+                .wrap(sw);
+        // THEN "*a*" on first line and "b" second line, no loss of '*'
+        assertEquals("*a*\nb", sw.toString());
+    }
+
+    @Test
+    @DisplayName("TC18: wrap(Writer) with excludeExtraWordChars treats '.' as separator and exercises punctuation branch resetting previousWasPunctuation")
+    public void test_TC18() {
+        // GIVEN "a.b" and '.' excluded => punctuation is separator so space inserted before 'b'
+        String text = "a.b";
+        StringWriter sw = new StringWriter();
+        // WHEN excluding '.' from extraWordChars
+        org.davidmoten.text.utils.WordWrap.from(text)  // Updated import to fully qualify WordWrap
+                .maxWidth(10)
+                .excludeExtraWordChars(".")
+                .wrap(sw);
+        // THEN expect "a. b" (dot stays with 'a', separator space then 'b')
+        assertEquals("a. b", sw.toString());
+    }
+
+    @Test
+    @DisplayName("TC19: wrap(Writer) propagates IORuntimeException when Reader.close() throws IOException in finally")
+    public void test_TC19() throws Exception {
+        // GIVEN a Reader that immediately returns EOF and throws IOException on close
+        Reader faulty = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) {
+                return -1;
+            }
+            @Override
+            public void close() throws IOException {
+                throw new IOException("fail-close");
+            }
+        };
+        StringWriter sw = new StringWriter();
+        // We must invoke package-private from(Reader, boolean) via reflection
+        Method m = org.davidmoten.text.utils.WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);  // Updated import to fully qualify WordWrap
+        m.setAccessible(true);
+        Object builder = m.invoke(null, faulty, true);
+        // WHEN wrap is called, close in finally will throw and be wrapped as IORuntimeException
+        assertThrows(IORuntimeException.class, () -> {
+            try {
+                Method wrapMethod = builder.getClass().getMethod("wrap", java.io.Writer.class);
+                wrapMethod.invoke(builder, sw);
+            } catch (InvocationTargetException e) {
+                // Unwrap so assertThrows sees the correct exception type
+                throw e.getCause();
+            }
+        });
+    }
+}

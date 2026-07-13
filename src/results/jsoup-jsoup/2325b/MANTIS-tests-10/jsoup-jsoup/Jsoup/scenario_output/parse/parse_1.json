@@ -1,0 +1,219 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(html, baseUri, custom parser) invokes parser.parseInput and returns its Document",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document returned from custom parser.parseInput is returned",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse with custom parser",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser stub = new Parser(new Parser.Settings()) {",
+        "      @Override public Document parseInput(String in, String uri) {",
+        "        Document d = Document.createShell(uri);",
+        "        d.body().appendElement(\"marker\").attr(\"id\",\"m\");",
+        "        return d;",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, stub);",
+        "  THEN",
+        "    assert doc.getElementById(\"m\") != null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(html) uses Parser.parse(html, \"\") default baseUri",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "Document.baseUri() == \"\" and element parsed",
+      "tags": [
+        "positive",
+        "overload",
+        "default"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse(html) default overload",
+        "  GIVEN",
+        "    String html = \"<span id='s'>X</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.getElementById(\"s\").text().equals(\"X\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseBodyFragment(bodyHtml, baseUri) returns Document fragment with given baseUri",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "body fragment parsed under baseUri",
+      "tags": [
+        "positive",
+        "fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String frag = \"<p id='f'>F</p>\";",
+        "    String uri = \"http://u/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(frag, uri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(uri);",
+        "    assert doc.getElementById(\"f\").text().equals(\"F\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment(bodyHtml) uses empty baseUri default",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "Document.baseUri()==\"\" and fragment parsed",
+      "tags": [
+        "positive",
+        "fragment",
+        "default"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parseBodyFragment default",
+        "  GIVEN",
+        "    String frag = \"<em id='e'>E</em>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(frag);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.getElementById(\"e\").tagName().equals(\"em\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(File, charsetName, baseUri, parser) invokes DataUtil.load with parser override",
+      "path": "B0→B2→B3",
+      "precondition": "temp file exists with valid HTML",
+      "expectedResult": "Document returned via DataUtil.load with parser",
+      "tags": [
+        "positive",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse file with custom parser",
+        "  GIVEN",
+        "    File f = File.createTempFile(\"t\",\".html\");",
+        "    f.deleteOnExit();",
+        "    Files.write(f.toPath(),\"<p id='x'>X</p>\".getBytes());",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, \"UTF-8\", \"http://b/\", xml);",
+        "  THEN",
+        "    assert doc.getElementById(\"x\").text().equals(\"X\");",
+        "    assert doc.baseUri().equals(\"http://b/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path, charsetName) loads from Path with fallback baseUri path.toAbsolutePath()",
+      "path": "B0→B2",
+      "precondition": "temp path exists with HTML content",
+      "expectedResult": "Document.baseUri()==path.toAbsolutePath and element present",
+      "tags": [
+        "positive",
+        "path",
+        "fallback"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse(Path, charset) fallback baseUri",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"t\",\".html\");",
+        "    Files.write(p, \"<div id='d'>D</div>\".getBytes());",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, \"UTF-8\");",
+        "  THEN",
+        "    assert doc.baseUri().equals(p.toAbsolutePath().toString());",
+        "    assert doc.getElementById(\"d\").text().equals(\"D\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri, parser) throws IOException on invalid charset",
+      "path": "B0→B1→B6",
+      "precondition": "InputStream of valid bytes",
+      "expectedResult": "IOException thrown for invalid charset",
+      "tags": [
+        "negative",
+        "exception",
+        "stream"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parse stream invalid charset",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<p/>\".getBytes());",
+        "    String cs = \"BAD-CS\";",
+        "    String uri = \"\";",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(in, cs, uri, p);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(URL, timeoutMillis) returns Document on successful GET within timeout",
+      "path": "B0→B1→B4→B5",
+      "precondition": "HttpConnection.connect(URL) stubbed to return Connection whose get() returns shell with title",
+      "expectedResult": "Document.title() == 'S'",
+      "tags": [
+        "positive",
+        "network",
+        "timeout"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse(URL,timeout) success",
+        "  GIVEN",
+        "    URL url = new URL(\"http://x/\");",
+        "    int t = 2000;",
+        "    // use reflection to stub HttpConnection.connect(URL) to return",
+        "    // a Connection whose timeout(int) returns self and get() returns shell with title 'S'",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, t);",
+        "  THEN",
+        "    assert doc.title().equals(\"S\");",
+        "END"
+      ]
+    }
+  ]
+}

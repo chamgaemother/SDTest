@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "clone() produces a deep copy: modifying clone's child elements does not affect the original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "original Document has an appended Element child",
+      "expectedResult": "clone is distinct; original.childNodes unaffected by mutations to clone.childNodes",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 deep-copy independence",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://example.com\");",
+        "    Element header = original.body().appendElement(\"header\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    copy.body().appendElement(\"footer\");",
+        "    copy.body().selectFirst(\"header\").remove();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    // original still has its header and no footer",
+        "    assertNotNull(original.body().selectFirst(\"header\"));",
+        "    assertNull(original.body().selectFirst(\"footer\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() preserves quirksMode and location fields, and clone.quirksMode changes do not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "original Document with non-default quirksMode set",
+      "expectedResult": "clone has same quirksMode and location; changing clone.quirksMode does not mutate original",
+      "tags": [
+        "positive",
+        "field-copy",
+        "independence"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 quirksMode and location copy",
+        "  GIVEN",
+        "    Document original = new Document(\"http://host\");",
+        "    original.quirksMode(Document.QuirksMode.quirks);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    copy.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  THEN",
+        "    // clone got original quirksMode and location",
+        "    assertEquals(Document.QuirksMode.quirks, copy.quirksMode());",
+        "    assertEquals(original.location(), copy.location());",
+        "    // changing clone does not affect original",
+        "    assertEquals(Document.QuirksMode.quirks, original.quirksMode());",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, copy.quirksMode());",
+        "END"
+      ]
+    }
+  ]
+}

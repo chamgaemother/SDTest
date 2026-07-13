@@ -1,0 +1,131 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when no child nodes exist (childNodeSize==0)",
+      "path": "B1→B2→B5",
+      "precondition": "Element parent = new Element(\"div\"); // no children appended",
+      "expectedResult": "returned Elements list is empty (size 0)",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns one child and caches shadowChildrenRef on first call (childNodeSize==1, cache miss)",
+      "path": "B1→B3→B6→B7→B8",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\"); // one child element",
+      "expectedResult": "returned Elements list size is 1 and contains the appended <span> element",
+      "tags": [
+        "branch-false",
+        "cache-miss",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-child-cache-miss",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1 && result.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns multiple children and populates cache on first invocation (childNodeSize>1, cache miss, loop N)",
+      "path": "B1→B3→B6→B7→B8",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendElement(\"li\"); parent.appendElement(\"li\"); // two child elements",
+      "expectedResult": "returned Elements list size is 2 containing both <li> children in order",
+      "tags": [
+        "branch-false",
+        "cache-miss",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children multiple-children-cache-miss",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element c1 = parent.appendElement(\"li\");",
+        "    Element c2 = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2 && result.get(0) == c1 && result.get(1) == c2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() returns cached children list on second call without mutation (cache hit, no rebuild)",
+      "path": "B1→B3→B6→B7 (first call) → B6→B7 (second call)",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"p\"); // one child element",
+      "expectedResult": "returned Elements list from second call is same instance and still size 1",
+      "tags": [
+        "cache-hit",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-hit-second-call",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"p\");",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first == second && second.size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() rebuilds cache after mutation via appendChild (cache invalidation)",
+      "path": "B1→B3→B6→B7 (initial cache build) → B9→B6→B7 (after mutation)",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"em\"); parent.children(); // build cache",
+      "expectedResult": "returned Elements list after append has size 2 and includes new <strong> child, different instance from first",
+      "tags": [
+        "cache-miss-after-mutation",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children cache-invalidated-after-append",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = parent.appendElement(\"em\");",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    Element c2 = parent.appendElement(\"strong\");",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second.size() == 2 && second.get(0) == c1 && second.get(1) == c2 && second != first;",
+        "END"
+      ]
+    }
+  ]
+}

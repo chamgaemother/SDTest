@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "charset(Charset) with default html syntax and only obsolete <meta name=charset> removes it and adds new <meta charset>",
+      "path": "B0→B1→B2(html-syntax)→B3(no meta[charset])→B5(append meta[charset])→B6(remove obsolete)",
+      "precondition": "Document.createShell has head with one <meta name=charset> and no <meta charset>",
+      "expectedResult": "new meta[charset] added with charset.displayName(), obsolete meta[name=charset] removed",
+      "tags": [
+        "html",
+        "obsolete-removal",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 html-obsolete-meta-removal",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    // add obsolete meta[name=charset]\n    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assertTrue(doc.updateMetaCharsetElement());",
+        "    // one meta[charset]\n    assertEquals(1, doc.head().select(\"meta[charset]\").size());",
+        "    // no meta[name=charset]\n    assertTrue(doc.head().select(\"meta[name=charset]\").isEmpty());"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "charset(Charset) with default html syntax, existing <meta charset> and obsolete <meta name=charset> updates charset attr and removes obsolete",
+      "path": "B0→B1→B2(html-syntax)→B4(existing meta[charset])→B5(update meta[charset])→B6(remove obsolete)",
+      "precondition": "Document.createShell has head with one <meta charset=\"UTF-8\"> and one <meta name=charset>",
+      "expectedResult": "existing meta[charset] updated to new charset.displayName(), obsolete meta[name=charset] removed",
+      "tags": [
+        "html",
+        "update",
+        "obsolete-removal",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 html-update-and-remove-obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\", \"UTF-8\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "    Charset cs = StandardCharsets.US_ASCII;",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    assertTrue(doc.updateMetaCharsetElement());",
+        "    Elements updated = doc.head().select(\"meta[charset]\");",
+        "    assertEquals(1, updated.size());",
+        "    assertEquals(cs.displayName(), updated.get(0).attr(\"charset\"));",
+        "    assertTrue(doc.head().select(\"meta[name=charset]\").isEmpty());"
+      ]
+    }
+  ]
+}

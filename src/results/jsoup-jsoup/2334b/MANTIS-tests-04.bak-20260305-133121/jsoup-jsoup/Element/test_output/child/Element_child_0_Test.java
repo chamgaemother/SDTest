@@ -1,0 +1,72 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_0_Test {
+
+    @Test
+    @DisplayName("child(0) on element with no children throws IndexOutOfBoundsException (childNodeSize==0 branch)")
+    void test_TC01() {
+        // GIVEN: a new element with no children ensures childNodeSize==0 and branch entering exception
+        Element parent = new Element("div");
+        int index = 0;
+        // WHEN & THEN: calling child(0) on empty children must throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(index));
+    }
+
+    @Test
+    @DisplayName("child(0) returns only child when one Element child present (childNodeSize>0, first iteration builds cache)")
+    void test_TC02() {
+        // GIVEN: an element with exactly one child element triggers building cache in childElementsList()
+        Element parent = new Element("ul");
+        Element li = parent.appendElement("li");
+        int index = 0;
+        // WHEN: retrieving the first child element
+        Element result = parent.child(index);
+        // THEN: it must return the single appended <li> element
+        assertEquals(li, result);
+    }
+
+    @Test
+    @DisplayName("child(1) returns second element among mixed TextNode and Element children (filters non-Element)")
+    void test_TC03() {
+        // GIVEN: parent has mixed nodes: TextNode, then <span>, then <a>; ensures loop over childNodes filters only Element instances
+        Element parent = new Element("p");
+        parent.appendText("text");
+        parent.appendElement("span");
+        Element second = parent.appendElement("a");
+        int index = 1;
+        // WHEN: retrieving child(1) from filtered element list
+        Element result = parent.child(index);
+        // THEN: it should skip TextNode and <span>, returning the <a> element
+        assertEquals(second, result);
+    }
+
+    @Test
+    @DisplayName("child(-1) with negative index throws IndexOutOfBoundsException (invalid index <0)")
+    void test_TC04() {
+        // GIVEN: an element with one child; negative index is invalid before filter logic
+        Element parent = new Element("div");
+        parent.appendElement("span");
+        int index = -1;
+        // WHEN & THEN: child(-1) must throw IndexOutOfBoundsException for invalid index
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(index));
+    }
+
+    @Test
+    @DisplayName("child(1) after caching returns correct element without rebuilding cache (shadowChildrenRef!=null branch)")
+    void test_TC05() {
+        // GIVEN: parent with two children; initial call to child(0) builds and caches the element list
+        Element parent = new Element("div");
+        parent.appendElement("x");
+        Element y = parent.appendElement("y");
+        // build cache
+        parent.child(0);
+        int index = 1;
+        // WHEN: second call to child(1) should use cached shadowChildrenRef
+        Element result = parent.child(index);
+        // THEN: it should return the previously appended <y> element
+        assertEquals(y, result);
+    }
+}

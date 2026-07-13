@@ -1,0 +1,147 @@
+package io.github.cdimascio.dotenv;
+
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.Comparator;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_0_Test {
+
+    @Test
+    @DisplayName("TC01: load() with systemProperties=false loads entries normally without setting system properties")
+    void test_TC01() throws IOException, DotenvException {
+        Path tempDir = Files.createTempDirectory("tc01");
+        try {
+            Path envFile = tempDir.resolve(".env");
+            Files.write(envFile, "KEY1=VALUE1\nKEY2=VALUE2\n".getBytes());
+
+            DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString());
+            Dotenv dotenv = builder.load();
+
+            // Assert that entries are loaded correctly
+            assertEquals("VALUE1", dotenv.get("KEY1"), "KEY1 should map to VALUE1");
+            assertEquals("VALUE2", dotenv.get("KEY2"), "KEY2 should map to VALUE2");
+            // Assert system properties remain unchanged
+            assertNull(System.getProperty("KEY1"), "System property KEY1 should not be set");
+            assertNull(System.getProperty("KEY2"), "System property KEY2 should not be set");
+        } finally {
+            Files.walk(tempDir)
+                 .sorted(Comparator.reverseOrder())
+                 .forEach(p -> {
+                     try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                 });
+        }
+    }
+
+    @Test
+    @DisplayName("TC02: load() with systemProperties=true and empty .env yields no system properties set")
+    void test_TC02() throws IOException, DotenvException {
+        Path tempDir = Files.createTempDirectory("tc02");
+        try {
+            Path envFile = tempDir.resolve(".env");
+            Files.createFile(envFile);
+
+            DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString()).systemProperties();
+            Dotenv dotenv = builder.load();
+
+            // No entries loaded
+            assertTrue(dotenv.entries().isEmpty(), "entries() should be empty for empty .env");
+            // No system properties introduced
+            assertNull(System.getProperty("SOME_RANDOM_KEY"), "No new system props should be set");
+        } finally {
+            Files.walk(tempDir)
+                 .sorted(Comparator.reverseOrder())
+                 .forEach(p -> {
+                     try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                 });
+        }
+    }
+
+    @Test
+    @DisplayName("TC03: load() with systemProperties=true and one entry sets exactly one system property")
+    void test_TC03() throws IOException, DotenvException {
+        Path tempDir = Files.createTempDirectory("tc03");
+        try {
+            Path envFile = tempDir.resolve(".env");
+            Files.write(envFile, "FOO=bar\n".getBytes());
+
+            // Ensure no pre-existing property
+            System.clearProperty("FOO");
+            DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString()).systemProperties();
+            Dotenv dotenv = builder.load();
+
+            // Entry loaded correctly
+            assertEquals("bar", dotenv.get("FOO"), "FOO should map to bar");
+            // System property set exactly once
+            assertEquals("bar", System.getProperty("FOO"), "System property FOO should be set to bar");
+        } finally {
+            Files.walk(tempDir)
+                 .sorted(Comparator.reverseOrder())
+                 .forEach(p -> {
+                     try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                 });
+            System.clearProperty("FOO");
+        }
+    }
+
+    @Test
+    @DisplayName("TC04: load() with systemProperties=true and multiple entries sets multiple system properties")
+    void test_TC04() throws IOException, DotenvException {
+        Path tempDir = Files.createTempDirectory("tc04");
+        try {
+            Path envFile = tempDir.resolve(".env");
+            Files.write(envFile, "A=1\nB=2\nC=3\n".getBytes());
+
+            // Clear possible existing props
+            System.clearProperty("A");
+            System.clearProperty("B");
+            System.clearProperty("C");
+            DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString()).systemProperties();
+            Dotenv dotenv = builder.load();
+
+            // Entries loaded correctly
+            assertAll("Check multiple entries and system properties",
+                () -> assertEquals("1", dotenv.get("A"), "A should map to 1"),
+                () -> assertEquals("2", dotenv.get("B"), "B should map to 2"),
+                () -> assertEquals("3", dotenv.get("C"), "C should map to 3"),
+                () -> assertEquals("1", System.getProperty("A"), "System property A should be set to 1"),
+                () -> assertEquals("2", System.getProperty("B"), "System property B should be set to 2"),
+                () -> assertEquals("3", System.getProperty("C"), "System property C should be set to 3")
+            );
+        } finally {
+            Files.walk(tempDir)
+                 .sorted(Comparator.reverseOrder())
+                 .forEach(p -> {
+                     try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                 });
+            System.clearProperty("A");
+            System.clearProperty("B");
+            System.clearProperty("C");
+        }
+    }
+
+    @Test
+    @DisplayName("TC05: load() throws DotenvException when .env file is missing and throwIfMissing=true")
+    void test_TC05() throws IOException {
+        Path tempDir = Files.createTempDirectory("tc05");
+        try {
+            DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString());
+            assertThrows(DotenvException.class, builder::load, 
+                "Expected DotenvException when .env is missing and throwIfMissing=true");
+            assertNull(System.getProperty("ANY_KEY"), "No system property should be set");
+        } finally {
+            Files.walk(tempDir)
+                 .sorted(Comparator.reverseOrder())
+                 .forEach(p -> {
+                     try { Files.deleteIfExists(p); } catch (IOException ignored) {}
+                 });
+        }
+    }
+}

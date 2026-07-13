@@ -1,0 +1,124 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with systemProperties=false loads entries normally without setting system properties",
+      "path": "B0→B2",
+      "precondition": "Create temporary directory with .env file containing two lines: KEY1=VALUE1 and KEY2=VALUE2; use real DotenvReader and DotenvParser; builder configured with default systemProperties=false",
+      "expectedResult": "returns Dotenv instance containing entries with keys KEY1, KEY2 and respective values VALUE1, VALUE2; System.getProperty for KEY1 and KEY2 remains unchanged",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 load without systemProperties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir);",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"KEY1\").equals(\"VALUE1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with systemProperties=true and empty .env yields no system properties set",
+      "path": "B0→B1→B2",
+      "precondition": "Create temp directory with empty .env file; builder configured with systemProperties=true",
+      "expectedResult": "returns Dotenv instance with no entries from file; no new System.getProperty keys introduced for any file entries",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 load with systemProperties and empty file",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with systemProperties=true and one entry sets exactly one system property",
+      "path": "B0→B1→B2",
+      "precondition": "Create temp directory with .env file containing a single line: FOO=bar; builder.systemProperties=true",
+      "expectedResult": "returns Dotenv instance with entry FOO=bar; System.getProperty(\"FOO\").equals(\"bar\")",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 load with one entry and systemProperties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"FOO\").equals(\"bar\") && System.getProperty(\"FOO\").equals(\"bar\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true and multiple entries sets multiple system properties",
+      "path": "B0→B1→B2",
+      "precondition": "Create temp directory with .env file containing lines A=1, B=2, C=3; builder.systemProperties=true",
+      "expectedResult": "returns Dotenv instance with entries A=1, B=2, C=3; System.getProperty(\"A\").equals(\"1\"), System.getProperty(\"B\").equals(\"2\"), System.getProperty(\"C\").equals(\"3\")",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 load with multiple entries and systemProperties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"A\").equals(\"1\") && dotenv.get(\"B\").equals(\"2\") && dotenv.get(\"C\").equals(\"3\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env file is missing and throwIfMissing=true",
+      "path": "B0",
+      "precondition": "Ensure directory does not contain .env; builder with default throwIfMissing=true",
+      "expectedResult": "throws DotenvException; no System properties modified",
+      "tags": [
+        "branch-false",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 load missing file exception",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(emptyDir);",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;",
+        "END"
+      ]
+    }
+  ]
+}

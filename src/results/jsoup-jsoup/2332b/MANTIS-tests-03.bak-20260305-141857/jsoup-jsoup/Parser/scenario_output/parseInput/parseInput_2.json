@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "xmlParser.parseInput(String, String) with simple XML string invokes the String overload then Reader overload and returns XML document",
+      "path": "B0→B2(String)→B3(Reader)→B4(parse)",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "Document contains XML root and child nodes; no exceptions",
+      "tags": [
+        "positive",
+        "overload",
+        "xml",
+        "string-to-reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 xmlParser parseInput via String overload",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<root><child attr='v'/></root>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assert doc.child(0).nodeName().equals(\"root\");",
+        "    assert doc.selectFirst(\"child\").attr(\"attr\").equals(\"v\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "htmlParser.parseInput(Reader, String) with simple HTML reader invokes Reader overload directly and returns HTML document",
+      "path": "B0→B3(Reader)→B4(parse)",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "Document body contains <div>Test</div>; no exceptions",
+      "tags": [
+        "positive",
+        "overload",
+        "html",
+        "reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 htmlParser parseInput via Reader overload",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<div>Test</div>\");",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"div\").text().equals(\"Test\");",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    }
+  ]
+}

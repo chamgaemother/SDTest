@@ -1,0 +1,200 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName) with valid UTF-8 charset returns parsed Document and uses file absolute path as baseUri",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temporary HTML file exists with <h2>Head2</h2>",
+      "expectedResult": "Document contains h2 text 'Head2' and baseUri equals file absolute path",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse(File,charsetName) two-arg overload",
+        "  GIVEN",
+        "    File file = createTempHtmlFile(\"<h2>Head2</h2>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset);",
+        "  THEN",
+        "    assert doc.selectFirst(\"h2\").text().equals(\"Head2\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File, charsetName, baseUri, Parser) with xmlParser returns XML-parsed Document and preserves provided baseUri",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "temporary HTML file exists with <item>Val</item>",
+      "expectedResult": "Document parsed by xml parser contains item 'Val' and baseUri is provided",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse(File,charsetName,baseUri,Parser) xmlParser",
+        "  GIVEN",
+        "    File file = createTempHtmlFile(\"<item>Val</item>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://mybase/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.selectFirst(\"item\").text().equals(\"Val\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path, charsetName) two-arg overload uses path absolute string as baseUri",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temporary Path exists with <p>Path</p>",
+      "expectedResult": "Document contains p text 'Path' and baseUri equals path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse(Path,charsetName) two-arg overload",
+        "  GIVEN",
+        "    Path path = createTempHtmlPath(\"<p>Path</p>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.selectFirst(\"p\").text().equals(\"Path\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path) one-arg overload detects UTF-8 by BOM/meta and sets baseUri to absolute path",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temporary Path exists with UTF-8 BOM and <div>BOM</div>",
+      "expectedResult": "Document contains div text 'BOM' and baseUri equals absolute path",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "bom"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse(Path) single-arg overload",
+        "  GIVEN",
+        "    Path path = createTempHtmlPathWithBom(\"<div>BOM</div>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.selectFirst(\"div\").text().equals(\"BOM\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path, charsetName, baseUri, Parser) with htmlParser returns parsed Document and applies given baseUri",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "temporary Path exists with <span>SP</span>",
+      "expectedResult": "Document parsed contains span 'SP' and baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse(Path,charsetName,baseUri,Parser) htmlParser",
+        "  GIVEN",
+        "    Path path = createTempHtmlPath(\"<span>SP</span>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"https://pu/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.selectFirst(\"span\").text().equals(\"SP\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri) with valid UTF-8 stream returns parsed Document and closes stream",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "InputStream contains <ul><li>One</li></ul> and charsetName UTF-8",
+      "expectedResult": "Document contains li 'One' and baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse(InputStream,charsetName,baseUri) valid stream",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<ul><li>One</li></ul>\".getBytes(UTF_8));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.selectFirst(\"li\").text().equals(\"One\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert in.isClosed();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) with xmlParser returns XML-parsed Document and closes stream",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "InputStream contains <root><e>3</e></root> and charsetName UTF-8",
+      "expectedResult": "Document parsed by xml parser contains e '3' and baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse(InputStream,charsetName,baseUri,Parser) xmlParser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<root><e>3</e></root>\".getBytes(UTF_8));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://streamX/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.selectFirst(\"e\").text().equals(\"3\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert in.isClosed();",
+        "END"
+      ]
+    }
+  ]
+}

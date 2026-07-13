@@ -1,0 +1,145 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for BM25InvertedIndex#search method covering all provided scenarios.
+ */
+public class BM25InvertedIndex_search_0_Test {
+
+    @Test
+    @DisplayName("TC01: search on term not in index returns empty list (branch B0 false)")
+    void test_TC01() {
+        // GIVEN an empty index, so index.containsKey(term) is false => B0 false
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        String term = "ghost";
+
+        // WHEN
+        List<?> results = idx.search(term);
+
+        // THEN
+        assertTrue(results.isEmpty(), "Expected no results when term is absent in index");
+    }
+
+    @Test
+    @DisplayName("TC02: search on term mapped to empty doc map returns empty list (loop-0, branch-true)")
+    void test_TC02() throws Exception {
+        // GIVEN index contains key "x" but its map is empty => B0 true, loop over termDocs size 0 => no iteration
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> internal = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        internal.put("x", new HashMap<>());  // stub empty doc map
+        String term = "x";
+
+        // WHEN
+        List<?> results = idx.search(term);
+
+        // THEN
+        assertTrue(results.isEmpty(), "Expected empty results when term maps to an empty document list");
+    }
+
+    @Test
+    @DisplayName("TC03: search with one doc entry but movie missing skips entry (loop-1 skip)")
+    void test_TC03() throws Exception {
+        // GIVEN index contains "term"-> {99=1}, but movies map is empty => B0 true, loop once, movie==null => skip
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> internal = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        Map<Integer,Integer> oneEntry = new HashMap<>();
+        oneEntry.put(99, 1);
+        internal.put("term", oneEntry);
+        String term = "term";
+
+        // WHEN
+        List<?> results = idx.search(term);
+
+        // THEN
+        assertTrue(results.isEmpty(), "Expected skip of missing movie entry and thus empty results");
+    }
+
+    @Test
+    @DisplayName("TC04: search with one matching movie returns single result")
+    void test_TC04() {
+        // GIVEN adding one movie with content containing "two" => termDocs size 1, movie exists => B3 true
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "A", 5.0, 2020, "one two three");
+        String term = "two";
+
+        // WHEN
+        List<SearchResult> results = idx.search(term);
+
+        // THEN
+        assertEquals(1, results.size(), "Expected exactly one result for single matching document");
+        assertEquals(1, results.get(0).getDocId(), "Expected returned docId to be 1");
+    }
+
+    @Test
+    @DisplayName("TC05: search with two matching movies returns sorted results")
+    void test_TC05() {
+        // GIVEN two movies both containing "t"; one has higher term frequency => sorted by descending score
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "M1", 0.0, 2000, "t t t");      // freq=3
+        idx.addMovie(2, "M2", 0.0, 2001, "t x t");      // freq=2
+        String term = "t";
+
+        // WHEN
+        List<SearchResult> results = idx.search(term);
+
+        // THEN
+        assertEquals(2, results.size(), "Expected two results for term present in two documents");
+        // Ensure sorted: first score >= second score
+        assertTrue(results.get(0).getRelevanceScore() >= results.get(1).getRelevanceScore(),
+                "Expected results sorted by descending relevance score");
+    }
+
+    @Test
+    @DisplayName("TC06: search is case-insensitive: uppercase term matches lowercase index")
+    void test_TC06() {
+        // GIVEN movie content has "hello" lowercase; searching "HELLO" triggers toLowerCase => B0 true
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(3, "Name", 7.0, 2021, "Hello World");
+        String term = "HELLO";
+
+        // WHEN
+        List<SearchResult> results = idx.search(term);
+
+        // THEN
+        assertEquals(1, results.size(), "Expected one result for case-insensitive match");
+        assertEquals(3, results.get(0).getDocId(), "Expected returned docId to be 3");
+    }
+
+    @Test
+    @DisplayName("TC07: search with mixed missing and present movies returns only present")
+    void test_TC07() throws Exception {
+        // GIVEN movie 4 contains "y"; we stub extra mapping y->99 which has no movie => skip 99, include 4
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(4, "X", 1.0, 2000, "y z");
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> internal = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        // Add extra docId=99 for term "y"
+        internal.get("y").put(99, 1);
+        String term = "y";
+
+        // WHEN
+        List<SearchResult> results = idx.search(term);
+
+        // THEN
+        assertEquals(1, results.size(), "Expected only the present movie to be returned");
+        assertEquals(4, results.get(0).getDocId(), "Expected returned docId to be 4");
+    }
+}

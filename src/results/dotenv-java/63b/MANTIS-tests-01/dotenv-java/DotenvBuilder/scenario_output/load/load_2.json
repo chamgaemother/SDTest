@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "load() with missing .env file and ignoreIfMissing() returns empty Dotenv without exception (tests throwIfMissing=false branch)",
+      "path": "B0→B1→B2",
+      "precondition": "empty directory without .env file",
+      "expectedResult": "returns Dotenv with no file entries; no exception thrown",
+      "tags": [
+        "positive",
+        "ignoreIfMissing",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 load ignores missing file when configured",
+        "  GIVEN",
+        "    // Arrange temporary directory with no .env file",
+        "    Path tempDir = createTempDirectory();",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert no file-based entries",
+        "    assertTrue(dotenv.entries(e -> true).isEmpty());"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "get(key, defaultValue) returns default when key absent in both system and file",
+      "path": "B0→B1→B2",
+      "precondition": "empty .env file and no relevant system property/env var",
+      "expectedResult": "get(\"MISSING\", \"DEF\") returns \"DEF\"",
+      "tags": [
+        "positive",
+        "defaultValue",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 getWithDefaultReturnsDefault",
+        "  GIVEN",
+        "    // Arrange an empty .env and no system prop for MISSING",
+        "    Path tempDir = createTempDirectoryWithEmptyEnv();",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir.toString()).load();",
+        "  WHEN",
+        "    String result = dotenv.get(\"MISSING\", \"DEF\");",
+        "  THEN",
+        "    // Assert default value returned",
+        "    assertEquals(\"DEF\", result);"
+      ]
+    }
+  ]
+}

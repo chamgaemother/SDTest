@@ -1,0 +1,171 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "parse(Path, charsetName, baseUri) successfully loads HTML and sets baseUri",
+      "path": "B0→B19→B20",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "return Document containing file HTML and baseUri equals provided baseUri",
+      "tags": [
+        "positive",
+        "file",
+        "path",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse(Path, charsetName, baseUri) success",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoupPath\", \".html\");",
+        "    Files.write(path, \"<p>Path</p>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://path.test/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.html().contains(\"<p>Path</p>\");",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path, charsetName) uses file path as baseUri when charsetName provided",
+      "path": "B0→B19→B21",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "return Document containing file HTML and baseUri equals path.toAbsolutePath()",
+      "tags": [
+        "positive",
+        "file",
+        "path",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse(Path, charsetName) default baseUri",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoupPath2\", \".html\");",
+        "    Files.write(path, \"<div>P13</div>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.html().contains(\"<div>P13</div>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path) reads HTML and defaults charsetName and baseUri to file path",
+      "path": "B0→B19→B22",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "return Document containing file HTML and baseUri equals path.toAbsolutePath()",
+      "tags": [
+        "positive",
+        "file",
+        "path",
+        "overload",
+        "null-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse(Path) default charset & baseUri",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoupPath3\", \".html\");",
+        "    Files.write(path, \"<span>P14</span>\".getBytes(\"UTF-8\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.html().contains(\"<span>P14</span>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path, charsetName, baseUri, parser) uses provided parser and respects baseUri",
+      "path": "B0→B19→B23",
+      "precondition": "temporary XML file exists",
+      "expectedResult": "return Document parsed by xmlParser and baseUri equals provided baseUri",
+      "tags": [
+        "positive",
+        "file",
+        "path",
+        "parser",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse(Path, charsetName, baseUri, parser) xml overload",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoupPathXML\", \".xml\");",
+        "    Files.write(path, \"<root/>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"u\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"root\").size() == 1;",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri, parser) reads stream with xml parser and closes it",
+      "path": "B0→B24→B25",
+      "precondition": "ByteArrayInputStream with XML content",
+      "expectedResult": "return Document parsed by xmlParser and InputStream is closed after parsing",
+      "tags": [
+        "positive",
+        "io",
+        "inputstream",
+        "parser",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse(InputStream, charsetName, baseUri, parser) xml overload",
+        "  GIVEN",
+        "    byte[] bytes = \"<a/>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(bytes);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"base\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"a\").size() == 1;",
+        "    assertThrows(IOException.class, in::read);"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(URL, timeoutMillis) with non-http protocol throws MalformedURLException",
+      "path": "B0→B26→B27",
+      "precondition": "URL with ftp protocol",
+      "expectedResult": "throws MalformedURLException",
+      "tags": [
+        "negative",
+        "url",
+        "exception",
+        "malformed"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse(URL, timeout) invalid protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com/file.html\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException"
+      ]
+    }
+  ]
+}

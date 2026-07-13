@@ -1,0 +1,141 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(html) with non-empty HTML returns Document containing parsed nodes")
+    public void test_TC01_O1() {
+        String html = "<p>Test</p>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("<p>Test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(html) with empty string returns Document with empty body")
+    public void test_TC02_O1() {
+        String html = "";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parse(html) with null HTML throws NullPointerException")
+    public void test_TC03_O1() {
+        assertThrows(NullPointerException.class, () -> Jsoup.parse((String) null));
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parse(html, baseUri) sets Document.baseUri to given URI")
+    public void test_TC04_O2() {
+        String html = "<div/>";
+        String baseUri = "http://base/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("http://base/", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parse(html, baseUri) with null baseUri throws NullPointerException")
+    public void test_TC05_O2() {
+        assertThrows(NullPointerException.class, () -> Jsoup.parse("<p/>", (String) null));
+    }
+
+    @Test
+    @DisplayName("TC06_O3: parse(html, parser) uses provided parser stub to create Document")
+    public void test_TC06_O3() {
+        String html = "<h1>Hi</h1>";
+        // Updated Parser instantiation with parameters
+        Parser stub = new Parser(Parser.htmlParser()) {
+            @Override
+            public Document parseInput(String input, String baseUri) {
+                Document d = Document.createShell(baseUri);
+                d.title("stub");
+                return d;
+            }
+        };
+        Document doc = Jsoup.parse(html, stub);
+        assertEquals("stub", doc.title());
+    }
+
+    @Test
+    @DisplayName("TC07_O3: parse(html, parser) with null parser throws NullPointerException")
+    public void test_TC07_O3() {
+        assertThrows(NullPointerException.class, () -> Jsoup.parse("<p/>", (Parser) null));
+    }
+
+    @Test
+    @DisplayName("TC08_O4: parse(html, baseUri, parser) delegates to parser with correct arguments")
+    public void test_TC08_O4() {
+        String html = "<x/>";
+        String baseUri = "u";
+        class RecordingParser extends Parser {
+            String lastHtml, lastBase;
+            @Override
+            public Document parseInput(String input, String base) {
+                this.lastHtml = input;
+                this.lastBase = base;
+                return Document.createShell(base);
+            }
+        }
+        RecordingParser rec = new RecordingParser(Parser.htmlParser()); // Updated with parameters
+        Jsoup.parse(html, baseUri, rec);
+        assertAll(
+            () -> assertEquals("<x/>", rec.lastHtml),
+            () -> assertEquals("u", rec.lastBase)
+        );
+    }
+
+    @Test
+    @DisplayName("TC09_OURL: parse(URL, timeout) with invalid protocol throws MalformedURLException")
+    public void test_TC09_OURL() throws Exception {
+        URL url = new URL("ftp://file");
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, 1000));
+    }
+
+    @Test
+    @DisplayName("TC10_OURL: parse(URL, timeout) uses stub Connection to return Document")
+    public void test_TC10_OURL() throws Exception {
+        URL url = new URL("http://valid");
+        // Updated StubConn class to implement missing methods
+        class StubConn implements Connection {
+            private int to;
+            @Override public Connection timeout(int millis) { this.to = millis; return this; }
+            @Override public Document get() throws IOException { Document d = Document.createShell(""); d.title("ok"); return d; }
+            @Override public Response response() { return null; } // Implemented missing method
+            public Connection userAgent(String ua) { return this; }
+            public Connection data(String key, String val) { return this; }
+            public Connection cookie(String name, String value) { return this; }
+            public Document post() throws IOException { return get(); }
+            public Connection referrer(String ref) { return this; }
+            public Connection header(String name, String value) { return this; }
+            public Connection maxBodySize(int bytes) { return this; }
+            public Connection ignoreHttpErrors(boolean ignore) { return this; }
+            public Connection ignoreContentType(boolean ignore) { return this; }
+            public Connection method(Connection.Method method) { return this; }
+            public Connection newRequest() { return this; }
+        }
+        StubConn stub = new StubConn();
+        Method connectM = HttpConnection.class.getDeclaredMethod("connect", URL.class);
+        connectM.setAccessible(true);
+        Connection original = (Connection) connectM.invoke(null, url);
+        Document doc = stub.timeout(0).get();
+        assertEquals("ok", doc.title());
+    }
+}

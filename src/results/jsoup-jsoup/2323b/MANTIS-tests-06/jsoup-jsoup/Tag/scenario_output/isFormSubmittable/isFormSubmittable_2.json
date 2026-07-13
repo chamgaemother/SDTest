@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "valueOf(\"TEXTAREA\", html, normal-case) returns the same static instance (no clone) and isFormSubmittable=true",
+      "path": "B0→B1→B2→B3→B4→B5(null first get)→B6(preserveCase=false)→B7(second get hit)→B8(return static)",
+      "precondition": "Parser.NamespaceHtml known, ParseSettings.normal",
+      "expectedResult": "returns the canonical textarea Tag (same instance) and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "no-clone",
+        "known-submit",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 known-submit uppercase normal-case no-clone",
+        "  GIVEN",
+        "    String tagName = \"TEXTAREA\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.normal;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    // same static instance for textarea",
+        "    assertSame(Tag.valueOf(\"textarea\"), result);",
+        "    assertTrue(result.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "valueOf(\"input\", svg, normal-case) namespace mismatch yields new generic Tag and isFormSubmittable=false",
+      "path": "B0→B1→B2→B3→B4→B5(first get hit but namespace mismatch)→B6(preserveCase=false)→B7(second get hit but namespace mismatch)→B9(create generic)→B10(return new)",
+      "precondition": "Parser.NamespaceSvg known, ParseSettings.normal",
+      "expectedResult": "returns a new generic Tag (not in Tags map) and isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "namespace-mismatch",
+        "generic",
+        "no-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 known-tag namespace-mismatch generic",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.normal;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    // new generic instance, not same as static HTML input",
+        "    assertNotSame(Tag.valueOf(\"input\"), result);",
+        "    assertEquals(\"input\", result.getName());",
+        "    assertFalse(result.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "valueOf(non-null tag, null namespace, any settings) throws NullPointerException at namespace check",
+      "path": "B0→B1→B2→B3→B4(validate.notNull namespace throws)",
+      "precondition": "ParseSettings.preserveCase (or normal)",
+      "expectedResult": "NullPointerException is thrown due to null namespace",
+      "tags": [
+        "negative",
+        "exception",
+        "null-check"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 null-namespace throws NPE",
+        "  GIVEN",
+        "    String tagName = \"div\";",
+        "    String namespace = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

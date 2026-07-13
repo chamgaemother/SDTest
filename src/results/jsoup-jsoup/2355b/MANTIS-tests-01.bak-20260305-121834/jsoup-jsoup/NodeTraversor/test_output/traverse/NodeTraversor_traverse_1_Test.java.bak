@@ -1,0 +1,118 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("Replaces a non-root child in head (parent != null && origSize == new size) and continues traversal on replacement")
+    public void test_TC11() {
+        // Setup a root with one child to trigger replacement in head
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                // record visit and replace the child to satisfy origSize == new size branch
+                log.add(node.nodeName() + ":head:" + depth);
+                if (node == child) {
+                    node.replaceWith(new Element("q"));
+                }
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                log.add(node.nodeName() + ":tail:" + depth);
+            }
+        };
+        // Execute traversal
+        NodeTraversor.traverse(visitor, root);
+        // Expect head on root, head on original child p, head and tail on replacement q at depth 1, then tail on root
+        List<String> expected = List.of(
+            "div:head:0",
+            "p:head:1",
+            "q:head:1",
+            "q:tail:1",
+            "div:tail:0"
+        );
+        assertIterableEquals(expected, log);
+    }
+
+    @Test
+    @DisplayName("Removes a non-root child in head (parent != null && origSize != new size) and skips its tail")
+    public void test_TC12() {
+        // Setup a root with one child to trigger removal in head
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                // record head and remove child to satisfy origSize != new size branch
+                log.add(node.nodeName() + ":head:" + depth);
+                if (node == child) {
+                    node.remove();
+                }
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                log.add(node.nodeName() + ":tail:" + depth);
+            }
+        };
+        // Execute traversal
+        NodeTraversor.traverse(visitor, root);
+        // Expect head on root, head on span, skip span tail, then tail on root only
+        List<String> expected = List.of(
+            "div:head:0",
+            "span:head:1",
+            "div:tail:0"
+        );
+        assertIterableEquals(expected, log);
+    }
+
+    @Test
+    @DisplayName("Deep nested tree triggers multiple ascents when no siblings (inner while: node.nextSibling null && depth>0)")
+    public void test_TC13() {
+        // Setup a deep tree: root -> child -> grandchild to trigger nested ascents
+        Element root = new Element("div");
+        Element child = new Element("ul");
+        Element grand = new Element("li");
+        root.appendChild(child);
+        child.appendChild(grand);
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                log.add(node.nodeName() + ":head:" + depth);
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                log.add(node.nodeName() + ":tail:" + depth);
+            }
+        };
+        // Execute traversal
+        NodeTraversor.traverse(visitor, root);
+        // Expect head at depths 0,1,2 and then tail at 2,1,0 with inner ascents
+        List<String> expected = List.of(
+            "div:head:0",
+            "ul:head:1",
+            "li:head:2",
+            "li:tail:2",
+            "ul:tail:1",
+            "div:tail:0"
+        );
+        assertIterableEquals(expected, log);
+    }
+}

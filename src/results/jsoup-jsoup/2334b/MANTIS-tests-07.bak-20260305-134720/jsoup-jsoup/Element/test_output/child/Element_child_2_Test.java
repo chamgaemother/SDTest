@@ -1,0 +1,69 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * JUnit 5 tests for Element.child(int) covering:
+ * TC08: boundary index returns correct element among three children (loop-3 branch)
+ * TC09: cache-hit branch on second call using shadowChildrenRef
+ */
+public class Element_child_2_Test {
+
+    @Test
+    @DisplayName("TC08: child(2) returns third Element when three Element children exist (loop-3 branch)")
+    public void test_TC08() {
+        // GIVEN an Element with exactly three direct Element children
+        Element parent = new Element("div");
+        Element e1 = new Element("span"); parent.appendChild(e1);
+        Element e2 = new Element("b");    parent.appendChild(e2);
+        Element e3 = new Element("i");    parent.appendChild(e3);
+        // The loop in childElementsList should iterate exactly 3 times (loop×3)
+        // WHEN retrieving the third child (index = 2)
+        Element result = parent.child(2);
+        // THEN the result is the third appended element without exception
+        assertSame(e3, result, "Expected the third element (e3) at index 2");
+    }
+
+    @Test
+    @DisplayName("TC09: child(1) uses cached shadowChildrenRef on second call (cache-hit branch)")
+    public void test_TC09() throws Exception {
+        // GIVEN an Element with two Element children and no prior cache
+        Element parent = new Element("ul");
+        Element first = new Element("li");  parent.appendChild(first);
+        Element second = new Element("li"); parent.appendChild(second);
+        // Ensure that shadowChildrenRef is initially null (cache uninitialized)
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        WeakReference<?> beforeCache = (WeakReference<?>) shadowField.get(parent);
+        assertEquals(null, beforeCache, "Cache should be null before first child() call");
+
+        // WHEN first call to child(1) populates the cache
+        Element firstCall = parent.child(1);
+        // THEN we get the correct second element
+        assertSame(second, firstCall, "First call should return the second element");
+        // AND the cache field should now be non-null
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> cacheRef = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNotNull(cacheRef, "Cache should be initialized after first child() call");
+        List<Element> cachedList = cacheRef.get();
+        assertNotNull(cachedList, "Cached list should be available after first call");
+
+        // WHEN second call to child(1) should hit the cache (no new list creation)
+        Element secondCall = parent.child(1);
+        // THEN still returns the same second element
+        assertSame(second, secondCall, "Second call should also return the second element");
+        // AND the cache reference remains the same object (cache-hit branch)
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> afterCacheRef = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertSame(cacheRef, afterCacheRef, "shadowChildrenRef should be the same instance on cache hit");
+    }
+}

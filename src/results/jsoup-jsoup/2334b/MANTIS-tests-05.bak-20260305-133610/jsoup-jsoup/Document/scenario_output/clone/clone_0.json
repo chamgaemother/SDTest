@@ -1,0 +1,137 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on an empty Document produces a distinct deep copy with no child nodes (loop-0)",
+      "path": "B1→B2→B3",
+      "precondition": "Document original = new Document(\"http://base\"); // no children added",
+      "expectedResult": "clone != original; clone.childNodeSize() == 0; modifications to clone do not affect original",
+      "tags": [
+        "loop-0",
+        "deep-copy",
+        "distinct-instance"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone empty document",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone != original;",
+        "    assert clone.childNodeSize() == 0;",
+        "    original.appendElement(\"div\"); // mutate original",
+        "    assert clone.childNodeSize() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() on Document with one child node produces deep copy with one child (loop-1)",
+      "path": "B1→B2→B3",
+      "precondition": "Document original = Document.createShell(\"http://base\"); // has html, head, body (3 children), then remove all but one",
+      "expectedResult": "clone.childNodeSize() == 1; modifying clone's child does not affect original",
+      "tags": [
+        "loop-1",
+        "deep-copy",
+        "child-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone with one child",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://base\");",
+        "    original.childNodes().subList(1, original.childNodeSize()).clear();",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.childNodeSize() == 1;",
+        "    clone.childNode(0).attr(\"id\", \"x\");",
+        "    assert original.childNode(0).hasAttr(\"id\") == false;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() on Document with multiple nested children produces deep copy with full structure (loop-N)",
+      "path": "B1→B2→B3",
+      "precondition": "Document original = new Document(\"http://base\"); original.appendElement(\"ul\").appendElement(\"li\").appendText(\"item\");",
+      "expectedResult": "clone.childNodeSize() == original.childNodeSize(); clone.select(\"li\").text() equals \"item\"; modifications to clone do not affect original",
+      "tags": [
+        "loop-N",
+        "deep-copy",
+        "nested-children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone with nested children",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    original.appendElement(\"ul\").appendElement(\"li\").text(\"item\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.childNodeSize() == original.childNodeSize();",
+        "    assert clone.select(\"li\").text().equals(\"item\");",
+        "    clone.selectFirst(\"li\").text(\"changed\");",
+        "    assert original.selectFirst(\"li\").text().equals(\"item\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() preserves independent OutputSettings: custom setting indentAmount (branch escapeMode unaffected)",
+      "path": "B1→B2→B3",
+      "precondition": "Document original = new Document(\"http://base\"); original.outputSettings().indentAmount(5);",
+      "expectedResult": "clone.outputSettings().indentAmount() == 5; modifying clone.indentAmount to 2 does not change original",
+      "tags": [
+        "branch-true",
+        "outputSettings",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone preserves outputSettings indent",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    original.outputSettings().indentAmount(5);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.outputSettings().indentAmount() == 5;",
+        "    clone.outputSettings().indentAmount(2);",
+        "    assert original.outputSettings().indentAmount() == 5;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() preserves independent Parser: custom parser namespace applied",
+      "path": "B1→B2→B3",
+      "precondition": "Document original = new Document(\"http://base\"); Parser p = Parser.xmlParser(); original.parser(p);",
+      "expectedResult": "clone.parser().getSettings() == p.getSettings(); modifying clone.parser() does not affect original.parser()",
+      "tags": [
+        "branch-false",
+        "parser",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone preserves parser settings",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    Parser p = Parser.xmlParser();",
+        "    original.parser(p);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.parser().getSettings().equals(p.getSettings());",
+        "    clone.parser(Parser.htmlParser());",
+        "    assert original.parser().getSettings().equals(p.getSettings());"
+      ]
+    }
+  ]
+}

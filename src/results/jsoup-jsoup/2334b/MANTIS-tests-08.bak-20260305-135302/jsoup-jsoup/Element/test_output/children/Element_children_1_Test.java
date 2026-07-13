@@ -1,0 +1,46 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for org.jsoup.nodes.Element.children()
+ */
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("TC05: children() on element with only non-Element nodes returns empty list and populates cache")
+    void test_TC05() {
+        // Given: an element with only TextNode children (no Element nodes)
+        Element el = new Element("div");
+        el.appendChild(new TextNode("one"));  // adds a non-Element child
+        el.appendChild(new TextNode("two"));  // adds another non-Element child
+        // When: calling children(), should filter out non-Element nodes and return empty
+        Elements result = el.children();
+        // Then: result is empty, confirming no Element children are present
+        assertTrue(result.isEmpty(), "Expected no Element children when only TextNodes are present");
+        // Also ensures that B1->B2 loop over two childNodes occurs, and B3 empty path is taken
+    }
+
+    @Test
+    @DisplayName("TC06: children() second call without mutation reuses shadowChildrenRef cache path")
+    void test_TC06() {
+        // Given: an element with two Element children, building the internal cache on first call
+        Element el = new Element("ul");
+        el.appendChild(new Element("li"));  // first Element child
+        el.appendChild(new Element("li"));  // second Element child
+        Elements first = el.children();  // builds and caches the childElementsList
+        // When: calling children() again without any mutation
+        Elements second = el.children(); // should reuse cached list rather than rebuild
+        // Then: exact same Elements instance should be returned, indicating cache reuse
+        assertSame(first, second, "Expected children() to return the same Elements instance when unmodified");
+        // And the size remains correct (2 Element children)
+        assertEquals(2, second.size(), "Expected two Element children in the reused cache");
+        // This exercises B1->B4 path where cached shadowChildrenRef is reused
+    }
+}

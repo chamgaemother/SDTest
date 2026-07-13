@@ -1,0 +1,81 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.attr methods.
+ * Each test is independent and self-contained, covering both String and boolean overloads.
+ */
+public class Element_attr_Test {
+    @Test
+    @DisplayName("TC01_O1 attr(String key, String value) throws IllegalArgumentException when key is null")
+    public void test_TC01_O1() {
+        // GIVEN an element with no prior attributes
+        Element el = new Element("div");
+        String key = null;
+        String value = "val";
+        // WHEN/THEN calling with null key should throw IllegalArgumentException (key null check branch)
+        assertThrows(IllegalArgumentException.class, () -> {
+            el.attr(key, value);
+        }, "Expected IllegalArgumentException when key is null");
+        // No attribute should be added
+        assertFalse(el.hasAttr(""), "No attribute should be present after exception");
+    }
+
+    @Test
+    @DisplayName("TC02_O1 attr(String key, String value) adds attribute when key non-null and value non-null")
+    public void test_TC02_O1() {
+        // GIVEN a fresh element and non-null key/value
+        Element el = new Element("p");
+        String key = "data";
+        String value = "123";
+        // WHEN setting a new attribute (String overload)
+        el.attr(key, value);
+        // THEN attribute should be present with exact value (new attribute branch)
+        assertTrue(el.hasAttr("data"), "Attribute 'data' should have been added");
+        assertEquals("123", el.attributes().get("data"), "Attribute 'data' should equal '123'");
+    }
+
+    @Test
+    @DisplayName("TC03_O1 attr(String key, String value) overrides existing attribute value")
+    public void test_TC03_O1() {
+        // GIVEN an element with existing title="old"
+        Element el = new Element("span");
+        el.attr("title", "old");
+        assertEquals("old", el.attributes().get("title"), "Precondition: title should be 'old'");
+        // WHEN overriding the attribute with a new value
+        el.attr("title", "new");
+        // THEN the value should be replaced (override branch true)
+        assertEquals("new", el.attributes().get("title"), "Attribute 'title' should be overridden to 'new'");
+    }
+
+    @Test
+    @DisplayName("TC04_O2 attr(String key, boolean value) adds boolean attribute when value is true")
+    public void test_TC04_O2() {
+        // GIVEN a fresh element and boolean true
+        Element el = new Element("div");
+        String key = "hidden";
+        // WHEN setting boolean attribute true (should add attribute with empty value)
+        el.attr(key, true);
+        // THEN attribute should exist and its raw value should be empty string (boolean true branch)
+        assertTrue(el.hasAttr("hidden"), "Boolean attribute 'hidden' should be present when true");
+        assertEquals("", el.attributes().getIgnoreCase("hidden"), "Boolean attribute value should be empty string");
+    }
+
+    @Test
+    @DisplayName("TC05_O2 attr(String key, boolean value) removes existing boolean attribute when value is false")
+    public void test_TC05_O2() {
+        // GIVEN an element with boolean attribute 'selected' present
+        Element el = new Element("div");
+        el.attr("selected", true);
+        assertTrue(el.hasAttr("selected"), "Precondition: 'selected' should be present");
+        // WHEN setting boolean attribute false (should remove attribute)
+        el.attr("selected", false);
+        // THEN attribute should no longer exist (boolean false branch)
+        assertFalse(el.hasAttr("selected"), "Boolean attribute 'selected' should be removed when set to false");
+    }
+}

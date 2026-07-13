@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Uppercase known form-submit tag 'INPUT' with preserveTagCase=true triggers clone path and returns true",
+      "path": "B0→B1→B3→B5→B6(Clone)→B9",
+      "precondition": "Tag 'input' pre-registered in Tags; ParseSettings.preserveCase",
+      "expectedResult": "return value is true; returned Tag != static instance",
+      "tags": [
+        "positive",
+        "clone-path",
+        "preserve-case"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone-path for uppercase form-submit",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag resultTag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "    boolean isSubmittable = resultTag.isFormSubmittable();",
+        "  THEN",
+        "    assert isSubmittable == true;",
+        "    assert resultTag != Tag.valueOf(\"input\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Unknown tag 'xyz' setSelfClosing(false) retains formSubmit=false",
+      "path": "B0→B1→B2(Miss)→B7(NewTag)→B9",
+      "precondition": "none",
+      "expectedResult": "return value is false even after setSelfClosing()",
+      "tags": [
+        "negative",
+        "unknown",
+        "setter-effect"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 setSelfClosing on unknown tag",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"xyz\");",
+        "  WHEN",
+        "    tag.setSelfClosing();",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,197 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "Valid structure separator between variable and identifier inserts '.' token without error",
+      "path": "B0→B1→B6→B1→...→getNextToken→parseIdentifier→...→parseStructureSeparator→B6→B1→...→B7→B9→B11",
+      "precondition": "configuration.isStructuresAllowed() == true",
+      "expectedResult": "tokens: VARIABLE_OR_CONSTANT 'x', STRUCTURE_SEPARATOR '.', VARIABLE_OR_CONSTANT 'y'",
+      "tags": [
+        "positive",
+        "structure",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 valid structure separator",
+        "  GIVEN",
+        "    String expr = \"x.y\";",
+        "    config.setStructuresAllowed(true);",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assertSequence(tokens, \"x\", \".\", \"y\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Valid array indexing produces ARRAY_OPEN, NUMBER_LITERAL, ARRAY_CLOSE tokens",
+      "path": "B0→B1→B6→...→parseIdentifier→...→parseArrayOpen→B6→...→parseNumberLiteral→B6→...→parseArrayClose→B6→...→B7→B9→B11",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "tokens: VARIABLE_OR_CONSTANT 'a', ARRAY_OPEN '[', NUMBER_LITERAL '1', ARRAY_CLOSE ']'",
+      "tags": [
+        "positive",
+        "array",
+        "indexing"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 valid array open and close",
+        "  GIVEN",
+        "    String expr = \"a[1]\";",
+        "    config.setArraysAllowed(true);",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assertSequence(tokens, \"a\", \"[\", \"1\", \"]\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "Defined function name followed by parentheses yields FUNCTION then BRACE_OPEN and BRACE_CLOSE",
+      "path": "B0→B1→B6→...→parseIdentifier→FUNCTION branch→B6→...→parseBraceOpen→...→parseBraceClose→B6→...→B7→B9→B11",
+      "precondition": "functionDictionary.hasFunction(\"f\") == true",
+      "expectedResult": "tokens: FUNCTION 'f', BRACE_OPEN '(', BRACE_CLOSE ')'",
+      "tags": [
+        "positive",
+        "function",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 function call tokenization",
+        "  GIVEN",
+        "    String expr = \"f()\";",
+        "    config.addFunction(\"f\");",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assertSequence(tokens, \"f\", \"(\", \")\");"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "Unary prefix operator '-' is recognized when previous token is null",
+      "path": "B0→B1→B6→...→parseOperator→prefixOperatorAllowed true→PREFIX_OPERATOR→B6→...→parseNumberLiteral→B6→...→B7→B9→B11",
+      "precondition": "operatorDictionary.hasPrefixOperator(\"-\") == true",
+      "expectedResult": "tokens: PREFIX_OPERATOR '-', NUMBER_LITERAL '5'",
+      "tags": [
+        "positive",
+        "operator",
+        "prefix"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 unary prefix minus",
+        "  GIVEN",
+        "    String expr = \"-5\";",
+        "    config.addPrefixOperator(\"-\");",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assertSequence(tokens, \"-\", \"5\");"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "Postfix operator '?' is recognized after a variable",
+      "path": "B0→B1→B6→...→parseIdentifier→...→parseOperator→postfixOperatorAllowed true→POSTFIX_OPERATOR→B6→...→B7→B9→B11",
+      "precondition": "operatorDictionary.hasPostfixOperator(\"?\") == true",
+      "expectedResult": "tokens: VARIABLE_OR_CONSTANT 'a', POSTFIX_OPERATOR '?'",
+      "tags": [
+        "positive",
+        "operator",
+        "postfix"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 postfix question mark",
+        "  GIVEN",
+        "    String expr = \"a?\";",
+        "    config.addPostfixOperator(\"?\");",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assertSequence(tokens, \"a\", \"?\");"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "Multi-character infix operator '==' is parsed via looping in parseOperator",
+      "path": "B0→B1→B6→...→parseOperator(loop×1)→infixOperator branch→B6→...→B7→B9→B11",
+      "precondition": "operatorDictionary.hasInfixOperator(\"=\") and hasInfixOperator(\"==\") == true",
+      "expectedResult": "tokens: INFIX_OPERATOR '=='",
+      "tags": [
+        "positive",
+        "operator",
+        "infix",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 multi-char infix operator",
+        "  GIVEN",
+        "    String expr = \"==\";",
+        "    config.addInfixOperator(\"=\");",
+        "    config.addInfixOperator(\"==\");",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert sequence length is 1 and token is \"==\";"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "Undefined single-character operator '$' throws ParseException for undefined operator",
+      "path": "B0→B1→B6→...→parseOperator→none-of branches→exception",
+      "precondition": "operatorDictionary.hasInfixOperator(\"$\") == false and no prefix/postfix",
+      "expectedResult": "ParseException with message containing \"Undefined operator '$'\"",
+      "tags": [
+        "negative",
+        "exception",
+        "operator"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 undefined operator exception",
+        "  GIVEN",
+        "    String expr = \"$\";",
+        "    config.withEmptyOperatorDict();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException matching \"Undefined operator '$'\";"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "Decimal number starting with dot \".5\" is parsed as NUMBER_LITERAL",
+      "path": "B0→B1→B6→...→isAtNumberStart→parseDecimalNumberLiteral→B6→...→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "tokens: NUMBER_LITERAL '.5'",
+      "tags": [
+        "positive",
+        "number",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 decimal literal starting with dot",
+        "  GIVEN",
+        "    String expr = \".5\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert single token \".5\" of type NUMBER_LITERAL;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(String html, String baseUri) with non-empty html and baseUri returns a Document with correct text and baseUri resolved")
+    public void test_TC01_O1() {
+        // Input has a simple paragraph so branch for non-empty html is taken
+        String html = "<p>Hello World</p>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Expect text() reflects element content, baseUri() is preserved
+        assertEquals("Hello World", doc.text());
+        assertEquals("http://example.com/", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(String html, String baseUri) with empty html returns empty Document body")
+    public void test_TC02_O1() {
+        // Input html is empty string, tests boundary for empty html
+        String html = "";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Body should have no content
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parse(String html, String baseUri) with null html throws IllegalArgumentException")
+    public void test_TC03_O1() {
+        // html null triggers parameter validation exception
+        String html = null;
+        String baseUri = "http://example.com/";
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parse(String html, String baseUri) with null baseUri throws IllegalArgumentException")
+    public void test_TC04_O1() {
+        // baseUri null triggers parameter validation exception
+        String html = "<p>Test</p>";
+        String baseUri = null;
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parse(String html, Parser parser) with valid html and custom parser returns Document parsed with empty baseUri")
+    public void test_TC05_O2() {
+        // Using xmlParser exercises overload with custom parser branch
+        String html = "<node>value</node>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        // xml parser sets syntax to xml and default baseUri is empty
+        assertEquals("xml", doc.outputSettings().syntax());
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parse(String html, Parser parser) with null parser throws IllegalArgumentException")
+    public void test_TC06_O2() {
+        // parser null should trigger validation exception in overload
+        String html = "<p>x</p>";
+        Parser parser = null;
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, parser));
+    }
+
+    @Test
+    @DisplayName("TC07_O3: parse(String html) with non-empty html returns Document with empty baseUri")
+    public void test_TC07_O3() {
+        // Single-arg overload with non-empty html exercises default-baseUri branch
+        String html = "<div>Text</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("Text", doc.text());
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC08_O1: parse(String html, String baseUri) with html containing relative link resolves href against baseUri")
+    public void test_TC08_O1() {
+        // Relative URL resolution branch
+        String html = "<a href=\"page.html\">Link</a>";
+        String baseUri = "http://example.com/path/";
+        Document doc = Jsoup.parse(html, baseUri);
+        Element link = doc.select("a").first();
+        assertNotNull(link);
+        assertEquals("http://example.com/path/page.html", link.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC09_O1: parse(String html, String baseUri) with html missing tags still produces a balanced Document")
+    public void test_TC09_O1() {
+        // Malformed html without closing tags triggers auto-balance
+        String html = "<b>bold text";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Body should wrap content and auto-close tags
+        assertEquals(1, doc.body().children().size());
+        Element child = doc.body().child(0);
+        assertEquals("b", child.tagName());
+        assertEquals("bold text", child.text());
+    }
+}

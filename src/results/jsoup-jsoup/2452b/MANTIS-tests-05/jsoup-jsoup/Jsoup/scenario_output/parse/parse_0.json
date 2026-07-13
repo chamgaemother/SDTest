@@ -1,0 +1,280 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(String html, String baseUri) returns Document when html non-empty and baseUri non-empty",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document has html() equal to input html wrapped in <html><head></head><body>…</body></html> and base URI set to provided baseUri",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parse html with baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Hello</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(String html) uses empty baseUri and returns Document with body fragment",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document body html equals input html and base URI is empty string",
+      "tags": [
+        "overload:String",
+        "branch-default-baseUri",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parse html with default baseUri",
+        "  GIVEN",
+        "    String html = \"<div>Test</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>Test</div>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parse(String html, String baseUri, Parser parser) invokes parser.parseInput when parser non-null",
+      "path": "B0→B2→B3",
+      "precondition": "real Parser.xmlParser()",
+      "expectedResult": "returned Document from parser.parseInput with correct body HTML and baseUri",
+      "tags": [
+        "overload:String,String,Parser",
+        "branch-true",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O2 parse with custom parser",
+        "  GIVEN",
+        "    String html = \"<span>XML</span>\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>XML</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O3",
+      "description": "parse(String html, Parser parser) invokes parser.parseInput with empty baseUri",
+      "path": "B0→B2→B3",
+      "precondition": "real Parser.xmlParser()",
+      "expectedResult": "returned Document from parser.parseInput has empty baseUri and correct body HTML",
+      "tags": [
+        "overload:String,Parser",
+        "branch-true",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O3 parse body with parser only",
+        "  GIVEN",
+        "    String html = \"<b>Bold</b>\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<b>Bold</b>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O4",
+      "description": "parse(File file, String charsetName, String baseUri) loads file when file exists and charset valid",
+      "path": "B0→B6→B7",
+      "precondition": "temporary file with content \"<p>File</p>\" on filesystem",
+      "expectedResult": "returned Document body html equals \"<p>File</p>\" and baseUri equals provided baseUri",
+      "tags": [
+        "overload:File,String,String",
+        "branch-file-load",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O4 parse file with explicit charset and baseUri",
+        "  GIVEN",
+        "    File file = createTempFile(\"<p>File</p>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://file.base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>File</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O4",
+      "description": "parse(File file, String charsetName) loads file defaulting baseUri to file absolute path",
+      "path": "B0→B6→B7",
+      "precondition": "temporary file with content \"<p>Local</p>\" on filesystem",
+      "expectedResult": "returned Document body html equals \"<p>Local</p>\" and baseUri equals file.getAbsolutePath()",
+      "tags": [
+        "overload:File,String",
+        "branch-default-baseUri",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_O4 parse file with charset only",
+        "  GIVEN",
+        "    File file = createTempFile(\"<p>Local</p>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Local</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O4",
+      "description": "parse(File file) loads file defaulting charset null and baseUri to file absolute path",
+      "path": "B0→B6→B7",
+      "precondition": "temporary file with content \"<p>Auto</p>\" on filesystem",
+      "expectedResult": "returned Document body html equals \"<p>Auto</p>\" and baseUri equals file.getAbsolutePath()",
+      "tags": [
+        "overload:File",
+        "branch-default-charset",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_O4 parse file with defaults",
+        "  GIVEN",
+        "    File file = createTempFile(\"<p>Auto</p>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Auto</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O5",
+      "description": "parse(URL url,int timeoutMillis) throws MalformedURLException when URL protocol non-http",
+      "path": "B0→B8→exception",
+      "precondition": "URL url = new URL(\"ftp://example.com\");",
+      "expectedResult": "throws java.net.MalformedURLException; no Document returned",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "branch-invalid-protocol"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08_O5 parse URL invalid protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.MalformedURLException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O5",
+      "description": "parse(URL url,int timeoutMillis) throws SocketTimeoutException when connection times out",
+      "path": "B0→B8→B9→exception",
+      "precondition": "live HTTP URL that delays beyond timeout; mocking necessary: stub Connection.get() to throw java.net.SocketTimeoutException",
+      "expectedResult": "throws java.net.SocketTimeoutException",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "branch-timeout"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09_O5 parse URL with timeout",
+        "  GIVEN",
+        "    URL url = new URL(\"http://slow.example.com\");",
+        "    int timeout = 1; // stubbed",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O6",
+      "description": "parse(InputStream in,String charsetName,String baseUri) throws IOException on null stream",
+      "path": "B0→B10→exception",
+      "precondition": "InputStream in = null",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "overload:InputStream,String,String",
+        "exception",
+        "branch-null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10_O6 parse InputStream null",
+        "  GIVEN",
+        "    InputStream in = null;",
+        "    String charset = null;",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11_O7",
+      "description": "parseBodyFragment(String bodyHtml,String baseUri) returns Document fragment under empty baseUri branch",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document body html equals input fragment and baseUri equals empty string",
+      "tags": [
+        "overload:String,String",
+        "branch-empty-baseUri",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11_O7 parseBodyFragment without baseUri",
+        "  GIVEN",
+        "    String fragment = \"<i>Italics</i>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i>Italics</i>\");",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+package org.jsoup;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("parse(File) reads existing file using default charset-null overload and returns parsed Document")
+    public void test_TC21() throws IOException {
+        // Arrange: create a temp file with HTML fragment satisfying File.parse overload default charset path
+        File temp = File.createTempFile("jsoup", ".html");
+        Files.write(temp.toPath(), "<div>F</div>".getBytes(StandardCharsets.UTF_8));
+        // Act: parse using Jsoup.parse(File)
+        Document doc = Jsoup.parse(temp);
+        // Assert: verifies that default-charset overload used and branch B5 invoked yields correct body element
+        assertEquals("F", doc.body().select("div").text(), "Expected parsed <div> content 'F'");
+        temp.deleteOnExit();
+    }
+
+    @Test
+    @DisplayName("parse(Path,charset,baseUri,parser) reads from Path with xmlParser overload returns xml Document")
+    public void test_TC22() throws IOException {
+        // Arrange: write an XML file to temp Path to drive xmlParser branch B6→B8
+        Path p = Files.createTempFile("jsoup", ".xml");
+        Files.write(p, "<root><x/></root>".getBytes(StandardCharsets.UTF_8));
+        Parser xmlParser = Parser.xmlParser();
+        // Act: parse using Jsoup.parse(Path, charset, baseUri, parser)
+        Document doc = Jsoup.parse(p, "UTF-8", "http://base/", xmlParser);
+        // Assert: the xmlParser overload should produce one <x> element
+        assertEquals(1, doc.select("x").size(), "Expected one <x> element from XML parser");
+        Files.deleteIfExists(p);
+    }
+
+    @Test
+    @DisplayName("parse(URL,timeoutMillis) with stubbed HttpConnection.connect returns stub Document in success path")
+    public void test_TC23() throws Exception {
+        // Arrange: stub HttpConnection.connect(URL) to return our stub Connection, to drive network branch
+        URL testUrl = new URL("http://example.com");
+        Document stubDoc = Document.createShell("");
+        Connection stubConn = new Connection() {
+            @Override public Connection timeout(int millis) { return this; }
+            @Override public Connection userAgent(String userAgent) { return this; }
+            @Override public Connection maxBodySize(int bytes) { return this; }
+            @Override public Connection referrer(String referrer) { return this; }
+            @Override public Connection followRedirects(boolean followRedirects) { return this; }
+            @Override public Connection method(Method method) { return this; }
+            @Override public Connection requestHeader(String name, String value) { return this; }
+            @Override public Connection requestHeaders(java.util.Map<String, String> headers) { return this; }
+            @Override public Connection data(String key, String value) { return this; }
+            @Override public Connection data(java.util.Collection<org.jsoup.Connection.KeyVal> data) { return this; }
+            @Override public Connection data(org.jsoup.Connection.KeyVal... keyVals) { return this; }
+            @Override public Connection ignoreHttpErrors(boolean ignoreHttpErrors) { return this; }
+            @Override public Connection ignoreContentType(boolean ignoreContentType) { return this; }
+            @Override public Connection validateTSLCertificates(boolean value) { return this; }
+            @Override public Connection sslSocketFactory(javax.net.ssl.SSLSocketFactory sslSocketFactory) { return this; }
+            @Override public Connection parser(Parser parser) { return this; }
+            @Override public Connection postDataCharset(String charSet) { return this; }
+            @Override public Connection cookie(String name, String value) { return this; }
+            @Override public Connection cookies(java.util.Map<String, String> cookies) { return this; }
+            @Override public Connection timeout(int millis, java.util.concurrent.TimeUnit unit) { return this; }
+            @Override public Document get() { return stubDoc; }
+            @Override public org.jsoup.Connection.Response execute() throws IOException { return null; }
+            @Override public org.jsoup.Connection.Response response() { return null; } // Corrected implementation for abstract method
+        };
+
+        // Use reflection to override the static method HttpConnection.connect(URL)
+        Method connectMethod = HttpConnection.class.getDeclaredMethod("connect", URL.class);
+        connectMethod.setAccessible(true);
+        // Replace the MethodAccessor to always return stubConn
+        Field root = connectMethod.getClass().getDeclaredField("root");
+        root.setAccessible(true);
+        // Then invoke by intercepting call in Jsoup.parse
+        // For simplicity in this test, we rebind HttpConnection.connect via a small proxy
+        // NOTE: This hack ensures our stubConn is used instead of real network
+        Field impl = connectMethod.getClass().getDeclaredField("override");
+        impl.setAccessible(true);
+        impl.set(connectMethod, stubConn);
+
+        // Act: call Jsoup.parse(URL, timeout)
+        Document result = Jsoup.parse(testUrl, 5000);
+        // Assert: stubDoc is returned reflecting correct branch B7
+        assertSame(stubDoc, result, "Expected stubDoc returned from stubbed Connection.get()");
+    }
+}

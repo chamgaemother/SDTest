@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "HTML doc with existing <meta charset> and obsolete <meta name=charset> updates meta[charset] and removes obsolete",
+      "path": "B0→B1(true)→B2(html)→B3(syntax=html)→B4(selectFirst meta[charset]!=null)→B5(update attr)→B6(remove obsolete)→B8(return)",
+      "precondition": "Document.createShell and doc.outputSettings().updateMetaCharsetElement(true); head has both meta[charset] and meta[name=charset]",
+      "expectedResult": "meta[charset] attribute updated to new charset and meta[name=charset] removed",
+      "tags": [
+        "positive",
+        "html",
+        "existing-meta",
+        "obsolete-removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 update existing html meta and remove obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example\");",
+        "    doc.outputSettings().updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\",\"ISO-8859-1\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(\"US-ASCII\");",
+        "    assert doc.selectFirst(\"meta[name=charset]\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "XML doc with existing XmlDeclaration name=\"xml\" lacking version attr adds encoding but leaves version absent",
+      "path": "B0→B1(true)→B2(html)→B3(syntax=xml)→B9(xml branch)→B10(get first child)→B11(node instanceof XmlDeclaration)→B12(name==xml)→B13(hasAttr version false)→B14(set encoding only)→B15(return)",
+      "precondition": "Document.createShell, syntax xml, prepend XmlDeclaration(\"xml\") with no version attr",
+      "expectedResult": "XmlDeclaration gets encoding updated to new charset and no version attr is added",
+      "tags": [
+        "positive",
+        "xml",
+        "declaration",
+        "no-version"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xml decl without version retains no version",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    // no version attr set",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    XmlDeclaration first = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assert first.attr(\"encoding\").equals(\"UTF-8\");",
+        "    assert !first.hasAttr(\"version\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "HTML doc with only obsolete <meta name=charset> appends new meta[charset] and removes the obsolete element",
+      "path": "B0→B1(true)→B2(html)→B3(syntax=html)→B4(selectFirst meta[charset]==null)→B7(append new)→B6(remove obsolete)→B8(return)",
+      "precondition": "Document.createShell with head containing only meta[name=charset]",
+      "expectedResult": "new meta[charset] appended and original meta[name=charset] removed",
+      "tags": [
+        "positive",
+        "html",
+        "append",
+        "obsolete-removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 append html meta when only obsolete present",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://obs\");",
+        "    doc.outputSettings().updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    Element metaNew = doc.selectFirst(\"meta[charset]\");",
+        "    assert metaNew != null && metaNew.attr(\"charset\").equals(\"UTF-16\");",
+        "    assert doc.selectFirst(\"meta[name=charset]\") == null;",
+        "END"
+      ]
+    }
+  ]
+}

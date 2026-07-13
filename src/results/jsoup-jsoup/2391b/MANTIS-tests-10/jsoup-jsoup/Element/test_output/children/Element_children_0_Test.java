@@ -1,0 +1,155 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() on element with no child nodes returns empty list (childNodeSize==0 branch)")
+    public void test_TC01() {
+        // Bypass childNodeSize==0 branch by no children
+        Element parent = new Element("div");
+        Elements result = parent.children();
+        assertEquals(0, result.size(), "Expected no children for empty element");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns single child when exactly one Element child present (loop-1, filterNodes)")
+    public void test_TC02() {
+        // branch true: childNodeSize>0, loop iterates once
+        Element parent = new Element("div");
+        parent.appendChild(new Element("p"));
+        Elements result = parent.children();
+        assertAll(
+            () -> assertEquals(1, result.size(), "Expected exactly one child element"),
+            () -> assertEquals("p", result.get(0).tagName(), "Tag name should be 'p'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC03: children() filters out non-Element nodes (mixed TextNode and Element, loop>1)")
+    public void test_TC03() {
+        // branch true: childNodeSize>0, loop sees TextNode then Element
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("text"));
+        parent.appendChild(new Element("span"));
+        Elements result = parent.children();
+        assertAll(
+            () -> assertEquals(1, result.size(), "Only one Element child expected"),
+            () -> assertEquals("span", result.get(0).tagName(), "Filtered element should be 'span'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns multiple element children in order (three Element children, loop-N)")
+    public void test_TC04() {
+        // branch true: loop collects all three Element children in insertion order
+        Element parent = new Element("ul");
+        parent.appendChild(new Element("li"));
+        parent.appendChild(new Element("li"));
+        parent.appendChild(new Element("li"));
+        Elements result = parent.children();
+        assertEquals(3, result.size(), "Expected three 'li' children");
+        assertEquals("li", result.get(0).tagName());
+        assertEquals("li", result.get(1).tagName());
+        assertEquals("li", result.get(2).tagName());
+    }
+
+    @Test
+    @DisplayName("TC05: children() reflects dynamic additions after prior empty children() (cache invalidation by fresh NodeList)")
+    public void test_TC05() {
+        // first call: no children -> B2; after appendChild, childNodeSize>0
+        Element parent = new Element("div");
+        Elements first = parent.children();
+        parent.appendChild(new Element("a"));
+        Elements second = parent.children();
+        assertAll(
+            () -> assertEquals(0, first.size(), "First call should see no children"),
+            () -> assertEquals(1, second.size(), "Second call should see newly added child")
+        );
+    }
+
+    @Test
+    @DisplayName("TC06: children() uses cached children list on second call (cachedChildren != null branch)")
+    public void test_TC06() {
+        // Simulate cachedChildren present: attributes userData has jsoup.childEls and matching mod count
+        Element parent = new Element("div");
+        List<Element> cached = Arrays.asList(new Element("p"));
+        Map<String, Object> userData = parent.attributes().userData();
+        userData.put("jsoup.childEls", new WeakReference<>(cached));
+        userData.put("jsoup.childElsMod", parent.childNodeSize()); // 0
+        Elements result = parent.children();
+        assertAll(
+            () -> assertEquals(1, result.size(), "Cached list should produce one child"),
+            () -> assertEquals("p", result.get(0).tagName(), "Cached child tag must be 'p'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC07: children() after clearing NodeList recreates new list (empty after empty()), loop-0")
+    public void test_TC07() {
+        // first children() primes cache, empty() clears nodes -> childNodeSize==0
+        Element parent = new Element("div");
+        parent.appendChild(new Element("span"));
+        parent.children(); // populate list
+        parent.empty();    // clear children
+        Elements result = parent.children();
+        assertEquals(0, result.size(), "After empty(), no children should remain");
+    }
+
+    @Test
+    @DisplayName("TC08: children() on element with only TextNode children returns empty list (filterNodes yields none)")
+    public void test_TC08() {
+        // branch true: childNodeSize>0, but filterNodes finds no Element
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("x"));
+        parent.appendChild(new TextNode("y"));
+        Elements result = parent.children();
+        assertEquals(0, result.size(), "TextNode children should be filtered out, resulting in zero elements");
+    }
+
+    @Test
+    @DisplayName("TC09: children() preserves insertion order when removing and re-adding children (loop-N)")
+    public void test_TC09() {
+        // branch true: initial children caches [p, span], remove p, reappend moves order
+        Element parent = new Element("div");
+        Element c1 = new Element("p");
+        Element c2 = new Element("span");
+        parent.appendChild(c1);
+        parent.appendChild(c2);
+        parent.children();             // cache initial order [p, span]
+        parent.removeChild(c1);        // remove p
+        parent.appendChild(c1);        // now order [span, p]
+        Elements result = parent.children();
+        assertAll(
+            () -> assertEquals("span", result.get(0).tagName(), "First child should now be 'span'"),
+            () -> assertEquals("p", result.get(1).tagName(), "Second child should now be 'p'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: children() on deeply nested children returns only direct child Elements (loop-N nested tree but only direct)")
+    public void test_TC10() {
+        // branch true: only direct children counted, nested grandchildren ignored
+        Element root = new Element("div");
+        Element child = new Element("p");
+        Element grand = new Element("span");
+        child.appendChild(grand);
+        root.appendChild(child);
+        Elements result = root.children();
+        assertAll(
+            () -> assertEquals(1, result.size(), "Only direct child should be returned"),
+            () -> assertSame(child, result.get(0), "Returned element must be the direct child 'p'")
+        );
+    }
+}

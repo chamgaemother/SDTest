@@ -1,0 +1,155 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Value below minimum (-5e9) triggers IllegalArgumentException branch (f < -5e9)",
+      "path": "B0→B1(true)→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; message contains \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "exception",
+        "boundary-below-min",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate below-minimum",
+        "  GIVEN",
+        "    double f = -5000000000.000001;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException; assert message contains \"-5000000000.0 and 5000000000.0\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Value above maximum (5e9) triggers IllegalArgumentException branch (f > 5e9)",
+      "path": "B0→B1(false)→B3(true)→B4",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; message contains \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "exception",
+        "boundary-above-max",
+        "branch-false",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate above-maximum",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException; assert message contains \"-5000000000.0 and 5000000000.0\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Value at minimum boundary (-5e9) returns zero hex string",
+      "path": "B0→B1(false)→B3(false)→B5",
+      "precondition": "none",
+      "expectedResult": "return string equals \"00000000000000\"",
+      "tags": [
+        "normal",
+        "boundary-min",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate at-minimum",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String hex = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert hex.equals(\"00000000000000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Value at maximum boundary (5e9) returns all-ones hex string",
+      "path": "B0→B1(false)→B3(false)→B5",
+      "precondition": "none",
+      "expectedResult": "return string equals \"FFFFFFFFFFFFFF\"",
+      "tags": [
+        "normal",
+        "boundary-max",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate at-maximum",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String hex = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert hex.equals(\"FFFFFFFFFFFFFF\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Zero value produces mid-range hex representing 1e15",
+      "path": "B0→B1(false)→B3(false)→B5",
+      "precondition": "none",
+      "expectedResult": "return string equals \"7FFFFFFFFFFFFF\"",
+      "tags": [
+        "normal",
+        "zero",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate zero",
+        "  GIVEN",
+        "    double f = 0.0;",
+        "  WHEN",
+        "    String hex = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert hex.equals(\"7FFFFFFFFFFFFF\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Fractional value preserves six decimal digits in hex conversion",
+      "path": "B0→B1(false)→B3(false)→B5",
+      "precondition": "none",
+      "expectedResult": "return string equals expected hex for 1.234567",
+      "tags": [
+        "normal",
+        "fractional",
+        "precision",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 generate fractional",
+        "  GIVEN",
+        "    double f = 1.234567;",
+        "  WHEN",
+        "    String hex = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert hex.equals(\"800012D687500\" /* hex of (5e9+1.234567)*1e6 */);",
+        "END"
+      ]
+    }
+  ]
+}

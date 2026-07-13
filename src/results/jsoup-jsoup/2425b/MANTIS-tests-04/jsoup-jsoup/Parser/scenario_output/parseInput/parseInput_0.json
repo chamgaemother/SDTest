@@ -1,0 +1,246 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) returns Document for valid HTML and baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use a stub TreeBuilder that returns a dummy Document instance for any input",
+      "expectedResult": "returned Document is the dummy instance from stub",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput valid-string",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(returnDoc)); String html=\"<p>Hi</p>\"; String baseUri=\"http://x/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == returnDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) throws UncheckedIOException when Reader.read() fails",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use real StringReader over Reader that throws on first read (IOStubReader)",
+      "expectedResult": "throws java.io.UncheckedIOException; no lock held afterwards",
+      "tags": [
+        "overload:String,String",
+        "branch-exception",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput string-reader-io-error",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()); String html = \"irrelevant\"; String baseUri = \"http://x/\";",
+        "      Reader r = new IOStubReader(); // throws IOException on read",
+        "  WHEN",
+        "    call parser.parseInput(r, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) throws NullPointerException when html is null",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String",
+        "branch-null-input",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()); String html = null; String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseInput(String, String) returns Document for empty HTML string",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub TreeBuilder returning emptyDoc",
+      "expectedResult": "returned Document == emptyDoc",
+      "tags": [
+        "overload:String,String",
+        "boundary-empty",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 parseInput empty-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(emptyDoc)); String html=\"\"; String baseUri=\"http://x/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == emptyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) returns Document for valid Reader and baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub TreeBuilder returning docR",
+      "expectedResult": "returned Document == docR",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput-reader-valid",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(docR)); Reader input = new StringReader(\"<a/>\"); String baseUri=\"http://u/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert result == docR;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when Reader is null",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,String",
+        "branch-null-input",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseInput null-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()); Reader input = null; String baseUri=\"http://u/\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B2",
+      "precondition": "Reader returns empty; HtmlTreeBuilder stub",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,String",
+        "branch-null-baseUri",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 parseInput null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(returnDoc)); Reader input = new StringReader(\"<p/>\"); String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "parseInput(Reader, String) propagates RuntimeException from treeBuilder.parse",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub TreeBuilder throwing IllegalStateException",
+      "expectedResult": "throws IllegalStateException",
+      "tags": [
+        "overload:Reader,String",
+        "branch-exception",
+        "runtime-exception"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 parseInput reader-runtime-ex",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(throw IllegalStateException)); Reader input = new StringReader(\"x\"); String baseUri=\"u\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "parseInput(Reader, String) returns Document when Reader has no content",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub TreeBuilder returning emptyDoc",
+      "expectedResult": "returned Document == emptyDoc",
+      "tags": [
+        "overload:Reader,String",
+        "boundary-empty-reader",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O2 parseInput empty-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilder(emptyDoc)); Reader input = new StringReader(\"\"); String baseUri=\"http://v/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert result == emptyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "parseInput(Reader, String) closes lock even when treeBuilder.parse throws",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use stub TreeBuilder throwing custom; track lock state externally",
+      "expectedResult": "throws CustomException; lock is unlocked after call",
+      "tags": [
+        "overload:Reader,String",
+        "branch-exception",
+        "lock-finally"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O2 parseInput lock-unlock-on-ex",
+        "  GIVEN",
+        "    LockMonitor monitor = new LockMonitor(); Parser parser = new Parser(new StubTreeBuilder(throw CustomException, monitor)); Reader input = new StringReader(\"z\"); String baseUri=\"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws CustomException; assert monitor.isUnlocked();",
+        "END"
+      ]
+    }
+  ]
+}

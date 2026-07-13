@@ -1,0 +1,88 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.*;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_2_Test {
+
+    @Test
+    @DisplayName("TC09: load() returns Dotenv and merges file entries when systemProperties=false and .env has entries (branch-false, loop-N)")
+    void test_TC09() throws IOException, DotenvException {
+        // GIVEN: a temp directory with a .env file containing two entries
+        Path tempDir = Files.createTempDirectory("dotenv_tc09");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "FOO=bar\nBAZ=qux".getBytes(StandardCharsets.UTF_8));
+
+        // Ensure no leftover system properties
+        System.clearProperty("FOO");
+        System.clearProperty("BAZ");
+
+        // WHEN: building without systemProperties (so branch-false) and loading
+        Dotenv dotenv = Dotenv.configure()
+                                   .directory(tempDir.toString())
+                                   .ignoreIfMissing() // Updated to include ignoreIfMissing()
+                                   .load();
+
+        // THEN: no system properties set, and values come from file
+        assertNull(System.getProperty("FOO"), "System property FOO should not be set when systemProperties=false");
+        assertNull(System.getProperty("BAZ"), "System property BAZ should not be set when systemProperties=false");
+        assertEquals("bar", dotenv.get("FOO"), "dotenv.get(Foo) should return the value from .env");
+        assertEquals("qux", dotenv.get("BAZ"), "dotenv.get(BAZ) should return the value from .env");
+    }
+
+    @Test
+    @DisplayName("TC10: load() returns Dotenv without exception when .env is missing and ignoreIfMissing() called (branch-false, no-file)")
+    void test_TC10() throws IOException, DotenvException {
+        // GIVEN: an empty temp directory (no .env)
+        Path tempDir = Files.createTempDirectory("dotenv_tc10");
+
+        // WHEN: building with ignoreIfMissing and loading
+        Dotenv dotenv = Dotenv.configure()
+                                   .directory(tempDir.toString())
+                                   .ignoreIfMissing()
+                                   .load();
+
+        // THEN: entries() should reflect only system env, and entries(filter) should be empty
+        int sysEnvSize = System.getenv().size();
+        assertEquals(sysEnvSize, dotenv.entries().size(), 
+            "entries() size must match the number of system env vars when no .env is present");
+        // entries(filter) uses filter!=null so returns only file entries; since file absent, should be empty
+        Set<DotenvEntry> filtered = dotenv.entries(entry -> true); // Updated to use lambda
+        assertTrue(filtered.isEmpty(), "entries(filter) should be empty when .env file is missing");
+    }
+
+    @Test
+    @DisplayName("TC11: load() returns Dotenv when .env malformed and ignoreIfMalformed() called (branch-false, malformed-file)")
+    void test_TC11() throws IOException, DotenvException {
+        // GIVEN: a temp directory with a malformed .env (no '=' delimiter)
+        Path tempDir = Files.createTempDirectory("dotenv_tc11");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "BADLINE".getBytes(StandardCharsets.UTF_8));
+
+        // WHEN: building with ignoreIfMalformed and loading
+        Dotenv dotenv = Dotenv.configure()
+                                   .directory(tempDir.toString())
+                                   .ignoreIfMalformed()
+                                   .load();
+
+        // THEN: entries(filter) returns only valid file entries; since none are valid, expect empty
+        Set<DotenvEntry> fileEntries = dotenv.entries(entry -> true); // Updated to use lambda
+        assertTrue(fileEntries.isEmpty(), "Malformed line should produce no file entries when ignoreIfMalformed");
+
+        // entries() includes system env
+        int sysEnvSize = System.getenv().size();
+        assertTrue(dotenv.entries().size() >= sysEnvSize, 
+            "entries() size should be at least the number of system env vars even if .env is malformed");
+    }
+}

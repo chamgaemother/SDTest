@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() on element with only DataNode child takes non-zero childNodeSize path and yields empty list",
+      "path": "B0→B1→B2(loop×1 filterNodes)→B4",
+      "precondition": "none",
+      "expectedResult": "returns empty Elements",
+      "tags": [
+        "positive",
+        "filter",
+        "data-node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children with only DataNode child",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "  WHEN",
+        "    // append a DataNode to trigger childNodeSize>0 but no Element children",
+        "    e.appendChild(new DataNode(\"data\"));",
+        "    Elements result = e.children();",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() uses fresh build when cachedChildren returns non-null ref but modCount mismatches (stale cache)",
+      "path": "B0→B1→B3(cachedChildren)→B2(loop rebuild)→B4",
+      "precondition": "element has attributes.userData with fake stale cache",
+      "expectedResult": "returns correct up-to-date Elements list (size 1)",
+      "tags": [
+        "positive",
+        "cache",
+        "stale"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children stale cache rebuild",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "    // manually inject stale cachedChildren reference with wrong mod count",
+        "    Attributes attrs = parent.attributes();",
+        "    Map<String,Object> ud = attrs.userData();",
+        "    WeakReference<List<Element>> ref = new WeakReference<>(List.of(child));",
+        "    ud.put(\"jsoup.childEls\", ref);",
+        "    ud.put(\"jsoup.childElsMod\", Integer.valueOf(-1));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assertSame(child, result.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

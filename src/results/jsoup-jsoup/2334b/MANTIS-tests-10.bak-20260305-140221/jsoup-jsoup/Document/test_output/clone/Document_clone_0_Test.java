@@ -1,0 +1,149 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_0_Test {
+
+    @Test
+    @DisplayName("clone() returns a distinct Document instance with identical baseUri and empty childNodes for a new Document")
+    public void test_TC01() {
+        // GIVEN a new Document with no children
+        Document original = new Document("http://example.com");
+        // WHEN clone is called
+        Document cloned = original.clone();
+        // THEN cloned is not the same instance and has same baseUri but no child nodes
+        assertNotSame(original, cloned);
+        assertEquals("http://example.com", cloned.baseUri());
+        assertTrue(cloned.childNodes().isEmpty());
+    }
+
+    @Test
+    @DisplayName("clone() deep clones OutputSettings so modifying original.settings.charset does not affect clone")
+    public void test_TC02() {
+        // GIVEN a Document with default UTF-8 output charset
+        Document original = new Document("u");
+        Charset iso = Charset.forName("ISO-8859-1");
+        // WHEN clone is made and original charset is changed
+        Document cloned = original.clone();
+        original.charset(iso); // modifies original.outputSettings
+        // THEN clone retains original UTF-8 setting unchanged
+        assertEquals(StandardCharsets.UTF_8, cloned.charset());
+    }
+
+    @Test
+    @DisplayName("clone() deep clones Parser so setting original.parser().setTrackErrors(...) does not affect clone.parser()")
+    public void test_TC03() {
+        // GIVEN a Document whose parser has recorded errors after tracking
+        Document original = new Document("base");
+        Parser originalParser = original.parser();
+        originalParser.setTrackErrors(5); // introduce error tracking in original
+        // WHEN clone is called
+        Document cloned = original.clone();
+        Parser clonedParser = cloned.parser();
+        // THEN clone.parser is a distinct instance and has no errors recorded
+        assertNotSame(originalParser, clonedParser);
+        assertTrue(clonedParser.getErrors().isEmpty());
+    }
+
+    @Test
+    @DisplayName("clone() retains connection==null so connection() on clone returns newSession, not original's")
+    public void test_TC04() {
+        // GIVEN a Document with null connection field
+        Document original = new Document("u");
+        // WHEN clone is created
+        Document cloned = original.clone();
+        // THEN both connection() calls return new distinct sessions
+        Connection origConn = original.connection();
+        Connection cloneConn = cloned.connection();
+        assertNotSame(origConn, cloneConn);
+        assertNotNull(origConn);
+        assertNotNull(cloneConn);
+    }
+
+    @Test
+    @DisplayName("clone() copies quirksMode so modifications on original do not affect clone")
+    public void test_TC05() {
+        // GIVEN a Document with quirksMode set to quirks
+        Document original = new Document("uri");
+        original.quirksMode(Document.QuirksMode.quirks);
+        // WHEN clone is created and original changed to limitedQuirks
+        Document cloned = original.clone();
+        original.quirksMode(Document.QuirksMode.limitedQuirks);
+        // THEN clone retains the quirks mode it had at clone time
+        assertEquals(Document.QuirksMode.quirks, cloned.quirksMode());
+    }
+
+    @Test
+    @DisplayName("clone() clones attribute set so adding attribute to original does not appear in clone")
+    public void test_TC06() {
+        // GIVEN a shell Document with attribute 'a' on original
+        Document original = Document.createShell("x");
+        original.attr("a", "1");
+        // WHEN clone is created
+        Document cloned = original.clone();
+        // THEN clone does not have attribute 'a'
+        assertFalse(cloned.hasAttr("a"));
+        // original still has it, ensuring deep copy
+        assertTrue(original.hasAttr("a"));
+    }
+
+    @Test
+    @DisplayName("clone() clones childNodes so adding child to clone does not affect original")
+    public void test_TC07() {
+        // GIVEN a shell Document with no <div> initially
+        Document original = Document.createShell("b");
+        // WHEN clone is created and <div> appended to clone
+        Document cloned = original.clone();
+        cloned.appendElement("div");
+        // THEN original remains without <div>
+        assertTrue(original.select("div").isEmpty());
+    }
+
+    @Test
+    @DisplayName("clone() supports round-trip outerHtml equivalence for simple content")
+    public void test_TC08() {
+        // GIVEN a Document with body text 'hello'
+        Document original = Document.createShell("u");
+        original.body().text("hello");
+        // WHEN clone is created
+        Document cloned = original.clone();
+        // THEN their HTML serialization remains equal and contains 'hello'
+        String origHtml = original.outerHtml();
+        String cloneHtml = cloned.outerHtml();
+        assertEquals(origHtml, cloneHtml);
+        assertTrue(cloneHtml.contains("hello"));
+    }
+
+    @Test
+    @DisplayName("clone() returns clone whose title matches original title after title() set")
+    public void test_TC09() {
+        // GIVEN a Document with title 'T'
+        Document original = Document.createShell("x");
+        original.title("T");
+        // WHEN clone is created and original title changed to 'U'
+        Document cloned = original.clone();
+        original.title("U");
+        // THEN clone retains its original title
+        assertEquals("T", cloned.title());
+    }
+
+    @Test
+    @DisplayName("clone() supports chaining: modifying clone.outputSettings() does not affect original.outputSettings()")
+    public void test_TC10() {
+        // GIVEN a fresh Document
+        Document original = new Document("u");
+        // WHEN clone is created and clone's prettyPrint toggled off
+        Document cloned = original.clone();
+        cloned.outputSettings().prettyPrint(false);
+        // THEN original's prettyPrint remains true
+        assertTrue(original.outputSettings().prettyPrint());
+    }
+}

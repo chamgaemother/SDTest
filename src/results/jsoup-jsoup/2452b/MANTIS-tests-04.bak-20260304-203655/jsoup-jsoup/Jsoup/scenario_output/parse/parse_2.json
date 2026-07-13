@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "clean(String, \"\", Safelist.none()) skips DummyUri branch when preserveRelativeLinks is false",
+      "path": "B0→B1(false)→B3→B5",
+      "precondition": "none",
+      "expectedResult": "returns cleaned HTML without using DummyUri, relative links removed",
+      "tags": [
+        "negative",
+        "branch",
+        "clean",
+        "preserveRelativeLinks=false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 clean skips DummyUri when preserveRelativeLinks false",
+        "  GIVEN",
+        "    String html = \"<a href='/r'>R</a>\";",
+        "    String base = \"\";",
+        "    Safelist safelist = Safelist.none();",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, base, safelist);",
+        "  THEN",
+        "    // Assert that no href attribute remains",
+        "    assert result.equals(\"<a>R</a>\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "clean(String, baseUri, Safelist.basic(), custom OutputSettings) applies outputSettings",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "returns cleaned HTML formatted according to outputSettings",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "outputSettings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 clean with custom OutputSettings",
+        "  GIVEN",
+        "    String html = \"<p>Line</p>\";",
+        "    String base = \"http://u/\";",
+        "    Safelist safelist = Safelist.basic();",
+        "    Document.OutputSettings settings = new Document.OutputSettings().prettyPrint(false).escapeMode(org.jsoup.nodes.Entities.EscapeMode.xhtml);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, base, safelist, settings);",
+        "  THEN",
+        "    assert result.contains(\"<p>Line</p>\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parseBodyFragment(String) returns Document with empty baseUri and fragment in body",
+      "path": "B0→B2→B5",
+      "precondition": "none",
+      "expectedResult": "body.html() equals fragment, baseUri is empty string",
+      "tags": [
+        "positive",
+        "overload",
+        "parseBodyFragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parseBodyFragment no-baseUri overload",
+        "  GIVEN",
+        "    String fragment = \"<span>X</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(fragment);",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(String, Parser) with null html throws IllegalArgumentException",
+      "path": "B0→B1(exception)",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload",
+        "parse(null)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse html-null with parser throws",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, int) with HTTP 404 returns HttpStatusException",
+      "path": "B0→B1→B2→exception",
+      "precondition": "embedded HTTP server returns 404 for GET",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "parse(URL)",
+        "http"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse URL 404 throws HttpStatusException",
+        "  GIVEN",
+        "    // start HTTP server at random port",
+        "    server responds 404 to any request",
+        "    URL url = new URL(\"http://localhost:\" + port + \"/notfound\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws org.jsoup.HttpStatusException;"
+      ]
+    }
+  ]
+}

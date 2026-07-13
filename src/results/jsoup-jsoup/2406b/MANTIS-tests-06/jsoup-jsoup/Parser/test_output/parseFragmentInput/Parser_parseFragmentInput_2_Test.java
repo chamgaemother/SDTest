@@ -1,0 +1,74 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.TagSet;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.Token;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class Parser_parseFragmentInput_2_Test {
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader, context, baseUri) propagates unchecked RuntimeException from TreeBuilder.parseFragment")
+    public void test_TC08() {
+        // GIVEN a stub TreeBuilder that throws IllegalStateException in parseFragment (drives exception path B2)
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public <N extends Node> List<N> parse(Reader in, String baseUri, Parser parser) throws Exception { return null; }
+            @Override public <N extends Node> List<N> parseFragment(Reader in, Element context, String baseUri, Parser parser) throws Exception {
+                throw new IllegalStateException("stub error");
+            }
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }
+            @Override public TagSet defaultTagSet() { return TagSet.Html(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return Parser.NamespaceHtml; }
+            @Override public void process(Token token) { /* no-op */ }
+        };
+        Parser parser = new Parser(stub);
+        Reader in = new StringReader("<p/>");
+        Element ctx = null;
+        String baseUri = "http://example.com";
+
+        // WHEN & THEN: throws IllegalStateException with original message
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseFragmentInput(in, ctx, baseUri)
+        );
+        assertEquals("stub error", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(String, non-null context, baseUri) propagates unchecked RuntimeException from TreeBuilder.parseFragment")
+    public void test_TC09() {
+        // GIVEN a stub TreeBuilder that throws NullPointerException in parseFragment (drives exception path B2)
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public <N extends Node> List<N> parse(Reader in, String baseUri, Parser parser) throws Exception { return null; }
+            @Override public <N extends Node> List<N> parseFragment(Reader in, Element context, String baseUri, Parser parser) throws Exception {
+                throw new NullPointerException("stub NPE");
+            }
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }
+            @Override public TagSet defaultTagSet() { return TagSet.Html(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return Parser.NamespaceHtml; }
+            @Override public void process(Token token) { /* no-op */ }
+        };
+        Parser parser = new Parser(stub);
+        Element ctx = new Element(org.jsoup.parser.Tag.valueOf("div"), "http://example.com");
+        String fragment = "<span></span>";
+        String baseUri = "http://example.com";
+
+        // WHEN & THEN: throws NullPointerException with original message via overload String->Reader
+        NullPointerException ex = assertThrows(NullPointerException.class,
+            () -> parser.parseFragmentInput(fragment, ctx, baseUri)
+        );
+        assertEquals("stub NPE", ex.getMessage());
+    }
+}

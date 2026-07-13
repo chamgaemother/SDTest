@@ -1,0 +1,55 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Comment;
+import org.jsoup.nodes.Elements;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_2_Test {
+
+    @Test
+    @DisplayName("children() caches empty element list when only non-Element child nodes and reuses cache on second call")
+    public void test_TC09() {
+        // GIVEN: an element with only TextNode and Comment children -> childNodeSize()>0 and no Element children
+        Element el = new Element("div");
+        el.appendChild(new TextNode("t1")); // non-Element child
+        el.appendChild(new Comment("c1")); // non-Element child
+        // WHEN: first call to children() builds and caches an empty list (shadowChildrenRef was null)
+        Elements first = el.children();
+        // WHEN: second call to children() should reuse cached list (shadowChildrenRef.get()!=null)
+        Elements second = el.children();
+        // THEN: result is empty and both calls return the same instance
+        assertTrue(first.isEmpty(), "Expected no Element children");
+        assertSame(first, second, "Expected children() to return cached instance on second call");
+    }
+
+    @Test
+    @DisplayName("children() rebuilds shadow list when WeakReference referent cleared (cache-miss on null get)")
+    public void test_TC10() throws Exception {
+        // GIVEN: an element with two Element children -> childNodeSize()>0 and shadowChildrenRef builds list of 2
+        Element el = new Element("ul");
+        el.appendChild(new Element("li")); // first Element child
+        el.appendChild(new Element("li")); // second Element child
+        Elements first = el.children();
+        assertEquals(2, first.size(), "Expected two Element children on first call");
+        // Reflectively clear the cached referent to simulate GC-cleared weak reference
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> wref = (WeakReference<List<Element>>) refField.get(el);
+        assertNotNull(wref, "WeakReference field should be non-null after first children() call");
+        wref.clear(); // clear referent to simulate cache miss
+        // WHEN: second call to children() should rebuild the list since get() returns null
+        Elements second = el.children();
+        // THEN: both lists have size 2 but are distinct instances
+        assertEquals(2, second.size(), "Expected two Element children on second call after cache miss");
+        assertNotSame(first, second, "Expected children() to rebuild list when weak referent was cleared");
+    }
+}

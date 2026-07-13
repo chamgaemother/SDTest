@@ -1,0 +1,104 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on empty Document produces a distinct deep copy with no child nodes (loop-0 children)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // no children",
+      "expectedResult": "returned Document != original; returned.childNodes.size() == 0; returned.baseUri() equals original.baseUri(); returned.outputSettings != original.outputSettings; returned.parser != original.parser",
+      "tags": [
+        "loop-0",
+        "deep-copy",
+        "empty-document"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone empty-document",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone != doc;",
+        "    assert clone.childNodes().isEmpty();",
+        "    assert clone.baseUri().equals(doc.baseUri());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() on Document with multiple children produces deep copies of all children (loop-N children)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document doc = Document.createShell(\"http://test\"); // has html, head, body children",
+      "expectedResult": "returned.childNodes().size() == 4; for each index i, returned.childNodes().get(i) != original.childNodes().get(i); returned.childNodes().get(i).outerHtml() equals original.childNodes().get(i).outerHtml()",
+      "tags": [
+        "loop-N",
+        "deep-copy",
+        "multiple-children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone multiple-children",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://test\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.childNodes().size() == doc.childNodes().size();",
+        "    assert clone.childNodes().get(0) != doc.childNodes().get(0);"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() yields a separate outputSettings instance (modify clone.outputSettings, original unaffected)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document doc = new Document(\"u\"); doc.outputSettings().prettyPrint(false);",
+      "expectedResult": "clone.outputSettings().prettyPrint() == false; modifying clone.outputSettings().prettyPrint(true) does not change doc.outputSettings().prettyPrint() (remains false)",
+      "tags": [
+        "outputSettings",
+        "deep-copy",
+        "state-isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 clone outputSettings isolation",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    doc.outputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.outputSettings().prettyPrint(true);",
+        "  THEN",
+        "    assert doc.outputSettings().prettyPrint() == false;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() yields a separate parser instance (modify clone.parser, original unaffected)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document doc = new Document(\"base\"); doc.parser(Parser.xmlParser());",
+      "expectedResult": "clone.parser().getName() equals original.parser().getName() initially; setting clone.parser(Parser.htmlParser()) does not change original.parser().getName()",
+      "tags": [
+        "parser",
+        "deep-copy",
+        "state-isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone parser isolation",
+        "  GIVEN",
+        "    Document doc = new Document(\"base\");",
+        "    doc.parser(Parser.xmlParser());",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.parser(Parser.htmlParser());",
+        "  THEN",
+        "    assert doc.parser().getName().equals(\"XML parser\");"
+      ]
+    }
+  ]
+}

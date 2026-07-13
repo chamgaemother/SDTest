@@ -1,0 +1,84 @@
+{
+  "method": "setScores",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Valid power-of-two length array sets scores and computes correct height (length=8)",
+      "path": "B0→B1→B3",
+      "precondition": "miniMax = new MiniMaxAlgorithm(); initial scores retained from constructor",
+      "expectedResult": "miniMax.getScores() equals the provided array [1,2,3,4,5,6,7,8]; miniMax.getHeight() == 3",
+      "tags": [
+        "branch-false",
+        "valid",
+        "power-of-two",
+        "happy-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 setScores valid-power-of-two",
+        "  GIVEN",
+        "    MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();",
+        "    int[] newScores = {1,2,3,4,5,6,7,8};",
+        "  WHEN",
+        "    miniMax.setScores(newScores);",
+        "  THEN",
+        "    assert Arrays.equals(miniMax.getScores(), newScores);",
+        "    assert miniMax.getHeight() == 3;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Invalid non-power-of-two length array prints warning and retains original state (length=3)",
+      "path": "B0→B2→B3",
+      "precondition": "miniMax = new MiniMaxAlgorithm(); capture originalScores and originalHeight",
+      "expectedResult": "System.out contains \"The number of scores must be a power of 2.\"; miniMax.getScores() equals originalScores; miniMax.getHeight() equals originalHeight",
+      "tags": [
+        "branch-true",
+        "invalid",
+        "non-power-of-two",
+        "warning-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 setScores invalid-non-power-of-two",
+        "  GIVEN",
+        "    MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();",
+        "    int[] originalScores = miniMax.getScores().clone();",
+        "    int originalHeight = miniMax.getHeight();",
+        "    int[] newScores = {1,2,3};",
+        "  WHEN",
+        "    captureStdOut();",
+        "    miniMax.setScores(newScores);",
+        "  THEN",
+        "    assert getStdOut().contains(\"The number of scores must be a power of 2.\");",
+        "    assert Arrays.equals(miniMax.getScores(), originalScores);",
+        "    assert miniMax.getHeight() == originalHeight;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Null input throws NullPointerException before validation",
+      "path": "B0",
+      "precondition": "miniMax = new MiniMaxAlgorithm()",
+      "expectedResult": "throws NullPointerException; no modification of scores or height",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 setScores null-input-exception",
+        "  GIVEN",
+        "    MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();",
+        "    int[] newScores = null;",
+        "  WHEN",
+        "    call miniMax.setScores(newScores);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

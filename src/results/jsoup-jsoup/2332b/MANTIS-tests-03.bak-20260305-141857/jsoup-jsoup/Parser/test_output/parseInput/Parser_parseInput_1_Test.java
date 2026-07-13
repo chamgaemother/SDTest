@@ -1,0 +1,39 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class Parser_parseInput_1_Test {
+
+    @Test
+    @DisplayName("parseInput(String, String) with non-null HTML and null baseUri throws NullPointerException")
+    public void test_TC06() {
+        // GIVEN a standard HTML parser and valid HTML content
+        Parser parser = Parser.htmlParser();
+        String html = "<div>Test</div>";
+        String baseUri = null;
+        // WHEN & THEN: passing a null baseUri should trigger a NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            // design: this exercises the String overload -> Reader overload path with null baseUri
+            parser.parseInput(html, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with valid Reader and null baseUri throws NullPointerException")
+    public void test_TC07() {
+        // GIVEN a standard XML parser and a valid Reader for XML content
+        Parser parser = Parser.xmlParser();
+        Reader reader = new StringReader("<root/>\n");
+        String baseUri = null;
+        // WHEN & THEN: supplying a null baseUri directly to the Reader overload should throw NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            // design: this exercises the Reader overload path and ensures NPE for null baseUri
+            parser.parseInput(reader, baseUri);
+        });
+    }
+}

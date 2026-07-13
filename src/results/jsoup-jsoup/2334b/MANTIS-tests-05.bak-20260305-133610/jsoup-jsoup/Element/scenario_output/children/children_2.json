@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() filters out DataNode instances when only DataNode present (childNodeSize>0 but no Element instances)",
+      "path": "B0→B3→B8",
+      "precondition": "none",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "filtering",
+        "negative",
+        "node-type"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children filters DataNode",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new DataNode(\"data\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() returns cached list on second call without rebuilding when shadowChildrenRef referent is non-null",
+      "path": "B0→B3→B5",
+      "precondition": "first call to children() has populated shadowChildrenRef",
+      "expectedResult": "second call returns same instance list and same elements",
+      "tags": [
+        "caching",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children cache reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    parent.appendChild(li);",
+        "    // build cache",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first == second || first.equals(second);",
+        "    assert second.size() == 1 && second.get(0) == li;",
+        "END"
+      ]
+    }
+  ]
+}

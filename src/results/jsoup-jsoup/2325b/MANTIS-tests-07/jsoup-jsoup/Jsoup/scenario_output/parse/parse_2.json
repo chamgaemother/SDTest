@@ -1,0 +1,190 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "parse(html, parser) throws NullPointerException when parser is null",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-check"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse html with null parser",
+        "  GIVEN",
+        "    String html = \"<p>text</p>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(html, parser) throws NullPointerException when html is null",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-check"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse null html with parser",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(File, charsetName, baseUri) throws IOException when file does not exist",
+      "path": "B0→B1→B2→B6",
+      "precondition": "non-existent File object",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse non-existent file",
+        "  GIVEN",
+        "    File file = new File(\"no_such_file.html\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(File) with existing HTML file returns parsed Document",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "temporary File with content \"<div>ok</div>\"",
+      "expectedResult": "Document.body().html() == \"<div>ok</div>\" and baseUri=file path",
+      "tags": [
+        "positive",
+        "file",
+        "io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse existing file with default charset",
+        "  GIVEN",
+        "    File file = createTempFile(\"test.html\", \"<div>ok</div>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>ok</div>\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(Path, charsetName, baseUri) throws IOException when charsetName is invalid",
+      "path": "B0→B1→B2→B6",
+      "precondition": "temporary Path with HTML file",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "path",
+        "io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse path with invalid charset",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"test\", \".html\");",
+        "    Files.write(path, \"<p>hi</p>\".getBytes(StandardCharsets.UTF_8));",
+        "    String invalidCharset = \"NoSuch-Charset\";",
+        "    String baseUri = \"http://b\";",
+        "  WHEN",
+        "    call Jsoup.parse(path, invalidCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(InputStream, charsetName, baseUri) returns parsed Document for valid stream",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "InputStream over bytes of \"<span>in</span>\"",
+      "expectedResult": "Document.body().html() == \"<span>in</span>\"",
+      "tags": [
+        "positive",
+        "inputstream",
+        "io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse input stream with explicit charset",
+        "  GIVEN",
+        "    byte[] data = \"<span>in</span>\".getBytes(StandardCharsets.UTF_8);",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>in</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(html, parser) invokes custom parser.parseInput and returns its Document",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "stub Parser that returns sentinel Document",
+      "expectedResult": "Returned Document is sentinel instance",
+      "tags": [
+        "positive",
+        "parser",
+        "stub"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 custom parser stub is invoked",
+        "  GIVEN",
+        "    String html = \"<x/>\";",
+        "    Parser stub = new Parser() {",
+        "      @Override",
+        "      public Document parseInput(String inHtml, String inBaseUri) {",
+        "        return new Document(\"stub\");",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document result = Jsoup.parse(html, stub);",
+        "  THEN",
+        "    assert result.title().equals(\"stub\");",
+        "END"
+      ]
+    }
+  ]
+}

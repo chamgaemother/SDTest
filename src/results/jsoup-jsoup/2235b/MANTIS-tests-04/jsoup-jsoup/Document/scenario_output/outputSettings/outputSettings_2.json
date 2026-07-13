@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "outputSettings(OutputSettings) with chaining on Document retains all mutated OutputSettings fields",
+      "path": "B0→B1→B2",
+      "precondition": "Document created; custom OutputSettings mutated",
+      "expectedResult": "Document.outputSettings returns this Document; getter returns the same mutated instance with all fields preserved",
+      "tags": [
+        "positive",
+        "setter",
+        "getter",
+        "chaining"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 setter-retains-all-settings",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    Document.OutputSettings os = new Document.OutputSettings()",
+        "      .charset(\"ISO-8859-1\")",
+        "      .escapeMode(Entities.EscapeMode.extended)",
+        "      .prettyPrint(false)",
+        "      .outline(true)",
+        "      .indentAmount(5)",
+        "      .maxPaddingWidth(100)",
+        "      .syntax(Document.OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    Document returnedDoc = doc.outputSettings(os);",
+        "  THEN",
+        "    assert returnedDoc == doc;",
+        "    assertSame(os, doc.outputSettings());",
+        "    assertEquals(\"ISO-8859-1\", os.charset().name());",
+        "    assertEquals(Entities.EscapeMode.extended, os.escapeMode());",
+        "    assertFalse(os.prettyPrint());",
+        "    assertTrue(os.outline());",
+        "    assertEquals(5, os.indentAmount());",
+        "    assertEquals(100, os.maxPaddingWidth());",
+        "    assertEquals(Document.OutputSettings.Syntax.xml, os.syntax());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "outputSettings(null) triggers IllegalArgumentException message formatting correctly",
+      "path": "B0→B3",
+      "precondition": "Document created",
+      "expectedResult": "IllegalArgumentException with message containing 'outputSettings' and 'null'",
+      "tags": [
+        "negative",
+        "exception",
+        "message"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 setter-null-exception-message",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    call doc.outputSettings(null);",
+        "  THEN",
+        "    catches IllegalArgumentException e;",
+        "    assert e.getMessage().contains(\"outputSettings\");",
+        "    assert e.getMessage().toLowerCase().contains(\"null\");",
+        "END"
+      ]
+    }
+  ]
+}

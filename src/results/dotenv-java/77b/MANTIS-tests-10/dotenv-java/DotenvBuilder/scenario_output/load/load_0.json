@@ -1,0 +1,258 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "default load() with missing .env throws DotenvException (throwIfMissing=true)",
+      "path": "B0",
+      "precondition": "Ensure directory './' contains no .env file; no mocks",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no system properties set",
+      "tags": [
+        "exception",
+        "branch-true",
+        "throwIfMissing",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 load missing-file default",
+        "  GIVEN",
+        "    // Ensure no .env in './'",
+        "    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "ignoreIfMissing().load() with missing .env returns empty Dotenv (throwIfMissing=false)",
+      "path": "B0→B1→B2",
+      "precondition": "Ensure directory './' contains no .env file; no mocks",
+      "expectedResult": "return Dotenv instance; entries() and entries(null) return only current system environment entries; setInFile empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "ignoreIfMissing",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 load ignoreIfMissing missing-file",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() >= 0;",
+        "    assert dotenv.entries(null).isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "default load() with one-entry .env returns Dotenv with one file entry and no systemProperties set",
+      "path": "B0→B1→B2",
+      "precondition": "Create file './.env' containing 'KEY=VALUE'; delete existing System.property KEY if any",
+      "expectedResult": "return Dotenv instance; dotenv.get(\"KEY\") == \"VALUE\"; System.getProperty(\"KEY\") == null",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "file-entry",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 load one-entry-file",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"KEY=VALUE\");",
+        "    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"KEY\").equals(\"VALUE\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "default load() with two-entry .env returns Dotenv with both file entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create file './.env' containing 'A=1' and 'B=2'; no System.property overrides",
+      "expectedResult": "return Dotenv instance; dotenv.get(\"A\")==\"1\" and dotenv.get(\"B\")==\"2\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "file-entry-multiple",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 load two-entry-file",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"A=1\\nB=2\");",
+        "    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"A\").equals(\"1\");",
+        "    assert dotenv.get(\"B\").equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "systemProperties().load() with one-entry .env sets corresponding System.property",
+      "path": "B0→B2",
+      "precondition": "Create file './.env' containing 'X=Y'; ensure System.getenv('X') is null; no mocks",
+      "expectedResult": "return Dotenv instance; System.getProperty(\"X\")==\"Y\"; dotenv.get(\"X\")==\"Y\"",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 load with-systemProperties one-entry",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"X=Y\");",
+        "    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"X\").equals(\"Y\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "systemProperties().load() with empty .env file returns Dotenv and sets no System.property",
+      "path": "B0→B2",
+      "precondition": "Create empty file './.env'; ensure no system property KEY_EMPTY; no mocks",
+      "expectedResult": "return Dotenv instance; dotenv.entries().contains(new DotenvEntry(KEY,VALUE)) is false; no new System.properties",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties",
+        "load:empty-file"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load systemProperties empty-file",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\" \");",
+        "    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() >= 0;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "systemProperties().load() with five-entry .env sets all five System.properties",
+      "path": "B0→B2",
+      "precondition": "Create file './.env' with 5 distinct 'K{i}=V{i}'; clear these System.properties beforehand",
+      "expectedResult": "for i=1..5, System.getProperty(\"K\"+i)==\"V\"+i",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties",
+        "loop-largeN",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 load systemProperties five-entries",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"K1=V1\\nK2=V2\\nK3=V3\\nK4=V4\\nK5=V5\");",
+        "    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    for(int i=1;i<=5;i++) assert System.getProperty(\"K\"+i).equals(\"V\"+i);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "default load() with malformed .env throws DotenvException (throwIfMalformed=true)",
+      "path": "B0",
+      "precondition": "Create './.env' containing malformed line without '='; no mocks",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no state change",
+      "tags": [
+        "exception",
+        "malformed",
+        "branch-true",
+        "throwIfMalformed",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 load malformed-file default",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"BADLINE\");",
+        "    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "ignoreIfMalformed().load() with malformed .env returns Dotenv ignoring malformed lines",
+      "path": "B0→B1→B2",
+      "precondition": "Create './.env' with 'GOOD=1' and 'BADLINE'; no mocks",
+      "expectedResult": "return Dotenv instance; dotenv.get(\"GOOD\")==\"1\"; malformed line ignored",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "ignoreIfMalformed",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 load ignoreIfMalformed malformed-file",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"GOOD=1\\nBADLINE\");",
+        "    DotenvBuilder builder = Dotenv.configure().ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"GOOD\").equals(\"1\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "default load() with ten-entry .env returns Dotenv with ten file entries (large N)",
+      "path": "B0→B1→B2",
+      "precondition": "Create './.env' with entries 'L1=V1'..'L10=V10'; no mocks",
+      "expectedResult": "for i=1..10, dotenv.get(\"L\"+i).equals(\"V\"+i)",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "largeN",
+        "load:directory='./',filename='.env'"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 load ten-entry-file",
+        "  GIVEN",
+        "    writeFile(\"./.env\",\"L1=V1\\nL2=V2\\nL3=V3\\nL4=V4\\nL5=V5\\nL6=V6\\nL7=V7\\nL8=V8\\nL9=V9\\nL10=V10\");",
+        "    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    for(int i=1;i<=10;i++) assert dotenv.get(\"L\"+i).equals(\"V\"+i);"
+      ]
+    }
+  ]
+}

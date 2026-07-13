@@ -1,0 +1,104 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("TC09: dataset() includes an entry for an attribute with key 'data-' resulting in empty property name")
+    public void test_TC09() {
+        // GIVEN an element with a data- attribute having no property name
+        Element e = new Element("div");
+        e.attr("data-", "value");
+        // WHEN retrieving the dataset view
+        Map<String, String> data = e.dataset();
+        // THEN the view has exactly one entry with empty-string key mapping to "value"
+        assertEquals(1, data.size(), "Expect exactly one dataset entry for 'data-' attribute");
+        assertTrue(data.containsKey(""), "Empty property name should be present as key");
+        assertEquals("value", data.get(""), "Value for empty property name should be 'value'");
+        // and the underlying attribute remains unchanged
+        assertTrue(e.attributes().hasKey("data-"), "Underlying attribute 'data-' must still exist");
+    }
+
+    @Test
+    @DisplayName("TC10: dataset() correctly camel-cases keys with multiple dashes (data-one-two-three → oneTwoThree)")
+    public void test_TC10() {
+        // GIVEN an element with a multi-dash data- attribute
+        Element e = new Element("p");
+        e.attr("data-one-two-three", "val");
+        // WHEN retrieving the dataset view
+        Map<String, String> data = e.dataset();
+        // THEN the view key should be camelCased from "one-two-three" to "oneTwoThree"
+        assertEquals(1, data.size(), "Expect one dataset entry for multi-dash attribute");
+        assertTrue(data.containsKey("oneTwoThree"), "Key should be camel-cased to 'oneTwoThree'");
+        assertEquals("val", data.get("oneTwoThree"), "Value should be 'val'");
+    }
+
+    @Test
+    @DisplayName("TC11: dataset().clear() removes all data- attributes from the element")
+    public void test_TC11() {
+        // GIVEN an element with two data- attributes
+        Element e = new Element("div");
+        e.attr("data-a", "1");
+        e.attr("data-b", "2");
+        Map<String, String> data = e.dataset();
+        assertEquals(2, data.size(), "Initial dataset should contain two entries");
+        // WHEN clearing the dataset view
+        data.clear(); // this should remove all "data-*" attributes
+        // THEN the view is empty
+        assertTrue(data.isEmpty(), "Dataset view should be empty after clear()");
+        // and underlying attributes no longer contain data-a or data-b
+        assertFalse(e.attributes().hasKey("data-a"), "Attribute 'data-a' should be removed");
+        assertFalse(e.attributes().hasKey("data-b"), "Attribute 'data-b' should be removed");
+    }
+
+    @Test
+    @DisplayName("TC12: dataset().putAll(...) adds multiple entries and underlying attributes are set accordingly")
+    public void test_TC12() {
+        // GIVEN an empty element and a newData map with two entries
+        Element e = new Element("span");
+        Map<String, String> newData = new HashMap<>();
+        newData.put("x", "X");
+        newData.put("yZ", "yz");
+        Map<String, String> data = e.dataset();
+        // WHEN putting all entries into the dataset view
+        data.putAll(newData);
+        // THEN the view has both entries
+        assertEquals(2, data.size(), "Dataset view should reflect both new entries");
+        assertEquals("X", data.get("x"), "Dataset 'x' should map to 'X'");
+        assertEquals("yz", data.get("yZ"), "Dataset 'yZ' should map to 'yz'");
+        // and the element attributes reflect proper dash-naming: data-x and data-y-z
+        assertEquals("X", e.attr("data-x"), "Element should have attribute data-x='X'");
+        assertEquals("yz", e.attr("data-y-z"), "Element should have attribute data-y-z='yz'");
+    }
+
+    @Test
+    @DisplayName("TC13: dataset().put(null, \"v\") throws NullPointerException for null key")
+    public void test_TC13() {
+        // GIVEN an element and its dataset view
+        Element e = new Element("div");
+        Map<String, String> data = e.dataset();
+        // WHEN attempting to put a null key
+        // THEN a NullPointerException must be thrown
+        assertThrows(NullPointerException.class, () -> data.put(null, "v"),
+            "Putting a null key into dataset should throw NullPointerException");
+    }
+
+    @Test
+    @DisplayName("TC14: dataset().put(\"k\", null) throws NullPointerException for null value")
+    public void test_TC14() {
+        // GIVEN an element and its dataset view
+        Element e = new Element("p");
+        Map<String, String> data = e.dataset();
+        // WHEN attempting to put a null value
+        // THEN a NullPointerException must be thrown
+        assertThrows(NullPointerException.class, () -> data.put("k", null),
+            "Putting a null value into dataset should throw NullPointerException");
+    }
+}

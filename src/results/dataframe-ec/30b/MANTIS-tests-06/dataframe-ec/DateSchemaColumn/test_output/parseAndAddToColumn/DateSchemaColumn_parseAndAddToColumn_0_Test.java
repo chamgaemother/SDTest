@@ -1,0 +1,99 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DataFrame;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DateSchemaColumn_parseAndAddToColumn_0_Test {
+
+    /**
+     * A simple stub implementation of DfColumn that records the last added object.
+     * Assumes DfColumn has a public no-arg constructor and an overridable addObject method.
+     */
+    private static class StubColumn implements DfColumn {
+        Object lastAddedObject;
+
+        public StubColumn() {
+            super();
+        }
+
+        @Override
+        public void addObject(Object obj) {
+            this.lastAddedObject = obj; // Changed to store the object
+        }
+
+        // Implementing the missing method from DfColumn
+        @Override
+        public void copyTo(DataFrame df) {
+            // Stub implementation; no operation needed for tests
+        }
+    }
+
+    @Test
+    @DisplayName("TC01: parseAndAddToColumn with null input adds null to the column (covers aString==null branch)")
+    public void test_TC01() {
+        // GIVEN: aString is null → triggers the aString==null branch in parseAsLocalDate
+        String aString = null;
+        DfColumn dfColumn = new StubColumn();
+
+        // WHEN: parsing and adding to column
+        DateSchemaColumn column = new DateSchemaColumn(null, "col", null);
+        column.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: the stub's lastAddedObject should be null
+        assertNull(((StubColumn) dfColumn).lastAddedObject, "Expected null to be added when input string is null");
+    }
+
+    @Test
+    @DisplayName("TC02: parseAndAddToColumn with empty string adds null to the column (covers trimmed.isEmpty()==true branch)")
+    public void test_TC02() {
+        // GIVEN: aString is whitespace only → trim yields empty string, triggers empty branch
+        String aString = "   ";
+        DfColumn dfColumn = new StubColumn();
+
+        // WHEN: parsing and adding to column
+        DateSchemaColumn column = new DateSchemaColumn(null, "col", null);
+        column.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: the stub's lastAddedObject should be null
+        assertNull(((StubColumn) dfColumn).lastAddedObject, "Expected null to be added when input string is empty after trimming");
+    }
+
+    @Test
+    @DisplayName("TC03: parseAndAddToColumn with valid date string adds LocalDate instance to the column (covers parse success branch)")
+    public void test_TC03() {
+        // GIVEN: aString is a valid date matching default pattern "uuuu-M-d"
+        String aString = "2022-3-5";
+        DfColumn dfColumn = new StubColumn();
+
+        // WHEN: parsing and adding to column
+        DateSchemaColumn column = new DateSchemaColumn(null, "col", null);
+        column.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: the stub's lastAddedObject should equal the corresponding LocalDate
+        Object added = ((StubColumn) dfColumn).lastAddedObject;
+        assertTrue(added instanceof LocalDate, "Expected instance of LocalDate added");
+        assertEquals(LocalDate.of(2022, 3, 5), added, "Expected parsed LocalDate.of(2022,3,5)");
+    }
+
+    @Test
+    @DisplayName("TC04: parseAndAddToColumn with malformed date string throws DateTimeParseException (covers parse exception path)")
+    public void test_TC04() {
+        // GIVEN: aString is not a date → parse should fail in LocalDate.parse
+        String aString = "not-a-date";
+        DfColumn dfColumn = new StubColumn();
+        DateSchemaColumn column = new DateSchemaColumn(null, "col", null);
+
+        // WHEN / THEN: expect DateTimeParseException when parsing malformed date
+        assertThrows(DateTimeParseException.class,
+            () -> column.parseAndAddToColumn(aString, dfColumn),
+            "Expected DateTimeParseException for invalid date string");
+    }
+}

@@ -1,0 +1,177 @@
+{
+  "method": "convexHullRecursive",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "convexHullRecursive(null) throws NullPointerException when input list is null",
+      "path": "B0",
+      "precondition": "points == null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 null-input",
+        "  GIVEN",
+        "    List<Point> points = null;",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "convexHullRecursive(empty) throws IndexOutOfBoundsException when list is empty",
+      "path": "B0",
+      "precondition": "points.size() == 0",
+      "expectedResult": "throws IndexOutOfBoundsException",
+      "tags": [
+        "exception",
+        "loop-0",
+        "empty-list"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 empty-list",
+        "  GIVEN",
+        "    List<Point> points = new ArrayList<>();",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "convexHullRecursive(singleton) returns the same single point for size==1",
+      "path": "B0→B7→B6",
+      "precondition": "points.size() == 1",
+      "expectedResult": "return list of size 1 containing the only point",
+      "tags": [
+        "boundary",
+        "loop-0",
+        "size-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 singleton-list",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).equals(new Point(0,0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "convexHullRecursive(twoPoints) returns both points sorted for size==2",
+      "path": "B0→B7→B6",
+      "precondition": "points.size() == 2, points unsorted",
+      "expectedResult": "return sorted list of the two distinct input points",
+      "tags": [
+        "boundary",
+        "loop-0",
+        "size-2"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 two-point-list",
+        "  GIVEN",
+        "    Point p1 = new Point(1,1); Point p2 = new Point(0,0);",
+        "    List<Point> points = List.of(p1, p2);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 2; assert result.get(0).equals(p2); assert result.get(1).equals(p1);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "convexHullRecursive(triangle) returns all three points for non-colinear triple",
+      "path": "B0→B7→B1→B2→B5→B7→B6",
+      "precondition": "points.size() == 3, points form a triangle",
+      "expectedResult": "return sorted list of the three vertices",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "size-3",
+        "triangle"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 triangle",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0), new Point(1,0), new Point(0,1));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 3; assert result.containsAll(points);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "convexHullRecursive(colinear) returns only endpoints for three colinear points",
+      "path": "B0→B7→B1→B3→B5→B7→B6",
+      "precondition": "points.size() == 3, points are colinear",
+      "expectedResult": "return sorted list of the two endpoints only",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "size-3",
+        "colinear"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 colinear-triple",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0), new Point(1,1), new Point(2,2));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 2; assert result.get(0).equals(new Point(0,0)); assert result.get(1).equals(new Point(2,2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "convexHullRecursive(mixed) returns hull excluding interior point for four points",
+      "path": "B0→B7→B1→B2→B5→B7→B1→B2→B5→B7→B6",
+      "precondition": "points.size() == 4, one point strictly inside triangle",
+      "expectedResult": "return sorted list of the three hull vertices, excluding interior point",
+      "tags": [
+        "branch-true",
+        "branch-true",
+        "loop-N",
+        "size-4",
+        "interior-point"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 four-points-with-interior",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0), new Point(2,0), new Point(1,2), new Point(1,1));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 3; assert !result.contains(new Point(1,1));",
+        "END"
+      ]
+    }
+  ]
+}

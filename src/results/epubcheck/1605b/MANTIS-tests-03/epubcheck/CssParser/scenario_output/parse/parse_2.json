@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "handleRuleSet branch when selector parsing fails (selectors==null)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "no selectors emitted; error handler invoked for GRAMMAR_UNEXPECTED_TOKEN or similar; loop continues to endDocument",
+      "tags": [
+        "negative",
+        "ruleset-error"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 selectors-null in handleRuleSet",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"123{}\"); // invalid selector tokens",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    // cssSelectorFactory.createSelectorList returns null",
+        "    assertTrue(err.hasErrorCode(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN));",
+        "    assertEquals(0, doc.selectorsCount);",
+        "    assertEquals(1, doc.startDocCount);",
+        "    assertEquals(1, doc.endDocCount);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "handleRuleSet branch when unexpected close parenthesis after selectors triggers error path",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "error handler invoked for GRAMMAR_UNEXPECTED_TOKEN on ')'; no selectors emitted",
+      "tags": [
+        "negative",
+        "ruleset-unexpected-token"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 unexpected ')' in selectors",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1){}\"); // ')' after selector",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assertTrue(err.hasErrorCode(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN));",
+        "    assertEquals(0, doc.selectorsCount);",
+        "    assertEquals(1, doc.startDocCount);",
+        "    assertEquals(1, doc.endDocCount);",
+        "END"
+      ]
+    }
+  ]
+}

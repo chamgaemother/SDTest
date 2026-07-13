@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "charset(Charset) with xml syntax and first child not XmlDeclaration prepends a new xml declaration before existing element",
+      "path": "B0→B1→B2(xml)→B3(syntax==xml)→B4(node not XmlDeclaration)→B7(prepend new XmlDeclaration)",
+      "precondition": "Document created via createShell(\"http://ex\") with default html children, then outputSettings.syntax(xml)",
+      "expectedResult": "New XmlDeclaration named 'xml' prepended; existing html element shifts to index 1; encoding='CHARSET', version='1.0'",
+      "tags": [
+        "positive",
+        "xml",
+        "prepend",
+        "non-XmlDeclaration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 xml-prepend-before-element",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "    // Precondition: first child is an Element (not XmlDeclaration)",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    // Assert new XmlDeclaration at index 0 with name 'xml', encoding=cs.displayName(), version='1.0'",
+        "    assertTrue(doc.childNodes().get(0) instanceof XmlDeclaration);",
+        "    XmlDeclaration decl = (XmlDeclaration)doc.childNodes().get(0);",
+        "    assertEquals(\"xml\", decl.name());",
+        "    assertEquals(cs.displayName(), decl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", decl.attr(\"version\"));",
+        "    // Existing html element is now at index 1",
+        "    assertEquals(\"html\", ((Element)doc.childNodes().get(1)).tagName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "charset(Charset) with xml syntax and existing XmlDeclaration with non-'xml' name prepends a new xml declaration and leaves old one",
+      "path": "B0→B1→B2(xml)→B3(syntax==xml)→B4(node instanceof XmlDeclaration)→B5(name!='xml')→B7(prepend new XmlDeclaration)",
+      "precondition": "Document instantiated, prependChild(new XmlDeclaration(\"foo\", false)), then outputSettings.syntax(xml)",
+      "expectedResult": "New XmlDeclaration at index 0 with name 'xml'; original 'foo' declaration moves to index 1; encoding='CHARSET', version='1.0'",
+      "tags": [
+        "positive",
+        "xml",
+        "prepend",
+        "non-matching-name"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 xml-prepend-before-named-decl",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    XmlDeclaration existing = new XmlDeclaration(\"foo\", false);",
+        "    existing.attr(\"version\", \"0.9\");",
+        "    existing.attr(\"encoding\", \"OLD\");",
+        "    doc.prependChild(existing);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    Charset cs = StandardCharsets.UTF_16;",
+        "    // Precondition: first child is existing XmlDeclaration name!='xml'",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    // New XmlDeclaration at 0, old moves to 1",
+        "    Node first = doc.childNodes().get(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration newDecl = (XmlDeclaration)first;",
+        "    assertEquals(\"xml\", newDecl.name());",
+        "    assertEquals(cs.displayName(), newDecl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", newDecl.attr(\"version\"));",
+        "    // Old declaration remains at index 1 unchanged name but version attr not '0.9'? (version attr unchanged)",
+        "    XmlDeclaration oldDecl = (XmlDeclaration)doc.childNodes().get(1);",
+        "    assertEquals(\"foo\", oldDecl.name());",
+        "    assertEquals(\"0.9\", oldDecl.attr(\"version\"));",
+        "END"
+      ]
+    }
+  ]
+}

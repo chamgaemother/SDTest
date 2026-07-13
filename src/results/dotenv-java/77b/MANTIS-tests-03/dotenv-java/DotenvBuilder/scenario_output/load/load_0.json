@@ -1,0 +1,97 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "When systemProperties is false and .env contains two entries, load returns Dotenv without setting system properties (branch-false)",
+      "path": "B0→B2",
+      "precondition": "Create a temporary .env file in a temp directory with content:\\nKEY1=VAL1\\nKEY2=VAL2; use real DotenvReader and DotenvParser",
+      "expectedResult": "returns a Dotenv instance such that get(\"KEY1\") == \"VAL1\" and get(\"KEY2\") == \"VAL2\"; System.getProperty(\"KEY1\") and System.getProperty(\"KEY2\") are null",
+      "tags": [
+        "branch-false",
+        "systemProperties:false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a .env file with two entries and systemProperties disabled",
+        "WHEN calling new DotenvBuilder().directory(tempDir).load()",
+        "THEN assert returned Dotenv.get(\"KEY1\") == \"VAL1\", Dotenv.get(\"KEY2\") == \"VAL2\" and no System properties set"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "When systemProperties is true and .env contains one entry, load sets exactly one system property (branch-true, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary .env file in a temp directory with content:\\nA=1; use real DotenvReader and DotenvParser",
+      "expectedResult": "returns a Dotenv instance and System.getProperty(\"A\") == \"1\"",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "systemProperties:true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a .env file with one entry and systemProperties enabled",
+        "WHEN calling new DotenvBuilder().directory(tempDir).systemProperties().load()",
+        "THEN assert returned Dotenv.get(\"A\") == \"1\" and System.getProperty(\"A\") == \"1\""
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "When systemProperties is true and .env contains zero entries, load returns Dotenv without system property loop (branch-true, loop-0)",
+      "path": "B0→B1→B2",
+      "precondition": "Create an empty .env file in a temp directory (no entries); use real DotenvReader and DotenvParser",
+      "expectedResult": "returns a Dotenv instance and no new System properties are set",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "systemProperties:true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN an empty .env file and systemProperties enabled",
+        "WHEN calling new DotenvBuilder().directory(tempDir).systemProperties().load()",
+        "THEN assert returned Dotenv.entries() contains only environment vars and no new System properties"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "When systemProperties is true and .env contains multiple entries, load sets multiple properties (branch-true, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary .env file with content:\\nX=foo\\nY=bar; use real DotenvReader and DotenvParser",
+      "expectedResult": "returns a Dotenv instance and System.getProperty(\"X\") == \"foo\" and System.getProperty(\"Y\") == \"bar\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "systemProperties:true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a .env file with two entries and systemProperties enabled",
+        "WHEN calling new DotenvBuilder().directory(tempDir).systemProperties().load()",
+        "THEN assert System.getProperty(\"X\") == \"foo\" and System.getProperty(\"Y\") == \"bar\""
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "When DotenvParser.parse throws DotenvException, load propagates the exception (exception)",
+      "path": "B0",
+      "precondition": "Mock DotenvParser.parse to throw DotenvException; mocking needed because parser is constructed internally",
+      "expectedResult": "throws DotenvException; no System properties or state changed",
+      "tags": [
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN DotenvParser.parse() is stubbed to throw DotenvException",
+        "WHEN calling new DotenvBuilder().load()",
+        "THEN assert DotenvException is thrown"
+      ]
+    }
+  ]
+}

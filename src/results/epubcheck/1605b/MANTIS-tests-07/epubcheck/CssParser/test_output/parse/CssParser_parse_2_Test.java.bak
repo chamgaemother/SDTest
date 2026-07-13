@@ -1,0 +1,142 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssExceptions.PrematureEOFException;
+import org.idpf.epubcheck.util.css.CssToken.Type;
+import org.idpf.epubcheck.util.css.CssTokenList.CssTokenIterator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  // A stub error handler that does nothing
+  static class StubErrorHandler implements CssErrorHandler {
+    @Override public void error(org.idpf.epubcheck.util.css.CssExceptions.CssException e) {}
+  }
+
+  // A stub content handler counting startDocument() and endDocument() calls
+  static class StubContentHandler implements CssContentHandler {
+    int startCount = 0;
+    int endCount = 0;
+    @Override public void startDocument() { startCount++; }
+    @Override public void endDocument() { endCount++; }
+    // other methods unused in parse()
+    @Override public void selectors(List<org.idpf.epubcheck.util.css.CssGrammar.CssSelector> s) {}
+    @Override public void endSelectors(List<org.idpf.epubcheck.util.css.CssGrammar.CssSelector> s) {}
+    @Override public void declaration(org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration d) {}
+    @Override public void startAtRule(org.idpf.epubcheck.util.css.CssGrammar.CssAtRule a) {}
+    @Override public void endAtRule(String name) {}
+  }
+
+  // A fake iterator driving tokens for parse()
+  static class FakeIterator implements CssTokenIterator {
+    private final List<CssToken> list;
+    private int idx = 0;
+    public CssToken last;
+    public FakeIterator(CssToken[] tokens) {
+      this.list = Arrays.asList(tokens);
+    }
+    @Override public boolean hasNext() { return idx < list.size(); }
+    @Override public CssToken next() {
+      last = list.get(idx++);
+      return last;
+    }
+    @Override public CssToken next(com.google.common.base.Predicate<CssToken> filter) {
+      // ignore filter for stub; just return next token
+      return next();
+    }
+    @Override public boolean hasNext(com.google.common.base.Predicate<CssToken> filter) {
+      return hasNext();
+    }
+    @Override public CssToken peek() {
+      return idx < list.size() ? list.get(idx) : last;
+    }
+    @Override public int index() { return idx - 1; }
+    @Override public List<CssToken> list() { return list; }
+    @Override public com.google.common.base.Predicate<CssToken> filter() { return null; }
+  }
+
+  @Test
+  @DisplayName("parse(): breaks loop on PrematureEOFException thrown by handleAtRule and still calls endDocument")
+  public void test_TC15() throws IOException {
+    // We supply one ATKEYWORD token to trigger handleAtRule path (B2→B4),
+    // and stub handleAtRule to throw PrematureEOFException to break loop.
+    CssParser parser = new CssParser(Locale.ENGLISH) {
+      @Override
+      protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        // one ATKEYWORD yields path to handleAtRule
+        return new FakeIterator(new CssToken[] {
+            new CssToken(Type.ATKEYWORD, "@x", null, 0)
+        });
+      }
+      @Override
+      private void handleAtRule(CssToken t, CssTokenIterator i, CssContentHandler d, CssErrorHandler e)
+          throws org.idpf.epubcheck.util.css.CssExceptions.CssException {
+        // simulate premature EOF
+        throw new PrematureEOFException();
+      }
+    };
+    StubContentHandler doc = new StubContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // when parse is called, handleAtRule throws, loop breaks, endDocument should still be called
+    parser.parse(new StringReader(""), "sid", err, doc);
+    assertEquals(1, doc.startCount, "startDocument must be called once");
+    assertEquals(1, doc.endCount, "endDocument must be called once");
+  }
+
+  @Test
+  @DisplayName("parse(): breaks loop on PrematureEOFException thrown by handleRuleSet and still calls endDocument")
+  public void test_TC16() throws IOException {
+    // We supply one IDENT token to trigger handleRuleSet path (B2→B3),
+    // and stub handleRuleSet to throw PrematureEOFException to break loop.
+    CssParser parser = new CssParser(Locale.ENGLISH) {
+      @Override
+      protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        // one IDENT yields path to handleRuleSet
+        return new FakeIterator(new CssToken[] {
+            new CssToken(Type.IDENT, "id", null, 0)
+        });
+      }
+      @Override
+      private void handleRuleSet(CssToken t, CssTokenIterator i, CssContentHandler d, CssErrorHandler e)
+          throws org.idpf.epubcheck.util.css.CssExceptions.CssException {
+        // simulate premature EOF
+        throw new PrematureEOFException();
+      }
+    };
+    StubContentHandler doc = new StubContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // when parse is called, handleRuleSet throws, loop breaks, endDocument should still be called
+    parser.parse(new StringReader(""), "sid", err, doc);
+    assertEquals(1, doc.startCount, "startDocument must be called once");
+    assertEquals(1, doc.endCount, "endDocument must be called once");
+  }
+
+  @Test
+  @DisplayName("parse(): propagates unchecked RuntimeException from scan()")
+  public void test_TC17() {
+    // Stub scan() to throw IllegalStateException to test propagation at B0
+    CssParser parser = new CssParser(Locale.ENGLISH) {
+      @Override
+      protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        throw new IllegalStateException("fatal");
+      }
+    };
+    StubContentHandler doc = new StubContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // expect IllegalStateException to propagate
+    IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
+      parser.parse(new StringReader(""), "sid", err, doc);
+    });
+    assertEquals("fatal", ex.getMessage(), "exception message must match");
+  }
+}

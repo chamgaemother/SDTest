@@ -1,0 +1,111 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "valueOf(tag, null namespace) throws IllegalArgumentException for null namespace",
+      "path": "B0→B3→B4",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "null-namespace"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null namespace exception",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String normalName = \"input\";",
+        "    String namespace = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(tagName with surrounding whitespace) trims name and returns correct submittable tag",
+      "path": "B0→B1→B3→B5→B8",
+      "precondition": "ParseSettings.preserveCase",
+      "expectedResult": "returned Tag.getName()==\"input\" and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "trim",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 trim whitespace",
+        "  GIVEN",
+        "    String tagName = \"  input  \";",
+        "    String normalName = \"input\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    assertEquals(\"input\", tag.getName());",
+        "    assertTrue(tag.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "valueOf(String, ParseSettings) with default namespace and default casing returns static tag and correct formSubmit flag",
+      "path": "B0→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "tagName 'output' returns known Tag and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 overload default namespace",
+        "  GIVEN",
+        "    String tagName = \"output\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assertSame(Tag.valueOf(\"output\"), tag);",
+        "    assertTrue(tag.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "valueOf(String, namespace, lower-case settings) does not clone and retains lowercase name",
+      "path": "B0→B1→B3→B6→B8",
+      "precondition": "ParseSettings.normaliseLower (case-insensitive)",
+      "expectedResult": "returned tag.getName()==\"option\" and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "settings",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 lower-case settings path",
+        "  GIVEN",
+        "    String tagName = \"OPTION\";",
+        "    String normalName = ParseSettings.normalName(tagName);",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase.equals(ParseSettings.preserveCase) ? ParseSettings.preserveCase : ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, namespace, ParseSettings.preserveCase);",
+        "  THEN",
+        "    assertEquals(normalName, tag.getName());",
+        "    assertTrue(tag.isFormSubmittable());",
+        "END"
+      ]
+    }
+  ]
+}

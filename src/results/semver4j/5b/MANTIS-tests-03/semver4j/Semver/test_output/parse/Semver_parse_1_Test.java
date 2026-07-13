@@ -1,0 +1,66 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_1_Test {
+
+    @Test
+    @DisplayName("parse rejects versions with too many numeric segments (more than major.minor.patch)")
+    public void test_TC11() {
+        // Given: a version string with four numeric segments, exceeding major.minor.patch
+        String version = "1.2.3.4";
+        // When: parsing this invalid version
+        Semver result = Semver.parse(version);
+        // Then: parsing should fail and return null due to StrictParser exception
+        assertNull(result, "Expected parse to return null for version with too many segments");
+    }
+
+    @Test
+    @DisplayName("parse normalizes leading zeros in numeric identifiers to canonical form")
+    public void test_TC12() {
+        // Given: a version string with leading zeros in each numeric identifier
+        String version = "01.002.0003";
+        // When: parsing this version
+        Semver result = Semver.parse(version);
+        // Then: result must not be null and version should be normalized without leading zeros
+        assertNotNull(result, "Expected parse to succeed for valid numeric segments even with leading zeros");
+        assertEquals("1.2.3", result.getVersion(),
+                "Expected leading zeros to be stripped and version normalized to '1.2.3'");
+    }
+
+    @Test
+    @DisplayName("parse accepts multiple build metadata tokens separated by dots")
+    public void test_TC13() {
+        // Given: a version string with build metadata tokens separated by dots
+        String version = "1.0.0+meta.data.info";
+        // When: parsing this version
+        Semver result = Semver.parse(version);
+        // Then: parse should succeed and build tokens should be split on dots
+        assertNotNull(result, "Expected parse to succeed for valid build metadata");
+        assertEquals(
+                Arrays.asList("meta", "data", "info"),
+                result.getBuild(),
+                "Expected build tokens to be [meta, data, info]"
+        );
+    }
+
+    @Test
+    @DisplayName("parse accepts multiple pre-release tokens separated by dots")
+    public void test_TC14() {
+        // Given: a version string with pre-release tokens separated by dots
+        String version = "1.2.3-alpha.beta.gamma";
+        // When: parsing this version
+        Semver result = Semver.parse(version);
+        // Then: parse should succeed and pre-release tokens should be split on dots
+        assertNotNull(result, "Expected parse to succeed for valid pre-release metadata");
+        assertEquals(
+                Arrays.asList("alpha", "beta", "gamma"),
+                result.getPreRelease(),
+                "Expected pre-release tokens to be [alpha, beta, gamma]"
+        );
+    }
+}

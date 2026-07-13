@@ -1,0 +1,57 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Comment;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(1) on element with two element children twice uses cached shadowChildrenRef on second call")
+    void test_TC06() {
+        // GIVEN an element with two child elements to populate the shadow cache after first read
+        Element parent = new Element("ul");
+        Element child1 = new Element("li");
+        Element child2 = new Element("li");
+        parent.appendChild(child1);
+        parent.appendChild(child2);
+        // WHEN accessing the second element twice (first builds cache, second reuses it)
+        Element firstCall = parent.child(1);
+        Element secondCall = parent.child(1);
+        // THEN both calls return the same instance (child2)
+        assertAll(
+            () -> assertEquals(child2, firstCall, "First call should return the second child element"),
+            () -> assertEquals(child2, secondCall, "Second call should return the same cached child element")
+        );
+    }
+
+    @Test
+    @DisplayName("child(0) throws IndexOutOfBoundsException when only non-element children exist (childNodeSize>0, filtered list empty)")
+    void test_TC07() {
+        // GIVEN an element with only non-element children so childElementsList is empty
+        Element el = new Element("div");
+        el.appendChild(new TextNode("text1"));  // TextNode not counted by childElementsList
+        el.appendChild(new Comment("c"));      // Comment not counted by childElementsList
+        // WHEN attempting to get element child at index 0
+        // THEN an IndexOutOfBoundsException is thrown
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(0);
+        });
+    }
+
+    @Test
+    @DisplayName("child(-1) throws IndexOutOfBoundsException when negative index with element children")
+    void test_TC08() {
+        // GIVEN an element with one valid element child so filtered list size is 1
+        Element el = new Element("span");
+        el.appendChild(new Element("b"));    // one child at index 0
+        // WHEN calling child with negative index
+        // THEN IndexOutOfBoundsException is thrown as negative indices are unsupported
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(-1);
+        });
+    }
+}

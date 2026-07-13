@@ -1,0 +1,169 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "wrap() returns empty string when source is empty (loop zero iterations)",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "result is empty string \"\"",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 wrap empty-input",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "wrap() does not insert newline for single short word within maxWidth (tooLong false branch)",
+      "path": "B0→B1→B2(loop×n)→B3→B4",
+      "precondition": "none",
+      "expectedResult": "result equals \"hello\"",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 wrap single-word-short",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "wrap() breaks a long word with hyphens when breakWords=true and word exceeds maxWidth (tooLong true branch then writeBrokenWord with insertHyphens)",
+      "path": "B0→B1→B2(loop×n)→...→B10→B11→B12",
+      "precondition": "maxWidth set to 4 to force break; breakWords and insertHyphens true by default",
+      "expectedResult": "result equals \"lo-\nngwo-\nrd\"\n (hyphens inserted at 2 chars per line)",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "breakWords-true",
+        "insertHyphens-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 wrap break-word-with-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"longword\").maxWidth(4);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"lo-\\nngwo-\\nrd\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "wrap() does not insert hyphens when insertHyphens=false but still breaks long word (breakWords true, insertHyphens false)",
+      "path": "B0→B1→B2(loop×n)→...→B10→B11→B12",
+      "precondition": "maxWidth=4; breakWords true; insertHyphens false",
+      "expectedResult": "result equals \"lon\\\ngwo\\\nrd\" (no hyphens inserted)",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "breakWords-true",
+        "insertHyphens-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 wrap break-word-no-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"longword\").maxWidth(4).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"lon\\ngwo\\nrd\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "wrap() does not break long word when breakWords=false even if word exceeds maxWidth (broken flag set, no writeBrokenWord)",
+      "path": "B0→B1→B2(loop×n)→...→B9→B13→B14",
+      "precondition": "maxWidth=4; breakWords false",
+      "expectedResult": "result equals \"longword\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "breakWords-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrap no-break-word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"longword\").maxWidth(4).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"longword\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "wrap() preserves explicit newline and trims trailing whitespace correctly (ch=='\\n' branch)",
+      "path": "B0→B1→B2(loop×n)→B5→B6→B7",
+      "precondition": "none",
+      "expectedResult": "result equals \"abc\\ndef\"",
+      "tags": [
+        "branch-true",
+        "newline",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 wrap explicit-newline",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abc\\ndef\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc\\ndef\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "wrap() trims leading whitespace on continued lines after hyphenation (broken && line.length()==0 branch)",
+      "path": "B0→B1→B2(loop×n)→...→B10→B11→B12",
+      "precondition": "input has leading spaces before word that gets broken; maxWidth small to trigger broken",
+      "expectedResult": "each new line has no leading spaces",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "hyphenation",
+        "leftTrim"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrap left-trim-after-break",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"   longword\").maxWidth(4);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert !result.contains(\" \\n\") && result.startsWith(\"lo-\");"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() returns all Element children in insertion order when multiple Elements are present",
+      "path": "B0→B3→B5(loop×N)→B6→B8",
+      "precondition": "Element el has three mixed childNodes: Element, Element, Element",
+      "expectedResult": "Elements list of size 3, in same order as appended",
+      "tags": [
+        "positive",
+        "iteration",
+        "multiple"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children with multiple elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"span\");",
+        "    Element b = new Element(\"p\");",
+        "    Element c = new Element(\"b\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    parent.appendChild(c);",
+        "  WHEN",
+        "    Elements out = parent.children();",
+        "  THEN",
+        "    assert out.size() == 3;",
+        "    assertSame(a, out.get(0));",
+        "    assertSame(b, out.get(1));",
+        "    assertSame(c, out.get(2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() caches the filtered child list so that subsequent calls without mutations return the same list instance",
+      "path": "B0→B3→B5(loop×1)→B6→B8 → B3(shadowChildrenRef.get()!=null)→B8",
+      "precondition": "Element el with one Element child and no intervening modifications",
+      "expectedResult": "Underlying childElementsList instance is the same on two consecutive calls",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 children caching internal list",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    el.appendChild(li);",
+        "  WHEN",
+        "    List<Element> list1 = el.children().asList();",
+        "    List<Element> list2 = el.children().asList();",
+        "  THEN",
+        "    // the backing list object (not the wrapper) is cached",
+        "    assertSame(list1, list2);",
+        "    assertEquals(1, list2.size());",
+        "END"
+      ]
+    }
+  ]
+}

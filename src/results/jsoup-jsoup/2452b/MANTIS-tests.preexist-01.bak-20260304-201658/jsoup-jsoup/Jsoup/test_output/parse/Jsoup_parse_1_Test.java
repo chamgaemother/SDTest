@@ -1,0 +1,137 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.helper.DataUtil;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(File,charset,baseUri,parser) delegates to custom Parser.parseInput after DataUtil.load")
+    public void test_TC11() throws IOException {
+        // Create temp file with known HTML fragment to hit overload with File+charset+baseUri+parser
+        File tmp = File.createTempFile("jsoup", "html");
+        tmp.deleteOnExit();
+        Files.write(tmp.toPath(), "<i>X</i>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://test/";
+        // Stub parser to verify that DataUtil.load passes raw HTML and baseUri to parseInput
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(String html, String uri) {
+                // inline comment: html should contain fragment from file, uri should be baseUri
+                assertTrue(html.contains("<i>X</i>"));
+                assertEquals(baseUri, uri);
+                Document d = new Document(uri);
+                d.appendElement("i").text("parsed");
+                return d;
+            }
+        };
+        Document doc = Jsoup.parse(tmp, charset, baseUri, stub);
+        assertEquals("parsed", doc.select("i").first().text());
+    }
+
+    @Test
+    @DisplayName("parse(Path,charsetName,baseUri) loads file via DataUtil with Path argument")
+    public void test_TC12() throws IOException {
+        // Create temp path with <p>Path</p> to exercise Path+charset+baseUri overload
+        Path p = Files.createTempFile("jsoupPath", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<p>Path</p>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://path/";
+        Document doc = Jsoup.parse(p, charset, baseUri);
+        // fragment p text and baseUri should match provided value
+        assertEquals("Path", doc.select("p").first().text());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path,charsetName) infers baseUri from Path.toAbsolutePath")
+    public void test_TC13() throws IOException {
+        // Create temp path with <span>Z</span> to hit Path+charset overload
+        Path p = Files.createTempFile("jsoupPathInf", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<span>Z</span>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        Document doc = Jsoup.parse(p, charset);
+        assertEquals("Z", doc.select("span").first().text());
+        // baseUri should contain the absolute path of the temp file
+        assertTrue(doc.baseUri().contains(p.toAbsolutePath().toString()));
+    }
+
+    @Test
+    @DisplayName("parse(Path) infers null charset and baseUri from Path.toAbsolutePath")
+    public void test_TC14() throws IOException {
+        // Create temp path with <div>Y</div> to hit Path-only overload
+        Path p = Files.createTempFile("jsoupPathNoCharset", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<div>Y</div>".getBytes("UTF-8"));
+        Document doc = Jsoup.parse(p);
+        assertEquals("Y", doc.select("div").first().text());
+        assertTrue(doc.baseUri().contains(p.toAbsolutePath().toString()));
+    }
+
+    @Test
+    @DisplayName("parse(InputStream,charset,baseUri,parser) delegates to custom Parser.parseInput and closes stream")
+    public void test_TC15() throws IOException {
+        // Prepare a trackable InputStream to hit InputStream+charset+baseUri+parser overload
+        class TrackInput extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackInput(byte[] b) { super(b); }
+            @Override public void close() throws IOException { closed = true; super.close(); }
+        }
+        TrackInput in = new TrackInput("<b>IS</b>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "u";
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(String html, String uri) {
+                // html should include input fragment, uri equals baseUri
+                assertTrue(html.contains("<b>IS</b>"));
+                assertEquals(baseUri, uri);
+                Document d = new Document(uri);
+                d.appendElement("b").text("ok");
+                return d;
+            }
+        };
+        Document doc = Jsoup.parse((InputStream) in, charset, baseUri, stub);
+        assertEquals("ok", doc.select("b").first().text());
+        // Ensure stream is closed by DataUtil.load after parsing
+        assertTrue(in.closed);
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String,baseUri) creates Document body fragment and resolves relative URLs")
+    public void test_TC16() {
+        // Provide fragment with relative link to hit parseBodyFragment(html, baseUri)
+        String html = "<a href=\"p\">f</a>";
+        String baseUri = "http://b/";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        assertEquals("f", doc.body().select("a").text());
+        // absUrl should resolve relative href against provided baseUri
+        assertEquals("http://b/p", doc.body().select("a").first().absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String) creates Document with empty baseUri and fragment content")
+    public void test_TC17() {
+        // No baseUri provided, should default to empty and parse fragment
+        String html = "<span>z</span>";
+        Document doc = Jsoup.parseBodyFragment(html);
+        assertEquals("z", doc.body().select("span").text());
+    }
+}

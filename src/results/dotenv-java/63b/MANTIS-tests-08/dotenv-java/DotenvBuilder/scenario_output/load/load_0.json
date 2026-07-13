@@ -1,0 +1,108 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with systemProperties=false and empty .env list returns DotenvImpl wrapping only system environment entries",
+      "path": "B0→B2",
+      "precondition": "Create an existing empty .env file in a temp directory; use real DotenvParser and DotenvReader",
+      "expectedResult": "returns a Dotenv instance whose entries() equals the current System.getenv() entries; no system properties set",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a temp directory with an empty .env file and DotenvBuilder.directory(path)",
+        "WHEN call builder.load() with systemProperties() not invoked",
+        "THEN assert result.entries() equals System.getenv().entrySet() and System.getProperty for each key is unaffected"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with systemProperties=true and zero entries applies no properties but returns DotenvImpl",
+      "path": "B0→B1→B2",
+      "precondition": "Create an empty .env file; call DotenvBuilder.systemProperties()",
+      "expectedResult": "returns a Dotenv instance whose entries() equals System.getenv(); no new System.getProperty values beyond existing ones",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "systemProperties",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a temp directory with empty .env and builder.systemProperties()",
+        "WHEN call builder.load()",
+        "THEN assert result.entries() equals System.getenv().entrySet() and no additional system properties were set"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with systemProperties=false and one entry in .env returns DotenvImpl containing that entry plus system env",
+      "path": "B0→B2",
+      "precondition": "Create .env file containing KEY=VALUE; use real parser and reader",
+      "expectedResult": "returns Dotenv where get(\"KEY\") equals \"VALUE\" and entries() contains an entry for KEY=VALUE plus all System.getenv()",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "boundary",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a temp directory with .env containing \"FOO=BAR\"",
+        "WHEN call builder.load() without systemProperties",
+        "THEN assert result.get(\"FOO\") == \"BAR\" and entries() contains DotenvEntry(\"FOO\",\"BAR\")"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true and multiple entries in .env sets each as system property and returns DotenvImpl",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env file with multiple lines KEY1=V1 and KEY2=V2; call builder.systemProperties(); use real parser",
+      "expectedResult": "returns Dotenv where get(KEY1)==V1,get(KEY2)==V2; System.getProperty(KEY1)==V1,System.getProperty(KEY2)==V2",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "systemProperties",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a temp directory with .env containing \"A=1\" and \"B=2\" and builder.systemProperties()",
+        "WHEN call builder.load()",
+        "THEN assert result.get(\"A\")==\"1\" && result.get(\"B\")==\"2\" && System.getProperty(\"A\")==\"1\" && System.getProperty(\"B\")==\"2\""
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env file is missing and throwIfMissing=true",
+      "path": "B0",
+      "precondition": "Point builder.directory to a non-existent path; use real DotenvReader and DotenvParser",
+      "expectedResult": "throws DotenvException; no system properties are modified",
+      "tags": [
+        "exception",
+        "throwIfMissing",
+        "branch-before-loop",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN builder with default throwIfMissing=true pointing to non-existent dir",
+        "WHEN call builder.load()",
+        "THEN throws DotenvException and System.getProperty remains unchanged"
+      ]
+    }
+  ]
+}

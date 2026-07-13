@@ -1,0 +1,75 @@
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Tag;
+import org.jsoup.select.Elements;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    /**
+     * A simple NodeVisitor that records how many times head and tail are called.
+     */
+    static class RecordingVisitor implements NodeVisitor {
+        int headCount = 0;
+        int tailCount = 0;
+
+        @Override
+        public void head(Node node, int depth) {
+            headCount++;
+        }
+
+        @Override
+        public void tail(Node node, int depth) {
+            tailCount++;
+        }
+    }
+
+    @Test
+    @DisplayName("TC14_O1: traverse(visitor, (Elements) null) triggers IllegalArgumentException at Validate.notNull(elements)")
+    public void test_TC14_O1() {
+        RecordingVisitor visitor = new RecordingVisitor();
+        Elements elements = null;
+        // WHEN/THEN: passing null Elements should trigger validation exception in overload
+        assertThrows(IllegalArgumentException.class, () -> {
+            NodeTraversor.traverse(visitor, elements);
+        });
+    }
+
+    @Test
+    @DisplayName("TC15_O1: traverse((NodeVisitor) null, elements) triggers IllegalArgumentException at Validate.notNull(visitor) in overload")
+    public void test_TC15_O1() {
+        NodeVisitor visitor = null;
+        // prepare one-element list to pass non-null elements check
+        Element el = new Element(Tag.valueOf("div"), "");
+        Elements list = new Elements(el);
+        // WHEN/THEN: null visitor should trigger validation exception before iterating elements
+        assertThrows(IllegalArgumentException.class, () -> {
+            NodeTraversor.traverse(visitor, list);
+        });
+    }
+
+    @Test
+    @DisplayName("TC16_O1: traverse(visitor, root) with single-child exercises inner ascend loop and correct head/tail calls")
+    public void test_TC16_O1() {
+        RecordingVisitor v = new RecordingVisitor();
+        // root has one child, so childNodeSize>0, no siblings -> inner ascend loop
+        Element root = new Element(Tag.valueOf("div"), "");
+        Element child = new Element(Tag.valueOf("span"), "");
+        root.appendChild(child);
+
+        // WHEN: traverse should visit head on root(depth=0), descend to child(depth=1), then ascend tail on child and root
+        NodeTraversor.traverse(v, root);
+
+        // THEN: head called twice (root + child), tail called twice (child + root)
+        assertAll(
+            () -> assertEquals(2, v.headCount, "Expected two head() calls (root and child)"),
+            () -> assertEquals(2, v.tailCount, "Expected two tail() calls (child and root)")
+        );
+    }
+}

@@ -1,0 +1,79 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "parse(\".1.2.3\") catches parsing error for leading dot and returns null (invalid format branch)",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "return null due to invalid leading dot",
+      "tags": [
+        "negative",
+        "exception",
+        "invalid-format"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse invalid leading dot",
+        "  GIVEN",
+        "    String version = \".1.2.3\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(\"1.2.3-alpha+build.meta.1\") returns Semver instance with complex pre-release and build tokens (valid complex branch)",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return non-null Semver with preRelease [\"alpha\"] and build [\"build\",\"meta\",\"1\"]",
+      "tags": [
+        "positive",
+        "pre-release",
+        "build",
+        "complex"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse complex pre-release and build",
+        "  GIVEN",
+        "    String version = \"1.2.3-alpha+build.meta.1\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals([\"alpha\"], result.getPreRelease());",
+        "    assertEquals([\"build\",\"meta\",\"1\"], result.getBuild());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(\"1.2.3+build_1\") catches parse error for invalid build identifier character and returns null (invalid-build branch)",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "return null due to underscore in build identifier",
+      "tags": [
+        "negative",
+        "exception",
+        "invalid-build"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse invalid build identifier",
+        "  GIVEN",
+        "    String version = \"1.2.3+build_1\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    }
+  ]
+}

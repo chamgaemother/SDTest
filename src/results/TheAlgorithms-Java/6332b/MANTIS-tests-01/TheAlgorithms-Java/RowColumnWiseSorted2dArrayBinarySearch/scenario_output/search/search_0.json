@@ -1,0 +1,129 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty matrix returns not found without entering loop (matrix.length=0 triggers colPointer<0)",
+      "path": "B0→B9→B1→B8",
+      "precondition": "matrix is empty (new Integer[0][]); none mocks",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-true B1",
+        "loop-0",
+        "boundary",
+        "negative-case"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search empty-matrix",
+        "  GIVEN",
+        "    Integer[][] matrix = new Integer[0][]; Integer key = 5;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single-element matrix finds key immediately at [0][0] (comp==0)",
+      "path": "B0→B9→B1→B2→B3",
+      "precondition": "matrix = {{7}}; none mocks",
+      "expectedResult": "return value is [0, 0]",
+      "tags": [
+        "branch-false B1",
+        "branch-false B2",
+        "loop-1",
+        "found"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search single-element-found",
+        "  GIVEN",
+        "    Integer[][] matrix = {{7}}; Integer key = 7;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{0, 0}, result);"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single-row matrix, key greater than only element triggers comp>0 then exits not found",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "matrix = {{3}}; none mocks",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false B1",
+        "branch-true B2",
+        "branch-true B4",
+        "loop-1",
+        "not-found"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search single-row-comp>0",
+        "  GIVEN",
+        "    Integer[][] matrix = {{3}}; Integer key = 5;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Single-row matrix, key less than element triggers multiple comp<0 iterations until colPointer<0 then not found",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B6→B7→B9→B1→B8",
+      "precondition": "matrix = {{5,4,3}} sorted row-wise; none mocks",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false B1",
+        "branch-true B2",
+        "branch-false B4",
+        "loop-N",
+        "boundary",
+        "not-found"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search row-decreasing-comp<0",
+        "  GIVEN",
+        "    Integer[][] matrix = {{5,4,3}}; Integer key = 1;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Multi-row square matrix finds key after mix of comp<0 and comp>0 moves",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B5→B7→B9→B1→B2→B3",
+      "precondition": "matrix = {{10,20,30,40},{15,25,35,45},{18,28,38,48}}; none mocks",
+      "expectedResult": "return value is [2, 2]",
+      "tags": [
+        "branch-false B1",
+        "branch-true B2 then branch-false B4 then branch-true B4",
+        "loop-N",
+        "found",
+        "integration"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search multi-iteration-found",
+        "  GIVEN",
+        "    Integer[][] matrix = {{10,20,30,40},{15,25,35,45},{18,28,38,48}}; Integer key = 38;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{2, 2}, result);"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,126 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(bodyHtml) uses default empty baseUri and returns Document with fragment in body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input fragment",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment default-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span>foo</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(fragment);"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(bodyHtml, baseUri) uses provided baseUri and resolves relative links in fragment",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Relative link is resolved against provided baseUri",
+      "tags": [
+        "positive",
+        "fragment",
+        "relative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment with-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<a href=\\\"page.html\\\">x</a>\";",
+        "    String base = \"http://example.com/path/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().attr(\"href\").equals(\"http://example.com/path/page.html\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(html, parser) invokes Parser.parseInput exactly once with empty baseUri",
+      "path": "B0→B1→B6→B7",
+      "precondition": "custom Parser subclass defined to record calls",
+      "expectedResult": "Parser.parseInput(html,\"\") called once; returned Document has correct baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "iteration=1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse_with_stubbed_parser",
+        "  GIVEN",
+        "    String html = \"<div>test</div>\";",
+        "    StubParser stub = new StubParser(); // extends Parser, overrides parseInput to record and delegate to htmlParser",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, stub);",
+        "  THEN",
+        "    assert stub.recordedInputs.size() == 1;",
+        "    assert stub.recordedInputs.get(0).equals(html);",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(html, baseUri, parser) propagates runtime exception from custom parser",
+      "path": "B0→B1→B6→B8",
+      "precondition": "Parser subclass that throws RuntimeException in parseInput",
+      "expectedResult": "RuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse_with_parser_exception",
+        "  GIVEN",
+        "    String html = \"<p/>\";",
+        "    String base = \"http://x/\";",
+        "    ErrorParser ep = new ErrorParser(); // extends Parser, overrides parseInput to throw new RuntimeException(\"fail\")",
+        "  WHEN",
+        "    call Jsoup.parse(html, base, ep);",
+        "  THEN",
+        "    throws RuntimeException with message \"fail\";"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(URL, timeoutMillis) throws SocketTimeoutException when connection exceeds timeout",
+      "path": "B0→B9→B10→B11",
+      "precondition": "URL pointing to non-responsive port",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse_url_timeout",
+        "  GIVEN",
+        "    URL url = new URL(\"http://127.0.0.1:9/\"); // assume port 9 closed",
+        "    int timeout = 100;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;"
+      ]
+    }
+  ]
+}

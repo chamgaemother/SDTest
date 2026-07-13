@@ -1,0 +1,120 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_0_Test {
+
+    @Test
+    @DisplayName("parseInput(html, baseUri) delegates to TreeBuilder.parse and returns a Document for non-empty html and baseUri")
+    public void test_TC01_O1() {
+        // GIVEN: HTML parser with default HtmlTreeBuilder
+        Parser parser = Parser.htmlParser();
+        String html = "<div>test</div>";
+        String baseUri = "http://example.com";
+        // WHEN: parsing non-null HTML and baseUri (B0→B1→B2)
+        Document doc = parser.parseInput(html, baseUri);
+        // THEN: document has correct baseUri and content parsed
+        assertEquals(baseUri, doc.baseUri());
+        Element div = doc.select("div").first();
+        assertNotNull(div, "Expected a <div> element in the parsed document");
+        assertEquals("test", div.text());
+    }
+
+    @Test
+    @DisplayName("parseInput(html, baseUri) throws NullPointerException when html is null")
+    public void test_TC02_O1() {
+        // GIVEN: HTML parser and null html triggers StringReader NPE (B0→B1→B3)
+        Parser parser = Parser.htmlParser();
+        String html = null;
+        String baseUri = "http://example.com";
+        // WHEN / THEN: expect NullPointerException for null html input
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseInput(html, baseUri) throws IllegalArgumentException when baseUri is null")
+    public void test_TC03_O1() {
+        // GIVEN: HTML parser and null baseUri should be rejected (B0→B1→B3)
+        Parser parser = Parser.htmlParser();
+        String html = "<p>p</p>";
+        String baseUri = null;
+        // WHEN / THEN: expect IllegalArgumentException for null baseUri
+        assertThrows(IllegalArgumentException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseInput(reader, baseUri) delegates to TreeBuilder.parse with custom stub and returns stub Document")
+    public void test_TC04_O2() {
+        // GIVEN: custom stub TreeBuilder that returns Document.createShell(baseUri) (B0→B1→B2)
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser p) {
+                return Document.createShell(baseUri);
+            }
+
+            @Override
+            public TreeBuilder newInstance() {
+                return new TreeBuilder() {
+                    @Override
+                    public void process(Token token) { }
+                };
+            }
+
+            @Override
+            public ParseSettings defaultSettings() {
+                return new ParseSettings(); // Changed to use default constructor
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("ignored content");
+        String baseUri = "uri";
+        // WHEN: parsing via stub
+        Document doc = parser.parseInput(reader, baseUri);
+        // THEN: returned shell document has correct baseUri and empty head/body
+        assertEquals(baseUri, doc.baseUri());
+        assertTrue(doc.head().children().isEmpty(), "Expected empty head children");
+        assertTrue(doc.body().children().isEmpty(), "Expected empty body children");
+    }
+
+    @Test
+    @DisplayName("parseInput(reader, baseUri) propagates IOException thrown by TreeBuilder.parse")
+    public void test_TC05_O2() {
+        // GIVEN: stub TreeBuilder that throws RuntimeException wrapping IOException (B0→B1→B4)
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser p) {
+                throw new RuntimeException(new IOException("fail"));
+            }
+
+            @Override
+            public TreeBuilder newInstance() {
+                return new TreeBuilder() {
+                    @Override
+                    public void process(Token token) { }
+                };
+            }
+
+            @Override
+            public ParseSettings defaultSettings() {
+                return new ParseSettings(); // Changed to use default constructor
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("x");
+        String baseUri = "uri";
+        // WHEN / THEN: expect RuntimeException with cause IOException("fail")
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> parser.parseInput(reader, baseUri));
+        Throwable cause = ex.getCause();
+        assertNotNull(cause, "Expected a cause for the RuntimeException");
+        assertTrue(cause instanceof IOException, "Expected cause to be IOException");
+        assertEquals("fail", cause.getMessage());
+    }
+}

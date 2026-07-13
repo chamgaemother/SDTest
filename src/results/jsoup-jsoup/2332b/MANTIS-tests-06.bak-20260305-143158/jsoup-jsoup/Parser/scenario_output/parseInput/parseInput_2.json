@@ -1,0 +1,99 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) with real HtmlTreeBuilder returns a Document with expected element structure",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document is non-null and contains a <div> child with text 'hello'",
+      "tags": ["positive","overload","html","real-builder"],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput string overload real html builder",
+        "  GIVEN",
+        "    Parser p = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"<div>hello</div>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    Element div = doc.selectFirst(\"div\");",
+        "    assert div.text().equals(\"hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader, String) with real HtmlTreeBuilder returns a Document with expected element hierarchy",
+      "path": "B0→B1→B4→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document is non-null and contains a <span> child with attribute id='x'",
+      "tags": ["positive","overload","html","real-builder"],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseInput reader overload real html builder",
+        "  GIVEN",
+        "    Parser p = new Parser(new HtmlTreeBuilder());",
+        "    Reader reader = new StringReader(\"<span id='x'/>\\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    Element span = doc.selectFirst(\"span\");",
+        "    assert span.attr(\"id\").equals(\"x\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(Reader, String) with real XmlTreeBuilder returns a Document with correct XML node names",
+      "path": "B0→B1→B4→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document is non-null and root child tagName is 'root'",
+      "tags": ["positive","overload","xml","real-builder"],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseInput reader overload real xml builder",
+        "  GIVEN",
+        "    Parser p = new Parser(new XmlTreeBuilder());",
+        "    Reader reader = new StringReader(\"<root><leaf/></root>\");",
+        "    String baseUri = \"urn:test\";",
+        "  WHEN",
+        "    Document doc = p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    Element root = doc.child(0);",
+        "    assert root.tagName().equals(\"root\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput(String, String) with empty html and non-null baseUri returns empty Document",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document is non-null and has no children",
+      "tags": ["boundary","empty-input","positive","real-builder"],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseInput empty string html",
+        "  GIVEN",
+        "    Parser p = new Parser(new HtmlTreeBuilder());",
+        "    String html = \"\";",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.childNodeSize() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

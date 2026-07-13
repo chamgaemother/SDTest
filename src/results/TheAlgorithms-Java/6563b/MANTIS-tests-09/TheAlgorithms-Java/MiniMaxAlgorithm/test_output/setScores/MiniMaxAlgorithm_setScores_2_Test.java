@@ -1,0 +1,100 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class MiniMaxAlgorithm_setScores_2_Test {
+
+    @Test
+    @DisplayName("TC08: setScores(null) on new instance throws NullPointerException before any branch")
+    void test_TC08() {
+        // GIVEN
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        // WHEN & THEN: calling with null should attempt to access length and thus NPE
+        assertThrows(NullPointerException.class, () -> {
+            alg.setScores(null);
+        });
+    }
+
+    @Test
+    @DisplayName("TC09: setScores on zero-length array triggers rejection branch (length not power of two)")
+    void test_TC09() {
+        // GIVEN
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] original = alg.getScores().clone();
+        int origHeight = alg.getHeight();
+        // Redirect System.out to capture the rejection message
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outStream));
+        try {
+            // WHEN: zero-length array which is not 2^n for any integer n >= 0
+            alg.setScores(new int[0]);
+        } finally {
+            System.setOut(originalOut);
+        }
+        // THEN: scores and height remain unchanged
+        assertArrayEquals(original, alg.getScores(), "Scores should remain unchanged on invalid length");
+        assertEquals(origHeight, alg.getHeight(), "Height should remain unchanged on invalid length");
+        // AND: an error message about power of two is printed
+        String output = outStream.toString();
+        assertTrue(output.contains("must be a power of 2"),
+            "Expected rejection message about requiring power of two");
+    }
+
+    @Test
+    @DisplayName("TC10: setScores on non-power-of-2 length=3 triggers rejection branch")
+    void test_TC10() {
+        // GIVEN
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] original = alg.getScores().clone();
+        int origHeight = alg.getHeight();
+        // Redirect System.out to capture the rejection message
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outStream));
+        try {
+            // WHEN: newScores length = 3, not a power of two
+            alg.setScores(new int[3]);
+        } finally {
+            System.setOut(originalOut);
+        }
+        // THEN: scores and height remain unchanged
+        assertArrayEquals(original, alg.getScores(), "Scores should remain unchanged on invalid length 3");
+        assertEquals(origHeight, alg.getHeight(), "Height should remain unchanged on invalid length 3");
+        // AND: rejection message printed
+        String output = outStream.toString();
+        assertTrue(output.contains("must be a power of 2"),
+            "Expected rejection message about requiring power of two for length=3");
+    }
+
+    @Test
+    @DisplayName("TC11: setScores on non-power-of-2 length=5 triggers rejection branch")
+    void test_TC11() {
+        // GIVEN
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] original = alg.getScores().clone();
+        int origHeight = alg.getHeight();
+        // Redirect System.out to capture the rejection message
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outStream));
+        try {
+            // WHEN: newScores length = 5, not a power of two
+            alg.setScores(new int[5]);
+        } finally {
+            System.setOut(originalOut);
+        }
+        // THEN: scores and height remain unchanged
+        assertArrayEquals(original, alg.getScores(), "Scores should remain unchanged on invalid length 5");
+        assertEquals(origHeight, alg.getHeight(), "Height should remain unchanged on invalid length 5");
+        // AND: rejection message printed
+        String output = outStream.toString();
+        assertTrue(output.contains("must be a power of 2"),
+            "Expected rejection message about requiring power of two for length=5");
+    }
+}

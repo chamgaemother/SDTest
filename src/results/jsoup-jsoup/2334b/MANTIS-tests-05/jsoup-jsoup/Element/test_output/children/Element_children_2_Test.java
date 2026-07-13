@@ -1,0 +1,76 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_2_Test {
+
+    @Test
+    @DisplayName("TC07: children() rebuilds list when shadowChildrenRef.get() has been cleared by GC (shadowChildrenRef non-null but reference cleared)")
+    void test_TC07() throws Exception {
+        // GIVEN: a parent with two element children, and cache populated once
+        Element parent = new Element("div");
+        Element c1 = parent.appendElement("span");
+        Element c2 = parent.appendElement("em");
+        // first children() populates shadowChildrenRef with a WeakReference to the cached list
+        Elements firstList = parent.children();
+        // reflectively get the weak reference and the underlying cached list
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> weak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> cachedList = weak.get();
+        assertNotNull(cachedList, "Cache should be populated after first children() call");
+        // simulate GC clearing the referent
+        weak.clear(); // after clear(), weak.get() returns null, simulating B5 path
+        assertNull(weak.get(), "WeakReference should now return null to trigger rebuild");
+
+        // WHEN: children() is called again, it should rebuild the list
+        Elements secondList = parent.children();
+        // reflectively get the new underlying list
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> newWeak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> rebuiltList = newWeak.get();
+
+        // THEN: the rebuilt list has size 2 and is a distinct new list instance
+        assertNotNull(rebuiltList, "After rebuild, shadowChildrenRef.get() should be non-null");
+        assertEquals(2, rebuiltList.size(), "Rebuilt children list should contain both original children");
+        assertNotSame(cachedList, rebuiltList, "A new list instance should be created when cache referent was cleared");
+        // also verify elements in the rebuilt list are the original children
+        assertTrue(rebuiltList.contains(c1) && rebuiltList.contains(c2), "Rebuilt list should contain the original child elements");
+    }
+
+    @Test
+    @DisplayName("TC08: children() rebuilds list when shadowChildrenRef is non-null but contains null (explicit invalidation)")
+    void test_TC08() throws Exception {
+        // GIVEN: a parent with one element child, cache populated once
+        Element parent = new Element("div");
+        Element child = parent.appendElement("p");
+        Elements initial = parent.children();
+        // reflectively replace shadowChildrenRef with a WeakReference that wraps null
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        WeakReference<List<Element>> fakeRef = new WeakReference<>(null);
+        refField.set(parent, fakeRef); // now shadowChildrenRef.get() returns null explicitly
+        assertNull(fakeRef.get(), "Explicitly invalidated reference should return null");
+
+        // WHEN: children() is called again, it should rebuild the list without throwing
+        Elements rebuilt = parent.children();
+        // reflectively retrieve the new referent
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> newWeak = (WeakReference<List<Element>>) refField.get(parent);
+        List<Element> rebuiltList = newWeak.get();
+
+        // THEN: the rebuilt list has size 1 and contains the single child
+        assertNotNull(rebuiltList, "After rebuild, shadowChildrenRef.get() should be non-null");
+        assertEquals(1, rebuiltList.size(), "Rebuilt children list should have exactly one element");
+        assertSame(child, rebuiltList.get(0), "The single element in rebuilt list should be the original child");
+    }
+}

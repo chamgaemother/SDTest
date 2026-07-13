@@ -1,0 +1,54 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "sourceRange() returns UntrackedAttr when parent is null (parent == null branch)",
+      "path": "B0→B1",
+      "precondition": "Create Attribute with key \"k\" and null parent (parent == null)",
+      "expectedResult": "return value is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-false",
+        "parent-null",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 sourceRange parent-null",
+        "  GIVEN",
+        "    Attribute attr = new Attribute(\"k\",\"v\", null);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "sourceRange() returns parent's sourceRange(key) when parent is non-null (parent != null branch)",
+      "path": "B0→B2",
+      "precondition": "Stub Attributes parent to return a known AttributeRange for key \"k\" (use simple fake)",
+      "expectedResult": "return value is the AttributeRange instance returned by parent.sourceRange(\"k\")",
+      "tags": [
+        "branch-true",
+        "parent-non-null",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange parent-non-null",
+        "  GIVEN",
+        "    Attributes fakeParent = new Attributes(){ public Range.AttributeRange sourceRange(String key){ return new Range.AttributeRange(1,2,3,4);} };",
+        "  WHEN",
+        "    Attribute attr = new Attribute(\"k\",\"v\", fakeParent);",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result.startTagStart == 1 && result.startTagEnd == 2 && result.endTagStart == 3 && result.endTagEnd == 4;",
+        "END"
+      ]
+    }
+  ]
+}

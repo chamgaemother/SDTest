@@ -1,0 +1,138 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Element;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(String html, String baseUri) with valid HTML and non-empty baseUri returns a Document with resolved baseUri")
+    public void test_TC01_O1() {
+        // Given valid HTML and a non-empty baseUri
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com/";
+        // When parsing
+        Document doc = Jsoup.parse(html, baseUri);
+        // Then the document should contain the element and the baseUri should be set
+        assertAll(
+            () -> assertTrue(doc.html().contains("<p>Hello</p>"), "Document HTML should contain the <p>Hello</p>"),
+            () -> assertEquals("http://example.com/", doc.baseUri(), "Base URI should be preserved")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(String html, String baseUri) with html == null throws NullPointerException")
+    public void test_TC02_O1() {
+        // Given null html triggers NPE before parsing
+        String html = null;
+        String baseUri = "http://x";
+        // When & Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parse(String html, String baseUri, Parser parser) with valid inputs returns Document via parser")
+    public void test_TC03_O2() {
+        // Given valid HTML, baseUri and a real HTML parser
+        String html = "<div>Test</div>";
+        String baseUri = "uri";
+        Parser p = Parser.htmlParser();
+        // When parsing with custom parser
+        Document doc = Jsoup.parse(html, baseUri, p);
+        // Then body html and baseUri should match inputs
+        assertAll(
+            () -> assertEquals("<div>Test</div>", doc.body().html(), "Body HTML should be exactly the fragment"),
+            () -> assertEquals("uri", doc.baseUri(), "Base URI should be 'uri'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parse(String html, String baseUri, Parser parser) with parser == null throws NullPointerException")
+    public void test_TC04_O2() {
+        // Given a null parser should throw NPE
+        String html = "<p/>";
+        String baseUri = "";
+        Parser p = null;
+        // When & Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, p));
+    }
+
+    @Test
+    @DisplayName("TC05_O3: parse(String html, Parser parser) with empty html and xml parser returns empty Document")
+    public void test_TC05_O3() {
+        // Given empty HTML and an XML parser
+        String html = "";
+        Parser p = Parser.xmlParser();
+        // When parsing
+        Document doc = Jsoup.parse(html, p);
+        // Then body should be empty and baseUri is empty string
+        assertAll(
+            () -> assertEquals("", doc.body().html(), "Empty HTML should produce empty body"),
+            () -> assertEquals("", doc.baseUri(), "Default baseUri should be empty")
+        );
+    }
+
+    @Test
+    @DisplayName("TC06_O3: parse(String html, Parser parser) with html == null throws NullPointerException")
+    public void test_TC06_O3() {
+        // Given null HTML and a valid parser
+        String html = null;
+        Parser p = Parser.xmlParser();
+        // When & Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, p));
+    }
+
+    @Test
+    @DisplayName("TC07_O4: parse(String html) with minimal HTML returns Document with empty baseUri")
+    public void test_TC07_O4() {
+        // Given a minimal HTML fragment
+        String html = "<span/>";
+        // When parsing without baseUri
+        Document doc = Jsoup.parse(html);
+        // Then body HTML preserved and baseUri empty
+        assertAll(
+            () -> assertEquals("<span/>", doc.body().html(), "Body HTML should preserve the span tag"),
+            () -> assertEquals("", doc.baseUri(), "Default baseUri should be empty")
+        );
+    }
+
+    @Test
+    @DisplayName("TC08_O4: parse(String html) with html == null throws NullPointerException")
+    public void test_TC08_O4() {
+        // Given null HTML
+        String html = null;
+        // When & Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html));
+    }
+
+    @Test
+    @DisplayName("TC09_O1: parse(String html, String baseUri) with empty baseUri resolves relative links based on document fragment")
+    public void test_TC09_O1() {
+        // Given an anchor with a relative link and empty baseUri
+        String html = "<a href='?x'>x</a>";
+        String baseUri = "";
+        // When parsing
+        Document doc = Jsoup.parse(html, baseUri);
+        Element a = doc.selectFirst("a");
+        // Then href attribute should remain unchanged
+        assertEquals("?x", a.attr("href"), "Relative href should be unchanged with empty baseUri");
+    }
+
+    @Test
+    @DisplayName("TC10_O2: parse(String html, String baseUri, Parser parser) with html containing unbalanced tags is balanced by parser")
+    public void test_TC10_O2() {
+        // Given unbalanced tags and HTML parser
+        String html = "<div><p>text";
+        String baseUri = "u";
+        Parser p = Parser.htmlParser();
+        // When parsing
+        Document doc = Jsoup.parse(html, baseUri, p);
+        // Then parser should balance missing closing tags
+        assertEquals("<div><p>text</p></div>", doc.body().html(), "Parser should auto-close unbalanced tags");
+    }
+}

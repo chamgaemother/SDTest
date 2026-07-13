@@ -1,0 +1,43 @@
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("Known form-submittable tag name with non-default namespace returns non-submittable default tag")
+    public void test_TC04() {
+        // Scenario TC04: namespace mismatch -> default Tag created (unknown to HTML) has formSubmit=false
+        String tagName = "input";
+        String namespace = Parser.NamespaceSvg; // non-HTML namespace
+        ParseSettings settings = ParseSettings.preserveCase;
+        // B0→B2→B9→B10: goes through unknown static map path, creates new Tag(tagName, normalName, namespace), sets isBlock=false
+        Tag t = Tag.valueOf(tagName, namespace, settings);
+        assertFalse(t.isFormSubmittable(), "Expected non-HTML namespace to yield a non-submittable default tag");
+    }
+
+    @Test
+    @DisplayName("ValueOf clone branch when preserveTagCase=true yields formSubmit flag from cloned known tag")
+    public void test_TC05() throws Exception {
+        // Scenario TC05: clone branch when preserveTagCase=true on known HTML tag 'pre'
+        String tagName = "PRE";
+        String normalName = "pre";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // Use reflection to invoke the package-private static valueOf(tagName, normalName, namespace, settings)
+        Method valueOfMethod = Tag.class.getDeclaredMethod(
+                "valueOf", String.class, String.class, String.class, ParseSettings.class);
+        valueOfMethod.setAccessible(true);
+        Tag t = (Tag) valueOfMethod.invoke(null, tagName, normalName, namespace, settings);
+        // Because preserveTagCase=true and tagName != normalName, a clone is created with tagName preserved
+        assertEquals("PRE", t.getName(), "Expected cloned tag to preserve the original tag name casing");
+        // Known HTML 'pre' is not submittable, so clone should also have formSubmit=false
+        assertFalse(t.isFormSubmittable(), "Expected formSubmit flag carried over from known tag to be false");
+    }
+}

@@ -1,0 +1,83 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document instance with identical basic structure",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\");",
+      "expectedResult": "result != doc; result.location() == doc.location(); result.head().tagName() == \"head\"; result.body().tagName() == \"body\";",
+      "tags": [
+        "branch-normal",
+        "structure-copy"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone basic-document",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result != doc;",
+        "    assert result.location().equals(\"http://example.com\");",
+        "    assert result.head().tagName().equals(\"head\");",
+        "    assert result.body().tagName().equals(\"body\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() produces a deep clone so modifications to clone’s outputSettings do not affect original",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = Document.createShell(\"/base\");",
+      "expectedResult": "doc.outputSettings().prettyPrint() == true; clone.outputSettings().prettyPrint() == false; original retains prettyPrint true",
+      "tags": [
+        "branch-normal",
+        "independence",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone outputSettings independence",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.outputSettings().prettyPrint(false);",
+        "  THEN",
+        "    assert doc.outputSettings().prettyPrint();",
+        "    assert !clone.outputSettings().prettyPrint();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() produces a deep clone so modifying clone’s parser does not affect original parser",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = Document.createShell(\"u\");",
+      "expectedResult": "doc.parser() != clone.parser(); clone.parser().equals(Parser.htmlParser()); original.parser() remains htmlParser",
+      "tags": [
+        "branch-normal",
+        "independence",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 clone parser independence",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assert clone.parser() != doc.parser();",
+        "    assert clone.parser().getClass().equals(doc.parser().getClass());",
+        "    assert doc.parser().equals(Parser.htmlParser());",
+        "END"
+      ]
+    }
+  ]
+}

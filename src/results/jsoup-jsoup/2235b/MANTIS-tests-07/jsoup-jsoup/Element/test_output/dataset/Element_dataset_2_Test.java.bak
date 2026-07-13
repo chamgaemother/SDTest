@@ -1,0 +1,74 @@
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC09: dataset().put(existingKey, newValue) updates underlying data- attribute value")
+    void test_TC09() {
+        // GIVEN an element with one data-x attribute (so dataset loop sees one entry)
+        Element el = new Element("div");
+        el.attr("data-x", "old");
+        // WHEN updating the dataset map for key "x"
+        Map<String, String> ds = el.dataset();
+        ds.put("x", "new");
+        // THEN the underlying attribute "data-x" should reflect the new value
+        assertEquals("new", el.attr("data-x"));
+    }
+
+    @Test
+    @DisplayName("TC10: dataset().clear() removes only data-* attributes and preserves non-data attributes")
+    void test_TC10() {
+        // GIVEN an element with a data-a attribute and a non-data attribute "foo"
+        Element el = new Element("span");
+        el.attr("data-a", "1");
+        el.attr("foo", "bar");
+        // WHEN clearing the dataset view (should iterate over data-* keys)
+        Map<String, String> ds = el.dataset();
+        ds.clear();
+        // THEN data-a should be removed but foo remains unchanged
+        assertFalse(el.hasAttr("data-a"));
+        assertEquals("bar", el.attr("foo"));
+    }
+
+    @Test
+    @DisplayName("TC11: dataset() converts multi-hyphen keys to camelCase (data-my-long-field)")
+    void test_TC11() {
+        // GIVEN an element with attribute "data-my-long-field"
+        Element el = new Element("div");
+        el.attr("data-my-long-field", "val");
+        // WHEN obtaining the dataset, the key "myLongField" should appear (camelCase conversion)
+        Map<String, String> ds = el.dataset();
+        // THEN the dataset contains the camelCase key with the original value
+        assertTrue(ds.containsKey("myLongField"));
+        assertEquals("val", ds.get("myLongField"));
+    }
+
+    @Test
+    @DisplayName("TC12: dataset() includes attribute with empty key suffix (data- only) as empty-string key")
+    void test_TC12() {
+        // GIVEN an element with attribute key exactly "data-" (suffix empty)
+        Element el = new Element("p");
+        el.attr("data-", "empty");
+        // WHEN obtaining the dataset, substring after "data-" is "" so map key is empty string
+        Map<String, String> ds = el.dataset();
+        // THEN the dataset contains key "" mapping to the attribute's value
+        assertTrue(ds.containsKey(""), "Expected dataset to contain empty-string key for 'data-'");
+        assertEquals("empty", ds.get(""));
+    }
+
+    @Test
+    @DisplayName("TC13: dataset().put(key, null) throws NullPointerException for null value")
+    void test_TC13() {
+        // GIVEN a fresh element with no data- attributes (so dataset loop yields no initial entries)
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset();
+        // WHEN putting a null value into the dataset view, THEN a NullPointerException should be thrown
+        assertThrows(NullPointerException.class, () -> ds.put("key", null));
+    }
+}

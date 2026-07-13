@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "XML syntax with first child XmlDeclaration name≠'xml' prepends new declaration and leaves existing",
+      "path": "B0→ensureMetaCharsetElement→syntax==xml→node instanceof XmlDeclaration→name!='xml'→prepend new→end",
+      "precondition": "Document created shell; outputSettings.syntax(xml); prependChild an XmlDeclaration named 'doc'",
+      "expectedResult": "A new XmlDeclaration named 'xml' with encoding and version 1.0 is prepended before the existing declaration",
+      "tags": [
+        "positive",
+        "xml",
+        "declaration",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 xml-first-decl-nonXml prepends new xml decl",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration existing = new XmlDeclaration(\"doc\", false);",
+        "    // use reflection to insert as first child",
+        "    Method prepend = Document.class.getDeclaredMethod(\"prependChild\", Node.class);",
+        "    prepend.setAccessible(true);",
+        "    prepend.invoke(doc, existing);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16LE\"));",
+        "  THEN",
+        "    List<Node> children = doc.childNodes();",
+        "    // first must be new xml declaration named 'xml'",
+        "    XmlDeclaration first = (XmlDeclaration) children.get(0);",
+        "    assert first.name().equals(\"xml\");",
+        "    assert first.attr(\"encoding\").equals(\"UTF-16LE\");",
+        "    assert first.attr(\"version\").equals(\"1.0\");",
+        "    // second remains the original non-xml declaration",
+        "    XmlDeclaration second = (XmlDeclaration) children.get(1);",
+        "    assert second.name().equals(\"doc\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Calling charset(null) throws NullPointerException",
+      "path": "B0→updateMetaCharsetElement(true)→outputSettings.charset(null)→NPE",
+      "precondition": "Document created shell; no special settings",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 charset-null throws NPE",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    call doc.charset(null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

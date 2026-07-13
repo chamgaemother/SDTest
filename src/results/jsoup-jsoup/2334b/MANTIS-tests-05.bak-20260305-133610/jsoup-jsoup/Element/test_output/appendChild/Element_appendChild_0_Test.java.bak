@@ -1,0 +1,85 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit5 tests for org.jsoup.nodes.Element.appendChild(Node)
+ */
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild throws IllegalArgumentException when child is null (Validate.notNull)")
+    void test_TC01() {
+        Element parent = new Element("div");
+        Node child = null;
+        // Branch B1: Validate.notNull should detect null and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> parent.appendChild(child));
+    }
+
+    @Test
+    @DisplayName("appendChild on empty children creates NodeList, adds child, sets sibling index to 0")
+    void test_TC02() {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("text");
+        // On fresh element, childNodes == EmptyNodes, so ensureChildNodes() path is taken to create new NodeList
+        parent.appendChild(child);
+        // After append, exactly one node
+        assertEquals(1, parent.childNodeSize());
+        // childNode(0) returns the TextNode
+        assertSame(child, parent.childNode(0));
+        // parent of the child is set to parent
+        assertSame(parent, child.parent());
+        // siblingIndex of first child should be 0
+        assertEquals(0, child.siblingIndex());
+    }
+
+    @Test
+    @DisplayName("appendChild on non-empty children adds second child at index 1")
+    void test_TC03() {
+        Element parent = new Element("div");
+        TextNode first = new TextNode("one");
+        parent.appendChild(first);
+        TextNode second = new TextNode("two");
+        // Now childNodes is non-empty; adding second should append at end
+        parent.appendChild(second);
+        // Expect two child nodes
+        assertEquals(2, parent.childNodeSize());
+        // The second node is at index 1
+        assertSame(second, parent.childNode(1));
+        // siblingIndex should reflect position 1
+        assertEquals(1, second.siblingIndex());
+    }
+
+    @Test
+    @DisplayName("appendChild moves node from old parent to new, removing from old parent's children")
+    void test_TC04() {
+        Element oldParent = new Element("div");
+        Element newParent = new Element("span");
+        TextNode child = new TextNode("x");
+        oldParent.appendChild(child);
+        // Precondition: child is under oldParent
+        assertEquals(1, oldParent.childNodeSize());
+        // Reparenting: append same child to newParent
+        newParent.appendChild(child);
+        // After reparent: old parent loses child
+        assertEquals(0, oldParent.childNodeSize());
+        // newParent gains child
+        assertEquals(1, newParent.childNodeSize());
+        // child.parent should now be newParent
+        assertSame(newParent, child.parent());
+        // siblingIndex reset to 0 in newParent context
+        assertEquals(0, child.siblingIndex());
+    }
+
+    @Test
+    @DisplayName("appendChild chaining returns same element for fluent API")
+    void test_TC05() {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("t");
+        // appendChild should return the same parent instance for chaining
+        Element returned = parent.appendChild(child);
+        assertSame(parent, returned);
+    }
+}

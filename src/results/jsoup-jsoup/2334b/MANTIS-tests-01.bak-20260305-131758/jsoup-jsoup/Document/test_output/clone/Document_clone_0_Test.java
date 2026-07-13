@@ -1,0 +1,61 @@
+package org.jsoup.nodes;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_0_Test {
+
+    @Test
+    @DisplayName("TC01: Calling clone() on a default-empty Document returns a new Document instance with identical field values but no shared mutable state")
+    void test_TC01() {
+        // Create an empty document to follow path B0→B1→B2→B3→B4 where no custom settings are applied
+        Document original = new Document("http://example.com");
+        // WHEN: clone is invoked
+        Document copy = original.clone();
+        // THEN: verify deep copy properties
+        assertAll("Deep copy of empty document should have same values but distinct instances",
+            // copy must not be the same object as original
+            () -> assertNotSame(original, copy, "Clone should create a new Document instance"),
+            // outputSettings deep-copied (distinct instance)
+            () -> assertNotSame(original.outputSettings(), copy.outputSettings(), "OutputSettings should be cloned, not shared"),
+            // parser deep-copied (distinct instance)
+            () -> assertNotSame(original.parser(), copy.parser(), "Parser should be cloned, not shared"),
+            // baseUri should be preserved exactly
+            () -> assertEquals(original.baseUri(), copy.baseUri(), "Base URI must match in clone"),
+            // quirksMode unchanged
+            () -> assertEquals(original.quirksMode(), copy.quirksMode(), "QuirksMode must match in clone"),
+            // location string preserved
+            () -> assertEquals(original.location(), copy.location(), "Location must match in clone")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02: Calling clone() on a Document with modified outputSettings and parser yields an independent clone unaffected by subsequent mutations")
+    void test_TC02() {
+        // GIVEN: a document with customized OutputSettings (xml syntax, indent 5) and custom parser
+        Document original = new Document("http://example.com");
+        original.outputSettings()
+                .syntax(Document.OutputSettings.Syntax.xml) // switch to XML syntax branch in ensureMetaCharsetElement
+                .indentAmount(5);                            // set indent to 5
+        Parser customParser = Parser.htmlParser().setTrackErrors(1); // a parser with custom state
+        original.parser(customParser);
+
+        // WHEN: clone is invoked, then clone is mutated
+        Document copy = original.clone(); // deep copy of outputSettings and parser
+        // mutate the clone's settings to ensure independence
+        copy.outputSettings().indentAmount(10);
+        copy.parser(Parser.htmlParser()); 
+
+        // THEN: verify the clone captured original state at clone time, and that its mutations do not affect original
+        assertAll("Clone should retain original customized settings and remain independent after further mutations",
+            // clone retains xml syntax and indent=5 from original at time of clone
+            () -> assertEquals(Document.OutputSettings.Syntax.xml, copy.outputSettings().syntax(), "Clone should inherit XML syntax"),
+            () -> assertEquals(5, copy.outputSettings().indentAmount(), "Clone should inherit indentAmount=5 from original"),
+            () -> assertEquals(customParser, copy.parser(), "Clone should inherit the custom parser instance from original"),
+            // original remains unchanged by clone's subsequent mutations
+            () -> assertEquals(5, original.outputSettings().indentAmount(), "Original indentAmount should remain 5"),
+            () -> assertEquals(customParser, original.parser(), "Original parser should remain the custom parser, unaffected by clone")
+        );
+    }
+}

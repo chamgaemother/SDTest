@@ -1,0 +1,151 @@
+package com.ezylang.evalex.parser;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.exceptions.ParseException;
+import com.ezylang.evalex.parser.Token.TokenType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tokenizer_parse_Test {
+
+  @Test
+  @DisplayName("TC01: Empty expression returns no tokens (r14==null, no loop iterations)")
+  void test_TC01() throws ParseException {
+    // GIVEN an empty input string and implicit multiplication disabled => no tokens at all
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setImplicitMultiplicationAllowed(false);
+    Tokenizer tokenizer = new Tokenizer("", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN should return an empty list
+    assertTrue(tokens.isEmpty(), "Expected no tokens for empty expression");
+  }
+
+  @Test
+  @DisplayName("TC02: Single number literal yields one NUMBER_LITERAL token (r14!=null, one loop iteration)")
+  void test_TC02() throws ParseException {
+    // GIVEN a simple number literal "123" => one NUMBER_LITERAL token
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("123", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN exactly one token of type NUMBER_LITERAL with value "123"
+    assertEquals(1, tokens.size(), "Expected exactly one token");
+    Token tok = tokens.get(0);
+    assertAll("Check number literal",
+        () -> assertEquals(TokenType.NUMBER_LITERAL, tok.getType()),
+        () -> assertEquals("123", tok.getTokenValue()));
+  }
+
+  @Test
+  @DisplayName("TC03: Implicit multiplication inserted between BRACE_CLOSE and BRACE_OPEN when allowed")
+  void test_TC03() throws ParseException {
+    // GIVEN "(1)(2)" and implicit multiplication allowed => between ')' and '(' should insert '*'
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setImplicitMultiplicationAllowed(true);
+    Tokenizer tokenizer = new Tokenizer("(1)(2)", config);
+    // WHEN parsing
+    List<Token> tokens = tokenizer.parse();
+    // THEN tokens[3] should be '*' infix operator
+    assertEquals(TokenType.INFIX_OPERATOR, tokens.get(3).getType(), "Expected '*' infix operator at position 3");
+    assertEquals("*", tokens.get(3).getTokenValue(), "Expected '*' value for implicit multiplication");
+  }
+
+  @Test
+  @DisplayName("TC04: Implicit multiplication missing throws ParseException when not allowed (implicit possible and config false)")
+  void test_TC04() {
+    // GIVEN "(1)(2)" and implicit multiplication disabled => parsing should fail at implicit multiplication
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setImplicitMultiplicationAllowed(false);
+    Tokenizer tokenizer = new Tokenizer("(1)(2)", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Missing operator", ex.getMessage(), "Expected Missing operator exception");
+  }
+
+  @Test
+  @DisplayName("TC05: Unmatched opening brace throws \"Closing brace not found\"")
+  void test_TC05() {
+    // GIVEN "(" with default config => unclosed '(' leads to closing brace not found
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("(", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing brace not found", ex.getMessage(), "Expected closing brace not found");
+  }
+
+  @Test
+  @DisplayName("TC06: Unmatched opening array throws \"Closing array not found\"")
+  void test_TC06() {
+    // GIVEN "[1" with arrays allowed => unclosed '[' leads to closing array not found
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setArraysAllowed(true);
+    Tokenizer tokenizer = new Tokenizer("[1", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing array not found", ex.getMessage(), "Expected closing array not found");
+  }
+
+  @Test
+  @DisplayName("TC07: Misplaced structure separator at start throws \"Misplaced structure operator\"")
+  void test_TC07() {
+    // GIVEN ".a" with structures allowed => first token is structure separator with no previous token
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setStructuresAllowed(true);
+    Tokenizer tokenizer = new Tokenizer(".a", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Misplaced structure operator", ex.getMessage(), "Expected misplaced structure operator");
+  }
+
+  @Test
+  @DisplayName("TC08: Unexpected token after infix operator throws \"Unexpected token after infix operator\"")
+  void test_TC08() {
+    // GIVEN "1 + * 2" default config => after infix '+' sees '*' which is invalid after infix
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1 + * 2", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Unexpected token after infix operator", ex.getMessage(),
+        "Expected unexpected token after infix operator");
+  }
+
+  @Test
+  @DisplayName("TC09: Multiple decimal points in number literal throws \"Number contains more than one decimal point\"")
+  void test_TC09() {
+    // GIVEN "1.2.3" default config => second '.' in same number literal should trigger error
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1.2.3", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Number contains more than one decimal point", ex.getMessage(),
+        "Expected error for multiple decimal points");
+  }
+
+  @Test
+  @DisplayName("TC10: Illegal scientific notation throws \"Illegal scientific format\"")
+  void test_TC10() {
+    // GIVEN "1e+" default config => incomplete scientific notation should error
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    Tokenizer tokenizer = new Tokenizer("1e+", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Illegal scientific format", ex.getMessage(), "Expected illegal scientific format");
+  }
+
+  @Test
+  @DisplayName("TC11: Unterminated string literal throws \"Closing quote not found\"")
+  void test_TC11() {
+    // GIVEN "\"abc" with single-quote allowed but using double-quote => unterminated quote error
+    ExpressionConfiguration config = new ExpressionConfiguration();
+    config.setSingleQuoteStringLiteralsAllowed(true);
+    Tokenizer tokenizer = new Tokenizer("\"abc", config);
+    // WHEN/THEN
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing quote not found", ex.getMessage(), "Expected closing quote not found");
+  }
+}

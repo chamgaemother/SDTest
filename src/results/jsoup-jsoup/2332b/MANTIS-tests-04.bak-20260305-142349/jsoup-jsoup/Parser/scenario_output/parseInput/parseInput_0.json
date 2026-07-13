@@ -1,0 +1,245 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String,baseUri) with empty HTML returns an empty Document with provided baseUri",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document.getBaseUri() equals \"http://example.com/\" and Document.body().children().isEmpty()",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "boundary-empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput empty-html",
+        "  GIVEN",
+        "    String html = \"\"; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.getBaseUri().equals(\"http://example.com/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader,baseUri) with simple HTML returns Document with one child element",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document.body().child(0).tagName() equals \"p\"",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput reader-simple-html",
+        "  GIVEN",
+        "    Reader input = new StringReader(\"<p>Hello</p>\"); String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert doc.body().child(0).tagName().equals(\"p\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String,null) with null baseUri throws IllegalArgumentException for undefined baseUri",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-baseUri",
+        "  GIVEN",
+        "    String html = \"<div/>\"; String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader,baseUri) with null Reader throws NullPointerException",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-null-reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput null-reader",
+        "  GIVEN",
+        "    Reader input = null; String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseInput(String,baseUri) with stubbed TreeBuilder throwing IllegalStateException propagates exception",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new StubTreeBuilder()); // stub.parse() throws IllegalStateException(\"fail\")",
+      "expectedResult": "throws IllegalStateException with message \"fail\"",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-parse-error",
+        "mock-stub"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 parseInput stubbed-parse-exception",
+        "  GIVEN",
+        "    String html = \"<x/>\"; String baseUri = \"b\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "parseInput(String,baseUri) after setTreeBuilder(XmlTreeBuilder) returns XML Document root element",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); parser.setTreeBuilder(new XmlTreeBuilder());",
+      "expectedResult": "Document.child(0).nodeName() equals \"root\" for input \"<root/>\"",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "variant-xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O1 parseInput xml-parser",
+        "  GIVEN",
+        "    Parser p = new Parser(new HtmlTreeBuilder()); p.setTreeBuilder(new XmlTreeBuilder());",
+        "  WHEN",
+        "    Document doc = p.parseInput(\"<root/>\",\"uri\");",
+        "  THEN",
+        "    assert doc.child(0).nodeName().equals(\"root\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parseInput(Reader,baseUri) with page containing nested tags returns correct nested hierarchy",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document.select(\"div > span\").size() == 1",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "boundary-nested"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 parseInput nested-tags",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"<div><span>x</span></div>\"); String uri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(r, uri);",
+        "  THEN",
+        "    assert doc.select(\"div > span\").size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O1",
+      "description": "parseInput(String,baseUri) with extremely large HTML string returns Document without OutOfMemoryError",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document != null and Document.body() is accessible",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "performance-large-input"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O1 parseInput large-input",
+        "  GIVEN",
+        "    String html = \"<p>\" + \"a\".repeat(1000000) + \"</p>\"; String uri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert doc.body() != null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "parseInput(Reader,baseUri) with empty baseUri string returns Document with empty baseUri",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document.getBaseUri() equals \"\"",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "boundary-empty-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O2 parseInput empty-baseUri",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"<p/>\"\"); String uri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(r, uri);",
+        "  THEN",
+        "    assert doc.getBaseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "parseInput(String,baseUri) with HTML containing attributes returns correct attribute values",
+      "path": "B1→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder());",
+      "expectedResult": "Document.select(\"img\").attr(\"src\") equals \"a.png\"",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "boundary-attributes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O1 parseInput attributes",
+        "  GIVEN",
+        "    String html = \"<img src='a.png'/>\"; String uri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert doc.select(\"img\").attr(\"src\").equals(\"a.png\");",
+        "END"
+      ]
+    }
+  ]
+}

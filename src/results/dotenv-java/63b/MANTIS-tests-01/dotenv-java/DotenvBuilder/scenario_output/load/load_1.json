@@ -1,0 +1,121 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "load() with missing .env file and default throwIfMissing=true throws DotenvException",
+      "path": "B0",
+      "precondition": "directory exists without any .env file",
+      "expectedResult": "DotenvException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "missing-file",
+        "throwIfMissing"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 load missing-file default-throws",
+        "  GIVEN",
+        "    // Arrange: create empty temp directory with no .env",
+        "    String dir = tempDir.toString();",
+        "  WHEN",
+        "    // Act & Assert: calling load() without ignoreIfMissing",
+        "    call Dotenv.configure().directory(dir).load();",
+        "  THEN",
+        "    // Assert: DotenvException is thrown",
+        "    throws DotenvException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() with missing .env file and ignoreIfMissing() returns empty Dotenv without exception",
+      "path": "B0→B1(loop×0)→B2",
+      "precondition": "directory exists without any .env file; builder.ignoreIfMissing()",
+      "expectedResult": "returns Dotenv with only system env entries; no exception",
+      "tags": [
+        "positive",
+        "boundary",
+        "missing-file",
+        "ignoreIfMissing"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 load missing-file ignoreIfMissing",
+        "  GIVEN",
+        "    // Arrange: create temp directory with no .env",
+        "    String dir = tempDir.toString();",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir).ignoreIfMissing();",
+        "  WHEN",
+        "    // Act",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert: no exception and returned entries() size >= 0",
+        "    assert dotenv.entries().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "load() with malformed and valid lines and ignoreIfMalformed() loads only valid entries",
+      "path": "B0→B1(loop×1)→B2",
+      "precondition": ".env file contains one malformed line and one valid 'A=1'; builder.ignoreIfMalformed()",
+      "expectedResult": "returns Dotenv containing only entry A=1; no exception",
+      "tags": [
+        "positive",
+        "ignoreIfMalformed",
+        "malformed",
+        "filter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 load ignoreIfMalformed filters malformed",
+        "  GIVEN",
+        "    // Arrange: .env file with ['BADLINE','A=1']",
+        "    Path env = tempDir.resolve(\".env\");",
+        "    Files.write(env, List.of(\"BADLINE\",\"A=1\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir.toString()).ignoreIfMalformed();",
+        "  WHEN",
+        "    // Act",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert: only valid entry present",
+        "    assertEquals(\"1\", dotenv.get(\"A\"));",
+        "    assertNull(dotenv.get(\"BADLINE\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "load() with malformed line and default throwIfMalformed=true throws DotenvException",
+      "path": "B0",
+      "precondition": ".env file contains a malformed line; default settings",
+      "expectedResult": "DotenvException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "malformed",
+        "throwIfMalformed"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 load malformed default-throws",
+        "  GIVEN",
+        "    // Arrange: .env file with ['INVALID'] only",
+        "    Path env = tempDir.resolve(\".env\");",
+        "    Files.write(env, List.of(\"INVALID\"));",
+        "  WHEN",
+        "    // Act & Assert: calling load() without ignoreIfMalformed",
+        "    call Dotenv.configure().directory(tempDir.toString()).load();",
+        "  THEN",
+        "    // Assert: DotenvException is thrown",
+        "    throws DotenvException;",
+        "END"
+      ]
+    }
+  ]
+}

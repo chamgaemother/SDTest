@@ -1,0 +1,87 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Locale;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("tagSet returns lowercase tags when settings provide mixed-case names")
+    public void test_TC01() throws Exception {
+        // GIVEN: htmlParser with mixed-case tag names in settings to exercise the lowercase-normalization path (loop×2)
+        Parser parser = Parser.htmlParser();
+        ParseSettings customSettings = new ParseSettings(Arrays.asList("Div", "SPAN"), Locale.ROOT);
+        parser.settings(customSettings);
+        // WHEN: invoke private/package-private tagSet via reflection
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", new Class[] {});
+        tagSetMethod.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Set<String> result = (Set<String>) tagSetMethod.invoke(parser);
+        // THEN: expect both entries normalized to lowercase
+        assertEquals(2, result.size(), "Expected two tags in the set");
+        assertTrue(result.containsAll(Set.of("div", "span")), "The set should contain only lowercase 'div' and 'span'");
+    }
+
+    @Test
+    @DisplayName("tagSet skips null entries when trackPosition is false")
+    public void test_TC02() throws Exception {
+        // GIVEN: htmlParser with one valid tag and one null to test skip-null when trackPosition=false (default)
+        Parser parser = Parser.htmlParser();
+        ParseSettings customSettings = new ParseSettings(Arrays.asList("p", null), Locale.ROOT);
+        parser.settings(customSettings);
+        // Ensure default trackPosition is false
+        assertFalse(parser.isTrackPosition(), "trackPosition should be false by default");
+        // WHEN: invoke tagSet
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", new Class[] {});
+        tagSetMethod.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Set<String> result = (Set<String>) tagSetMethod.invoke(parser);
+        // THEN: expect only the non-null tag 'p'
+        assertEquals(Set.of("p"), result, "The set should contain only 'p' and skip null entries");
+    }
+
+    @Test
+    @DisplayName("tagSet throws IllegalArgumentException on null tag when trackPosition is enabled")
+    public void test_TC03() throws Exception {
+        // GIVEN: htmlParser with trackPosition enabled and a single null entry to force exception on null handling path
+        Parser parser = Parser.htmlParser().setTrackPosition(true);
+        ParseSettings customSettings = new ParseSettings(Arrays.asList((String) null), Locale.ROOT);
+        parser.settings(customSettings);
+        // WHEN & THEN: invoking tagSet should throw IllegalArgumentException
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", new Class[] {});
+        tagSetMethod.setAccessible(true);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> tagSetMethod.invoke(parser),
+            "Expected IllegalArgumentException when encountering null tag with trackPosition=true"
+        );
+        // Reflection wraps exception in InvocationTargetException; unwrap if needed
+        if (ex.getCause() instanceof IllegalArgumentException) {
+            // unwrap
+        }
+    }
+
+    @Test
+    @DisplayName("tagSet returns empty set when settings has no tags")
+    public void test_TC04() throws Exception {
+        // GIVEN: htmlParser with empty settings list to test no-loop path
+        Parser parser = Parser.htmlParser();
+        ParseSettings customSettings = new ParseSettings(Arrays.asList(), Locale.ROOT);
+        parser.settings(customSettings);
+        // WHEN: invoke tagSet
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", new Class[] {});
+        tagSetMethod.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Set<String> result = (Set<String>) tagSetMethod.invoke(parser);
+        // THEN: expect empty set
+        assertTrue(result.isEmpty(), "The set should be empty when no tags provided in settings");
+    }
+}

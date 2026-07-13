@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parse(Path, charsetName, baseUri) reads file via Path overload and resolves relative links against provided baseUri",
+      "path": "B0→BXX→BYY→BZZ→Bret",
+      "precondition": "Path to temporary HTML file exists with content '<a href=\"q.html\">x</a>'",
+      "expectedResult": "Document with one <a> element whose absUrl('href') equals baseUri + 'q.html'",
+      "tags": [
+        "positive",
+        "overload",
+        "Path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse Path with charset and baseUri",
+        "  GIVEN",
+        "    Path p = temp html file with '<a href=\"q.html\">x</a>';",
+        "    String cs = 'UTF-8';",
+        "    String base = 'http://site.com/dir/';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, cs, base);",
+        "  THEN",
+        "    assert doc.select('a').first().absUrl('href').equals('http://site.com/dir/q.html');"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(Path, charsetName, baseUri) throws IOException when Path does not exist",
+      "path": "B0→BXX→Berr",
+      "precondition": "Path to non-existent file",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload",
+        "Path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse non-existent Path throws",
+        "  GIVEN",
+        "    Path p = Paths.get('no_such_file.html');",
+        "    String cs = 'UTF-8';",
+        "    String base = 'u';",
+        "  WHEN",
+        "    call Jsoup.parse(p, cs, base);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(URL, timeout) throws SocketTimeoutException if server delays beyond timeout",
+      "path": "B0→B1→B2(timeout)→Berr",
+      "precondition": "MockWebServer enqueues delayed response (> timeoutMillis)",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout",
+        "URL"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse URL timeout exception",
+        "  GIVEN",
+        "    MockWebServer server = new MockWebServer();",
+        "    server.enqueue(new MockResponse().setBody('<p>').setBodyDelay(2, TimeUnit.SECONDS));",
+        "    server.start();",
+        "    URL url = server.url('/').url();",
+        "    int timeout = 500; // ms",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws SocketTimeoutException;"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, timeout) throws HttpStatusException on non-200 HTTP status",
+      "path": "B0→B1→B3(status!=200)→Berr",
+      "precondition": "MockWebServer enqueues 404 response",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "http-status",
+        "URL"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse URL 404 status exception",
+        "  GIVEN",
+        "    MockWebServer server = new MockWebServer();",
+        "    server.enqueue(new MockResponse().setResponseCode(404).setBody('Not found'));",
+        "    server.start();",
+        "    URL url = server.url('/').url();",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws HttpStatusException;"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL, timeout) throws UnsupportedMimeTypeException on unsupported content-type",
+      "path": "B0→B1→B4(mime unsupported)→Berr",
+      "precondition": "MockWebServer enqueues 200 response with Content-Type 'image/png'",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "mime-type",
+        "URL"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse URL unsupported mime exception",
+        "  GIVEN",
+        "    MockWebServer server = new MockWebServer();",
+        "    server.enqueue(new MockResponse().setResponseCode(200).setBody('PNGDATA').addHeader('Content-Type','image/png'));",
+        "    server.start();",
+        "    URL url = server.url('/img').url();",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException;"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(File, charsetName, baseUri, parser) throws IOException for invalid charset on gzipped file",
+      "path": "B0→Bxx→Berr",
+      "precondition": "GZipped temp file exists; parser = Parser.htmlParser(); charsetName='BAD'",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "File",
+        "parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse gzipped File invalid charset throws",
+        "  GIVEN",
+        "    File f = gzipped temp file with '<p/>' content;",
+        "    String cs = 'BAD-CHARSET';",
+        "    String base = 'u';",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(f, cs, base, parser);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    }
+  ]
+}

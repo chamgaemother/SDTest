@@ -1,0 +1,191 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "clone() returns a deep copy with independent state",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser with HtmlTreeBuilder and trackPosition=true, trackErrors(3)",
+      "expectedResult": "clone()!=original, settings equal, errors.maxSize equal, trackPosition equal, treeBuilder instances distinct",
+      "tags": [
+        "clone",
+        "deep-copy",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone deep-copy",
+        "  GIVEN",
+        "    Parser orig = Parser.htmlParser().setTrackErrors(3).setTrackPosition(true);",
+        "  WHEN",
+        "    Parser copy = orig.clone();",
+        "  THEN",
+        "    assert copy != orig;",
+        "    assert copy.settings() == orig.settings();",
+        "    assert copy.getErrors().getMaxSize() == 3;",
+        "    assert copy.isTrackPosition() == true;",
+        "    assert copy.getTreeBuilder() != orig.getTreeBuilder();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "newInstance() on XML parser yields independent Parser with XmlTreeBuilder",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser xml = Parser.xmlParser(); xml.setTrackErrors(1)",
+      "expectedResult": "instance!=original, xml builder type preserved, errors size copied",
+      "tags": [
+        "newInstance",
+        "copy",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 newInstance xmlParser",
+        "  GIVEN",
+        "    Parser xml = Parser.xmlParser().setTrackErrors(1);",
+        "  WHEN",
+        "    Parser copy = xml.newInstance();",
+        "  THEN",
+        "    assert copy != xml;",
+        "    assert copy.getTreeBuilder().getClass() == xml.getTreeBuilder().getClass();",
+        "    assert copy.getErrors().getMaxSize() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, baseUri) with simple HTML yields non-null Document body",
+      "path": "B0→B3→B4",
+      "precondition": "HtmlTreeBuilder parser",
+      "expectedResult": "Document with one <p> child text",
+      "tags": [
+        "parseInput",
+        "positive",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput Reader overload",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    Reader r = new StringReader(\"<p>Hello</p>\");",
+        "  WHEN",
+        "    Document doc = p.parseInput(r, \"http://example/\");",
+        "  THEN",
+        "    assert doc.body().select(\"p\").text().equals(\"Hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseFragmentInput(null context) returns fragment nodes without context parent",
+      "path": "B0→B5→B6",
+      "precondition": "Parser html parser",
+      "expectedResult": "List of Nodes representing <span>Text</span>",
+      "tags": [
+        "parseFragmentInput",
+        "null-context",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput with null context",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    Reader r = new StringReader(\"<span>Text</span>\");",
+        "  WHEN",
+        "    List<Node> nodes = p.parseFragmentInput(r, null, \"base\");",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0) instanceof Element;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "static parseFragment(fragment, context, baseUri, errorList) uses provided errorList",
+      "path": "B0→B7→B8",
+      "precondition": "custom ParseErrorList(maxSize=1)",
+      "expectedResult": "returned node list, errorList same instance, no exceptions",
+      "tags": [
+        "static",
+        "parseFragment",
+        "errorList",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 static parseFragment with errorList",
+        "  GIVEN",
+        "    Element context = new Element(\"div\");",
+        "    ParseErrorList errs = ParseErrorList.tracking(1);",
+        "    String html = \"<b>Bad &unclosed\";",
+        "  WHEN",
+        "    List<Node> list = Parser.parseFragment(html, context, \"uri\", errs);",
+        "  THEN",
+        "    assert list.size() >= 1;",
+        "    assert errs.getMaxSize() == 1;",
+        "    assert errs.size() <= 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseBodyFragment appends nodes to body in reverse-original order",
+      "path": "B0→B9→B10→B11→B12",
+      "precondition": "simple two siblings fragment",
+      "expectedResult": "body children sequence matches original fragment order",
+      "tags": [
+        "parseBodyFragment",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment order preserved",
+        "  GIVEN",
+        "    String frag = \"<i>One</i><b>Two</b>\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(frag, \"uri\");",
+        "  THEN",
+        "    List<Element> children = doc.body().children();",
+        "    assert children.get(0).tagName().equals(\"i\");",
+        "    assert children.get(1).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "unescapeEntities(true) and (false) correctly unescape named and numeric entities",
+      "path": "B0→B13→B14",
+      "precondition": "none",
+      "expectedResult": "'&amp;' → '&', '&#x3C;'→ '<' for both attribute and data modes",
+      "tags": [
+        "unescapeEntities",
+        "positive",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 unescapeEntities modes",
+        "  GIVEN",
+        "    String enc = \"&amp;&#60;\";",
+        "  WHEN",
+        "    String dataMode = Parser.unescapeEntities(enc, false);",
+        "    String attrMode = Parser.unescapeEntities(enc, true);",
+        "  THEN",
+        "    assert dataMode.equals(\"&<\");",
+        "    assert attrMode.equals(\"&<\");",
+        "END"
+      ]
+    }
+  ]
+}

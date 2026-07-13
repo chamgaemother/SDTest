@@ -1,0 +1,65 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseBodyFragment(html with relative links, non-empty baseUri) returns Document with resolved links")
+    public void test_TC01_O1() {
+        // This input has a relative link and non-empty baseUri to test resolution path B0→B1→B2→B3
+        String bodyHtml = "<a href=\"page.html\">link</a>";
+        String baseUri = "https://example.com/";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        Element a = doc.body().select("a").first();
+        assertNotNull(a, "Expected an <a> element in body");
+        // The absUrl should resolve relative 'page.html' against the provided baseUri
+        assertEquals("https://example.com/page.html", a.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseBodyFragment(empty html, non-empty baseUri) returns empty body element")
+    public void test_TC02_O1() {
+        // Empty input triggers the path B0→B1→B2→B3 but with no content
+        String bodyHtml = "";
+        String baseUri = "https://example.com/";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        // Expect empty body html when no fragment is provided
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseBodyFragment(null html, non-empty baseUri) throws NullPointerException for null bodyHtml")
+    public void test_TC03_O1() {
+        // Null html input should cause NullPointerException before parsing (path B0→B1→B4)
+        String baseUri = "https://example.com/";
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment(null, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseBodyFragment(html with no baseUri overload preserves empty baseUri as default")
+    public void test_TC04_O2() {
+        // One-arg overload uses empty baseUri internally (branch-true for baseUri.isEmpty()) B0→B1→B2→B3
+        String bodyHtml = "<img src='pic.png'>";
+        Document doc = Jsoup.parseBodyFragment(bodyHtml);
+        // The body html should exactly match the input fragment
+        assertEquals("<img src=\"pic.png\">", doc.body().html());
+        Element img = doc.body().select("img").first();
+        assertNotNull(img, "Expected an <img> element in body");
+        // Relative src should not be resolved when baseUri is empty
+        assertTrue(img.absUrl("src").isEmpty(), "Expected no absolute URL when baseUri is empty");
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseBodyFragment(null html in one-arg overload throws NullPointerException")
+    public void test_TC05_O2() {
+        // Null html in single-arg overload should cause NullPointerException (path B0→B1→B4)
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment((String) null));
+    }
+}

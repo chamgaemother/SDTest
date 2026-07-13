@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(String, baseUri) propagates RuntimeException from TreeBuilder.parse",
+      "path": "B0→B2→B3→exception",
+      "precondition": "TreeBuilder.parse(StringReader, baseUri, parser) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown with original message",
+      "tags": ["exception","negative","runtime"],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 propagate-runtime-exception-on-string-input",
+        "  GIVEN",
+        "    // Stub TreeBuilder that throws at parse"
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"stub error\"); }",
+        "      @Override public void process(Token token) {}",
+        "      @Override public Document parseFragment(Reader in, Element context, String uri) { return null; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public org.jsoup.nodes.TagSet defaultTagSet() { return null; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<a/>\";",
+        "  WHEN",
+        "    // Act & Then",
+        "    call parser.parseInput(html, \"base\");",
+        "  THEN",
+        "    // Assert",
+        "    throws IllegalStateException with message \"stub error\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(Reader, baseUri) propagates RuntimeException from TreeBuilder.parse",
+      "path": "B0→B2→B3→exception",
+      "precondition": "TreeBuilder.parse(Reader, baseUri, parser) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown with original message",
+      "tags": ["exception","negative","runtime"],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 propagate-runtime-exception-on-reader-input",
+        "  GIVEN",
+        "    // Stub TreeBuilder that throws at parse"
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"fail parse\"); }",
+        "      @Override public void process(Token token) {}",
+        "      @Override public Document parseFragment(Reader in, Element context, String uri) { return null; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public org.jsoup.nodes.TagSet defaultTagSet() { return null; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<b>test</b>\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"base\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail parse\";",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.CDataNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertSame;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(1) after cache invalidation rebuilds shadowChildrenRef and returns new element")
+    public void test_TC08() {
+        // GIVEN: a parent with one child, and cache built via child(0)
+        Element parent = new Element("div");
+        Element first = new Element("p");
+        parent.appendChild(first);
+        // build shadowChildrenRef cache (path B3→B5→B6)
+        Element cachedFirst = parent.child(0);
+        // WHEN: append a second element, which triggers nodelistChanged and invalidates cache (via onContentsChanged)
+        Element second = new Element("span");
+        parent.appendChild(second);
+        // THEN: child(1) should rebuild cache and return the newly appended element
+        Element result = parent.child(1);
+        assertSame(second, result, "Expected the second element returned after cache invalidation");
+    }
+
+    @Test
+    @DisplayName("child(1) skips DataNode and CDataNode, returns correct second Element")
+    public void test_TC09() {
+        // GIVEN: parent with mixed node types: DataNode, Element e1, CDataNode, Element e2
+        Element parent = new Element("div");
+        parent.appendChild(new DataNode("d1"));               // non-Element, should be skipped
+        Element e1 = new Element("a"); parent.appendChild(e1); // first element child at filtered index 0
+        parent.appendChild(new CDataNode("c1"));              // non-Element, should be skipped
+        Element e2 = new Element("b"); parent.appendChild(e2); // second element child at filtered index 1
+        // WHEN: child(1) should iterate over childNodes, skip non-Elements (4 iterations in B5 loop), then return e2
+        Element result = parent.child(1);
+        // THEN: assertSame ensures correct filtering behavior
+        assertSame(e2, result, "Expected the second Element child, skipping DataNode and CDataNode");
+    }
+}

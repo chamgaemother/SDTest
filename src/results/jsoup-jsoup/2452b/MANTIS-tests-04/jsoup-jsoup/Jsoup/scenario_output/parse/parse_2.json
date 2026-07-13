@@ -1,0 +1,142 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parse(URL, timeout) with valid HTTP URL returns parsed Document",
+      "path": "B0→B8→B10→B11",
+      "precondition": "remote HTTP server serving simple HTML at http://example.org",
+      "expectedResult": "Document returned with body HTML and baseUri matching the fetched URL",
+      "tags": [
+        "positive",
+        "overload",
+        "URL"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse valid URL with timeout",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.org\");",
+        "    int timeout = 2000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body() contains expected HTML fragment;",
+        "    assert doc.baseUri().equals(url.toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(InputStream, charsetName, baseUri) without parser returns Document",
+      "path": "B0→B1→B3→B6",
+      "precondition": "ByteArrayInputStream wrapping valid HTML input",
+      "expectedResult": "Document returned with body HTML matching stream content and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parse InputStream without parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<li>Item</li>\".getBytes());",
+        "    String cs = \"UTF-8\";",
+        "    String base = \"http://stream.test\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, cs, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<li>Item</li>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(Path, charsetName, baseUri, parser) with XML parser returns fragment",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temporary file created with XML content and xmlParser()",
+      "expectedResult": "Document returned containing the XML fragment in body and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse Path with custom parser",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"t20\", \".xml\");",
+        "    Files.write(path, \"<node/>\".getBytes(StandardCharsets.UTF_8));",
+        "    String cs = \"UTF-8\";",
+        "    String base = \"http://pathparser.test\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, cs, base, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<node/>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File, charsetName, baseUri) with invalid charset throws IOException",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "existing temp HTML file, bad charset name provided",
+      "expectedResult": "IOException is thrown due to unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse File with invalid charset",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"t21\", \".html\");",
+        "    Files.write(temp.toPath(), \"<p>X</p>\".getBytes(StandardCharsets.UTF_8));",
+        "    String badCs = \"NO_SUCH_CHARSET\";",
+        "    String base = \"http://badcs.test\";",
+        "  WHEN",
+        "    call Jsoup.parse(temp, badCs, base);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path, charsetName) with invalid charset throws IOException",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "existing temp HTML Path, bad charset name provided",
+      "expectedResult": "IOException is thrown due to unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "path",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse Path with invalid charset",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"t22\", \".html\");",
+        "    Files.write(path, \"<div>Y</div>\".getBytes(StandardCharsets.UTF_8));",
+        "    String badCs = \"INVALID_CHARSET\";",
+        "  WHEN",
+        "    call Jsoup.parse(path, badCs);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    }
+  ]
+}

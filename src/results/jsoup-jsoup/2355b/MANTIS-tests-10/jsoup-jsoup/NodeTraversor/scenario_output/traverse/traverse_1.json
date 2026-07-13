@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "two siblings: child with sibling exercises nextSibling non-null at depth>0 (B17→B18→B20)",
+      "path": "B0→B1→B2→B5→B11→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "root has two children appended in order",
+      "expectedResult": "both children visited in depth-first order; no errors",
+      "tags": [
+        "positive",
+        "iteration",
+        "sibling"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 traverse two-siblings depth>0 nextSibling non-null",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"a\");",
+        "    Element c2 = new Element(\"b\");",
+        "    root.appendChild(c1);",
+        "    root.appendChild(c2);",
+        "    RecordingVisitor vis = new RecordingVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(vis, root);",
+        "  THEN",
+        "    assert vis.events.get(0).equals(\"head:div:0\");",
+        "    assert vis.events.contains(\"head:a:1\");",
+        "    assert vis.events.contains(\"head:b:1\");",
+        "    assert vis.events.get(vis.events.size()-1).equals(\"tail:div:0\");"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "remove-first-child when sibling exists triggers replace/removed branch B9→B10 (nextSibling non-null removal)",
+      "path": "B0→B1→B2→B5→B6→B9→B10→B1→B24",
+      "precondition": "root has two children; visitor removes first child in head at depth=1",
+      "expectedResult": "first child removed and next sibling visited, then root returns",
+      "tags": [
+        "negative",
+        "remove",
+        "sibling"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 traverse remove-first-with-sibling",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"x\");",
+        "    Element c2 = new Element(\"y\");",
+        "    root.appendChild(c1);",
+        "    root.appendChild(c2);",
+        "    NodeVisitor v = new NodeVisitor() {",
+        "      @Override public void head(Node node, int d) { if (d == 1) node.remove(); }",
+        "      @Override public void tail(Node node, int d) {}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    // No exception, c1 removed, c2 still traversed head at depth1"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "elements list with two elements loops twice in traverse(visitor,Elements) (B1→B2 twice then B3)",
+      "path": "B0→B1→B2→(traverse single)→B1→B2→(traverse single)→B1→B3",
+      "precondition": "Elements with two distinct Element roots",
+      "expectedResult": "each element triggers its own head/tail calls; loop executes exactly twice",
+      "tags": [
+        "positive",
+        "elements",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 traverse two-elements list",
+        "  GIVEN",
+        "    Element e1 = new Element(\"p\");",
+        "    Element e2 = new Element(\"span\");",
+        "    RecordingVisitor vis = new RecordingVisitor();",
+        "    Elements elems = new Elements(e1, e2);",
+        "  WHEN",
+        "    NodeTraversor.traverse(vis, elems);",
+        "  THEN",
+        "    assertEquals(2, vis.events.stream().filter(e->e.startsWith(\"head\")).count());",
+        "    assertEquals(2, vis.events.stream().filter(e->e.startsWith(\"tail\")).count());"
+      ]
+    }
+  ]
+}

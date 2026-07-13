@@ -1,0 +1,49 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * JUnit 5 tests for Element.attr(String, String).
+ */
+public class Element_attr_2_Test {
+
+    @Test
+    @DisplayName("attr with empty string value sets attribute to empty string without error (branch B1→B2→B3)")
+    public void test_TC05() {
+        // GIVEN: a new Element with no prior attributes; childNodes untouched
+        Element el = new Element("div");
+        String key = "key";
+        String value = ""; // empty value to trigger branch B3 where value is empty
+        
+        // WHEN: setting an attribute with empty string value
+        Element ret = el.attr(key, value);
+        
+        // THEN: method returns same Element instance (chained)
+        assertSame(el, ret, "attr should return the same Element instance");
+        // AND: the attribute map contains the key, even though its value is empty
+        Attributes attrs = el.attributes();
+        assertTrue(attrs.hasKey(key), "attributes should contain the provided key");
+        assertEquals("", attrs.get(key), "the value for the key should be the empty string");
+    }
+
+    @Test
+    @DisplayName("attr with empty string key throws IllegalArgumentException (Validate.notEmptyParam(key))")
+    public void test_TC06() {
+        // GIVEN: a new Element with no prior attributes
+        Element el = new Element("span");
+        String emptyKey = ""; // empty key to trigger validation exception (branch B4)
+        String value = "v";
+        
+        // WHEN & THEN: calling attr with empty key should throw IllegalArgumentException
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            el.attr(emptyKey, value);
+        }, "Expected attr to throw IllegalArgumentException for empty key");
+        
+        // AND: no attribute with an empty key should have been created
+        Attributes attrs = el.attributes();
+        assertFalse(attrs.hasKey(emptyKey), "attributes should not contain an empty key");
+    }
+}

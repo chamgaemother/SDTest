@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "traverse(elements) throws IllegalArgumentException when elements contains a null entry",
+      "path": "B0→B1→B2→B3→B0?",
+      "precondition": "Elements list with one null element",
+      "expectedResult": "IllegalArgumentException is thrown due to null root in nested traverse",
+      "tags": [
+        "negative",
+        "elements",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 traverse elements with null child",
+        "  GIVEN",
+        "    NodeVisitor v = valid visitor;",
+        "    Elements els = new Elements((Element) null);",
+        "  WHEN",
+        "    call NodeTraversor.traverse(v, els);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "traverse(elements) with single-element list invokes visitor exactly once",
+      "path": "B0→B1→B2→[nested traverse leaf path]→B3",
+      "precondition": "Elements list with one simple Element child",
+      "expectedResult": "visitor.head and tail called exactly for the one element at depth=0",
+      "tags": [
+        "positive",
+        "elements",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 traverse single-element list",
+        "  GIVEN",
+        "    Element el = new Element(\"x\");",
+        "    Elements els = new Elements(el);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor v = ({ head(n,d)->calls.add(\"H\"+n.nodeName()+d), tail(n,d)->calls.add(\"T\"+n.nodeName()+d) });",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, els);",
+        "  THEN",
+        "    assert calls == [\"Hx0\",\"Tx0\"];",
+        "END"
+      ]
+    }
+  ]
+}

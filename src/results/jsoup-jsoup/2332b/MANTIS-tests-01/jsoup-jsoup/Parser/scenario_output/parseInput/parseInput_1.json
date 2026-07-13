@@ -1,0 +1,83 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06_O2_nullReader",
+      "description": "parseInput(Reader, String) throws NullPointerException when reader is null",
+      "path": "B0→B2→exception",
+      "precondition": "Parser with real HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput Reader null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2_nullBaseUri",
+      "description": "parseInput(Reader, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B2→exception",
+      "precondition": "Parser with real HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput baseUri null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<p/>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O2_xmlParser_success",
+      "description": "parseInput(Reader, String) with XmlTreeBuilder returns Document containing XML element",
+      "path": "B0→B2→B3",
+      "precondition": "Parser from xmlParser()",
+      "expectedResult": "Document contains element 'tag' parsed from XML input",
+      "tags": [
+        "positive",
+        "overload",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput xmlParser returns XML document",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader reader = new StringReader(\"<tag attr='v'/>;\");",
+        "    String baseUri = \"urn:xml\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"tag\").size() == 1;",
+        "    assert doc.select(\"tag\").first().attr(\"attr\").equals(\"v\");",
+        "END"
+      ]
+    }
+  ]
+}

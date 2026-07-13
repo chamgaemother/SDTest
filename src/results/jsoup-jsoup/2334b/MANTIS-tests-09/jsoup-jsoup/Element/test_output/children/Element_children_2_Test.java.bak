@@ -1,0 +1,52 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC06: children() rebuilds cache when shadowChildrenRef exists but referent has been cleared (cache-miss branch)")
+    void test_TC06() throws Exception {
+        // GIVEN: an element with two child elements, and initial cache built
+        Element el = new Element("div");
+        Element child1 = new Element("span");
+        Element child2 = new Element("em");
+        el.appendChild(child1);
+        el.appendChild(child2);
+        // build initial shadowChildrenRef cache (B0→B3)
+        Elements initial = el.children();
+        assertEquals(2, initial.size(), "initial children size should be 2");
+
+        // simulate cache-miss: clear the referent inside shadowChildrenRef (B5)
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        // verify we have a WeakReference
+        @SuppressWarnings("unchecked")
+        WeakReference<Elements> oldRef = (WeakReference<Elements>) shadowField.get(el);
+        assertNotNull(oldRef, "shadowChildrenRef must be non-null after initial children() call");
+        // replace with a WeakReference referring to null to force rebuild
+        WeakReference<?> clearedRef = new WeakReference<>(null);
+        shadowField.set(el, clearedRef);
+
+        // WHEN: calling children() again should detect referent null and rebuild cache
+        // comment: this triggers the cache-miss branch and rebuilds the childElementsList
+        Elements result = el.children();
+
+        // THEN: we expect fresh list of two children and a new non-null referent
+        assertAll("Verify children cache-miss rebuild",
+            () -> assertEquals(2, result.size(), "children() must return two elements after cache clearance"),
+            () -> {
+                @SuppressWarnings("unchecked")
+                WeakReference<?> newRef = (WeakReference<?>) shadowField.get(el);
+                // newRef.get() should be non-null, meaning cache was rebuilt
+                assertNotNull(newRef.get(), "shadowChildrenRef referent should be rebuilt (non-null)");
+            }
+        );
+    }
+}

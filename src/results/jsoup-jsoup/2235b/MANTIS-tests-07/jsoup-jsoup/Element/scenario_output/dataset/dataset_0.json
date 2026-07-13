@@ -1,0 +1,116 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() on new Element with no attributes returns empty map (attributes==null branch, zero data-* attrs)",
+      "path": "B0→B1(true)→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); // attributes is null initially",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty when no attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() after setting non-data attribute returns empty map (attributes!=null branch, zero data-* attrs)",
+      "path": "B0→B1(false)→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"foo\",\"bar\"); // only non-data attribute",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset excludes non-data attrs",
+        "  GIVEN",
+        "    Element el = new Element(\"span\"); el.attr(\"foo\",\"bar\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() includes single data-* attribute (loop-1 iteration)",
+      "path": "B0→B1(false)→B3",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-key\",\"value\");",
+      "expectedResult": "returned map contains exactly {\"key\"=\"value\"}",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset single entry",
+        "  GIVEN",
+        "    Element el = new Element(\"p\"); el.attr(\"data-key\",\"value\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1 && ds.get(\"key\").equals(\"value\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() includes multiple data-* attributes (loop-N>1)",
+      "path": "B0→B1(false)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\"); el.attr(\"data-c\",\"3\");",
+      "expectedResult": "returned map contains exactly keys [\"a\",\"b\",\"c\"] with corresponding values [\"1\",\"2\",\"3\"]",
+      "tags": [
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset multiple entries",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\"); el.attr(\"data-c\",\"3\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 3 && ds.get(\"a\").equals(\"1\") && ds.get(\"b\").equals(\"2\") && ds.get(\"c\").equals(\"3\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() returns view that reflects adding via map.put propagates to element attributes",
+      "path": "B0→B1(false)→B3",
+      "precondition": "Element el = new Element(\"div\"); // attributes!=null after call; Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.put(\"new\",\"val\"), el.attr(\"data-new\") == \"val\"",
+      "tags": [
+        "branch-false",
+        "mutation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset view mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"new\",\"val\");",
+        "  THEN",
+        "    assert el.attr(\"data-new\").equals(\"val\");"
+      ]
+    }
+  ]
+}

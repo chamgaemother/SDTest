@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "dataset converts hyphenated data- attribute names to camelCase keys (prefix removed, hyphens→upper-case)",
+      "path": "B0→B1(loop×1)→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "map contains key 'userName' with value 'Alice'",
+      "tags": [
+        "positive",
+        "naming",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 dataset camelCase conversion",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-user-name\", \"Alice\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"userName\");",
+        "    assert ds.get(\"userName\").equals(\"Alice\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "dataset view remove() deletes the corresponding data- attribute from the element",
+      "path": "B0→B1(loop×1)→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "after ds.remove, attribute 'data-x' is absent and ds.isEmpty()",
+      "tags": [
+        "mutation",
+        "negative",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 dataset remove entry",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-x\", \"y\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.remove(\"x\");",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"data-x\");",
+        "    assert ds.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "dataset.put null key throws NullPointerException when attempting to insert a null key",
+      "path": "B0→B1(loop×0)→B6(exception)",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset null-key put",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    call ds.put(null, \"v\");",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    }
+  ]
+}

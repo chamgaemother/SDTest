@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "load() throws DotenvException when .env file is missing and throwIfMissing=true (default)",
+      "path": "B0→B2→[EXIT_EXCEPTION]",
+      "precondition": "directory set to non-existent path, default throwIfMissing=true",
+      "expectedResult": "DotenvException is thrown indicating missing file",
+      "tags": [
+        "negative",
+        "exception",
+        "missing-file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load throws on missing file",
+        "  GIVEN",
+        "    String badPath = \"./nonexistent_dir\";",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(badPath);",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "entries(filter) returns only file-defined entries when filter is non-null",
+      "path": "B0→B2→[entries(filter) branch]",
+      "precondition": "parser.parse() returns two entries via real DotenvParser on a test .env file",
+      "expectedResult": "entries(filter) returns exactly the two file entries, excluding system env",
+      "tags": [
+        "positive",
+        "entries",
+        "filter",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 entries(filter) returns only file entries",
+        "  GIVEN",
+        "    // Prepare a test .env file in temp directory with KEY_A=VAL_A,KEY_B=VAL_B",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(tempDir).filename(\".env\");",
+        "    Dotenv dotenv = builder.load();",
+        "    Dotenv.Filter nonNullFilter = filter -> true;",
+        "  WHEN",
+        "    Set<DotenvEntry> fileEntries = dotenv.entries(nonNullFilter);",
+        "  THEN",
+        "    assert fileEntries.stream().allMatch(e -> List.of(\"KEY_A\",\"KEY_B\").contains(e.getKey()));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "get(key) returns environment variable over file value when system env contains same key",
+      "path": "B0→B2→[get(key) branch system override]",
+      "precondition": "parser.parse() returns one entry (X=fromFile), real System.getenv(\"X\") is set to fromEnv",
+      "expectedResult": "get(\"X\") returns the system environment value, not the file value",
+      "tags": [
+        "positive",
+        "get",
+        "override"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 get returns system env override",
+        "  GIVEN",
+        "    String key = \"X\";",
+        "    // ensure real env var X exists with value fromEnv",
+        "    // create test .env with X=fromFile",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(tempDir).filename(\".env\");",
+        "    Dotenv dotenv = builder.load();",
+        "  WHEN",
+        "    String value = dotenv.get(key);",
+        "  THEN",
+        "    assert value.equals(System.getenv(key));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "get(key, defaultValue) returns defaultValue when neither system nor file entry exists",
+      "path": "B0→B2→[get(k,d) null-value branch]",
+      "precondition": "parser.parse() returns empty list, system env has no variable Z",
+      "expectedResult": "get(\"Z\", \"def\") returns \"def\"",
+      "tags": [
+        "positive",
+        "get",
+        "default-value",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 get with default when missing",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder().ignoreIfMissing().directory(tempDir).filename(\".env\");",
+        "    // ensure .env is absent so parse yields empty",
+        "    Dotenv dotenv = builder.load();",
+        "    String key = \"Z\";",
+        "    String defaultVal = \"def\";",
+        "  WHEN",
+        "    String result = dotenv.get(key, defaultVal);",
+        "  THEN",
+        "    assert result.equals(defaultVal);",
+        "END"
+      ]
+    }
+  ]
+}

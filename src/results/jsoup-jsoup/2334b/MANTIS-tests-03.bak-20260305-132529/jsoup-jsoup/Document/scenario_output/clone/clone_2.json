@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "clone() on Document with null connection preserves null field so connection() returns new session",
+      "path": "B0→B1→B2",
+      "precondition": "none (document.connection is null)",
+      "expectedResult": "clone.connection() returns a non-null Connection distinct from original and subsequent calls yield new sessions",
+      "tags": [
+        "positive",
+        "connection-null",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone null-connection branch",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    assert doc.connection() != null; // default new session",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    Connection c1 = clone.connection();",
+        "    Connection c2 = clone.connection();",
+        "    assertNotNull(c1);",
+        "    assertNotSame(c1, c2);",
+        "    assertNotSame(doc.connection(), c1);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() deep-copies an existing XmlDeclaration child node",
+      "path": "B0→B1(loop×1 deep child)→B2",
+      "precondition": "document has an XmlDeclaration prepended as first child",
+      "expectedResult": "clone.childNodes().get(0) is a distinct XmlDeclaration instance equal in name but not same reference",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "xml-decl",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone deep-clones XmlDeclaration",
+        "  GIVEN",
+        "    Document doc = new Document(\"ns\",\"http://example.com\");",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    Node orig = doc.childNodes().get(0);",
+        "    Node copy = clone.childNodes().get(0);",
+        "    assertTrue(orig instanceof XmlDeclaration);",
+        "    assertTrue(copy instanceof XmlDeclaration);",
+        "    assertNotSame(orig, copy);",
+        "    assertEquals(((XmlDeclaration)orig).name(), ((XmlDeclaration)copy).name());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() copies default quirksMode and allows independent modification",
+      "path": "B0→B1→B2",
+      "precondition": "none (quirksMode is default noQuirks)",
+      "expectedResult": "clone.quirksMode() initially matches original, changing clone does not affect original",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 clone independent quirksMode modification",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode());",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.quirksMode(Document.QuirksMode.quirks);",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.quirks, clone.quirksMode());",
+        "    assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode());"
+      ]
+    }
+  ]
+}

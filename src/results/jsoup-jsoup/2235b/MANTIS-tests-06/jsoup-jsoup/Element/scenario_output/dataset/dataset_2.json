@@ -1,0 +1,137 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "dataset().put on existing key updates underlying attribute (live view update path)",
+      "path": "B1→B2→B3(loop×1)→B4→B6→B7(update)",
+      "precondition": "Element with one data- attribute 'data-key'='old'",
+      "expectedResult": "Underlying attribute 'data-key' updated to 'new'",
+      "tags": [
+        "positive",
+        "live-view",
+        "update"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset live-view update existing entry",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes().put(\"data-key\", \"old\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"key\", \"new\");",
+        "  THEN",
+        "    assertEquals(\"new\", el.attr(\"data-key\"));"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "dataset().remove removes underlying data- attribute (live view removal path)",
+      "path": "B1→B2→B3(loop×1)→B4→B6→B7(removal)",
+      "precondition": "Element with one data- attribute 'data-remove'='yes' and another non-data",
+      "expectedResult": "Attribute 'data-remove' no longer present, other attributes intact",
+      "tags": [
+        "positive",
+        "live-view",
+        "remove"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 dataset live-view removing entry",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-remove\", \"yes\");",
+        "    el.attr(\"class\", \"keep\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.remove(\"remove\");",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-remove\"));",
+        "    assertEquals(\"keep\", el.attr(\"class\"));"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset() maps multi-hyphenated keys to camelCase correctly",
+      "path": "B1→B2→B3(loop×1)→B4→B5",
+      "precondition": "Element with attribute 'data-very-long-name-test'='x'",
+      "expectedResult": "Map contains key 'veryLongNameTest' with value 'x'",
+      "tags": [
+        "positive",
+        "transformation",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 dataset multi-hyphen transformation",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attributes().put(\"data-very-long-name-test\", \"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"veryLongNameTest\"));",
+        "    assertEquals(\"x\", ds.get(\"veryLongNameTest\"));"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset().clear removes all data- attributes but retains non-data attributes",
+      "path": "B1→B2→B3(loop×N)→B4→B6→clear",
+      "precondition": "Element with attributes 'data-a'='1','data-b'='2','foo'='bar'",
+      "expectedResult": "No 'data-*' attributes remain; 'foo' persists",
+      "tags": [
+        "positive",
+        "live-view",
+        "clear",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 dataset live-view clear all data- entries",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"1\");",
+        "    el.attr(\"data-b\", \"2\");",
+        "    el.attr(\"foo\", \"bar\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-a\"));",
+        "    assertFalse(el.attributes().hasKey(\"data-b\"));",
+        "    assertEquals(\"bar\", el.attr(\"foo\"));"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset().put then get on newly inserted key exercises insertion path",
+      "path": "B1→B2(empty loop)→B4→B6→put(insert)",
+      "precondition": "Element with no attributes (attributes==null branch)",
+      "expectedResult": "Map get returns inserted value and underlying 'data-new-one' attribute set",
+      "tags": [
+        "positive",
+        "live-view",
+        "insertion",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 dataset live-view insert new entry on empty attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"newOne\", \"value1\");",
+        "  THEN",
+        "    assertEquals(\"value1\", ds.get(\"newOne\"));",
+        "    assertEquals(\"value1\", el.attr(\"data-new-one\"));"
+      ]
+    }
+  ]
+}

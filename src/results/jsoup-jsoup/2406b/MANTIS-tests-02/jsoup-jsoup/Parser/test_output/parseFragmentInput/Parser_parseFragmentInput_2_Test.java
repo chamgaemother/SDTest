@@ -1,0 +1,97 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_parseFragmentInput_2_Test {
+    /**
+     * StubTreeBuilder returns a predefined node list for parseFragment.
+     * Used to validate that Parser delegates correctly.
+     */
+    static class StubTreeBuilder extends TreeBuilder {
+        private final List<Node> nodes;
+        StubTreeBuilder(List<Node> nodes) {
+            this.nodes = nodes;
+        }
+        @Override
+        protected ParseSettings defaultSettings() {
+            // return any non-null settings to satisfy Parser constructor
+            return new ParseSettings(true, true);
+        }
+        @Override
+        protected TagSet defaultTagSet() {
+            // provide a default TagSet copy
+            return new TagSet(TagSet.Html());
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            // return a fresh stub that returns same nodes
+            return new StubTreeBuilder(nodes);
+        }
+        @Override
+        public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException("Not used in fragment tests");
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            return nodes;
+        }
+        @Override
+        public void process(Token token) {
+            // No processing needed for stub
+        }
+    }
+
+    @Test
+    @DisplayName("Reader overload with null Reader reference throws NullPointerException")
+    public void test_TC09() {
+        // Given: a parser and null reader to trigger NPE before delegation
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        Element ctx = new Element(Tag.valueOf("div"), "base", new Attributes());
+        String base = "base";
+        // When & Then: calling parseFragmentInput with null reader leads to NPE (path B0→B1→B2→B3)
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(reader, ctx, base));
+    }
+
+    @Test
+    @DisplayName("String overload with null baseUri returns parsed nodes from stub TreeBuilder")
+    public void test_TC10() {
+        // Given: a stub builder that returns nodeA and baseUri null to exercise overload path B0→B1→B2→B3→B4
+        Node nodeA = new Element(Tag.valueOf("p"), "", new Attributes());
+        StubTreeBuilder sb = new StubTreeBuilder(Collections.singletonList(nodeA));
+        Parser parser = new Parser(sb);
+        String fragment = "<p>hi</p>";
+        Element ctx = new Element(Tag.valueOf("div"), "", new Attributes());
+        String base = null;
+        // When: calling string overload
+        List<Node> result = parser.parseFragmentInput(fragment, ctx, base);
+        // Then: result should be exactly the stub's list
+        assertEquals(Collections.singletonList(nodeA), result);
+    }
+
+    @Test
+    @DisplayName("Reader overload with null baseUri returns parsed nodes from stub TreeBuilder")
+    public void test_TC11() {
+        // Given: a stub builder that returns nodeB and baseUri null, using Reader overload path B0→B1→B2→B3→B4
+        Node nodeB = new Element(Tag.valueOf("span"), "", new Attributes());
+        StubTreeBuilder sb = new StubTreeBuilder(Collections.singletonList(nodeB));
+        Parser parser = new Parser(sb);
+        Reader reader = new StringReader("<span>ok</span>");
+        Element ctx = new Element(Tag.valueOf("span"), "", new Attributes());
+        String base = null;
+        // When: calling reader overload
+        List<Node> result = parser.parseFragmentInput(reader, ctx, base);
+        // Then: result should be exactly the stub's list
+        assertEquals(Collections.singletonList(nodeB), result);
+    }
+}

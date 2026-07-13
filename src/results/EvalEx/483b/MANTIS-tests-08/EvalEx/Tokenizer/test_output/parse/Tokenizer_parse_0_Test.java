@@ -1,0 +1,154 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.config.FunctionDictionaryIfc;
+import com.ezylang.evalex.config.OperatorDictionaryIfc;
+import com.ezylang.evalex.functions.FunctionIfc;
+import com.ezylang.evalex.operators.OperatorIfc;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * JUnit 5 tests for Tokenizer.parse() covering all provided scenarios.
+ * Each test is self-contained, uses reflection only when necessary,
+ * and does not rely on any shared state.
+ */
+public class Tokenizer_parse_0_Test {
+
+  // A minimal stub operator that does nothing; used for '*' infix operator
+  private static class DummyOperator implements OperatorIfc {
+    @Override public Object evaluate(com.ezylang.evalex.Expression expr, com.ezylang.evalex.parser.Token token, com.ezylang.evalex.data.EvaluationValue... values) { return null; }
+  }
+
+  // A minimal stub operator dictionary: only recognizes '*' as infix operator
+  private static class StubOperatorDictionary implements OperatorDictionaryIfc {
+    @Override public boolean hasPrefixOperator(String op) { return false; }
+    @Override public OperatorIfc getPrefixOperator(String op) { return null; }
+    @Override public boolean hasPostfixOperator(String op) { return false; }
+    @Override public OperatorIfc getPostfixOperator(String op) { return null; }
+    @Override public boolean hasInfixOperator(String op) {
+      return "*".equals(op);
+    }
+    @Override public OperatorIfc getInfixOperator(String op) {
+      if ("*".equals(op)) {
+        return new DummyOperator();
+      }
+      return null;
+    }
+    @Override public void addOperator(String op, OperatorIfc operator) { }
+  }
+
+  // A minimal stub function dictionary: no functions defined
+  private static class StubFunctionDictionary implements FunctionDictionaryIfc {
+    @Override public boolean hasFunction(String name) { return false; }
+    @Override public FunctionIfc getFunction(String name) { return null; }
+    @Override public void addFunction(String name, FunctionIfc function) { }
+  }
+
+  // A stub ExpressionConfiguration with configurable flags
+  private static class StubConfig implements ExpressionConfiguration {
+    private final boolean implicitMult, arraysAllowed, structAllowed, singleQuoteAllowed;
+    private final OperatorDictionaryIfc opDict = new StubOperatorDictionary();
+    private final FunctionDictionaryIfc fnDict = new StubFunctionDictionary();
+
+    StubConfig(boolean implicitMult,
+               boolean arraysAllowed,
+               boolean structAllowed,
+               boolean singleQuoteAllowed) {
+      this.implicitMult = implicitMult;
+      this.arraysAllowed = arraysAllowed;
+      this.structAllowed = structAllowed;
+      this.singleQuoteAllowed = singleQuoteAllowed;
+    }
+
+    @Override public OperatorDictionaryIfc getOperatorDictionary() { return opDict; }
+    @Override public FunctionDictionaryIfc getFunctionDictionary() { return fnDict; }
+    @Override public boolean isImplicitMultiplicationAllowed() { return implicitMult; }
+    @Override public boolean isArraysAllowed() { return arraysAllowed; }
+    @Override public boolean isStructuresAllowed() { return structAllowed; }
+    @Override public boolean isSingleQuoteStringLiteralsAllowed() { return singleQuoteAllowed; }
+    @Override public void addOperator(String op, OperatorIfc operator) { }
+    @Override public void addFunction(String name, FunctionIfc function) { }
+  }
+
+  @Test
+  @DisplayName("TC01 Empty expression returns empty token list (no tokens, braceBalance=0,arrayBalance=0)")
+  void test_TC01() throws Exception {
+    // Given an empty expression and defaults: implicit mult true, arrays & structs allowed
+    String expr = "";
+    ExpressionConfiguration config = new StubConfig(true, true, true, true);
+    Tokenizer tokenizer = new Tokenizer(expr, config);
+    // When parsing
+    List<Token> tokens = tokenizer.parse();
+    // Then we expect no tokens returned
+    assertTrue(tokens.isEmpty(), "Expected empty token list for empty expression");
+  }
+
+  @Test
+  @DisplayName("TC02 Single decimal number literal produces one NUMBER_LITERAL token")
+  void test_TC02() throws Exception {
+    // Given "123" which triggers decimal number parse path (isAtNumberStart true)
+    String expr = "123";
+    ExpressionConfiguration config = new StubConfig(true, true, true, true);
+    Tokenizer tokenizer = new Tokenizer(expr, config);
+    // When parsing
+    List<Token> tokens = tokenizer.parse();
+    // Then one number token with exact literal "123"
+    assertEquals(1, tokens.size(), "Should produce exactly one token for '123'");
+    Token t = tokens.get(0);
+    assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType(), "Token type must be NUMBER_LITERAL");
+    assertEquals("123", t.getToken(), "Token text must be '123'");
+  }
+
+  @Test
+  @DisplayName("TC03 Implicit multiplication allowed inserts '*' between number and '('")
+  void test_TC03() throws Exception {
+    // Given "2(3)" which causes implicitMultiplicationPossible to be true when "(" follows a number
+    String expr = "2(3)";
+    ExpressionConfiguration config = new StubConfig(true, true, true, true);
+    Tokenizer tokenizer = new Tokenizer(expr, config);
+    // When parsing
+    List<Token> tokens = tokenizer.parse();
+    // Then sequence: [ "2", "*", "(", "3", ")" ]
+    assertEquals(5, tokens.size(), "Expected 5 tokens: 2,*,(,3,)");
+    assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+    assertEquals("2", tokens.get(0).getToken());
+    assertEquals(Token.TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+    assertEquals("*", tokens.get(1).getToken());
+    assertEquals(Token.TokenType.BRACE_OPEN, tokens.get(2).getType());
+    assertEquals("(", tokens.get(2).getToken());
+    assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(3).getType());
+    assertEquals("3", tokens.get(3).getToken());
+    assertEquals(Token.TokenType.BRACE_CLOSE, tokens.get(4).getType());
+    assertEquals(")", tokens.get(4).getToken());
+  }
+
+  @Test
+  @DisplayName("TC04 Implicit multiplication disallowed throws Missing operator when number followed by '('")
+  void test_TC04() {
+    // Given "2(3)" and implicit multiplication disabled → should hit branch throwing in parse()
+    String expr = "2(3)";
+    ExpressionConfiguration config =
+        new StubConfig(false, true, true, true);
+    Tokenizer tokenizer = new Tokenizer(expr, config);
+    // When & Then expect ParseException for missing operator message
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Missing operator", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC05 Unclosed brace throws Closing brace not found for input \"(1\"")
+  void test_TC05() {
+    // Given "(1" which leaves braceBalance > 0 at end → should throw closing brace not found
+    String expr = "(1";
+    ExpressionConfiguration config = new StubConfig(true, true, true, true);
+    Tokenizer tokenizer = new Tokenizer(expr, config);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing brace not found", ex.getMessage());
+  }
+}

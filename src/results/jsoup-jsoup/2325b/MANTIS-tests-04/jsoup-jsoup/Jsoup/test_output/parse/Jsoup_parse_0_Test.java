@@ -1,0 +1,152 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(String html, String baseUri) with non-empty html and baseUri returns Document with correct baseUri")
+    public void test_TC01_O1() {
+        String html = "<p>test</p>";
+        String baseUri = "https://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertTrue(doc.html().contains("<p>test</p>"), "HTML should contain the provided markup"),
+            () -> assertEquals(baseUri, doc.baseUri(), "Base URI should match the provided non-empty baseUri")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(String html, String baseUri) with empty baseUri yields Document with empty baseUri")
+    public void test_TC02_O1() {
+        String html = "<div/>";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("", doc.baseUri(), "Empty baseUri should be preserved as empty");
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parse(String html) uses empty baseUri default")
+    public void test_TC03_O2() {
+        String html = "<span/>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri(), "Default baseUri for single-arg parse should be empty");
+    }
+
+    @Test
+    @DisplayName("TC04_O3: parse(String html, Parser parser) invokes parser.parseInput with empty baseUri")
+    public void test_TC04_O3() {
+        String html = "x";
+        StubParser stub = new StubParser(); 
+        Document returned = Jsoup.parse(html, stub);
+        assertAll(
+            () -> assertEquals("x", stub.lastHtml, "Parser.parseInput should receive the passed html"),
+            () -> assertEquals("", stub.lastBaseUri, "Parser.parseInput should receive empty baseUri by default"),
+            () -> assertSame(stub.returnDoc, returned, "Returned Document should be the one from stub parser")
+        );
+    }
+
+    @Test
+    @DisplayName("TC05_O4: parse(String html, String baseUri, Parser parser) passes arguments to parser.parseInput")
+    public void test_TC05_O4() {
+        String html = "a";
+        String baseUri = "b";
+        StubParser stub = new StubParser();
+        Document returned = Jsoup.parse(html, baseUri, stub);
+        assertAll(
+            () -> assertEquals("a", stub.lastHtml, "Parser.parseInput should get the html argument"),
+            () -> assertEquals("b", stub.lastBaseUri, "Parser.parseInput should get the baseUri argument"),
+            () -> assertSame(stub.returnDoc, returned, "Should return the stub's document")
+        );
+    }
+
+    @Test
+    @DisplayName("TC06_O5: parse(File file, String charsetName, String baseUri) throws IOException when file not found")
+    public void test_TC06_O5() {
+        File missing = new File("/no/such/path/definitelyNotExist.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(missing, null, "b"), "Should throw IOException for missing file");
+    }
+
+    @Test
+    @DisplayName("TC07_O6: parse(File file, String charsetName) loads file and resolves baseUri from file path")
+    public void test_TC07_O6() throws IOException {
+        File tmp = File.createTempFile("jsoupTest", ".html");
+        tmp.deleteOnExit();
+        try (BufferedWriter w = new BufferedWriter(new FileWriter(tmp))) {
+            w.write("<p>f</p>");
+        }
+        Document doc = Jsoup.parse(tmp, "UTF-8");
+        assertAll(
+            () -> assertTrue(doc.html().contains("<p>f</p>"), "Should read HTML content from file"),
+            () -> assertEquals(tmp.getAbsolutePath(), doc.baseUri(), "BaseUri should be the file's absolute path")
+        );
+    }
+
+    @Test
+    @DisplayName("TC08_O7: parse(URL url, int timeoutMillis) with valid HTTP URL returns fetched Document")
+    public void test_TC08_O7() throws Exception {
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange t) throws IOException {
+                byte[] resp = "<h1>ok</h1>".getBytes("UTF-8");
+                t.getResponseHeaders().add("Content-Type", "text/html; charset=UTF-8");
+                t.sendResponseHeaders(200, resp.length);
+                t.getResponseBody().write(resp);
+                t.getResponseBody().close();
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://localhost:" + port + "/");
+        Document doc = Jsoup.parse(url, 1000);
+        server.stop(0);
+        assertTrue(doc.html().contains("<h1>ok</h1>"), "Fetched document should contain the server's HTML");
+    }
+
+    @Test
+    @DisplayName("TC09_O8: parseBodyFragment(String bodyHtml, String baseUri) with preserveRelativeLinks=true returns unchanged relative link")
+    public void test_TC09_O8() {
+        String bodyHtml = "<a href='/x'>x</a>";
+        Safelist stubList = new Safelist(); // Changed to use the correct constructor
+        String result = Jsoup.clean(bodyHtml, "", stubList);
+        assertTrue(result.contains("href=\"/x\""), "Relative link should be preserved when preserveRelativeLinks is true");
+    }
+
+    // Stub Parser recording inputs and returning a dummy Document
+    private static class StubParser extends Parser {
+        String lastHtml;
+        String lastBaseUri;
+        final Document returnDoc = Document.createShell("");
+
+        public StubParser() { super(new Parser.Settings()); } // Fixed constructor to call super with settings
+
+        @Override
+        public Document parseInput(String html, String baseUri) {
+            this.lastHtml = html;
+            this.lastBaseUri = baseUri;
+            return returnDoc;
+        }
+    }
+}

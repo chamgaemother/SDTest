@@ -1,0 +1,66 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Parser.setTrackPosition method, covering enabling, disabling, and chaining behavior.
+ */
+public class Parser_setTrackPosition_Test {
+
+    @Test
+    @DisplayName("Calling setTrackPosition(true) on a new Parser sets trackPosition from false to true and returns the same instance")
+    public void test_TC01() {
+        // GIVEN: a fresh HTML parser with default trackPosition=false
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start as false");
+
+        // WHEN: enabling position tracking (branch true)
+        Parser result = parser.setTrackPosition(true);
+
+        // THEN: the same instance is returned, and trackPosition flips to true
+        assertAll(
+            () -> assertSame(parser, result, "setTrackPosition should return the same parser instance"),
+            () -> assertTrue(parser.isTrackPosition(), "trackPosition should be true after setTrackPosition(true)")
+        );
+    }
+
+    @Test
+    @DisplayName("Calling setTrackPosition(false) on a new Parser leaves trackPosition false and returns the same instance")
+    public void test_TC02() {
+        // GIVEN: a fresh XML parser with default trackPosition=false
+        Parser parser = Parser.xmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start as false");
+
+        // WHEN: disabling position tracking (branch false)
+        Parser result = parser.setTrackPosition(false);
+
+        // THEN: the same instance is returned, and trackPosition remains false
+        assertAll(
+            () -> assertSame(parser, result, "setTrackPosition should return the same parser instance"),
+            () -> assertFalse(parser.isTrackPosition(), "trackPosition should remain false after setTrackPosition(false)")
+        );
+    }
+
+    @Test
+    @DisplayName("Chaining setTrackPosition(true) then setTrackPosition(false) flips trackPosition from false→true→false on the same instance")
+    public void test_TC03() {
+        // GIVEN: a new Parser instance (HTML tree) with default trackPosition=false
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start as false");
+
+        // WHEN: first enable tracking (branch true), then disable tracking (branch false)
+        Parser first = parser.setTrackPosition(true);
+        Parser second = first.setTrackPosition(false);
+
+        // THEN: each call returns the same parser instance, and final state is trackPosition=false
+        assertAll(
+            () -> assertSame(parser, first, "First call should return the same parser instance"),
+            () -> assertSame(parser, second, "Second call should return the same parser instance"),
+            () -> assertFalse(parser.isTrackPosition(), "trackPosition should be false after chaining true then false")
+        );
+    }
+}

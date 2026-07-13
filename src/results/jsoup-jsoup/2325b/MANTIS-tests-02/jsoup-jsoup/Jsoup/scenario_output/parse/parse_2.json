@@ -1,0 +1,271 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(String, String, Parser) with null baseUri throws IllegalArgumentException",
+      "path": "B0→B1(html≠null)→B2(baseUri==null)→B6",
+      "precondition": "Parser.htmlParser() available",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse null-baseUri with parser",
+        "  GIVEN",
+        "    String html = \"<p>OK</p>\";",
+        "    String baseUri = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(File, charsetName, baseUri, Parser) returns Document from DataUtil.load with custom parser",
+      "path": "B0→B1→B2→B3(parser≠null)→B4→B5→B9",
+      "precondition": "tempFile exists with content \"<x/>\"",
+      "expectedResult": "Document.body.html() == \"<x/>\" and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse file with custom parser",
+        "  GIVEN",
+        "    File f = tempFile(\".html\",\"<x/>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://a/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<x/>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(Path, charsetName, baseUri, Parser) returns Document using Path overload",
+      "path": "B0→B1→B2→B3(parser≠null)→B4→B5→B9",
+      "precondition": "tempPath exists with content \"<h/>\"",
+      "expectedResult": "Document.body.html() == \"<h/>\" and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse path with custom parser",
+        "  GIVEN",
+        "    Path p = tempPath(\".html\",\"<h/>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"https://site/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h/>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) returns Document using InputStream overload",
+      "path": "B0→B1→B2→B3(parser≠null)→B4→B5→B9",
+      "precondition": "ByteArrayInputStream of \"<i/>\"",
+      "expectedResult": "Document.body.html() == \"<i/>\" and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse stream with custom parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<i/>\".getBytes());",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://b/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i/>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, timeoutMillis) throws SocketTimeoutException on slow response",
+      "path": "B0→B1(connect)→B2(timeout set)→B3(request)→B7(timeout)→exception",
+      "precondition": "HTTP server delays longer than timeout",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "timeout",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse URL timeout",
+        "  GIVEN",
+        "    start HTTP server delaying 200ms per request;",
+        "    URL url = http://localhost:port/;",
+        "  WHEN",
+        "    call Jsoup.parse(url, 50);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=true assigns DummyUri",
+      "path": "B0→B1(baseUri.isEmpty)→B2(safelist.preserveRelativeLinks)→B3→B4→return",
+      "precondition": "Safelist.relaxed().preserveRelativeLinks(true)",
+      "expectedResult": "returned HTML contains absolute URLs starting with DummyUri",
+      "tags": [
+        "positive",
+        "clean",
+        "branch",
+        "safelist"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 clean preserves relative links with DummyUri",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"p.html\\\">x</a>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.relaxed().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert out.contains(\"href=\\\"\" + org.jsoup.internal.SharedConstants.DummyUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=false removes relative href",
+      "path": "B0→B1(baseUri.isEmpty)→B2(!preserveRelativeLinks)→B4→return",
+      "precondition": "Safelist.none() default preserveRelativeLinks=false",
+      "expectedResult": "returned HTML contains no href attribute",
+      "tags": [
+        "negative",
+        "clean",
+        "branch",
+        "safelist"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 clean removes relative links without preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"p.html\\\">x</a>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.none();",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert !out.contains(\"href\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "clean(String, String, Safelist, Document.OutputSettings) applies outputSettings to cleaned document",
+      "path": "B0→B1→B4(clean)→B5(outputSettings)→return",
+      "precondition": "Safe HTML fragment and custom prettyPrint=false",
+      "expectedResult": "returned HTML has no pretty-print indentations",
+      "tags": [
+        "positive",
+        "clean",
+        "outputSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 clean with custom outputSettings",
+        "  GIVEN",
+        "    String html = \"<div><p>x</p></div>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist, os);",
+        "  THEN",
+        "    assert out.equals(\"<p>x</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "isValid(String, Safelist) returns true for HTML matching safelist",
+      "path": "B0→B1→B2→return true",
+      "precondition": "Safelist.simpleText() allows <p>",
+      "expectedResult": "true",
+      "tags": [
+        "positive",
+        "validation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 isValid returns true on compliant HTML",
+        "  GIVEN",
+        "    String html = \"<p>ok</p>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "isValid(String, Safelist) returns false for HTML with disallowed tags",
+      "path": "B0→B1→B2→return false",
+      "precondition": "Safelist.simpleText() disallows <script>",
+      "expectedResult": "false",
+      "tags": [
+        "negative",
+        "validation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC28 isValid returns false on non-compliant HTML",
+        "  GIVEN",
+        "    String html = \"<script>evil()</script>\";",
+        "    Safelist safelist = Safelist.simpleText();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid == false;",
+        "END"
+      ]
+    }
+  ]
+}

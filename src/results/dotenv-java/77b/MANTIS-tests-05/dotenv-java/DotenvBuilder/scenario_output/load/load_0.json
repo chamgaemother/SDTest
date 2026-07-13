@@ -1,0 +1,157 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with default systemProperties=false and empty env list invokes no iterations and returns DotenvImpl",
+      "path": "B0→B1→B2",
+      "precondition": "DotenvParser.parse() stubbed to return empty List<DotenvEntry>; real DotenvReader used",
+      "expectedResult": "returns a Dotenv instance whose entries() and entries(null) both return empty unmodifiable Set; no System properties set",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 load default empty-list",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    stub DotenvParser.parse() to return Collections.emptyList();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with default systemProperties=false and single entry invokes one iteration for systemProperties=false",
+      "path": "B0→B1→B2",
+      "precondition": "DotenvParser.parse() stubbed to return List with one DotenvEntry(\"KEY\",\"VALUE\"); real DotenvReader used",
+      "expectedResult": "returns Dotenv whose entries() contains exactly one DotenvEntry(KEY,VALUE); System.getProperty(\"KEY\") remains null",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 load default one-entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    stub DotenvParser.parse() to return List.of(new DotenvEntry(\"KEY\",\"VALUE\"));",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with default systemProperties=false and multiple entries invokes multiple iterations",
+      "path": "B0→B1→B2",
+      "precondition": "DotenvParser.parse() stubbed to return List of three distinct entries; real DotenvReader used",
+      "expectedResult": "returns Dotenv with entries() of size 3; no System properties modified",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 load default multi-entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    stub DotenvParser.parse() to return List.of(e1,e2,e3);",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().size() == 3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true and empty env list skips forEach and returns DotenvImpl",
+      "path": "B0→B2",
+      "precondition": "builder.systemProperties() called; DotenvParser.parse() stubbed to return empty list",
+      "expectedResult": "returns Dotenv with entries() empty; no System properties set",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties",
+        "priority-P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 load with systemProperties empty-list",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder().systemProperties();",
+        "    stub DotenvParser.parse() to return Collections.emptyList();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() with systemProperties=true and one entry skips forEach in code but intended to set system properties",
+      "path": "B0→B2",
+      "precondition": "builder.systemProperties() called; DotenvParser.parse() stubbed to return List.of(new DotenvEntry(\"A\",\"1\"))",
+      "expectedResult": "returns Dotenv with entries() size 1; System.getProperty(\"A\") == \"1\" (intended behavior)",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "systemProperties",
+        "exception-intent-detection",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 load with systemProperties one-entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder().systemProperties();",
+        "    stub DotenvParser.parse() to return List.of(new DotenvEntry(\"A\",\"1\"));",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"A\").equals(\"1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load() propagates DotenvException when parse() fails",
+      "path": "B0",
+      "precondition": "DotenvParser.parse() stubbed to throw new DotenvException(\"fail\")",
+      "expectedResult": "throws DotenvException with message \"fail\"",
+      "tags": [
+        "exception",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load parse-failure",
+        "  GIVEN",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    stub DotenvParser.parse() to throw new DotenvException(\"fail\");",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException with message \"fail\";",
+        "END"
+      ]
+    }
+  ]
+}

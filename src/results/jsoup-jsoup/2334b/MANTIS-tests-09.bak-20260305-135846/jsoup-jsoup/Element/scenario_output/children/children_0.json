@@ -1,0 +1,108 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on element with no child nodes returns empty Elements (childNodeSize()==0 branch)",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements list = el.children();",
+        "  THEN",
+        "    assert list.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() on element with single Element child builds list via loop once (childNodeSize()>0, shadowChildrenRef==null, one iteration)",
+      "path": "B0→B1→B3→B4(loop×1)→B5",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\"); // one element child",
+      "expectedResult": "returned Elements list has size 1 and contains the span child",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Elements list = parent.children();",
+        "  THEN",
+        "    assert list.size() == 1 && list.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() on element with mixed Node children filters only Element instances (childNodeSize()>0, shadowChildrenRef==null, multiple iterations)",
+      "path": "B0→B1→B3→B4(loop×3)→B5",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"text\")); parent.appendElement(\"p\"); parent.appendChild(new Comment(\"cmt\"));",
+      "expectedResult": "returned Elements list has size 1 and contains only the <p> element",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"text\"));",
+        "    Element p = parent.appendElement(\"p\");",
+        "    parent.appendChild(new Comment(\"cmt\"));",
+        "  WHEN",
+        "    Elements list = parent.children();",
+        "  THEN",
+        "    assert list.size() == 1 && list.get(0) == p;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() uses cached shadowChildrenRef on second call (shadowChildrenRef!=null branch)",
+      "path": "B0→B1→B3→B4(loop×1)→B5→B0→B1→B3→B5",
+      "precondition": "Element parent = new Element(\"div\"); Element c = parent.appendElement(\"a\"); parent.children(); // prime cache",
+      "expectedResult": "second call to children() returns list of size 1 containing the same cached child",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "cache-hit",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c = parent.appendElement(\"a\");",
+        "    parent.children();",
+        "  WHEN",
+        "    Elements list2 = parent.children();",
+        "  THEN",
+        "    assert list2.size() == 1 && list2.get(0) == c;",
+        "END"
+      ]
+    }
+  ]
+}

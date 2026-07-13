@@ -1,0 +1,193 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "parse(html, baseUri, parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown for null parser",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 null-parser-overload",
+        "  GIVEN",
+        "    String html = \"<p>X</p>\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(File, charsetName, baseUri, parser) with XML parser returns Document with supplied parser",
+      "path": "B0→B3→B5",
+      "precondition": "File exists containing '<h3>F</h3>'",
+      "expectedResult": "Document body contains <h3>F</h3> and baseUri set to provided value",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 file-overload-with-parser",
+        "  GIVEN",
+        "    File file = tempFileWithContent(\"<h3>F</h3>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"https://base/\";",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, xmlParser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.select(\"h3\").first().text().equals(\"F\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(Path, charsetName, baseUri) for existing path returns Document",
+      "path": "B0→B3→B6",
+      "precondition": "Path to temp HTML file containing '<p>P</p>'",
+      "expectedResult": "Document body contains <p>P</p> and baseUri equals path.toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 path-overload-with-charset-baseUri",
+        "  GIVEN",
+        "    Path path = tempPathWithContent(\"<p>P</p>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://u/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>P</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(Path, charsetName) with null charsetName defaults to UTF-8 and baseUri from path",
+      "path": "B0→B3→B7",
+      "precondition": "Path to temp HTML file containing '<div>D</div>'",
+      "expectedResult": "Document body contains <div>D</div> and baseUri equals path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "default"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 path-overload-with-null-charset",
+        "  GIVEN",
+        "    Path path = tempPathWithContent(\"<div>D</div>\");",
+        "    String charset = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<div>D</div>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(Path) with missing file throws IOException",
+      "path": "B0→B8",
+      "precondition": "Path to non-existent file",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload",
+        "path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 path-overload-nonexistent-file",
+        "  GIVEN",
+        "    Path path = Paths.get(\"no-such-file.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(path);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(InputStream, charsetName, baseUri) without parser uses default HTML parser",
+      "path": "B0→B9→B10",
+      "precondition": "ByteArrayInputStream containing '<li>Item</li>'",
+      "expectedResult": "Document body contains <li>Item</li> and baseUri equals provided baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 stream-overload-without-parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<li>Item</li>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<li>Item</li>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(InputStream, charsetName, baseUri) with corrupt stream throws IOException",
+      "path": "B0→B9→B11",
+      "precondition": "InputStream that throws IOException on read",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stream",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 stream-overload-corrupt",
+        "  GIVEN",
+        "    InputStream in = new InputStream() { public int read() throws IOException { throw new IOException(); } };",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    }
+  ]
+}

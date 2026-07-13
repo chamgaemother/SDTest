@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "charset(html, updateMetaCharset=true, meta[charset] absent, obsolete meta[name=charset] present) appends new meta[charset] and removes obsolete",
+      "path": "B0→B1(true)→html-syntax→no-meta[charset]→append-meta[charset]→remove-meta[name=charset]→exit",
+      "precondition": "Document shell with head containing only <meta name=\"charset\">",
+      "expectedResult": "New <meta charset> added and obsolete <meta name=charset> removed; outputSettings.charset updated",
+      "tags": [
+        "positive",
+        "html",
+        "append",
+        "removal",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 charset appends and removes in HTML when obsolete only",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"ISO-8859-5\"));",
+        "  THEN",
+        "    // A new meta[charset] is created with ISO-8859-5",
+        "    assertEquals(\"ISO-8859-5\", doc.selectFirst(\"meta[charset]\").attr(\"charset\"));",
+        "    // The obsolete meta[name=charset] is removed",
+        "    assertTrue(doc.select(\"meta[name=charset]\").isEmpty());"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "charset(xml, updateMetaCharset=true, first child is XmlDeclaration with non-xml name) prepends new xml declaration",
+      "path": "B0→B1(true)→xml-syntax→first-child-instance(XmlDeclaration)→inner-else→prepend-new-xml-decl→exit",
+      "precondition": "Document(new) with syntax=xml, updateMetaCharset=true, first child XmlDeclaration named \"notxml\"",
+      "expectedResult": "A new XmlDeclaration named 'xml' prepended with version=1.0 and encoding set; original decl pushed to second position",
+      "tags": [
+        "positive",
+        "xml",
+        "prepend",
+        "declaration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 charset prepends when first XmlDeclaration has wrong name",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration wrong = new XmlDeclaration(\"notxml\", false);",
+        "    doc.prependChild(wrong);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-32\"));",
+        "  THEN",
+        "    // New xml declaration is at index 0",
+        "    Node first = doc.childNodes().get(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration xd = (XmlDeclaration) first;",
+        "    assertEquals(\"xml\", xd.name());",
+        "    assertEquals(\"UTF-32\", xd.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", xd.attr(\"version\"));",
+        "    // Original wrong-named declaration is now second",
+        "    assertSame(wrong, doc.childNodes().get(1));"
+      ]
+    }
+  ]
+}

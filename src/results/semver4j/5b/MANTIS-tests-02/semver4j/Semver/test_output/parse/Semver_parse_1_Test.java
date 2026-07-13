@@ -1,0 +1,32 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(\"01.2.3\") returns null when numeric identifier has leading zero")
+    void test_TC07() {
+        // Scenario TC07: invalid semver string due to leading zero in major component
+        String version = "01.2.3";
+        // WHEN: attempting to parse invalid version with leading zero
+        Semver result = Semver.parse(version);
+        // THEN: parser should reject leading zeros and return null
+        assertNull(result, "Expected parse to return null for version with leading zero in major");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3+build.1.2\") returns Semver with build metadata only")
+    void test_TC08() {
+        // Scenario TC08: valid semver with build metadata only, no pre-release
+        String version = "1.2.3+build.1.2";
+        // WHEN: parsing a valid semver string containing only build metadata
+        Semver result = Semver.parse(version);
+        // THEN: parser should succeed and return non-null Semver with exact version string
+        assertNotNull(result, "Expected parse to return non-null for valid semver with build metadata");
+        assertEquals("1.2.3+build.1.2", result.getVersion(),
+                "Expected getVersion() to return the original version including build metadata only");
+    }
+}

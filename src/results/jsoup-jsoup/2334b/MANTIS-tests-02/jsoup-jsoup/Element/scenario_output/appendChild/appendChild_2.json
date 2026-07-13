@@ -1,0 +1,39 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild(node) when child is already in this element moves it to end and updates sibling indices",
+      "path": "B0→B3(reparentChild remove)→B4(has EmptyNodes false in ensureChildNodes)→B5",
+      "precondition": "parent element has three children and one of them will be moved",
+      "expectedResult": "moved child is now last in childNodes, other children shift indices accordingly",
+      "tags": [
+        "positive",
+        "reparent",
+        "same-parent"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild same-parent move-to-end",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"a\");",
+        "    TextNode middle = new TextNode(\"b\");",
+        "    TextNode last = new TextNode(\"c\");",
+        "    parent.appendChild(first).appendChild(middle).appendChild(last);",
+        "    // initial order: [first(0), middle(1), last(2)]",
+        "  WHEN",
+        "    parent.appendChild(middle);",
+        "  THEN",
+        "    // order should now be [first, last, middle]",
+        "    assert parent.childNode(0) == first;",
+        "    assert parent.childNode(1) == last;",
+        "    assert parent.childNode(2) == middle;",
+        "    // sibling indices updated: first=0, last=1, middle=2",
+        "    assert first.siblingIndex() == 0;",
+        "    assert last.siblingIndex() == 1;",
+        "    assert middle.siblingIndex() == 2;"
+      ]
+    }
+  ]
+}

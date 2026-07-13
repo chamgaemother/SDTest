@@ -1,0 +1,122 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String overload with empty fragment and null context returns empty node list (branch: fragment.isEmpty(), context==null)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned list size is 0",
+      "tags": [
+        "overload:String,Element,String",
+        "branch:empty-fragment",
+        "context-null",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput empty-string-null-context",
+        "  GIVEN",
+        "    String fragment = \"\"; Element context = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String overload with single element fragment and non-null context returns one node (branch: fragment non-empty, context!=null, single element)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document shell created for context; use Jsoup to create context Element",
+      "expectedResult": "returned list size is 1; node tagName is \"span\"",
+      "tags": [
+        "overload:String,Element,String",
+        "branch:single-element",
+        "context-non-null",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput one-element-fragment-with-context",
+        "  GIVEN",
+        "    String fragment = \"<span>text</span>\"; Element context = new Document(\"http://x\").body(); String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> result = Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert ((Element)result.get(0)).tagName().equals(\"span\");"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "Reader overload with multi-element fragment returns two nodes (branch: fragment non-empty, loop iterations N=2)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned list size is 2; first node tagName is \"a\", second is \"b\"",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch:multi-element",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O2 parseFragmentInput reader-multi-element",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<a></a><b></b>\"); Element context = null; String baseUri = \"urn:test\";",
+        "  WHEN",
+        "    List<Node> result = new Parser(new HtmlTreeBuilder()).parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 2; assert ((Element)result.get(0)).tagName().equals(\"a\"); assert ((Element)result.get(1)).tagName().equals(\"b\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "String overload with null baseUri throws NullPointerException (branch: baseUri==null)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "branch:baseUri-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O1 parseFragmentInput null-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<p></p>\"; Element context = null; String baseUri = null;",
+        "  WHEN",
+        "    call Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "Reader overload with Reader throwing IOException wraps in UncheckedIOException (branch: Reader.ioException)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Reader stub throws IOException on read; mocking necessary to simulate I/O error",
+      "expectedResult": "throws UncheckedIOException; no nodes returned",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "branch:io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O2 parseFragmentInput reader-io-exception",
+        "  GIVEN",
+        "    Reader fragment = new Reader(){ public int read(char[] cbuf,int off,int len){ throw new IOException(\"fail\"); } public void close(){} }; Element context = null; String baseUri = \"x\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    }
+  ]
+}

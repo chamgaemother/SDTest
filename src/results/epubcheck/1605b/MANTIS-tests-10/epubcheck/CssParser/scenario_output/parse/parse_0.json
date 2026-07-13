@@ -1,0 +1,244 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty input yields no rules (hasNext==false)",
+      "path": "B0→B1→B8",
+      "precondition": "Reader over empty string; real CssErrorHandler and CssContentHandler",
+      "expectedResult": "doc.startDocument() called once; doc.endDocument() called once; no selectors or declarations invoked",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    verify(contentHandler).startDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single ruleset input exercises non-ATKEYWORD branch (branch-false) once",
+      "path": "B0→B1→B2→B4→B7→B1→B8",
+      "precondition": "Reader over \"h1 { color:red; }\"; real handlers",
+      "expectedResult": "contentHandler.startDocument(); contentHandler.selectors(...) with one selector; contentHandler.declaration(...) with one declaration; contentHandler.endSelectors(...); contentHandler.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color:red; }\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert contentHandler.received one selectors and one declaration;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single at-rule without block exercises ATKEYWORD branch (branch-true) once",
+      "path": "B0→B1→B2→B3→B7→B1→B8",
+      "precondition": "Reader over \"@import 'a.css';\"; real handlers",
+      "expectedResult": "contentHandler.startDocument(); contentHandler.startAtRule(\"import\"); contentHandler.endAtRule(\"import\"); contentHandler.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@import 'a.css';\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert contentHandler.startAtRule(\"import\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Mixed two iterations: first ruleset then at-rule",
+      "path": "B0→B1→B2→B4→B7→B1→B2→B3→B7→B1→B8",
+      "precondition": "Reader over \"h1{} @charset 'utf-8';\"; real handlers",
+      "expectedResult": "contentHandler.selectors([...]); contentHandler.declaration(...); contentHandler.startAtRule(\"charset\"); contentHandler.endAtRule(\"charset\");",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "branch-true",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse mixed-rules",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{} @charset 'utf-8';\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert sequence of selectors then at-rule events;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "scan() throws IOException propagates up",
+      "path": "B0",
+      "precondition": "Reader whose read() throws IOException via custom Reader stub",
+      "expectedResult": "throws IOException; no document events invoked",
+      "tags": [
+        "exception",
+        "scan-IOException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan-ioexception",
+        "  GIVEN",
+        "    Reader reader = new Reader(){public int read(char[]c,int o,int l)throws IOException{throw new IOException(\"fail\");}};",
+        "  WHEN",
+        "    call parser.parse(reader, \"id\", errHandler, contentHandler)",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "scan() throws CssException propagates up",
+      "path": "B0",
+      "precondition": "Stub CssParser.scan to throw CssException via subclass exposing scan; explain mocking necessary as private scan",
+      "expectedResult": "throws CssException; no doc.startDocument()",
+      "tags": [
+        "exception",
+        "scan-CssException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan-CssException",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser()); stub(parser).scan(any(),any(),any()).toThrow(new CssGrammarException(...));",
+        "  WHEN",
+        "    call parser.parse(reader, \"id\", errHandler, contentHandler)",
+        "  THEN",
+        "    throws CssException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Premature EOF in ruleset breaks loop (NoSuchElementException→PrematureEOFException)",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "Reader over \"h1 { color:red;\" missing closing brace; real handlers",
+      "expectedResult": "contentHandler.startDocument(); errHandler.error(GRAMMAR_PREMATURE_EOF); contentHandler.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse ruleset-premature-eof",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color:red;\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert errHandler.error called with PREMATURE_EOF;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Premature EOF in at-rule breaks loop",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Reader over \"@media screen { h1 { color:red;\" missing braces; real handlers",
+      "expectedResult": "contentHandler.startDocument(); errHandler.error(GRAMMAR_PREMATURE_EOF); contentHandler.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse atrule-premature-eof",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media screen { h1 { color:red;\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert errHandler.error called with PREMATURE_EOF;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Multiple rulesets (N>2) all non-ATKEYWORD",
+      "path": "B0→B1→B2→B4→B7→B1→B2→B4→B7→B1→B2→B4→B7→B1→B8",
+      "precondition": "Reader over three simple rulesets; real handlers",
+      "expectedResult": "three selectors and their declarations; startDocument and endDocument once",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse multi-rulesets",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{}p{}div{}\" );",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert contentHandler.selectors called 3 times;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Multiple at-rules (N>1) all ATKEYWORD",
+      "path": "B0→B1→B2→B3→B7→B1→B2→B3→B7→B1→B8",
+      "precondition": "Reader over two at-rules; real handlers",
+      "expectedResult": "startAtRule/endAtRule invoked twice; endDocument",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse multi-atrules",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@a;@b;\" );",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errHandler, contentHandler);",
+        "  THEN",
+        "    assert atRule 'a' and 'b' processed;",
+        "END"
+      ]
+    }
+  ]
+}

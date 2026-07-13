@@ -1,0 +1,119 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("TC01: load() with no entries and systemProperties=false skips setting system properties")
+    public void test_TC01() throws IOException {
+        // Arrange: ensure no .env file present
+        Path envPath = Paths.get(".env");
+        Files.deleteIfExists(envPath);
+        DotenvBuilder builder = Dotenv.configure(); // systemProperties=false by default
+
+        // Act: load should not set any system properties from file (branch false, skip loop)
+        Dotenv dotenv = builder.load();
+
+        // Assert: entries(filter) returns only file entries (none) -> empty
+        Set<DotenvEntry> fileEntries = dotenv.entries(f -> true);
+        assertTrue(fileEntries.isEmpty(), "Expected no entries from empty or missing .env file");
+        // Also ensure that no system property was added for some random key
+        assertNull(System.getProperty("NON_EXISTENT_KEY"), "No new system properties should be set");
+    }
+
+    @Test
+    @DisplayName("TC02: load() with no entries and systemProperties=true still loops zero times")
+    public void test_TC02() throws IOException {
+        // Arrange: create empty .env file and record existing system properties
+        Path envPath = Paths.get(".env");
+        Files.write(envPath, new byte[0], StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        Properties before = new Properties();
+        before.putAll(System.getProperties());
+
+        DotenvBuilder builder = Dotenv.configure().systemProperties(); // branch true, but loop0
+
+        // Act
+        Dotenv dotenv = builder.load();
+
+        // Assert: no entries from file
+        assertTrue(dotenv.entries(f -> true).isEmpty(), "Expected no entries for empty .env file");
+        // Assert: no new system properties beyond those before
+        Set<String> afterKeys = System.getProperties().stringPropertyNames();
+        assertTrue(afterKeys.containsAll(before.stringPropertyNames()), "No new system props beyond original");
+        // cleanup
+        Files.deleteIfExists(envPath);
+    }
+
+    @Test
+    @DisplayName("TC03: load() with one entry and systemProperties=true sets exactly one System property")
+    public void test_TC03() throws IOException {
+        // Arrange: write a single entry, clear any existing KEY1
+        Path envPath = Paths.get(".env");
+        Files.write(envPath, Collections.singletonList("KEY1=VALUE1"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("KEY1");
+        DotenvBuilder builder = Dotenv.configure().systemProperties(); // branch true, loop1
+
+        // Act
+        Dotenv dotenv = builder.load();
+
+        // Assert: system property set
+        assertEquals("VALUE1", System.getProperty("KEY1"), "KEY1 should be set to VALUE1 as system property");
+        // Assert: entries(filter) returns the file entry
+        Set<DotenvEntry> entries = dotenv.entries(f -> true);
+        assertEquals(1, entries.size(), "Expected exactly one entry from .env file");
+        assertTrue(entries.stream().anyMatch(e -> e.getKey().equals("KEY1") && e.getValue().equals("VALUE1")),
+                   "Expected DotenvEntry(KEY1, VALUE1)");
+        // cleanup
+        Files.deleteIfExists(envPath);
+        System.clearProperty("KEY1");
+    }
+
+    @Test
+    @DisplayName("TC04: load() with multiple entries and systemProperties=true sets all file entries as System properties")
+    public void test_TC04() throws IOException {
+        // Arrange: write two entries, clear any existing system properties A and B
+        Path envPath = Paths.get(".env");
+        Files.write(envPath, Arrays.asList("A=1", "B=2"), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+        System.clearProperty("A");
+        System.clearProperty("B");
+        DotenvBuilder builder = Dotenv.configure().systemProperties(); // branch true, loop N
+
+        // Act
+        Dotenv dotenv = builder.load();
+
+        // Assert: both system properties set
+        assertEquals("1", System.getProperty("A"), "A should be set to 1");
+        assertEquals("2", System.getProperty("B"), "B should be set to 2");
+        // Assert: entries(filter) contains both entries
+        Set<DotenvEntry> entries = dotenv.entries(f -> true);
+        Set<String> keys = entries.stream().map(DotenvEntry::getKey).collect(Collectors.toSet());
+        assertTrue(keys.containsAll(Arrays.asList("A", "B")), "Entries should contain both keys A and B");
+        // cleanup
+        Files.deleteIfExists(envPath);
+        System.clearProperty("A");
+        System.clearProperty("B");
+    }
+
+    @Test
+    @DisplayName("TC05: load() throws DotenvException when .env file is missing and throwIfMissing=true")
+    public void test_TC05() throws IOException {
+        // Arrange: ensure .env file is absent, default throwIfMissing=true
+        Path envPath = Paths.get(".env");
+        Files.deleteIfExists(envPath);
+        DotenvBuilder builder = Dotenv.configure(); // default throwIfMissing=true
+
+        // Act & Assert: expect DotenvException
+        assertThrows(DotenvException.class, builder::load, "Should throw DotenvException when .env is missing");
+    }
+}

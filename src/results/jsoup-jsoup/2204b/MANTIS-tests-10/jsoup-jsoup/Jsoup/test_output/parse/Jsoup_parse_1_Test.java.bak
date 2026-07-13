@@ -1,0 +1,150 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC10: parse(File, charsetName, baseUri) reads UTF-8 file and resolves relative URL in HTML")
+    public void test_TC10() throws IOException {
+        // GIVEN: a temp HTML file with a relative link to foo.html
+        Path tmp = Files.createTempFile("tc10", ".html");
+        String html = "<a href=\"foo.html\">link</a>";
+        Files.write(tmp, html.getBytes(StandardCharsets.UTF_8));
+        File file = tmp.toFile();
+        String charset = "UTF-8";
+        String baseUri = "http://host/";
+        // WHEN: parsing file with explicit charset and baseUri (DataUtil.load -> Parser.parse)
+        Document doc = Jsoup.parse(file, charset, baseUri);
+        // THEN: absUrl should resolve to baseUri + "foo.html"
+        String abs = doc.select("a").first().absUrl("href");
+        assertEquals("http://host/foo.html", abs, "Relative URL should be resolved against provided baseUri");
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC11: parse(File, charsetName, baseUri, Parser) uses xmlParser to preserve tag case from file")
+    public void test_TC11() throws IOException {
+        // GIVEN: a temp HTML file containing an XML-like tag <Tag>Value</Tag>
+        Path tmp = Files.createTempFile("tc11", ".html");
+        String xmlHtml = "<Tag>Value</Tag>";
+        Files.write(tmp, xmlHtml.getBytes(StandardCharsets.UTF_8));
+        File file = tmp.toFile();
+        String charset = "UTF-8";
+        String baseUri = "";
+        Parser parser = Parser.xmlParser();
+        // WHEN: parsing file with explicit xml parser (DataUtil.load -> parser.parseInput)
+        Document doc = Jsoup.parse(file, charset, baseUri, parser);
+        // THEN: the tag case is preserved in the body HTML
+        String bodyHtml = doc.body().html();
+        assertTrue(bodyHtml.contains("<Tag>Value</Tag>"),
+                "Using xmlParser should preserve original tag case and structure");
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC12: parse(Path, charsetName, baseUri) reads XML content via Path and resolves baseUri")
+    public void test_TC12() throws IOException {
+        // GIVEN: a temp Path file with <img src="i.png"/>
+        Path tmp = Files.createTempFile("tc12", ".html");
+        String imgHtml = "<img src=\"i.png\"/>";
+        Files.write(tmp, imgHtml.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String baseUri = "https://x.com/";
+        // WHEN: parsing path overload (DataUtil.load -> Parser.parse)
+        Document doc = Jsoup.parse(tmp, charset, baseUri);
+        // THEN: img src is resolved against baseUri
+        String abs = doc.select("img").first().absUrl("src");
+        assertEquals("https://x.com/i.png", abs,
+                "Image src should be resolved to baseUri + 'i.png'");
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC13: parse(Path, charsetName) reads HTML and uses file absolute path as baseUri")
+    public void test_TC13() throws IOException {
+        // GIVEN: a temp Path file with <div>OK</div>
+        Path tmp = Files.createTempFile("tc13", ".html");
+        String divHtml = "<div>OK</div>";
+        Files.write(tmp, divHtml.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        // WHEN: parsing path with charset only (DataUtil.load -> Parser.parse)
+        Document doc = Jsoup.parse(tmp, charset);
+        // THEN: body html matches input; baseUri influences only absUrl, not body content
+        assertEquals("<div>OK</div>", doc.body().html(),
+                "Body HTML should match the file content exactly");
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC14: parse(Path) reads HTML, auto-detects charset and uses absolute path as baseUri")
+    public void test_TC14() throws IOException {
+        // GIVEN: a temp Path file with <span>v</span>
+        Path tmp = Files.createTempFile("tc14", ".html");
+        String spanHtml = "<span>v</span>";
+        Files.write(tmp, spanHtml.getBytes(StandardCharsets.UTF_8));
+        // WHEN: parsing path default overload (DataUtil.load -> Parser.parse)
+        Document doc = Jsoup.parse(tmp);
+        // THEN: body html matches input exactly
+        assertEquals("<span>v</span>", doc.body().html(),
+                "Default parse(Path) should read content and not alter it");
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC15: parse(InputStream, charsetName, baseUri) reads stream and resolves relative link")
+    public void test_TC15() throws IOException {
+        // GIVEN: InputStream over '<a href="r.html">r</a>' and track close
+        class TrackStream extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackStream(byte[] buf) { super(buf); }
+            @Override public void close() throws IOException { closed = true; super.close(); }
+        }
+        byte[] data = "<a href=\"r.html\">r</a>".getBytes(StandardCharsets.UTF_8);
+        TrackStream in = new TrackStream(data);
+        String charset = "UTF-8";
+        String baseUri = "ftp://ignore/";
+        // WHEN: parsing stream overload (DataUtil.load -> Parser.parse)
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        // THEN: absUrl should resolve relative url; stream is closed after parse
+        String abs = doc.select("a").first().absUrl("href");
+        assertEquals("ftp://ignore/r.html", abs,
+                "Relative link should resolve to baseUri + 'r.html'");
+        assertTrue(in.closed, "InputStream should be closed by parse call");
+    }
+
+    @Test
+    @DisplayName("TC16: parse(InputStream, charsetName, baseUri, Parser) uses xmlParser on stream")
+    public void test_TC16() throws IOException {
+        // GIVEN: InputStream over '<X>1</X>' tracking close and xml parser
+        class TrackStream extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackStream(byte[] buf) { super(buf); }
+            @Override public void close() throws IOException { closed = true; super.close(); }
+        }
+        byte[] data = "<X>1</X>".getBytes(StandardCharsets.UTF_8);
+        TrackStream in = new TrackStream(data);
+        String charset = "UTF-8";
+        String baseUri = "";
+        Parser parser = Parser.xmlParser();
+        // WHEN: parsing with xmlParser (DataUtil.load -> parser.parseInput)
+        Document doc = Jsoup.parse(in, charset, baseUri, parser);
+        // THEN: body html retains original XML tag case and stream is closed
+        assertEquals("<X>1</X>", doc.body().html(),
+                "xmlParser should preserve tag case and structure");
+        assertTrue(in.closed, "InputStream should be closed by parse call");
+    }
+}

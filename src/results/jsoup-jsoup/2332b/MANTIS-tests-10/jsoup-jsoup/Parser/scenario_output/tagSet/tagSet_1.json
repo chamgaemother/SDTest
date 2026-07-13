@@ -1,0 +1,157 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setTrackErrors(0) disables error tracking branch and isTrackErrors returns false",
+      "path": "B0→B1(false)→B2→B3",
+      "precondition": "Parser created via htmlParser()",
+      "expectedResult": "isTrackErrors() == false and getErrors().getMaxSize() == 0",
+      "tags": [
+        "branch",
+        "negative",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 disable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == false;",
+        "    assert parser.getErrors().getMaxSize() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors(5) enables tracking branch and isTrackErrors returns true",
+      "path": "B0→B1(true)→B4→B3",
+      "precondition": "Parser created via xmlParser()",
+      "expectedResult": "isTrackErrors() == true and getErrors().getMaxSize() == 5",
+      "tags": [
+        "branch",
+        "positive",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 enable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == true;",
+        "    assert parser.getErrors().getMaxSize() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackPosition(true) flips trackPosition branch and isTrackPosition returns true",
+      "path": "B0→B5(true)→B6",
+      "precondition": "Parser.newInstance() from htmlParser",
+      "expectedResult": "isTrackPosition() == true",
+      "tags": [
+        "branch",
+        "positive",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 enable-position-tracking",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser();",
+        "    Parser parser = original.newInstance();",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert parser.isTrackPosition() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() deep copies settings, errors, and trackPosition state",
+      "path": "B0→B7→B8→B9",
+      "precondition": "Parser configured with tracking and custom ParseSettings",
+      "expectedResult": "clone and original differ by object identity but share same settings values",
+      "tags": [
+        "branch",
+        "clone",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone-deep-copy",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser()",
+        "      .setTrackErrors(3)",
+        "      .setTrackPosition(true)",
+        "      .settings(ParseSettings.preserveCase);",
+        "  WHEN",
+        "    Parser copy = original.clone();",
+        "  THEN",
+        "    assert copy != original;",
+        "    assert copy.settings() != original.settings();",
+        "    assert copy.isTrackErrors() == original.isTrackErrors();",
+        "    assert copy.isTrackPosition() == original.isTrackPosition();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "htmlParser() returns Parser with HtmlTreeBuilder and default HTML namespace path",
+      "path": "B0→B10→B11",
+      "precondition": "none",
+      "expectedResult": "defaultNamespace() == NamespaceHtml",
+      "tags": [
+        "branch",
+        "static-factory",
+        "html"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 htmlParser-default-namespace",
+        "  GIVEN",
+        "    none",
+        "  WHEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  THEN",
+        "    assert \"http://www.w3.org/1999/xhtml\".equals(parser.defaultNamespace());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "xmlParser() returns Parser with XmlTreeBuilder and default XML namespace path",
+      "path": "B0→B12→B13",
+      "precondition": "none",
+      "expectedResult": "defaultNamespace() == NamespaceXml",
+      "tags": [
+        "branch",
+        "static-factory",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 xmlParser-default-namespace",
+        "  GIVEN",
+        "    none",
+        "  WHEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  THEN",
+        "    assert \"http://www.w3.org/XML/1998/namespace\".equals(parser.defaultNamespace());",
+        "END"
+      ]
+    }
+  ]
+}

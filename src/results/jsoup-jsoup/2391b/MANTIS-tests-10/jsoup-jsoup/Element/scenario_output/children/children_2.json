@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "children() with userData having childElsKey but missing childElsMod forces fresh filterNodes path",
+      "path": "B0→B3→B5→B7→B9→B10(filterNodes)→B12(stashChildren)→B13(return)",
+      "precondition": "parent has one Element child; attributes().userData contains jsoup.childElsKey but no jsoup.childElsMod",
+      "expectedResult": "children() returns actual child list of size 1 despite cache key present",
+      "tags": [
+        "cache-miss",
+        "filterNodes",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 children missing-mod triggers fresh list",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "    // inject only key, no mod to force cache miss",
+        "    String key = reflectChildElsKey();",
+        "    parent.attributes().userData().put(key, new WeakReference<>(List.of(new Element(\"fake\"))));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "children() second call uses cachedChildren branch after real stashChildren from first call",
+      "path": "B0→B3→B5→B7→B9→B10(filterNodes)→B12(stashChildren)→B13(return)→B3→B5→B7→B8(cachedChildren != null)→B13(return)",
+      "precondition": "parent has two Element children; no manual userData injection before first call",
+      "expectedResult": "first children() returns two children, second children() returns same two-element list from cache",
+      "tags": [
+        "cache-hit",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 children real cache hit on second call",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"a\"));",
+        "    parent.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 2;",
+        "    assert second.size() == 2;",
+        "    assert first == second; // same cached instance",
+        "END"
+      ]
+    }
+  ]
+}

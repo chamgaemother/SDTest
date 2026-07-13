@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "parse at-rule with block containing declarations exercises hasBlock=true and hasRuleSet=false path",
+      "path": "B0→B1→B2→B4→(handleAtRule start)→doc.startAtRule→handleDeclarationBlock→doc.declaration→doc.endAtRule→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "startAtRule, declaration, endAtRule, endDocument called without errors",
+      "tags": [
+        "positive",
+        "at-rule",
+        "declaration-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 at-rule-with-block-declaration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo { color: blue; }\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    CssParser parser = new CssParser(Locale.ENGLISH);",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert no errors in err;",
+        "    assert doc.startAtRuleCount == 1;",
+        "    assert doc.declarationCount == 1;",
+        "    assert doc.endAtRuleCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse at-rule with invalid parameter exercises unexpected-token branch in handleAtRuleParam",
+      "path": "B0→B1→B2→B4→handleAtRule→param-fail→err.error→skip to matching '}'→return→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "error reported once; endDocument still called",
+      "tags": [
+        "negative",
+        "at-rule",
+        "error-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 at-rule-invalid-param",
+        "  GIVEN",
+        "    // Supply a token sequence where handleAtRuleParam returns null",
+        "    TestableCssParser parser = new TestableCssParser() {",
+        "      @Override CssTokenIterator provideIterator() {",
+        "        // ATKEYWORD '@x', then a token invalid as param, then close brace",
+        "        return new StubIterator(",
+        "          new CssToken(Type.ATKEYWORD, \"@x\"),",
+        "          new CssToken(Type.CDOT, \":\"),",
+        "          new CssToken(Type.CDC, \"}\")",
+        "        );",
+        "      }",
+        "    };",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"\"), \"id\", err, doc);",
+        "  THEN",
+        "    assert err.errorCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseStyleAttribute skips leading semicolons and parses a declaration then ends document",
+      "path": "StyleAttr: start→while(iter.hasNext)→skip ';'→handleDeclaration→doc.declaration→endDocument",
+      "precondition": "none",
+      "expectedResult": "one declaration reported; endDocument called; no errors",
+      "tags": [
+        "positive",
+        "style-attribute",
+        "iteration",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parseStyleAttribute-leading-semicolon",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\";margin:10px\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "    CssParser parser = new CssParser(Locale.ENGLISH);",
+        "  WHEN",
+        "    parser.parseStyleAttribute(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.declarationCount == 1;",
+        "    assert doc.endDocumentCalled == true;",
+        "    assert no errors in err;",
+        "END"
+      ]
+    }
+  ]
+}

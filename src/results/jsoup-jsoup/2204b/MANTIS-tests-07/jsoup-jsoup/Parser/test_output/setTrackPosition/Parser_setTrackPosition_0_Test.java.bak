@@ -1,0 +1,42 @@
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_setTrackPosition_Test {
+
+    @Test
+    @DisplayName("TC01: setTrackPosition(true) enables position tracking (trackPosition changes from default false to true)")
+    public void test_TC01() {
+        // GIVEN: a new HTML parser with default trackPosition = false
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start as false");
+
+        // WHEN: enabling position tracking
+        Parser result = parser.setTrackPosition(true);
+        // The inline comment below explains coverage of B0→B1→B2: we go through the setter path to set trackPosition true.
+        // This triggers the branch that assigns true to trackPosition.
+
+        // THEN: the returned instance is the same as the original, and tracking is enabled
+        assertSame(parser, result, "setTrackPosition should return the same Parser instance");
+        assertTrue(parser.isTrackPosition(), "After setTrackPosition(true), isTrackPosition() should be true");
+    }
+
+    @Test
+    @DisplayName("TC02: setTrackPosition(false) keeps position tracking disabled (trackPosition remains false)")
+    public void test_TC02() {
+        // GIVEN: a new HTML parser with default trackPosition = false
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: trackPosition should start as false");
+
+        // WHEN: explicitly disabling position tracking
+        Parser result = parser.setTrackPosition(false);
+        // The inline comment below explains coverage of B0→B1→B2: we go through the setter path to set trackPosition false.
+        // This covers the branch where setting false leaves trackPosition unchanged at false.
+
+        // THEN: the returned instance is the same as the original, and tracking remains disabled
+        assertSame(parser, result, "setTrackPosition should return the same Parser instance");
+        assertFalse(parser.isTrackPosition(), "After setTrackPosition(false), isTrackPosition() should remain false");
+    }
+}

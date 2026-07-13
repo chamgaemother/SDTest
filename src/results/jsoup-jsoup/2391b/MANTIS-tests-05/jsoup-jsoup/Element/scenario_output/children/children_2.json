@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() uses cached childElementsList when invoked a second time without modifications (cache-hit path)",
+      "path": "B0→B1(childNodeSize>0)→B2(enter childElementsList)→B3(cachedChildren()!=null)→B4(return cached list)→B5(wrap into Elements)",
+      "precondition": "Element with two Element children, no modifications between calls",
+      "expectedResult": "Second children() returns size 2 and contains original children, using cached list internally",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache-hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"p\");",
+        "    Element b = new Element(\"span\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second.size() == 2;",
+        "    assert second.get(0) == a;",
+        "    assert second.get(1) == b;",
+        "    // Internally from cache, though list instances differ, childElementsList used cached path",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() invalidates cache and rebuilds childElementsList when childNodes.modCount changes (cache-miss on modCount mismatch)",
+      "path": "B0→B1(childNodeSize>0)→B2(childElementsList initial)→B3(stashChildren)→B6(modCount mismatch)→B4(filterNodes)→B5(stashChildren)→B7(wrap into Elements)",
+      "precondition": "Element with two Element children, children() called once to populate cache, then a new child appended to change modCount",
+      "expectedResult": "After modification, children() returns updated list of size 3 and is a different backing childElementsList instance",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children cache-invalidate-on-modcount",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"p\");",
+        "    Element b = new Element(\"span\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    Elements first = parent.children(); // populates cache",
+        "  WHEN",
+        "    parent.appendChild(new Element(\"em\")); // modCount changes",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second.size() == 3;",
+        "    assert second.get(0) == a;",
+        "    assert second.get(1) == b;",
+        "    assert second.get(2).tagName().equals(\"em\");",
+        "    // childElementsList was rebuilt due to modCount mismatch",
+        "END"
+      ]
+    }
+  ]
+}

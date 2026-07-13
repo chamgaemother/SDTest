@@ -1,0 +1,35 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Parser.setTrackPosition and newInstance behavior.
+ */
+public class Parser_setTrackPosition_Test {
+
+    @Test
+    @DisplayName("newInstance() creates a deep copy preserving trackPosition=true and independent TreeBuilder")
+    public void test_TC03() {
+        // GIVEN: create an HTML parser and enable trackPosition to satisfy the branch where trackPosition was true
+        Parser original = Parser.htmlParser().setTrackPosition(true);
+        // Inline check to ensure original parser has trackPosition enabled
+        assertTrue(original.isTrackPosition(), 
+            "Precondition: original parser should have trackPosition enabled");
+
+        // WHEN: create a copy via newInstance(), which should preserve trackPosition and produce independent TreeBuilder
+        Parser copy = original.newInstance();
+
+        // THEN: ensure the copy is not the same object as the original (deep copy)
+        assertNotSame(original, copy, 
+            "Deep copy should yield a different Parser instance");
+        // The trackPosition flag should be true in the new parser, preserving the original state
+        assertTrue(copy.isTrackPosition(), 
+            "Copy should preserve trackPosition=true from original");
+        // The TreeBuilder instances should be independent, not the same object
+        assertNotSame(original.getTreeBuilder(), copy.getTreeBuilder(), 
+            "TreeBuilder should be a new instance in the copied parser");
+    }
+}

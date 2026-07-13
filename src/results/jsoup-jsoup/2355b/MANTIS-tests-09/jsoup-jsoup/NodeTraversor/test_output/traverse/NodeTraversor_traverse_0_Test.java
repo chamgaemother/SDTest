@@ -1,0 +1,172 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_0_Test {
+
+    @Test
+    @DisplayName("visitor null triggers Validate.notNull(visitor) IllegalArgumentException")
+    public void test_TC01_O1() {
+        NodeVisitor visitor = null;
+        Node root = new Element("div");
+        // branch-visitor-null: first argument is null, should trigger Validate.notNull
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("root null triggers Validate.notNull(root) IllegalArgumentException")
+    public void test_TC02_O1() {
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) {}
+            @Override public void tail(Node node, int depth) {}
+        };
+        Node root = null;
+        // branch-root-null: second argument is null, should trigger Validate.notNull
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("single-node tree (no children) calls head and tail once")
+    public void test_TC03_O1() {
+        Element root = new Element("div");
+        List<Node> seen = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node n, int d) { seen.add(n); }
+            @Override public void tail(Node n, int d) { seen.add(n); }
+        };
+        // branch-parent-null and loop-0: root has no parent and no children
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(2, seen.size());
+        assertSame(root, seen.get(0));
+        assertSame(root, seen.get(1));
+    }
+
+    @Test
+    @DisplayName("two-level tree descends into child and ascends back")
+    public void test_TC04_O1() {
+        Element div = new Element("div");
+        Element span = new Element("span");
+        div.appendChild(span);
+        List<String> seq = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node n, int d) { seq.add(n.nodeName() + "@" + d); }
+            @Override public void tail(Node n, int d) { seq.add(n.nodeName() + "@" + d); }
+        };
+        // branch-descend: div has a child -> descend; branch-ascend: then ascend back to div
+        NodeTraversor.traverse(visitor, div);
+        List<String> expected = List.of("div@0", "span@1", "span@1", "div@0");
+        assertEquals(expected, seq);
+    }
+
+    @Test
+    @DisplayName("child replaced in head triggers replace branch")
+    public void test_TC05_O1() {
+        Element div = new Element("div");
+        Element child = new Element("p");
+        div.appendChild(child);
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                if (n == child) {
+                    // simulate replace branch: replace child with <b>
+                    n.replaceWith(new Element("b"));
+                }
+            }
+            @Override public void tail(Node n, int d) { }
+        };
+        // branch-replace: child replaced during head, parent.childNodeSize remains same
+        NodeTraversor.traverse(visitor, div);
+        // verify that div now has <b> as first child
+        assertEquals("b", div.child(0).tagName());
+    }
+
+    @Test
+    @DisplayName("child removed in head triggers removal branch and skip tail")
+    public void test_TC06_O1() {
+        Element div = new Element("div");
+        Element child = new Element("p");
+        div.appendChild(child);
+        List<Node> seen = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                if (n == child) {
+                    // simulate removal branch: remove child in head
+                    n.remove();
+                }
+            }
+            @Override
+            public void tail(Node n, int d) {
+                seen.add(n);
+            }
+        };
+        // branch-remove: child removed, should not be visited in tail
+        NodeTraversor.traverse(visitor, div);
+        assertTrue(div.children().isEmpty(), "Child should be removed from parent");
+        assertTrue(seen.isEmpty(), "Removed node should not appear in tail calls");
+    }
+
+    @Test
+    @DisplayName("visitor null in Elements overload triggers IllegalArgumentException")
+    public void test_TC07_O2() {
+        NodeVisitor visitor = null;
+        Elements els = new Elements();
+        // overload:Elements branch-visitor-null
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, els)); // Fixed: Removed (Elements) cast
+    }
+
+    @Test
+    @DisplayName("elements null in Elements overload triggers IllegalArgumentException")
+    public void test_TC08_O2() {
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) {}
+            @Override public void tail(Node node, int depth) {}
+        };
+        Elements els = null;
+        // overload:Elements branch-elements-null
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, els)); // Fixed: Removed (Elements) cast
+    }
+
+    @Test
+    @DisplayName("empty Elements list yields no traversal calls")
+    public void test_TC09_O2() {
+        List<Node> seen = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node n, int d) { seen.add(n); }
+            @Override public void tail(Node n, int d) { seen.add(n); }
+        };
+        Elements els = new Elements();
+        // branch-empty-list: no elements to traverse
+        NodeTraversor.traverse(visitor, els);
+        assertTrue(seen.isEmpty(), "No nodes should be visited for empty Elements");
+    }
+
+    @Test
+    @DisplayName("multiple Elements list traverses each element subtree in order")
+    public void test_TC10_O2() {
+        Element a = new Element("a");
+        Element b = new Element("b");
+        Elements els = new Elements(a, b);
+        List<String> seq = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node n, int d) { seq.add(n.nodeName()); }
+            @Override public void tail(Node n, int d) { seq.add(n.nodeName()); }
+        };
+        // branch-multiple-list: two elements, each with no children => head+tail per element
+        NodeTraversor.traverse(visitor, els);
+        List<String> expected = List.of("a", "a", "b", "b");
+        assertEquals(expected, seq);
+    }
+}

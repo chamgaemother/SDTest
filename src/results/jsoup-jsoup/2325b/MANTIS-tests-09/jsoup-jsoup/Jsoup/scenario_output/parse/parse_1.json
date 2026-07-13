@@ -1,0 +1,126 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(String html, String baseUri, Parser parser) uses provided parser and preserves baseUri",
+      "path": "B0→B2→B7→B8",
+      "precondition": "none",
+      "expectedResult": "Document parsed by xmlParser with element count and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse with html, baseUri, and parser",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"x\\\">link</a>\";",
+        "    String base = \"http://test/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, base, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(base);",
+        "    assert doc.getElementsByTag(\"a\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(String html, String baseUri, null) throws IllegalArgumentException for null parser",
+      "path": "B0→B2→B9",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse with null parser",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "    String base = \"\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, base, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(String html) returns Document with empty baseUri and correct body content",
+      "path": "B0→B1→B4→B6",
+      "precondition": "none",
+      "expectedResult": "Document has empty baseUri and body matches input",
+      "tags": [
+        "positive",
+        "overload",
+        "default-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse with only html",
+        "  GIVEN",
+        "    String html = \"<div>X</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.body().html().equals(\"<div>X</div>\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) wraps fragment in body and resolves relative links",
+      "path": "B0→B3→B10→B11",
+      "precondition": "none",
+      "expectedResult": "Document body contains fragment and baseUri used to resolve links",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseBodyFragment with html and baseUri",
+        "  GIVEN",
+        "    String fragment = \"<img src=\\\"img.png\\\">\";",
+        "    String base = \"http://site.com/path/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<img src=\\\"http://site.com/path/img.png\\\">\");"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseBodyFragment(String bodyHtml) uses empty baseUri and no URL resolution",
+      "path": "B0→B3→B10→B12",
+      "precondition": "none",
+      "expectedResult": "Document body contains fragment with original relative src",
+      "tags": [
+        "positive",
+        "fragment",
+        "default-baseUri"
+      ],
+      "priority": "P3",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parseBodyFragment with only html",
+        "  GIVEN",
+        "    String fragment = \"<img src=\\\"a.png\\\">\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"src=\\\"a.png\\\"\");"
+      ]
+    }
+  ]
+}

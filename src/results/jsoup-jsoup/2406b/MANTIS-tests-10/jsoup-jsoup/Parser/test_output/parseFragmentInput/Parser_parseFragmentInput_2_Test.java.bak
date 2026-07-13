@@ -1,0 +1,63 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_Test {
+
+    @Test
+    @DisplayName("parseFragmentInput(String, non-null context) with real HtmlTreeBuilder returns parsed Element nodes")
+    public void test_TC09() {
+        // Scenario TC09: positive path, using real HtmlTreeBuilder, non-null context
+        Parser parser = Parser.htmlParser();
+        String fragment = "<div><span>hi</span></div>";
+        Element context = new Element("body");
+        String baseUri = "http://example.com";
+        // B0→B1→B2→B3: should parse using lock and delegate to HtmlTreeBuilder.parseFragment
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        // Expect exactly one root element <div>
+        assertEquals(1, result.size(), "Expected one root node for the fragment");
+        Node node0 = result.get(0);
+        assertTrue(node0 instanceof Element, "Expected the parsed node to be an Element");
+        Element elem = (Element) node0;
+        assertEquals("div", elem.tagName(), "Expected the tag name of the element to be 'div'");
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader, null context) with real XmlTreeBuilder returns parsed Node list for XML fragment")
+    public void test_TC10() {
+        // Scenario TC10: positive path, using real XmlTreeBuilder, null context
+        Parser parser = Parser.xmlParser();
+        Reader reader = new StringReader("<root><child/></root>");
+        Element context = null;
+        String baseUri = "";
+        // B0→B1→B2→B3: parseFragmentInput should handle Reader input and null context
+        List<Node> result = parser.parseFragmentInput(reader, context, baseUri);
+        // Expect one root element named "root"
+        assertEquals(1, result.size(), "Expected one root node for the XML fragment");
+        Node node0 = result.get(0);
+        assertEquals("root", node0.nodeName(), "Expected the nodeName of the root to be 'root'");
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader, context) with null Reader throws NullPointerException after lock")
+    public void test_TC11() {
+        // Scenario TC11: negative path, Reader is null => NullPointerException
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        Element context = new Element("div");
+        String baseUri = "http://example.com";
+        // B0→B1→B2(ex)→B3: lock acquired then underlying parseFragment called with null Reader
+        assertThrows(NullPointerException.class, () -> {
+            parser.parseFragmentInput(reader, context, baseUri);
+        }, "Expected NullPointerException when Reader is null");
+    }
+}

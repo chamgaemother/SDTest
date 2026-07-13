@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "isFormSubmittable returns true for uppercase known submittable tag with preserveCase=false",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is true and tag.getName() == \"input\"",
+      "tags": [
+        "positive",
+        "preserve-case-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 uppercase-input with preserveCase=false",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.lowercase; // preserveTagCase() == false",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag.getName().equals(\"input\");",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "isFormSubmittable returns false for known submittable tag with a non-HTML namespace",
+      "path": "B0→B1→B2(ns-mismatch)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "namespace-mismatch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 input with wrong namespace yields non-submittable",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String fakeNamespace = \"http://example.com/custom\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, fakeNamespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

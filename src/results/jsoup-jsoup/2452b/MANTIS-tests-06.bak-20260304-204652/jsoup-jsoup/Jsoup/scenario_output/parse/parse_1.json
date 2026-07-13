@@ -1,0 +1,222 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName) uses file path as baseUri and UTF-8 charset when provided",
+      "path": "B0→B1→B2→B3",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "Document contains parsed content with correct text",
+      "tags": [
+        "positive",
+        "overload",
+        "File"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse file two-arg overload",
+        "  GIVEN",
+        "    File f pointing to file with '<span>hello</span>';",
+        "    String charset = 'UTF-8';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, charset);",
+        "  THEN",
+        "    assert doc.select('span').text() == 'hello';"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File) uses BOM or meta to detect charset and file path as baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "file with BOM and '<em>e</em>' content exists",
+      "expectedResult": "Document contains 'e' text",
+      "tags": [
+        "positive",
+        "overload",
+        "File",
+        "BOM"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse file single-arg overload",
+        "  GIVEN",
+        "    File f with BOM followed by '<em>e</em>' bytes;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f);",
+        "  THEN",
+        "    assert doc.select('em').text() == 'e';"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File, charsetName, baseUri, parser) uses custom parser on gzipped file",
+      "path": "B0→B1→B4→B5",
+      "precondition": "gzipped .gz HTML file exists",
+      "expectedResult": "XML parser produces correct element count",
+      "tags": [
+        "positive",
+        "overload",
+        "File",
+        "parser",
+        "gzip"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse gzipped file with custom parser",
+        "  GIVEN",
+        "    File f.gz containing '<item/>';",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, 'UTF-8', 'base', xml);",
+        "  THEN",
+        "    assert doc.select('item').size() == 1;"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path, charsetName) reads Path with provided charset and resolves baseUri automatically",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Path to HTML file exists",
+      "expectedResult": "Document parsed correctly with provided charset",
+      "tags": [
+        "positive",
+        "overload",
+        "Path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse Path two-arg overload",
+        "  GIVEN",
+        "    Path p to file with '<div>ok</div>' UTF-8;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, 'UTF-8');",
+        "  THEN",
+        "    assert doc.select('div').text() == 'ok';"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path) auto-detects charset and uses absolute path for baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Path to HTML file with BOM and '<i>it</i>' exists",
+      "expectedResult": "Document contains 'it' text",
+      "tags": [
+        "positive",
+        "overload",
+        "Path",
+        "BOM"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse Path single-arg overload",
+        "  GIVEN",
+        "    Path p to file with BOM + '<i>it</i>';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p);",
+        "  THEN",
+        "    assert doc.select('i').text() == 'it';"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path, charsetName, baseUri, parser) applies custom parser on Path",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Path to XML-style file exists",
+      "expectedResult": "Parser.xmlParser produces element",
+      "tags": [
+        "positive",
+        "overload",
+        "Path",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse Path with custom parser",
+        "  GIVEN",
+        "    Path p to file '<tag/>' UTF-8;",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, 'UTF-8', 'u', xml);",
+        "  THEN",
+        "    assert doc.select('tag').size() == 1;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri) closes stream and parses with given charset",
+      "path": "B0→B1→B2→B3",
+      "precondition": "InputStream with '<b>bs</b>' bytes open",
+      "expectedResult": "Document contains 'bs' text and stream is closed",
+      "tags": [
+        "positive",
+        "overload",
+        "InputStream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse InputStream without parser",
+        "  GIVEN",
+        "    InputStream in with '<b>bs</b>' UTF-8;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, 'UTF-8', 'u');",
+        "  THEN",
+        "    assert doc.select('b').text() == 'bs';"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(InputStream, charsetName, baseUri, parser) with xml parser",
+      "path": "B0→B1→B4→B5",
+      "precondition": "InputStream containing '<x/>' is open",
+      "expectedResult": "Parsed one x element",
+      "tags": [
+        "positive",
+        "overload",
+        "InputStream",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse InputStream with custom parser",
+        "  GIVEN",
+        "    InputStream in with '<x/>' UTF-8;",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, 'UTF-8', 'u', xml);",
+        "  THEN",
+        "    assert doc.select('x').size() == 1;"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(File, charsetName) throws IOException on invalid charset",
+      "path": "B0→B1→EX",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "UnsupportedCharsetException wrapped in IOException",
+      "tags": [
+        "negative",
+        "exception",
+        "File"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse file invalid charset",
+        "  GIVEN",
+        "    File f with '<p>p</p>' content;",
+        "    String charset = 'BAD-CHARSET';",
+        "  WHEN",
+        "    call Jsoup.parse(f, charset);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    }
+  ]
+}

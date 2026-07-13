@@ -1,0 +1,59 @@
+{
+  "method": "outputSettings",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "outputSettings() returns the default OutputSettings instance when no setter was called",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // uses default constructor",
+      "expectedResult": "returned OutputSettings is the same instance as doc.outputSettings() initial field; charset()==UTF-8, prettyPrint()==true, syntax()==html",
+      "tags": [
+        "positive",
+        "default-state",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 default-output-settings",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    OutputSettings settings = doc.outputSettings();",
+        "  THEN",
+        "    assert settings == doc.outputSettings();",
+        "    assert settings.charset().equals(DataUtil.UTF_8);",
+        "    assert settings.prettyPrint();",
+        "    assert settings.syntax() == OutputSettings.Syntax.html;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "outputSettings() returns the newly set OutputSettings instance after setter invocation",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"http://example.com\"); OutputSettings custom = new OutputSettings().charset(\"ISO-8859-1\").prettyPrint(false).syntax(OutputSettings.Syntax.xml);",
+      "expectedResult": "returned OutputSettings == custom; charset()==ISO-8859-1, prettyPrint()==false, syntax()==xml",
+      "tags": [
+        "positive",
+        "post-setter",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 custom-output-settings",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    OutputSettings custom = new OutputSettings().charset(\"ISO-8859-1\").prettyPrint(false).syntax(OutputSettings.Syntax.xml);",
+        "    doc.outputSettings(custom);",
+        "  WHEN",
+        "    OutputSettings result = doc.outputSettings();",
+        "  THEN",
+        "    assert result == custom;",
+        "    assert result.charset().equals(Charset.forName(\"ISO-8859-1\"));",
+        "    assert !result.prettyPrint();",
+        "    assert result.syntax() == OutputSettings.Syntax.xml;"
+      ]
+    }
+  ]
+}

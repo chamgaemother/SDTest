@@ -1,0 +1,41 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.nio.charset.Charset;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class Document_outputSettings_1_Test {
+
+    @Test
+    @DisplayName("outputSettings(null) throws IllegalArgumentException with a non-empty message")
+    public void test_TC03() {
+        // B0->B1->B5: calling with null triggers Validate.notNull check and throws IllegalArgumentException
+        Document doc = new Document("baseUri");
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            doc.outputSettings(null);
+        });
+        // verify exception message contains the required 'must not be null' clause
+        assertTrue(ex.getMessage().contains("must not be null"),
+                "Expected exception message to mention must not be null");
+    }
+
+    @Test
+    @DisplayName("outputSettings(...) can be chained to override multiple settings instances")
+    public void test_TC04() {
+        // B0->B1->B2->B3->B4: chaining two distinct OutputSettings instances
+        Document doc = new Document("baseUri");
+        OutputSettings first = new OutputSettings().prettyPrint(false);
+        OutputSettings second = new OutputSettings().outline(true);
+        // WHEN: chain calls
+        Document returned = doc.outputSettings(first).outputSettings(second);
+        // THEN: chaining should return the same Document instance
+        assertSame(doc, returned, "Chaining outputSettings should return the same Document instance");
+        // outline should be set to true by second settings
+        assertTrue(doc.outputSettings().outline(), "Expected outline to be true after applying second settings");
+        // prettyPrint should remain false from the first settings override
+        assertFalse(doc.outputSettings().prettyPrint(), "Expected prettyPrint to remain false from the first settings");
+    }
+}

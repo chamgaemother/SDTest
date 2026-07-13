@@ -1,0 +1,162 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "clone() on empty Document produces distinct deep copy with no child nodes",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "clone is not original, childNodeSize() == 0, modifications to original do not affect clone",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "children",
+        "branch-return"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC06 clone empty document",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, clone);",
+        "    assertEquals(0, clone.childNodeSize());",
+        "    original.appendElement(\"div\");",
+        "    assertEquals(0, clone.childNodeSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() copies nested element structure fully and deep, preserving text",
+      "path": "B0→B1→B2(loop×N)→B3→B4",
+      "precondition": "none",
+      "expectedResult": "clone has identical nested children count and text, modifications to clone do not impact original",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "nested",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07 clone nested structure",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    original.appendElement(\"ul\").appendElement(\"li\").text(\"item1\");",
+        "    original.appendElement(\"li\").text(\"item2\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertEquals(original.childNodeSize(), clone.childNodeSize());",
+        "    assertEquals(\"item1 item2\", clone.select(\"li\").text());",
+        "    clone.selectFirst(\"li\").text(\"changed\");",
+        "    assertEquals(\"item1\", original.selectFirst(\"li\").text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() retains null connection field leading to new session on clone.connection() branch",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original.connection == null",
+      "expectedResult": "clone.connection() returns a new Jsoup.Connection instance, not original",
+      "tags": [
+        "positive",
+        "branch",
+        "connection",
+        "session"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 clone with null connection",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    // connection not set => null",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    Connection c1 = clone.connection();",
+        "    Connection c2 = clone.connection();",
+        "  THEN",
+        "    assertNotNull(c1);",
+        "    assertNotSame(c1, c2);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() copies non-null connection field so clone.connection() returns same session object",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original.connection set to custom Connection",
+      "expectedResult": "clone.connection() returns the same Connection instance as original",
+      "tags": [
+        "positive",
+        "branch",
+        "connection",
+        "session"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC09 clone with existing connection",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    Connection custom = Jsoup.connect(\"http://example.com\").newRequest();",
+        "    original.connection(custom);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertSame(custom, clone.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() copies outputSettings, parser, and quirksMode independently",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original has custom parser, custom outputSettings, custom quirksMode",
+      "expectedResult": "clone.parser and clone.outputSettings and clone.quirksMode match original initially but remain independent after modification",
+      "tags": [
+        "positive",
+        "fields",
+        "independence",
+        "parser",
+        "settings",
+        "quirks"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC10 clone copies fields independently",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    original.parser(Parser.xmlParser());",
+        "    original.outputSettings().prettyPrint(false).outline(true);",
+        "    original.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    // initial copy",
+        "    assertEquals(original.parser().getSettings(), clone.parser().getSettings());",
+        "    assertEquals(original.outputSettings().prettyPrint(), clone.outputSettings().prettyPrint());",
+        "    assertEquals(original.outputSettings().outline(), clone.outputSettings().outline());",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, clone.quirksMode());",
+        "    // mutate clone fields",
+        "    clone.parser(Parser.htmlParser());",
+        "    clone.outputSettings().prettyPrint(true).outline(false);",
+        "    clone.quirksMode(Document.QuirksMode.quirks);",
+        "  AND",
+        "    // original remains unchanged",
+        "    assertEquals(Parser.xmlParser().getSettings(), original.parser().getSettings());",
+        "    assertFalse(original.outputSettings().prettyPrint());",
+        "    assertTrue(original.outputSettings().outline());",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, original.quirksMode());",
+        "END"
+      ]
+    }
+  ]
+}

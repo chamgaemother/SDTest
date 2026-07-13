@@ -1,0 +1,88 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+
+import org.davidmoten.text.utils.WordWrap.Builder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class WordWrap_wrap_2_Test {
+
+    @Test
+    @DisplayName("maxWidth(0) throws IllegalArgumentException when non-positive width passed")
+    public void test_TC16() {
+        // GIVEN a builder from simple text
+        Builder builder = WordWrap.from("text");
+        // WHEN/THEN: maxWidth of zero should trigger validation and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> builder.maxWidth(0),
+                "Expected IllegalArgumentException for non-positive maxWidth");
+    }
+
+    @Test
+    @DisplayName("wrap(Writer) wraps IOException from Writer into IORuntimeException")
+    public void test_TC17() {
+        // GIVEN a reader with some data and a writer that always throws IOException
+        Reader in = new StringReader("data");
+        Builder builder = WordWrap.from(in);
+        Writer out = new Writer() {
+            @Override public void write(char[] cbuf, int off, int len) throws IOException {
+                // simulate I/O failure on write
+                throw new IOException("write failed");
+            }
+            @Override public void flush() throws IOException {}
+            @Override public void close() throws IOException {}
+        };
+        // WHEN/THEN: IOException in wrap should be wrapped into IORuntimeException
+        assertThrows(IORuntimeException.class, () -> builder.wrap(out),
+                "Expected IORuntimeException when underlying writer throws IOException");
+    }
+
+    @Test
+    @DisplayName("from(File,Charset) throws IORuntimeException when input File not found")
+    public void test_TC18() {
+        // GIVEN a non-existent file
+        File file = new File("nonexistent_file_which_does_not_exist.txt");
+        // WHEN/THEN: from(File,Charset) should wrap FileNotFoundException into IORuntimeException
+        assertThrows(IORuntimeException.class,
+                () -> WordWrap.from(file, StandardCharsets.UTF_8),
+                "Expected IORuntimeException for missing input file");
+    }
+
+    @Test
+    @DisplayName("fromUtf8(InputStream) uses InputStream+charset overload and wraps text")
+    public void test_TC19() {
+        // GIVEN an InputStream with 'X Y' in UTF-8
+        byte[] data = "X Y".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        Builder builder = WordWrap.fromUtf8(in);
+        StringWriter out = new StringWriter();
+        // WHEN: we wrap using the writer
+        builder.wrap(out);
+        // THEN: output should equal the original text since it's shorter than default maxWidth
+        assertEquals("X Y", out.toString(),
+                "Expected wrapped output to match input when no wrapping needed");
+    }
+
+    @Test
+    @DisplayName("includeExtraWordChars treats punctuation as word so no punctuation branch")
+    public void test_TC20() {
+        // GIVEN a builder with text containing '?' and configured to include '?' as part of words
+        Builder builder = WordWrap.from("?a");
+        // Including '?' prevents it from being treated as punctuation and split
+        builder.includeExtraWordChars("?");
+        // WHEN: wrap returns the processed string
+        String result = builder.wrap();
+        // THEN: '?' remains attached to 'a' and output is '?a'
+        assertEquals("?a", result,
+                "Expected punctuation '?' to be treated as part of the word and not split");
+    }
+}

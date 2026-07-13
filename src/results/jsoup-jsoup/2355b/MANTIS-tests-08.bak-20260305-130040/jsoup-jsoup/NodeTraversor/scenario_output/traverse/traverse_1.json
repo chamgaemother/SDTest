@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "three-level tree triggers multi-level ascend loop (depth > 0) hitting B17→B18 path",
+      "path": "B0→B1→B5→B11→B12(loop descend twice)→B23→B1→B5→B11→B13→B16→B17→B18→B20→B21",
+      "precondition": "none",
+      "expectedResult": "visitor.head/tail called in order: head:root0, head:c1:1, head:c2:2, tail:c2:2, tail:c1:1, tail:root:0",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-loop"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 multi-level descend and ascend loop",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    Element c1 = new Element(\"c1\");",
+        "    Element c2 = new Element(\"c2\");",
+        "    root.appendChild(c1);",
+        "    c1.appendChild(c2);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) { calls.add(\"head:\"+node.nodeName()+\":\"+depth); }",
+        "      public void tail(Node node, int depth) { calls.add(\"tail:\"+node.nodeName()+\":\"+depth); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assert calls.equals(List.of(",
+        "      \"head:root:0\",",
+        "      \"head:c1:1\",",
+        "      \"head:c2:2\",",
+        "      \"tail:c2:2\",",
+        "      \"tail:c1:1\",",
+        "      \"tail:root:0\"",
+        "    ));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "remove at depth>1 with nextSibling non-null skips tail for removed and ascends correctly",
+      "path": "B0→B1→B5→B11→B12(descend twice)→B23→B1→B5→B11→B6→B9→B10→B1→...→B24",
+      "precondition": "none",
+      "expectedResult": "removed node at depth 2 not tailed, siblings and ancestors still traversed normally",
+      "tags": [
+        "negative",
+        "removal",
+        "depth>1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 removal at depth>1 skips tail of removed",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"span\");",
+        "    Element sibling = new Element(\"a\");",
+        "    root.appendChild(c1);",
+        "    c1.appendChild(c2);",
+        "    root.appendChild(sibling);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) {",
+        "        if (node == c2) { node.remove(); calls.add(\"head:removed:\"+node.nodeName()+\":\"+depth); }",
+        "        else { calls.add(\"head:\"+node.nodeName()+\":\"+depth); }",
+        "      }",
+        "      public void tail(Node node, int depth) { calls.add(\"tail:\"+node.nodeName()+\":\"+depth); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assert calls.equals(List.of(",
+        "      \"head:div:0\",",
+        "      \"head:p:1\",",
+        "      \"head:removed:span:2\",",
+        "      \"head:a:1\",",
+        "      \"tail:a:1\",",
+        "      \"tail:p:1\",",
+        "      \"tail:div:0\"",
+        "    ));",
+        "END"
+      ]
+    }
+  ]
+}

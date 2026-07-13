@@ -1,0 +1,135 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssErrorCode;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssGrammar.CssSelector;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssToken;
+import org.idpf.epubcheck.util.css.CssTokenList.CssTokenIterator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Test class for CssParser.parse(Reader, String, CssErrorHandler, CssContentHandler)
+ * Scenarios: TC14, TC15
+ */
+public class CssParser_parse_Test {
+
+  /**
+   * Minimal error handler recording error codes.
+   */
+  public static class RecordingErrorHandler implements CssErrorHandler {
+    private CssErrorCode lastCode;
+    @Override
+    public void error(CssGrammarException e) {
+      this.lastCode = e.getErrorCode();
+    }
+    public boolean hasErrorCode(CssErrorCode code) {
+      return code.equals(lastCode);
+    }
+  }
+
+  /**
+   * Minimal content handler recording document events and selector events.
+   */
+  public static class RecordingContentHandler implements CssContentHandler {
+    int startDocCount = 0;
+    int endDocCount = 0;
+    int selectorsCount = 0;
+    @Override public void startDocument() { startDocCount++; }
+    @Override public void endDocument() { endDocCount++; }
+    @Override public void selectors(List<CssSelector> selectors) { selectorsCount += selectors.size(); }
+    // The rest of the interface methods can be no-ops
+    @Override public void endSelectors(List<CssSelector> selectors) {}
+    @Override public void declaration(org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration declaration) {}
+    @Override public void startAtRule(org.idpf.epubcheck.util.css.CssGrammar.CssAtRule atRule) {}
+    @Override public void endAtRule(String atRuleName) {}
+  }
+
+  /**
+   * A stub factory for selectors that always returns null.
+   */
+  public static class NullSelectorFactory extends CssSelectorConstructFactory {
+    public NullSelectorFactory(Locale locale) { super(locale); }
+    @Override
+    public List<CssSelector> createSelectorList(CssToken start, CssTokenIterator iter, CssErrorHandler err) {
+      return null;
+    }
+  }
+
+  /**
+   * A stub factory for selectors that returns one dummy selector.
+   */
+  public static class OneSelectorFactory extends CssSelectorConstructFactory {
+    public OneSelectorFactory(Locale locale) { super(locale); }
+    @Override
+    public List<CssSelector> createSelectorList(CssToken start, CssTokenIterator iter, CssErrorHandler err) {
+      // Returns a non-null singleton list to exercise unexpected-close-paren branch.
+      return Collections.singletonList(new CssSelector(start.getChars(), start.location));
+    }
+  }
+
+  @Test
+  @DisplayName("TC14: handleRuleSet branch when selector parsing fails (selectors==null)")
+  public void test_TC14() throws Exception {
+    // GIVEN: input that would trigger createSelectorList -> null
+    Reader reader = new StringReader("anything{}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    // Inject our stub factory to force selectors==null
+    Field selFactoryField = CssParser.class.getDeclaredField("cssSelectorFactory");
+    selFactoryField.setAccessible(true);
+    selFactoryField.set(parser, new NullSelectorFactory(Locale.ENGLISH));
+
+    // WHEN
+    parser.parse(reader, "id", err, doc);
+
+    // THEN
+    // we expect an error reported for unexpected token or selector failure
+    assertTrue(err.hasErrorCode(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN),
+        "Expected GRAMMAR_UNEXPECTED_TOKEN when selectors==null");
+    // No selectors should have been emitted
+    assertEquals(0, doc.selectorsCount, "No selectors should be emitted");
+    // Document start and end are always called once each
+    assertEquals(1, doc.startDocCount, "startDocument should be called exactly once");
+    assertEquals(1, doc.endDocCount, "endDocument should be called exactly once");
+  }
+
+  @Test
+  @DisplayName("TC15: handleRuleSet branch when unexpected close parenthesis after selectors triggers error path")
+  public void test_TC15() throws Exception {
+    // GIVEN: input that would produce a close parenthesis as first token
+    Reader reader = new StringReader("){}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    CssParser parser = new CssParser(Locale.ENGLISH);
+    // Inject a factory that returns non-null so we take the MATCH_CLOSEPAREN branch
+    Field selFactoryField = CssParser.class.getDeclaredField("cssSelectorFactory");
+    selFactoryField.setAccessible(true);
+    selFactoryField.set(parser, new OneSelectorFactory(Locale.ENGLISH));
+
+    // WHEN
+    parser.parse(reader, "id", err, doc);
+
+    // THEN
+    // We expect the parser to report an unexpected ')' token error
+    assertTrue(err.hasErrorCode(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN),
+        "Expected GRAMMAR_UNEXPECTED_TOKEN on unexpected ')'");
+    // Although factory returned one selector, it should not be emitted due to error
+    assertEquals(0, doc.selectorsCount, "Selectors should not be emitted on unexpected ')'");
+    // Document start and end are always called once each
+    assertEquals(1, doc.startDocCount, "startDocument should be called exactly once");
+    assertEquals(1, doc.endDocCount, "endDocument should be called exactly once");
+  }
+}

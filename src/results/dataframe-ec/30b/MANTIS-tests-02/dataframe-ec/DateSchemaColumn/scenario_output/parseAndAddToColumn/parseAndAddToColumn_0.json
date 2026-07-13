@@ -1,0 +1,111 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "aString is null branch-true at r0==null, adds null to column",
+      "path": "B1→B2→B3→B7",
+      "precondition": "Use a simple stub DfColumn that records added values; no mocks necessary",
+      "expectedResult": "stubColumn.getLastAdded() == null",
+      "tags": [
+        "branch-true",
+        "null-input",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn schemaCol = new DateSchemaColumn(csvSchema, \"col\", \"uuuu-M-d\");",
+        "    StubDfColumn stubColumn = new StubDfColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    schemaCol.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "aString is whitespace-only branch-true at trimmed.isEmpty(), adds null to column",
+      "path": "B1→B2→B4→B5→B7",
+      "precondition": "Use a simple stub DfColumn that records added values; no mocks necessary",
+      "expectedResult": "stubColumn.getLastAdded() == null",
+      "tags": [
+        "branch-false-null-check",
+        "branch-true-empty-string",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn empty-string",
+        "  GIVEN",
+        "    DateSchemaColumn schemaCol = new DateSchemaColumn(csvSchema, \"col\", \"uuuu-M-d\");",
+        "    StubDfColumn stubColumn = new StubDfColumn();",
+        "    String aString = \"   \";",
+        "  WHEN",
+        "    schemaCol.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "aString is valid date string branch-false at trimmed.isEmpty(), parsed with strict formatter, adds LocalDate",
+      "path": "B1→B2→B4→B5→B6→B7",
+      "precondition": "Use real DfDateColumn instance to verify correct LocalDate add; no mocks necessary",
+      "expectedResult": "realColumn.getTypedObject(0).equals(LocalDate.of(2023,4,5))",
+      "tags": [
+        "branch-false-null-check",
+        "branch-false-empty-string",
+        "positive",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-date",
+        "  GIVEN",
+        "    DateSchemaColumn schemaCol = new DateSchemaColumn(csvSchema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn realColumn = new DfDateColumn();",
+        "    String aString = \"2023-04-05\";",
+        "  WHEN",
+        "    schemaCol.parseAndAddToColumn(aString, realColumn);",
+        "  THEN",
+        "    assert realColumn.getTypedObject(0).equals(LocalDate.of(2023,4,5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "aString is invalid date string triggers DateTimeParseException in LocalDate.parse",
+      "path": "B1→B2→B4→B5→B6",
+      "precondition": "Use a simple stub DfColumn; no mocks necessary",
+      "expectedResult": "throws DateTimeParseException; stubColumn has no additions",
+      "tags": [
+        "branch-false-null-check",
+        "branch-false-empty-string",
+        "exception",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn invalid-date",
+        "  GIVEN",
+        "    DateSchemaColumn schemaCol = new DateSchemaColumn(csvSchema, \"col\", \"uuuu-M-d\");",
+        "    StubDfColumn stubColumn = new StubDfColumn();",
+        "    String aString = \"not-a-date\";",
+        "  WHEN",
+        "    call schemaCol.parseAndAddToColumn(aString, stubColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    }
+  ]
+}

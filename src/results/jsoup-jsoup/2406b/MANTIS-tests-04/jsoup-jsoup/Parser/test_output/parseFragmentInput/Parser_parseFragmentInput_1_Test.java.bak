@@ -1,0 +1,83 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_Test {
+
+    @Test
+    @DisplayName("parseFragmentInput(String, Element, baseUri) with non-null context and plain text returns a TextNode")
+    public void test_TC11() {
+        // Given a new HTML parser
+        Parser parser = Parser.htmlParser();
+        String fragment = "plain text";
+        // Use a non-null context (body of a new Document) to exercise B1→B2 path
+        Element context = new Document("http://example.com").body();
+        String baseUri = "http://example.com";
+
+        // When: parsing a plain text fragment
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+
+        // Then: exactly one text node whose text equals the input fragment
+        assertAll(
+            () -> assertEquals(1, nodes.size(), "Expected exactly one node in the result list"),
+            () -> {
+                Node node = nodes.get(0);
+                // toString() on a TextNode returns its text content
+                assertEquals("plain text", node.toString(), "The text content should match the input fragment");
+            }
+        );
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader, Element, baseUri) with null baseUri throws NullPointerException")
+    public void test_TC12() {
+        // Given a new HTML parser
+        Parser parser = Parser.htmlParser();
+        // Reader over a simple HTML fragment
+        Reader reader = new StringReader("<a></a>");
+        Element context = new Document("http://x").body();
+        String baseUri = null; // Null baseUri to trigger null check path B5
+
+        // When/Then: calling with null baseUri should throw NPE immediately
+        assertThrows(NullPointerException.class, () -> {
+            parser.parseFragmentInput(reader, context, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader, null, baseUri) with Reader that throws IOException results in UncheckedIOException")
+    public void test_TC13() {
+        // Given a new HTML parser
+        Parser parser = Parser.htmlParser();
+        // Faulty Reader that always throws IOException on read to force UncheckedIOException in parseFragmentInput
+        Reader faulty = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override
+            public void close() throws IOException {
+                // no-op
+            }
+        };
+        Element context = null; // null context still passed to treeBuilder
+        String baseUri = "http://x"; // valid baseUri
+
+        // When/Then: IO on reader should be wrapped as UncheckedIOException
+        assertThrows(UncheckedIOException.class, () -> {
+            parser.parseFragmentInput(faulty, context, baseUri);
+        });
+    }
+}

@@ -1,0 +1,83 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_1_Test {
+
+    @Test
+    @DisplayName("load() throws DotenvException when .env is missing and throwIfMissing=true (default)")
+    void test_TC05() throws IOException {
+        // GIVEN: a temp directory with no .env file, default throwIfMissing=true triggers exception on missing file
+        Path dir = Files.createTempDirectory("env");
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString());
+        // WHEN & THEN: loading without ignoreIfMissing should throw DotenvException
+        assertThrows(DotenvException.class, builder::load);
+    }
+
+    @Test
+    @DisplayName("load() returns Dotenv without exception when .env is missing and ignoreIfMissing() called")
+    void test_TC06() throws IOException, DotenvException {
+        // GIVEN: a temp directory with no .env file, ignoreIfMissing disables throwing on missing file
+        Path dir = Files.createTempDirectory("env");
+        DotenvBuilder builder = Dotenv.configure()
+                .directory(dir.toString())
+                .ignoreIfMissing();
+        // WHEN: load succeeds without exception
+        Dotenv dotenv = builder.load();
+        // THEN: entries() merges only system env (no file entries)
+        Set<DotenvEntry> allEntries = dotenv.entries();
+        assertEquals(System.getenv().size(), allEntries.size(),
+                "entries() size should match system env when .env is missing and ignored");
+        // entries(filter) should return only file entries, which are none => empty
+        Set<DotenvEntry> fileEntries = dotenv.entries(entry -> true);
+        assertTrue(fileEntries.isEmpty(), "entries(filter) should be empty when no file entries");
+    }
+
+    @Test
+    @DisplayName("load() returns Dotenv and merges file entries when systemProperties=false and .env has entries")
+    void test_TC07() throws IOException, DotenvException {
+        // GIVEN: a temp directory with .env containing two entries, systemProperties not set so false path
+        Path dir = Files.createTempDirectory("env");
+        Path envFile = dir.resolve(".env");
+        String content = "FOO=bar\nBAZ=qux";
+        Files.write(envFile, content.getBytes());
+        DotenvBuilder builder = Dotenv.configure().directory(dir.toString());
+        // WHEN: load merges file entries into Dotenv
+        Dotenv dotenv = builder.load();
+        // THEN: no system properties should be set for FOO or BAZ
+        assertNull(System.getProperty("FOO"), "System property 'FOO' should not be set when systemProperties=false");
+        assertNull(System.getProperty("BAZ"), "System property 'BAZ' should not be set when systemProperties=false");
+        // Dotenv.get should return file values
+        assertEquals("bar", dotenv.get("FOO"), "dotenv.get should return 'bar' for FOO");
+        assertEquals("qux", dotenv.get("BAZ"), "dotenv.get should return 'qux' for BAZ");
+        // entries(filter) with non-null filter returns only file entries => size 2
+        Set<DotenvEntry> fileEntries = dotenv.entries(entry -> true);
+        assertEquals(2, fileEntries.size(), "entries(filter) size should be 2 for two file entries");
+    }
+
+    @Test
+    @DisplayName("load() throws DotenvException when .env malformed and throwIfMalformed=true (default) and no systemProperties side‐effects")
+    void test_TC08() throws IOException {
+        // GIVEN: a temp directory with malformed .env, ignoreIfMissing() so missing-file ignoring but malformed still throws
+        Path dir = Files.createTempDirectory("env");
+        Path envFile = dir.resolve(".env");
+        Files.write(envFile, "BADLINE".getBytes());
+        DotenvBuilder builder = Dotenv.configure()
+                .directory(dir.toString())
+                .ignoreIfMissing();
+        // WHEN & THEN: malformed line should trigger DotenvException
+        DotenvException ex = assertThrows(DotenvException.class, builder::load,
+                "Malformed .env should cause DotenvException even if missing-file is ignored");
+        // AND: no system property for the malformed key
+        assertNull(System.getProperty("BADLINE"),
+                "System property 'BADLINE' should not be set when parsing fails");
+    }
+}

@@ -1,0 +1,87 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class BM25InvertedIndex_search_0_Test {
+
+    @Test
+    @DisplayName("search(term) returns empty list when index contains no mapping for the lowercase term (branch-false)")
+    void test_TC01() {
+        // Given a fresh index with no entries, B0 condition (index.contains) is false
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        // When
+        List<SearchResult> results = idx.search("unknown");
+        // Then: expect empty list as no mapping exists for "unknown"
+        assertTrue(results.isEmpty(), "Expected no search results for term not in index");
+    }
+
+    @Test
+    @DisplayName("search(term) returns empty list when index contains term but no documents (branch-true, loop-0)")
+    void test_TC02() throws Exception {
+        // Given: stub index to contain term "foo" mapping to an empty doc map
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        indexMap.put("foo", new HashMap<>());
+        // When: index.containsKey("foo") is true (branch-true), but no docs so loop does not iterate (loop-0)
+        List<SearchResult> results = idx.search("foo");
+        // Then: expect empty result list
+        assertTrue(results.isEmpty(), "Expected empty results when posting list is empty");
+    }
+
+    @Test
+    @DisplayName("search(term) returns single SearchResult when one movie contains term once (branch-true, loop-1)")
+    void test_TC03() {
+        // Given: one movie added with content containing "one" exactly once -> loop executes once
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "One", 5.0, 2020, "The One time");
+        // When: searching lowercase "one" matches term in index (branch-true)
+        List<SearchResult> results = idx.search("one");
+        // Then: exactly one result with docId 1 and positive relevance
+        assertEquals(1, results.size(), "Expected exactly one search result");
+        SearchResult res = results.get(0);
+        assertEquals(1, res.getDocId(), "DocId should be 1");
+        assertTrue(res.getRelevanceScore() > 0, "Relevance score should be positive");
+    }
+
+    @Test
+    @DisplayName("search(term) skips entries when movies map has no Movie for docId (branch-true, loop-1, movie-null)")
+    void test_TC04() throws Exception {
+        // Given: stub index to contain term "miss"-> Map.of(99,1), but movies map is empty so movie lookup returns null
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        Map<Integer, Integer> posting = Map.of(99, 1);
+        indexMap.put("miss", posting);
+        // When: index.containsKey("miss") true, loop enters once but movie==null branch taken (B3->B4)
+        List<SearchResult> results = idx.search("miss");
+        // Then: no results since missing movie entries are skipped
+        assertTrue(results.isEmpty(), "Expected no results when movie entry is missing");
+    }
+
+    @Test
+    @DisplayName("search(term) returns multiple SearchResults sorted by descending relevance (branch-true, loop-N)")
+    void test_TC05() {
+        // Given: two movies added; first has term frequency 2, second frequency 1 -> first should score higher
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "A", 1.0, 2000, "foo foo"); // docLength=3 words, term "foo" freq=2
+        idx.addMovie(2, "B", 2.0, 2001, "foo");     // docLength=2 words, term "foo" freq=1
+        // When: search for "foo" (branch-true, loop runs twice)
+        List<SearchResult> results = idx.search("foo");
+        // Then: two results sorted by descending score => docId 1 then 2
+        assertEquals(2, results.size(), "Expected two search results");
+        assertEquals(1, results.get(0).getDocId(), "First result should be docId 1 with higher score");
+        assertEquals(2, results.get(1).getDocId(), "Second result should be docId 2 with lower score");
+    }
+}

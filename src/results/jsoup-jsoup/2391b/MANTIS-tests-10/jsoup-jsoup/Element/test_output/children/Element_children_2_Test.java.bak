@@ -1,0 +1,57 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("children() with userData having childElsKey but missing childElsMod forces fresh filterNodes path")
+    void test_TC11() throws Exception {
+        // GIVEN: parent with one real child, and simulate only key cache without modcount to force cache miss
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // reflection to get private static childElsKey
+        Field keyField = Element.class.getDeclaredField("childElsKey");
+        keyField.setAccessible(true);
+        String childElsKey = (String) keyField.get(null);
+        // inject only jsoup.childElsKey into userData, omit jsoup.childElsMod => triggers fresh filterNodes
+        Map<String, Object> userData = parent.attributes().userData();
+        List<Element> fakeList = Collections.singletonList(new Element("fake"));
+        userData.put(childElsKey, new WeakReference<>(fakeList));
+
+        // WHEN: call children()
+        Elements result = parent.children();
+
+        // THEN: expect fresh filtered list of actual child
+        assertEquals(1, result.size());                             // only the real span child should be returned
+        assertEquals("span", result.get(0).tagName());             // verify tagName of the real child
+    }
+
+    @Test
+    @DisplayName("children() second call uses cachedChildren branch after real stashChildren from first call")
+    void test_TC13() throws Exception {
+        // GIVEN: parent with two children, initial cache empty means first call stashes children
+        Element parent = new Element("div");
+        parent.appendChild(new Element("a")); // first child
+        parent.appendChild(new Element("b")); // second child
+
+        // WHEN: first invocation populates cache via filterNodes and stashChildren
+        Elements first = parent.children();
+        // second invocation should hit cachedChildren path without recomputation
+        Elements second = parent.children();
+
+        // THEN: both results have size 2 and are the same cached instance
+        assertEquals(2, first.size());                              // two children expected
+        assertEquals(2, second.size());                             // still two children
+        assertSame(first, second);                                  // same instance returned from cache
+    }
+}

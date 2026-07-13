@@ -1,0 +1,158 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parse(File) one-arg overload reads file with default charset inference and sets baseUri to absolute path",
+      "path": "B0→B3→B5",
+      "precondition": "exist a temp file with <h3>OneArg</h3> content",
+      "expectedResult": "Document contains element h3 with text 'OneArg' and baseUri equals file absolute path",
+      "tags": [
+        "overload",
+        "File",
+        "positive",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse(File) default-charset",
+        "  GIVEN",
+        "    File file = temp file containing '<h3>OneArg</h3>'",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.selectFirst(\"h3\").text().equals(\"OneArg\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(File, charsetName, baseUri, Parser) four-arg overload with xmlParser preserves provided baseUri",
+      "path": "B0→B4→B6",
+      "precondition": "exist a temp file with <node>X</node> content",
+      "expectedResult": "Document contains element node with text 'X' and baseUri equals provided baseUri",
+      "tags": [
+        "overload",
+        "File",
+        "Parser",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse(File,charset,baseUri,parser)",
+        "  GIVEN",
+        "    File file = temp file containing '<node>X</node>'",
+        "    String baseUri = 'http://filebase/';",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, 'UTF-8', baseUri, parser);",
+        "  THEN",
+        "    assert doc.selectFirst('node').text().equals('X');",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(InputStream, null, baseUri) three-arg overload uses default charset detection and closes stream",
+      "path": "B0→B3→B5",
+      "precondition": "ByteArrayInputStream wrapping '<li>StreamNull</li>'",
+      "expectedResult": "Document contains li text 'StreamNull', baseUri equals provided baseUri, and stream is closed",
+      "tags": [
+        "overload",
+        "InputStream",
+        "null-charset",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse(InputStream,null,baseUri)",
+        "  GIVEN",
+        "    TrackCloseStream in = new TrackCloseStream('<li>StreamNull</li>'.getBytes());",
+        "    String baseUri = 'http://instream/';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, baseUri);",
+        "  THEN",
+        "    assert doc.selectFirst('li').text().equals('StreamNull');",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert in.isClosed();"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(URL, timeoutMillis) throws SocketTimeoutException when connection timed out",
+      "path": "B0→B1→B2→exception",
+      "precondition": "HttpConnection.Factory stub returns connection whose timeout(...) throws SocketTimeoutException",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "overload",
+        "URL",
+        "exception",
+        "timeout"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse(URL,timeout) timeout-exception",
+        "  GIVEN",
+        "    URL url = new URL('http://example.com');",
+        "    stub HttpConnection.Factory to return conn where conn.timeout(any) throws SocketTimeoutException;",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parseBodyFragment(String, String) returns fragment in body with provided baseUri resolution",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals '<em>Frag</em>' and baseUri equals provided baseUri",
+      "tags": [
+        "overload",
+        "fragment",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parseBodyFragment html with baseUri",
+        "  GIVEN",
+        "    String html = '<em>Frag</em>';",
+        "    String baseUri = 'http://frag/';",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals('<em>Frag</em>');",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parseBodyFragment(String) one-arg overload returns fragment in body with empty baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals '<strong>Only</strong>' and baseUri equals empty string",
+      "tags": [
+        "overload",
+        "fragment",
+        "positive",
+        "default-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parseBodyFragment one-arg",
+        "  GIVEN",
+        "    String html = '<strong>Only</strong>';",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals('<strong>Only</strong>');",
+        "    assert doc.baseUri().equals('');"
+      ]
+    }
+  ]
+}

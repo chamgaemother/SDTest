@@ -1,0 +1,101 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parse(File) reads existing file using default charset-null overload and returns parsed Document",
+      "path": "B0→B2→B3→B5",
+      "precondition": "temp HTML file exists with content '<div>F</div>'",
+      "expectedResult": "Document.body().select('div').text() == 'F'",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse File happy-path default charset",
+        "  GIVEN",
+        "    // Arrange: create temp file with HTML fragment",
+        "    File temp = File.createTempFile('jsoup', '.html');",
+        "    Files.write(temp.toPath(), '<div>F</div>'.getBytes(UTF_8));",
+        "  WHEN",
+        "    // Act: parse using parse(File)",
+        "    Document doc = Jsoup.parse(temp);",
+        "  THEN",
+        "    // Assert: content is parsed and temp file cleaned up",
+        "    assert doc.body().select('div').text().equals('F');",
+        "    temp.deleteOnExit();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path,charset,baseUri,parser) reads from Path with xmlParser overload returns xml Document",
+      "path": "B0→B2→B3→B6→B8",
+      "precondition": "temp XML file exists with '<root><x/></root>'",
+      "expectedResult": "doc.select('x').size() == 1",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse Path with xmlParser",
+        "  GIVEN",
+        "    // Arrange: write XML to temp Path",
+        "    Path p = Files.createTempFile('jsoup', '.xml');",
+        "    Files.write(p, '<root><x/></root>'.getBytes(UTF_8));",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "  WHEN",
+        "    // Act: parse using parse(Path, charset, baseUri, parser)",
+        "    Document doc = Jsoup.parse(p, 'UTF-8', 'http://base', xmlParser);",
+        "  THEN",
+        "    // Assert: xmlParser branch yields one <x> element",
+        "    assert doc.select('x').size() == 1;",
+        "    Files.deleteIfExists(p);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL,timeoutMillis) with stubbed HttpConnection.connect returns stub Document in success path",
+      "path": "B0→B1→B4→B7",
+      "precondition": "reflection override HttpConnection.connect(URL) to return stub Connection",
+      "expectedResult": "returned Document == stubDoc",
+      "tags": [
+        "positive",
+        "network",
+        "reflection",
+        "timeout-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse URL success via stub",
+        "  GIVEN",
+        "    // Arrange: create a stub Connection that returns a known Document",
+        "    URL testUrl = new URL('http://example.com');",
+        "    Document stubDoc = Document.createShell('');",
+        "    Connection stubConn = new Connection() {",
+        "      public Connection timeout(int millis) { return this; }",
+        "      public Document get() { return stubDoc; }",
+        "      // other methods no-op",
+        "    };",
+        "    // Reflectively override HttpConnection.connect(URL) to return stubConn",
+        "    reflectivelyOverride(HttpConnection.class, 'connect', stubConn);",
+        "  WHEN",
+        "    // Act: call parse with URL and timeout",
+        "    Document result = Jsoup.parse(testUrl, 5000);",
+        "  THEN",
+        "    // Assert: stubDoc is returned",
+        "    assert result == stubDoc;",
+        "END"
+      ]
+    }
+  ]
+}

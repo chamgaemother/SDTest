@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() on element with non-Element child nodes only returns empty list (childNodeSize()>0, no Element instances)",
+      "path": "B0→B3→B5",
+      "precondition": "none",
+      "expectedResult": "returns an empty Elements list",
+      "tags": [
+        "negative",
+        "filter",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children only non-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"text1\"));",
+        "    parent.appendChild(new Comment(\"cmt1\"));",
+        "  WHEN",
+        "    Elements children = parent.children();",
+        "  THEN",
+        "    assertTrue(children.isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() rebuilds shadow cache after mutation (childNodeSize()>0, shadowChildrenRef expired branch)",
+      "path": "B0→B3→B5 (first call), mutate→B3→B5 (second call)",
+      "precondition": "none",
+      "expectedResult": "on first call returns original children; after mutation and nodelistChanged, children() rebuilds new list",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li1 = parent.appendElement(\"li\");",
+        "    Elements first = parent.children(); // primes cache",
+        "  WHEN",
+        "    parent.appendElement(\"li\"); // mutate childNodes, triggers nodelistChanged and clears shadowChildrenRef",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertEquals(1, first.size());",
+        "    assertSame(li1, first.get(0));",
+        "    assertEquals(2, second.size());",
+        "    assertNotSame(first, second);",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader,baseUri) propagates unexpected RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→B4→B6",
+      "precondition": "Parser initialized with stub TreeBuilder that throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "runtime"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 propagate-runtime-exception",
+        "  GIVEN",
+        "    // Arrange stub that throws at parse",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"bad\"); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.html(); }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token tok) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<tag/>\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"uri\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"bad\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(String,baseUri) throws NullPointerException when html string is null",
+      "path": "B0→B1→B7",
+      "precondition": "Parser.htmlParser(); html=null, baseUri non-null",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 string-overload-null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader,baseUri) accepts null baseUri and passes it through to TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "Parser initialized with stub TreeBuilder that records baseUri",
+      "expectedResult": "returned dummy Doc and recorded baseUri is null",
+      "tags": [
+        "positive",
+        "null-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 reader-overload-null-baseUri",
+        "  GIVEN",
+        "    AtomicReference<String> rec = new AtomicReference<>();",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      Document DUMMY = new Document(\"stub://\");",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { rec.set(uri); return DUMMY; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.html(); }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token tok) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<x/>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assertSame(stub.DUMMY, doc);",
+        "    assert rec.get() == null;",
+        "END"
+      ]
+    }
+  ]
+}

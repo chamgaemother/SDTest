@@ -1,0 +1,70 @@
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("TC08: valueOf(tag, null namespace) throws IllegalArgumentException for null namespace")
+    public void test_TC08() {
+        // GIVEN a valid tagName and normalName but null namespace to trigger Validate.notNull(namespace)
+        String tagName = "input";
+        String normalName = "input";
+        String namespace = null;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN & THEN expect IllegalArgumentException due to null namespace
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(tagName, normalName, namespace, settings);
+        });
+    }
+
+    @Test
+    @DisplayName("TC09: valueOf(tagName with surrounding whitespace) trims name and returns correct submittable tag")
+    public void test_TC09() {
+        // GIVEN tagName with leading/trailing spaces to satisfy trim branch, known namespace, and preserveCase
+        String tagName = "  input  ";
+        String normalName = "input";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN trim logic applies and returns a Tag for "input"
+        Tag tag = Tag.valueOf(tagName, normalName, namespace, settings);
+        // THEN the name is trimmed and formSubmit flag is set (input is a form-submittable tag)
+        assertEquals("input", tag.getName(), "Expected trimmed tagName");
+        assertTrue(tag.isFormSubmittable(), "Expected 'input' to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("TC10: valueOf(String, ParseSettings) with default namespace and default casing returns static tag and correct formSubmit flag")
+    public void test_TC10() {
+        // GIVEN a known tagName "output" and default ParseSettings.preserveCase
+        String tagName = "output";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN using the overload that uses default HTML namespace
+        Tag tag = Tag.valueOf(tagName, settings);
+        // THEN this should return the static instance for "output"
+        assertSame(Tag.valueOf("output"), tag, "Expected same static Tag instance for known tag 'output'");
+        // AND it should be form-submittable (output is listed in SharedConstants.FormSubmitTags)
+        assertTrue(tag.isFormSubmittable(), "Expected 'output' to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("TC11: valueOf(String, namespace, lower-case settings) does not clone and retains lowercase name")
+    public void test_TC11() {
+        // GIVEN an uppercase tagName "OPTION", its normalName, HTML namespace, and preserve-case settings
+        // This setup goes through the branch where tag exists in Tags by normalName and settings.preserveTagCase() == true
+        String tagName = "OPTION";
+        String normalName = ParseSettings.normalName(tagName);
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN retrieving the tag via detailed valueOf
+        Tag tag = Tag.valueOf(tagName, normalName, namespace, settings);
+        // THEN despite preserve-case, intended behavior is to retain lowercase normalName and not produce uppercase
+        assertEquals(normalName, tag.getName(), "Expected tagName to remain lowercase normalName");
+        // AND ensure it is form-submittable for 'option'
+        assertTrue(tag.isFormSubmittable(), "Expected 'option' to be form-submittable");
+    }
+}

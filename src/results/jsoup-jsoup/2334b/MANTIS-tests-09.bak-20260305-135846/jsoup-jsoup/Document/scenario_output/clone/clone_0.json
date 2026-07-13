@@ -1,0 +1,101 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on empty Document returns a distinct instance with identical base state",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // no children, default outputSettings and parser",
+      "expectedResult": "returned Document != doc; returned.baseUri() equals \"http://example.com\"; returned.childNodeSize() == 0; returned.outputSettings().equals(doc.outputSettings()); returned.parser().equals(doc.parser())",
+      "tags": [
+        "no-branches",
+        "deep-clone",
+        "identity",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone empty document",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "  THEN",
+        "    assert copy != doc; assert copy.baseUri().equals(\"http://example.com\"); assert copy.childNodeSize() == 0; assert copy.outputSettings().equals(doc.outputSettings()); assert copy.parser().equals(doc.parser());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() deep copies Document with one child node; modifying clone child does not affect original",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = Document.createShell(\"http://base\"); doc.body().appendElement(\"p\").text(\"para\"); // one child in body",
+      "expectedResult": "copy.childNodeSize() == doc.childNodeSize(); modifying copy.body().selectFirst(\"p\").text(\"new\") does not change doc.body().selectFirst(\"p\").text() which remains \"para\"",
+      "tags": [
+        "deep-clone",
+        "mutation-isolation",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone with one child",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://base\"); doc.body().appendElement(\"p\").text(\"para\");",
+        "  WHEN",
+        "    Document copy = doc.clone(); copy.body().selectFirst(\"p\").text(\"new\");",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"p\").text().equals(\"para\"); assert copy.body().selectFirst(\"p\").text().equals(\"new\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() preserves multiple child nodes; each child cloned separately",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = Document.createShell(\"u\"); doc.body().appendElement(\"div\"); doc.body().appendElement(\"span\");",
+      "expectedResult": "copy.childNodeSize() == doc.childNodeSize(); for each index i, copy.childNodes().get(i) != doc.childNodes().get(i) and has same tag name",
+      "tags": [
+        "deep-clone",
+        "loop-N",
+        "multiple-children",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone with multiple children",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\"); doc.body().appendElement(\"div\"); doc.body().appendElement(\"span\");",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "  THEN",
+        "    assert copy.childNodeSize() == doc.childNodeSize(); assert copy.childNodes().get(1) != doc.childNodes().get(1); assert copy.childNodes().get(1).nodeName().equals(doc.childNodes().get(1).nodeName());"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() returns deep copy such that modifying outputSettings of clone does not affect original",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"ns\",\"base\"); // default outputSettings",
+      "expectedResult": "copy.outputSettings().charset() initially equals doc.outputSettings().charset(); after copy.charset(Charset.forName(\"US-ASCII\")), doc.charset() remains unchanged UTF-8; copy.charset() is US-ASCII",
+      "tags": [
+        "deep-clone",
+        "output-settings",
+        "branch-none",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone and modify outputSettings",
+        "  GIVEN",
+        "    Document doc = new Document(\"ns\",\"base\");",
+        "  WHEN",
+        "    Document copy = doc.clone(); copy.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assert doc.charset().name().equals(\"UTF-8\"); assert copy.charset().name().equals(\"US-ASCII\");"
+      ]
+    }
+  ]
+}

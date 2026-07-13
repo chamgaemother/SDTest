@@ -1,0 +1,40 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+/**
+ * Test class for Parser#setTrackPosition method covering enabling and disabling position tracking.
+ */
+public class Parser_setTrackPosition_Test {
+
+    @Test
+    @DisplayName("Calling setTrackPosition(true) sets trackPosition from default false to true and returns the same Parser instance")
+    public void test_TC01() {
+        // GIVEN: a new HTML parser with default trackPosition=false
+        Parser parser = Parser.htmlParser();
+        // WHEN: enabling position tracking (branch-true)
+        Parser result = parser.setTrackPosition(true);
+        // THEN: returned object is the same instance and tracking is enabled
+        // Inline comment: setting to true covers the branch where trackPosition changes from false to true
+        assertSame(parser, result, "setTrackPosition(true) should return the same parser instance");
+        assertTrue(parser.isTrackPosition(), "Parser should have trackPosition=true after enabling");
+    }
+
+    @Test
+    @DisplayName("Calling setTrackPosition(false) resets trackPosition from true to false and returns the same Parser instance")
+    public void test_TC02() {
+        // GIVEN: a new HTML parser with trackPosition initially enabled
+        Parser parser = Parser.htmlParser().setTrackPosition(true);
+        // WHEN: disabling position tracking (branch-false)
+        Parser result = parser.setTrackPosition(false);
+        // THEN: returned object is the same instance and tracking is disabled
+        // Inline comment: setting to false covers the branch where trackPosition changes from true to false
+        assertSame(parser, result, "setTrackPosition(false) should return the same parser instance");
+        assertFalse(parser.isTrackPosition(), "Parser should have trackPosition=false after disabling");
+    }
+}

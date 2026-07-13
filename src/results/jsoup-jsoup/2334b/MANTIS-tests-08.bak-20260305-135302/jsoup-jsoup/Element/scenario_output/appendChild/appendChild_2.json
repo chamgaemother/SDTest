@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild(TextNode) on parent with cached shadowChildrenRef invalidates cache via nodelistChanged",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "Element parent has called children() to populate shadowChildrenRef",
+      "expectedResult": "shadowChildrenRef becomes null and children() returns only Element children unchanged",
+      "tags": [
+        "cache-invalidation",
+        "shadowChildrenRef",
+        "textnode"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild(TextNode) invalidates shadow cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element childEl = parent.appendElement(\"p\");",
+        "    parent.children(); // populate shadowChildrenRef",
+        "    access shadowChildrenRef before appendChild; // should be non-null",
+        "  WHEN",
+        "    TextNode tn = new TextNode(\"foo\");",
+        "    parent.appendChild(tn);",
+        "  THEN",
+        "    assert shadowChildrenRef after appendChild is null;",
+        "    assert parent.children().size() == 1; // only the original Element",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild on parent with >1 existing children assigns correct increasing siblingIndex",
+      "path": "B0→B2→B4→B5",
+      "precondition": "Element parent has two existing children",
+      "expectedResult": "third appended child gets siblingIndex 2",
+      "tags": [
+        "iteration",
+        "siblingIndex",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 appendChild assigns incremented siblingIndex",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    TextNode first = new TextNode(\"one\"); parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\"); parent.appendChild(second);",
+        "  WHEN",
+        "    TextNode third = new TextNode(\"three\");",
+        "    parent.appendChild(third);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 3;",
+        "    assert third.siblingIndex() == 2;",
+        "END"
+      ]
+    }
+  ]
+}

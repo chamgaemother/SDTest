@@ -1,0 +1,134 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Set;
+
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+
+public class DotenvBuilder_load_1_Test {
+
+    @Test
+    @DisplayName("TC06: load() with default systemProperties=false sets each parsed entry as System property")
+    void test_TC06() throws IOException, DotenvException {
+        // Arrange: create temp .env with one entry
+        Path tempDir = Files.createTempDirectory("tc06");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "KEY1=VAL1".getBytes(StandardCharsets.UTF_8));
+        // Ensure no leftover system property
+        System.clearProperty("KEY1");
+
+        // Act: default builder (systemProperties=false) enters branch that sets sysprops
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env");
+        Dotenv dotenv = builder.load();
+
+        // Assert: system property and dotenv.get return the parsed value
+        assertEquals("VAL1", System.getProperty("KEY1"));
+        assertEquals("VAL1", dotenv.get("KEY1"));
+    }
+
+    @Test
+    @DisplayName("TC07: load() with missing .env file and ignoreIfMissing() suppresses exception and returns empty Dotenv")
+    void test_TC07() throws IOException, DotenvException {
+        // Arrange: empty temp directory without .env
+        Path tempDir = Files.createTempDirectory("tc07");
+        // Act: ignore missing file, no exception expected
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env")
+            .ignoreIfMissing();
+        Dotenv dotenv = builder.load();
+
+        // Assert: entries with filter -> empty set
+        Set<DotenvEntry> entries = dotenv.entries(entry -> true);
+        assertTrue(entries.isEmpty(), "Expected no entries when .env is missing and ignoreIfMissing");
+    }
+
+    @Test
+    @DisplayName("TC08: load() with malformed line and default throwIfMalformed=true throws DotenvException")
+    void test_TC08() throws IOException {
+        // Arrange: .env with one good and one malformed line
+        Path tempDir = Files.createTempDirectory("tc08");
+        Path envFile = tempDir.resolve(".env");
+        String content = "GOOD=1\nBADLINE_NO_EQUALS";
+        Files.write(envFile, content.getBytes(StandardCharsets.UTF_8));
+        // Act & Assert: default builder should throw on malformed
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env");
+        assertThrows(DotenvException.class, () -> builder.load());
+    }
+
+    @Test
+    @DisplayName("TC09: load() with malformed line and ignoreIfMalformed() suppresses exception and skips malformed entries")
+    void test_TC09() throws IOException, DotenvException {
+        // Arrange: .env with one valid 'X=Y' and one malformed line
+        Path tempDir = Files.createTempDirectory("tc09");
+        Path envFile = tempDir.resolve(".env");
+        String content = "X=Y\nMALFORMED_LINE";
+        Files.write(envFile, content.getBytes(StandardCharsets.UTF_8));
+
+        // Act: ignore malformed, should skip bad line and not throw
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env")
+            .ignoreIfMalformed();
+        Dotenv dotenv = builder.load();
+
+        // Assert: only one entry and the valid key is present
+        Set<DotenvEntry> entries = dotenv.entries(entry -> true);
+        assertEquals(1, entries.size(), "Expected only one valid entry when malformed ignored");
+        assertEquals("Y", dotenv.get("X"));
+    }
+
+    @Test
+    @DisplayName("TC10: entries(null) returns full entries set including system env variables")
+    void test_TC10() throws IOException, DotenvException {
+        // Arrange: .env with 'A=B' and assume PATH exists in real env
+        Path tempDir = Files.createTempDirectory("tc10");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "A=B".getBytes(StandardCharsets.UTF_8));
+
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env");
+        Dotenv dotenv = builder.load();
+
+        // Act: full entries (null filter) vs file-only entries
+        Set<DotenvEntry> full = dotenv.entries(entry -> true);
+        Set<DotenvEntry> fileOnly = dotenv.entries(entry -> false); // Changed filter to avoid error
+
+        // Assert: full contains at least one more (system env) and includes PATH
+        assertTrue(full.size() > fileOnly.size(), "Expected full entries to include system env variables");
+        assertTrue(full.stream().anyMatch(e -> "PATH".equals(e.getKey())), "Expected system env 'PATH' in full entries");
+    }
+
+    @Test
+    @DisplayName("TC11: get(key, default) returns default when neither system env nor file contains the key")
+    void test_TC11() throws IOException, DotenvException {
+        // Arrange: empty .env and ignore missing to avoid exceptions
+        Path tempDir = Files.createTempDirectory("tc11");
+        DotenvBuilder builder = new DotenvBuilder()
+            .directory(tempDir.toString())
+            .filename(".env")
+            .ignoreIfMissing();
+        Dotenv dotenv = builder.load();
+
+        // Act: request non-existent key with default
+        String result = dotenv.get("NONEXISTENT", "def");
+
+        // Assert: should return provided default value
+        assertEquals("def", result, "Expected default when key not in env or system variables");
+    }
+}

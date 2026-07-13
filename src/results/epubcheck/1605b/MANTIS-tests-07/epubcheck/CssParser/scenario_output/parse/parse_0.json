@@ -1,0 +1,232 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse(): scanner yields no tokens, endDocument only (hasNext false)",
+      "path": "B0→B1→B8",
+      "precondition": "Use stubbed CssParser.scan(...) that returns an iterator with hasNext(FILTER_S_CMNT_CDO_CDC)==false",
+      "expectedResult": "CssContentHandler.startDocument() then CssContentHandler.endDocument() is called; no other calls",
+      "tags": [
+        "loop-0",
+        "branch-hasNext-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse no-tokens",
+        "  GIVEN",
+        "    stub CssParser.scan(reader,systemID,err) returns iterator with no elements",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    verify docHandler.startDocument() then docHandler.endDocument()"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse(): one token ATKEYWORD, handleAtRule invoked once then endDocument",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Stub scan to return one CssToken with type ATKEYWORD, CssTokenIterator.hasNext then next yields that token then hasNext(FILTER_S_CMNT_CDO_CDC)==false",
+      "expectedResult": "docHandler.startDocument(), handleAtRule on ATKEYWORD, docHandler.endDocument()",
+      "tags": [
+        "loop-1",
+        "branch-hasNext-true",
+        "branch-type-ATKEYWORD"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-ATKEYWORD",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to return iterator yielding one ATKEYWORD token",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    assert handleAtRule was invoked for that token and docHandler.endDocument()"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse(): one token non-ATKEYWORD, handleRuleSet invoked once then endDocument",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Stub scan to return one CssToken with type IDENT, iterator ends after one element",
+      "expectedResult": "docHandler.startDocument(), handleRuleSet on IDENT, docHandler.endDocument()",
+      "tags": [
+        "loop-1",
+        "branch-hasNext-true",
+        "branch-type-not-ATKEYWORD"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-IDENT",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to return iterator yielding one IDENT token",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    assert handleRuleSet was invoked for that token and docHandler.endDocument()"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse(): two iterations, first ATKEYWORD then IDENT, both handlers invoked",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Stub scan to return two tokens: first ATKEYWORD, then IDENT, then no more",
+      "expectedResult": "docHandler.startDocument(), handleAtRule then handleRuleSet, then docHandler.endDocument()",
+      "tags": [
+        "loop-N",
+        "branch-sequence-ATKEYWORD-then-not",
+        "branch-hasNext-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse two-tokens-mixed",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to return iterator yielding ATKEYWORD then IDENT",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    assert handleAtRule called then handleRuleSet called then endDocument"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parse(): scan throws IOException, exception propagated",
+      "path": "B0",
+      "precondition": "Stub CssParser.scan(...) to throw IOException(\"io error\")",
+      "expectedResult": "throws IOException with message \"io error\"; docHandler.startDocument() not called",
+      "tags": [
+        "exception",
+        "scan-throws-ioexception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan-ioexception",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to throw new IOException(\"io error\");",
+        "  WHEN",
+        "    call parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    throws IOException(\"io error\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse(): scan throws CssException, exception propagated",
+      "path": "B0",
+      "precondition": "Stub CssParser.scan(...) to throw CssException",
+      "expectedResult": "throws CssException; docHandler.startDocument() not called",
+      "tags": [
+        "exception",
+        "scan-throws-cssexception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan-cssexception",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to throw new CssException(...);",
+        "  WHEN",
+        "    call parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    throws CssException;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse(): three iterations non-ATKEYWORD tokens, 3 handleRuleSet calls",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B3→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Stub scan to return three IDENT tokens then end",
+      "expectedResult": "startDocument, 3×handleRuleSet, endDocument",
+      "tags": [
+        "loop-N",
+        "branch-type-not-ATKEYWORD",
+        "iteration>1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse three-IDENTs",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to return iterator yielding three IDENT tokens",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    verify three invocations of handleRuleSet and endDocument"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(): two ATKEYWORD tokens, 2 handleAtRule calls",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Stub scan to return two ATKEYWORD tokens then end",
+      "expectedResult": "startDocument, 2×handleAtRule, endDocument",
+      "tags": [
+        "loop-N",
+        "branch-type-ATKEYWORD",
+        "iteration>1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse two-ATKEYWORDs",
+        "  GIVEN",
+        "    stub CssParser.scan(...) to return iterator yielding two ATKEYWORD tokens",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    verify two invocations of handleAtRule and endDocument"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(): first call hasNext true then immediate NoSuchElementException breaks loop",
+      "path": "B0→B1→B2→B6→B8",
+      "precondition": "Stub scan to return iterator where next(FILTER_S_CMNT_CDO_CDC) throws NoSuchElementException on first call",
+      "expectedResult": "startDocument then on NoSuchElementException break to endDocument; endDocument called",
+      "tags": [
+        "exception",
+        "loop-1",
+        "branch-next-fails"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse next-throws-nse",
+        "  GIVEN",
+        "    stub CssParser.scan(...) returns iterator where next(...) throws NoSuchElementException;",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    verify docHandler.startDocument() then docHandler.endDocument()"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parse(): mixed loop of 1 IDENT then next throws NoSuchElementException",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B6→B8",
+      "precondition": "Stub scan to return one IDENT then next(FILTER_S_CMNT_CDO_CDC) throws NoSuchElementException",
+      "expectedResult": "startDocument, one handleRuleSet, then on NSE break to endDocument; endDocument called",
+      "tags": [
+        "loop-N",
+        "branch-mixed",
+        "exception-loop"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse one-IDENT-then-nse",
+        "  GIVEN",
+        "    stub CssParser.scan(...) yields IDENT then throws NoSuchElementException on second next();",
+        "  WHEN",
+        "    parser.parse(reader, systemID, errHandler, docHandler);",
+        "  THEN",
+        "    verify handleRuleSet called once and docHandler.endDocument()"
+      ]
+    }
+  ]
+}

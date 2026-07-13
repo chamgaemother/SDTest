@@ -1,0 +1,127 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, Parser) uses provided Parser overload path")
+    public void test_TC11() throws IOException {
+        // Create temp HTML file with simple content to trigger parser overload
+        File temp = File.createTempFile("test11", ".html");
+        Files.write(temp.toPath(), "<u>text</u>".getBytes(StandardCharsets.UTF_8));
+        Parser parser = Parser.xmlParser();
+        String charset = "UTF-8";
+        String baseUri = "http://base/";
+        // Use the overload that includes Parser to cover B14 path
+        Document doc = Jsoup.parse(temp, charset, baseUri, parser);
+        assertEquals(baseUri, doc.baseUri());
+        assertTrue(doc.body().html().contains("<u>text</u>"), "Body should contain the <u>text</u> fragment");
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri, Parser) uses provided Parser overload path")
+    public void test_TC12() throws IOException {
+        // Write HTML fragment to a path to cover path overload with Parser
+        Path tempDir = Files.createTempDirectory("jsoup");
+        Path htmlPath = Files.write(tempDir.resolve("test12.html"), "<i>it</i>".getBytes(StandardCharsets.UTF_8));
+        String charset = null;
+        String baseUri = "https://x/";
+        Parser parser = Parser.htmlParser();
+        Document doc = Jsoup.parse(htmlPath, charset, baseUri, parser);
+        assertEquals(baseUri, doc.baseUri());
+        assertTrue(doc.body().html().contains("<i>it</i>"), "Body should contain the <i>it</i> fragment");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri) uses provided InputStream overload path")
+    public void test_TC13() throws IOException {
+        // Use ByteArrayInputStream to test InputStream overload without Parser
+        byte[] data = "<b>bold</b>".getBytes(StandardCharsets.UTF_8);
+        InputStream in = new ByteArrayInputStream(data);
+        String charset = "UTF-8";
+        String baseUri = "";
+        // Removed parser parameter as per the error guidance
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        assertEquals("<b>bold</b>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String, String) sets non-empty baseUri and parses fragment body")
+    public void test_TC14() {
+        // parseBodyFragment with baseUri should resolve relative src to absolute, covering B17
+        String fragment = "<img src='a.png'>";
+        String baseUri = "http://img/";
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // baseUri is used to resolve src attribute
+        assertTrue(doc.body().html().contains("<img src=\"http://img/a.png\""),
+                "Image src should be resolved against baseUri");
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String) uses empty baseUri when none provided")
+    public void test_TC15() {
+        // parseBodyFragment default should set empty baseUri and preserve fragment
+        String fragment = "<span>X</span>";
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        assertEquals("", doc.baseUri());
+        assertEquals("<span>X</span>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(File) throws IOException when file does not exist")
+    public void test_TC16() {
+        // Non-existent file should cause IOException in parse(File)
+        File missing = new File("no-such-file.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(missing));
+    }
+
+    @Test
+    @DisplayName("parse(Path) throws IOException when path does not exist")
+    public void test_TC17() {
+        // Non-existent path should cause IOException in parse(Path)
+        Path missing = Path.of("no-such.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(missing));
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) throws SocketTimeoutException when server delays beyond timeout")
+    public void test_TC18() throws Exception {
+        // Start a server that accepts connection but delays response to trigger read timeout
+        try (ServerSocket server = new ServerSocket(0)) {
+            int port = server.getLocalPort();
+            Executors.newSingleThreadExecutor().submit(() -> {
+                try (Socket client = server.accept()) {
+                    // Delay longer than client timeout of 50ms
+                    Thread.sleep(200);
+                    // Send minimal HTTP response (won't be reached before timeout)
+                    client.getOutputStream().write("HTTP/1.1 200 OK\r\nContent-Length:0\r\n\r\n".getBytes());
+                } catch (Exception ignored) {
+                }
+            });
+            URL url = new URL("http://localhost:" + port + "/");
+            int timeoutMillis = 50; // Changed from timeout to timeoutMillis to match method signature
+            // Expect SocketTimeoutException due to read timeout
+            assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, timeoutMillis));
+        }
+    }
+}

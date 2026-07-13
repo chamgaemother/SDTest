@@ -1,0 +1,52 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseBodyFragment(String, String) honors an in‐fragment <base href> over the explicit baseUri for relative link resolution",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "the <a> href is resolved against the <base> tag URL, not the supplied baseUri",
+      "tags": [
+        "positive",
+        "fragment",
+        "base-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment honors inline base tag",
+        "  GIVEN",
+        "    String bodyHtml = \"<base href='https://cdn.example.com/' /><a href='img.png'>img</a>\";",
+        "    String baseUri = \"http://ignored.example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    Element link = doc.selectFirst(\"a\");",
+        "    assert link.absUrl(\"href\").equals(\"https://cdn.example.com/img.png\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseBodyFragment(String) correctly decodes HTML entities in a body fragment",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "the entity &amp;mdash; is decoded in the output fragment",
+      "tags": [
+        "positive",
+        "entity",
+        "fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseBodyFragment decodes entities",
+        "  GIVEN",
+        "    String bodyHtml = \"<p>Foo &mdash; Bar</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"—\");"
+      ]
+    }
+  ]
+}

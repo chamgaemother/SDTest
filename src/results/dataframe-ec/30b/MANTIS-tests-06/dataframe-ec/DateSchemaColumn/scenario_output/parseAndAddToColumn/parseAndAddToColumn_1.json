@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn with valid date string using a custom pattern adds correct LocalDate",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty()==false)→B3(parse trimmed via custom formatter)→B4(addObject)",
+      "precondition": "DateSchemaColumn created with pattern \"dd/MM/uuuu\"",
+      "expectedResult": "LocalDate.of(2022,3,5) is added to the column",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "parse",
+        "trimmed-non-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn custom-pattern",
+        "  GIVEN",
+        "    String aString = \"05/03/2022\";",
+        "    DfColumn dfColumn = new StubColumn();",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"col\", \"dd/MM/uuuu\");",
+        "  WHEN",
+        "    column.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert ((StubColumn) dfColumn).lastAddedObject.equals(LocalDate.of(2022,3,5));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn trims whitespace and parses default-pattern date correctly",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty()==false)→B3(parse trimmed via default formatter)→B4(addObject)",
+      "precondition": "DateSchemaColumn created with null pattern (uses default \"uuuu-M-d\")",
+      "expectedResult": "LocalDate.of(2022,3,5) is added to the column",
+      "tags": [
+        "positive",
+        "trimming",
+        "default-pattern",
+        "parse"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn with surrounding spaces",
+        "  GIVEN",
+        "    String aString = \" 2022-3-5 \";",
+        "    DfColumn dfColumn = new StubColumn();",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"col\", null);",
+        "  WHEN",
+        "    column.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert ((StubColumn) dfColumn).lastAddedObject.equals(LocalDate.of(2022,3,5));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "child(2) on element with two children throws IndexOutOfBoundsException for index > max",
+      "path": "B0→B3→B4→B7",
+      "precondition": "parent has exactly two Element children after appendElement calls",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary",
+        "index-out-of-range"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 child index too large",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"a\");",
+        "    parent.appendElement(\"b\");",
+        "    int index = 2;",
+        "  WHEN",
+        "    call parent.child(index);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "child(1) rebuilds cache after mutation (shadowChildrenRef invalidated branch)",
+      "path": "B0→B3→B4(cache build)→nodelistChanged→B3→B4(cache rebuild)→B6→B8",
+      "precondition": "parent has one child, cache built, then mutated via prependChild",
+      "expectedResult": "returns the second element correctly after rebuilding cache",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 child rebuilds cache after nodes change",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    parent.child(0); // build cache",
+        "  WHEN",
+        "    Element second = new Element(\"li\");",
+        "    parent.prependChild(second); // mutates childNodes, triggers nodelistChanged",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assert result == first;",
+        "END"
+      ]
+    }
+  ]
+}

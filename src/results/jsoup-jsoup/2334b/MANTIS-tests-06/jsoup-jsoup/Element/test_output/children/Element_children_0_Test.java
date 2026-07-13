@@ -1,0 +1,90 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.children() covering various branch and caching scenarios.
+ */
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() on new element with no child nodes returns empty list (childNodeSize()==0 branch)")
+    public void test_TC01() {
+        // GIVEN a fresh element with no children => childNodeSize()==0 triggers EmptyChildren branch
+        Element el = new Element("div");
+        
+        // WHEN calling children()
+        Elements result = el.children();
+        
+        // THEN the result should be an empty Elements list
+        assertEquals(0, result.size(), "Expected no child elements when none were added");
+    }
+
+    @Test
+    @DisplayName("TC02: children() on element with one text node returns empty list (childNodeSize()>0 but no Element instances)")
+    public void test_TC02() {
+        // GIVEN an element with one text node => childNodeSize()>0 enters loop, but no Element instanceof nodes
+        Element el = new Element("p");
+        el.appendText("hello"); // adds a TextNode, not an Element
+        
+        // WHEN calling children()
+        Elements result = el.children();
+        
+        // THEN no element children should be returned
+        assertEquals(0, result.size(), "Expected no child elements when only text nodes are present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() on element with one child Element returns list containing that element (single match)")
+    public void test_TC03() {
+        // GIVEN an element with one child Element => childNodeSize()>0 and instanceof Element match exactly once
+        Element el = new Element("ul");
+        Element li = el.appendElement("li");
+        
+        // WHEN calling children()
+        Elements result = el.children();
+        
+        // THEN exactly that child element should be in the list
+        assertEquals(1, result.size(), "Expected one child element");
+        assertSame(li, result.get(0), "Expected the returned child to be the same instance as appended li");
+    }
+
+    @Test
+    @DisplayName("TC04: children() on element with mixed child nodes filters out non-elements and returns only child Elements")
+    public void test_TC04() {
+        // GIVEN an element with mixed children => loop over 3 nodes, two are Element, one TextNode
+        Element el = new Element("div");
+        Element span = el.appendElement("span"); // element match
+        el.appendText("t");               // text node should be filtered out
+        Element a = el.appendElement("a");    // element match
+        
+        // WHEN calling children()
+        Elements result = el.children();
+        
+        // THEN only the two Elements in their original order should be returned
+        assertEquals(2, result.size(), "Expected two child elements filtering out text nodes");
+        assertSame(span, result.get(0), "First child element should be the span");
+        assertSame(a, result.get(1), "Second child element should be the a");
+    }
+
+    @Test
+    @DisplayName("TC05: children() uses cached shadowChildrenRef on second call without rebuilding list")
+    public void test_TC05() {
+        // GIVEN an element with one child Element => first children() builds and caches list
+        Element el = new Element("div");
+        Element c = el.appendElement("p");
+        
+        // WHEN calling children() twice
+        Elements first = el.children();
+        Elements second = el.children();
+        
+        // THEN the first and second should be the same instance (cache hit)
+        assertEquals(1, first.size(), "Expected one child element on first call");
+        assertSame(first, second, "Expected the same Elements instance returned from cache on second call");
+    }
+}

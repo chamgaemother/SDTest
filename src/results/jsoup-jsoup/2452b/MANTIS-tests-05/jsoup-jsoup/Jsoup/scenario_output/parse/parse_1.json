@@ -1,0 +1,293 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "parse(File, charsetName, baseUri, Parser) returns Document using provided parser",
+      "path": "B0→B1→B2→B3",
+      "precondition": "temp HTML file exists",
+      "expectedResult": "return document parsed by XML parser with correct baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse file with parser overload",
+        "  GIVEN",
+        "    File file = createTempHtmlFile(\"<tag>XML</tag>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<tag>XML</tag>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path, charsetName, baseUri) returns Document with baseUri equal to provided string",
+      "path": "B0→B1→B2",
+      "precondition": "temp HTML file path exists",
+      "expectedResult": "return document with correct content and baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse Path with charset and baseUri",
+        "  GIVEN",
+        "    Path path = createTempHtmlPath(\"<p>Path</p>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://path.base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Path</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path, charsetName) sets baseUri to path.toAbsolutePath().toString()",
+      "path": "B0→B1→B2",
+      "precondition": "temp HTML file path exists",
+      "expectedResult": "return document with correct content and baseUri equal to absolute path",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "default-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse Path with charset only",
+        "  GIVEN",
+        "    Path path = createTempHtmlPath(\"<div>Default</div>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>Default</div>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path) sets charsetName null and baseUri to absolute path",
+      "path": "B0→B1→B2",
+      "precondition": "temp HTML file path exists",
+      "expectedResult": "return document with content and baseUri equal to absolute path",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "null-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse Path with no charset",
+        "  GIVEN",
+        "    Path path = createTempHtmlPath(\"<span>Auto</span>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>Auto</span>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri) returns Document reading from stream",
+      "path": "B0→B1→B2",
+      "precondition": "InputStream over HTML bytes",
+      "expectedResult": "return document with correct content and baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse InputStream without parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<b>Bytes</b>\".getBytes());",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<b>Bytes</b>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) returns Document using provided parser",
+      "path": "B0→B1→B2",
+      "precondition": "InputStream over HTML bytes",
+      "expectedResult": "return document parsed by XML parser with correct baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parse InputStream with parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<i>It</i>\".getBytes());",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream2/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i>It</i>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(URL, timeoutMillis) returns Document when connection and get succeed",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "mock HttpConnection.connect to return Connection that yields a Document",
+      "expectedResult": "return document from connection.get()",
+      "tags": [
+        "positive",
+        "overload",
+        "url",
+        "mock"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse URL success",
+        "  GIVEN",
+        "    URL url = new URL(\"http://ok.example.com\");",
+        "    int timeout = 500;",
+        "    MockedStatic<HttpConnection> ms = mockStatic(HttpConnection.class);",
+        "    Connection con = mock(Connection.class);",
+        "    Document expected = Parser.parse(\"<p>OK</p>\", url.toString());",
+        "    ms.when(() -> HttpConnection.connect(url)).thenReturn(con);",
+        "    when(con.timeout(timeout)).thenReturn(con);",
+        "    when(con.get()).thenReturn(expected);",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>OK</p>\");",
+        "    ms.close();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(URL, timeoutMillis) throws HttpStatusException on non-OK status",
+      "path": "B0→B1→B2→B3→B4→exception",
+      "precondition": "mock HttpConnection.connect to throw HttpStatusException",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "overload",
+        "url",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parse URL HttpStatusException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://error.example.com\");",
+        "    int timeout = 200;",
+        "    MockedStatic<HttpConnection> ms = mockStatic(HttpConnection.class);",
+        "    Connection con = mock(Connection.class);",
+        "    ms.when(() -> HttpConnection.connect(url)).thenReturn(con);",
+        "    when(con.timeout(timeout)).thenReturn(con);",
+        "    when(con.get()).thenThrow(new org.jsoup.HttpStatusException(\"404 not found\", 404, url.toString()));",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws org.jsoup.HttpStatusException;",
+        "    ms.close();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(URL, timeoutMillis) throws UnsupportedMimeTypeException on bad mime type",
+      "path": "B0→B1→B2→B3→B4→exception",
+      "precondition": "mock HttpConnection.connect to throw UnsupportedMimeTypeException",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "overload",
+        "url",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse URL UnsupportedMimeTypeException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://bad.example.com\");",
+        "    int timeout = 300;",
+        "    MockedStatic<HttpConnection> ms = mockStatic(HttpConnection.class);",
+        "    Connection con = mock(Connection.class);",
+        "    ms.when(() -> HttpConnection.connect(url)).thenReturn(con);",
+        "    when(con.timeout(timeout)).thenReturn(con);",
+        "    when(con.get()).thenThrow(new org.jsoup.UnsupportedMimeTypeException(\"image/png\", url.toString()));",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws org.jsoup.UnsupportedMimeTypeException;",
+        "    ms.close();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File, charsetName, baseUri) throws IOException on invalid charsetName",
+      "path": "B0→B1→B2→exception",
+      "precondition": "temp HTML file exists",
+      "expectedResult": "IOException is thrown due to invalid charset",
+      "tags": [
+        "negative",
+        "file",
+        "exception",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse file invalid charset",
+        "  GIVEN",
+        "    File file = createTempHtmlFile(\"<p>Bad</p>\");",
+        "    String invalidCharset = \"NO_SUCH_CHARSET\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, invalidCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    }
+  ]
+}

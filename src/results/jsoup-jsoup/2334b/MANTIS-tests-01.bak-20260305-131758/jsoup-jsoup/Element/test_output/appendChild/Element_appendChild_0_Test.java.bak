@@ -1,0 +1,67 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("TC01: appendChild(null) throws IllegalArgumentException when child is null")
+    public void test_TC01() {
+        Element parent = new Element("div");
+        Node child = null;
+        // passing null should trigger Validate.notNull -> IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> parent.appendChild(child),
+            "Expected appendChild(null) to throw IllegalArgumentException");
+        // verify no child was added
+        assertEquals(0, parent.childNodeSize(), "No children should be added on exception");
+    }
+
+    @Test
+    @DisplayName("TC02: append first child when childNodes is initially empty (ensureChildNodes branch-true)")
+    public void test_TC02() throws Exception {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("text");
+        // precondition: childNodes == EmptyNodes before append -> triggers ensureChildNodes branch-true
+        Element result = parent.appendChild(child);
+        // return value must be parent itself
+        assertEquals(parent, result, "appendChild should return the parent element");
+        // size should be 1 after first append
+        assertEquals(1, parent.childNodeSize(), "First child appended should increase size to 1");
+        // child.parent() via public API
+        assertEquals(parent, child.parent(), "Child's parent must be set to the element");
+        // siblingIndex is private; use reflection to verify it's set to 0
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(child);
+        assertEquals(0, idx, "First child's sibling index should be 0");
+    }
+
+    @Test
+    @DisplayName("TC03: append second child when childNodes already non-empty (ensureChildNodes branch-false)")
+    public void test_TC03() throws Exception {
+        Element parent = new Element("div");
+        TextNode first = new TextNode("one");
+        // append first to move childNodes out of EmptyNodes -> ensureChildNodes branch false next
+        parent.appendChild(first);
+        TextNode second = new TextNode("two");
+        // now childNodes is non-empty -> triggers add branch not needing to create list
+        Element result = parent.appendChild(second);
+        // return value must be parent itself
+        assertEquals(parent, result, "appendChild should return the parent element");
+        // size should be 2 after appending second
+        assertEquals(2, parent.childNodeSize(), "Second child appended should increase size to 2");
+        // child.parent() via public API
+        assertEquals(parent, second.parent(), "Second child's parent must be set to the element");
+        // siblingIndex is private; use reflection to verify it's set to 1
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(second);
+        assertEquals(1, idx, "Second child's sibling index should be 1");
+    }
+}

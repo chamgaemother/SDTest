@@ -1,0 +1,215 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Unclosed array throws Closing array not found when expression ends with '['",
+      "path": "B0→B1→B6(loop end)→B7→B9→B10",
+      "precondition": "ExpressionConfiguration with arraysAllowed=true",
+      "expectedResult": "ParseException with message 'Closing array not found'",
+      "tags": [
+        "exception",
+        "boundary",
+        "array"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 unclosed-array",
+        "  GIVEN",
+        "    String expr = \"[1\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Closing array not found\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Unexpected closing brace at start throws Unexpected closing brace",
+      "path": "B0→B1→B6(loop start)→parseBraceClose→braceBalance<0→exception",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "ParseException with message 'Unexpected closing brace'",
+      "tags": [
+        "exception",
+        "brace",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 unexpected-closing-brace",
+        "  GIVEN",
+        "    String expr = \")\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing brace\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Unexpected closing array at start throws Unexpected closing array",
+      "path": "B0→B1→getNextToken→parseArrayClose→arrayBalance<0→exception",
+      "precondition": "ExpressionConfiguration with arraysAllowed=true",
+      "expectedResult": "ParseException with message 'Unexpected closing array'",
+      "tags": [
+        "exception",
+        "array",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 unexpected-closing-array",
+        "  GIVEN",
+        "    String expr = \"]\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing array\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Misplaced structure operator at start throws Misplaced structure operator",
+      "path": "B0→B1→getNextToken→parseStructureSeparator→validateToken exception",
+      "precondition": "ExpressionConfiguration with structAllowed=true",
+      "expectedResult": "ParseException with message 'Misplaced structure operator'",
+      "tags": [
+        "exception",
+        "structure",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 misplaced-structure-operator",
+        "  GIVEN",
+        "    String expr = \".\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Misplaced structure operator\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Undefined operator for '.' when structures disallowed throws Undefined operator",
+      "path": "B0→B1→getNextToken→parseOperator→exception",
+      "precondition": "ExpressionConfiguration with structAllowed=false",
+      "expectedResult": "ParseException with message containing \"Undefined operator '.'\"",
+      "tags": [
+        "exception",
+        "operator",
+        "structure"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 undefined-operator-structure-disabled",
+        "  GIVEN",
+        "    String expr = \".\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, false, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined operator '.'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Hexadecimal number literal '0x1F' yields one NUMBER_LITERAL token",
+      "path": "B0→B1→getNextToken→isAtNumberStart→parseNumberLiteral→parseHexNumberLiteral→return→B11",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "Return list with one NUMBER_LITERAL token '0x1F'",
+      "tags": [
+        "positive",
+        "number",
+        "hexadecimal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 hex-number-literal",
+        "  GIVEN",
+        "    String expr = \"0x1F\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size()==1;",
+        "    assert tokens.get(0).getType()==NUMBER_LITERAL;",
+        "    assert tokens.get(0).getToken().equals(\"0x1F\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Decimal with two dots throws Number contains more than one decimal point",
+      "path": "B0→B1→getNextToken→parseDecimalNumberLiteral(loop)→exception",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "ParseException with message 'Number contains more than one decimal point'",
+      "tags": [
+        "exception",
+        "number",
+        "decimal",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 multiple-decimal-points",
+        "  GIVEN",
+        "    String expr = \"1.2.3\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Number contains more than one decimal point\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Illegal scientific format in '1e+' throws Illegal scientific format",
+      "path": "B0→B1→getNextToken→parseDecimalNumberLiteral→post-loop illegal-scientific→exception",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "ParseException with message 'Illegal scientific format'",
+      "tags": [
+        "exception",
+        "number",
+        "scientific"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 illegal-scientific-format",
+        "  GIVEN",
+        "    String expr = \"1e+\";",
+        "    ExpressionConfiguration config = new StubConfig(true, true, true, true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Illegal scientific format\";",
+        "END"
+      ]
+    }
+  ]
+}

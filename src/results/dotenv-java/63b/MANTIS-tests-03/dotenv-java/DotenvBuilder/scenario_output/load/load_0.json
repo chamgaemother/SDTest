@@ -1,0 +1,173 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Throws DotenvException when .env file is missing and throwIfMissing=true (branch-false on systemProperties)",
+      "path": "B0",
+      "precondition": "Ensure no .env file exists in temporary test directory; using real DotenvReader and DotenvParser",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no Dotenv instance returned",
+      "tags": [
+        "exception",
+        "throwIfMissing:true",
+        "branch-false",
+        "overload:()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 load missing-file-throws",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Returns empty Dotenv when .env is missing but ignoreIfMissing() is set (branch-false on systemProperties)",
+      "path": "B0→B2",
+      "precondition": "Ensure no .env file exists in temporary directory; using real parser; ignoreIfMissing() suppresses exception",
+      "expectedResult": "return value is Dotenv instance with entries() empty or matching only system env; entries().stream().noneMatch(e->e.getKey().equals(\"KEY\"));",
+      "tags": [
+        "branch-false",
+        "ignoreIfMissing",
+        "overload:()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 load ignore-missing",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().stream().allMatch(e->e.getKey()!=null);"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Returns Dotenv with single entry from file when systemProperties=false (branch-false)",
+      "path": "B0→B2",
+      "precondition": "Create .env in tempDir with ONE_KEY=ONE_VAL; real parser; systemProperties default false",
+      "expectedResult": "result.get(\"ONE_KEY\") equals \"ONE_VAL\"; entries().contains(new DotenvEntry(\"ONE_KEY\",\"ONE_VAL\"));",
+      "tags": [
+        "branch-false",
+        "loop-1?",
+        "overload:()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 load single-entry-no-sysprops",
+        "  GIVEN",
+        "    write \"ONE_KEY=ONE_VAL\" to tempDir/.env;",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir);",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"ONE_KEY\")==\"ONE_VAL\";"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Sets system properties for zero entries when systemProperties=true (branch-true, loop-0)",
+      "path": "B0→B1→B2",
+      "precondition": "Create empty .env in tempDir; real parser; builder.systemProperties();",
+      "expectedResult": "no new system property for any key from file; result.entries().size()>=System.getenv().size();",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "overload:()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 load empty-file-with-sysprops",
+        "  GIVEN",
+        "    write \"\" to tempDir/.env;",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().containsAll(System.getenv().entrySet().stream()",
+        "      .map(e->new DotenvEntry(e.getKey(),e.getValue())).collect(Collectors.toSet()));"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Sets a single system property when systemProperties=true and file has one entry (branch-true, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env in tempDir with KEY1=VAL1; real parser; builder.systemProperties();",
+      "expectedResult": "System.getProperty(\"KEY1\") equals \"VAL1\"; result.get(\"KEY1\")==\"VAL1\";",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "overload:()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 load one-entry-with-sysprops",
+        "  GIVEN",
+        "    write \"KEY1=VAL1\" to tempDir/.env;",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"KEY1\")==\"VAL1\";"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Sets multiple system properties when systemProperties=true and file has multiple entries (branch-true, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env in tempDir with K1=V1,K2=V2,K3=V3; real parser; builder.systemProperties();",
+      "expectedResult": "for each Ki, System.getProperty(Ki)==Vi; result.entries() contains entries for all keys;",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load multiple-entries-with-sysprops",
+        "  GIVEN",
+        "    write lines [\"K1=V1\",\"K2=V2\",\"K3=V3\"] to tempDir/.env;",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).systemProperties();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"K1\")==\"V1\" && System.getProperty(\"K2\")==\"V2\" && System.getProperty(\"K3\")==\"V3\";"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Throws DotenvException when .env file is malformed and throwIfMalformed=true",
+      "path": "B0",
+      "precondition": "Create .env in tempDir with malformed content \"BAD LINE\"; real parser; default throwIfMalformed=true",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no side effects on system properties",
+      "tags": [
+        "exception",
+        "throwIfMalformed:true",
+        "overload:()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 load malformed-file-throws",
+        "  GIVEN",
+        "    write \"BAD LINE\" to tempDir/.env;",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir);",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    }
+  ]
+}

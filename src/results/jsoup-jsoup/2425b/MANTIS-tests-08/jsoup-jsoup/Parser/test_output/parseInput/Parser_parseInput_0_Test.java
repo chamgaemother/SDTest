@@ -1,0 +1,222 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_0_Test {
+
+    @Test
+    @DisplayName("parseInput(String, String) with simple HTML returns Document with corresponding p element (normal branch)")
+    void test_TC01_O1() {
+        // GIVEN a real HTML parser and a simple <p>test</p> snippet
+        Parser parser = Parser.htmlParser();
+        String html = "<p>test</p>";
+        String uri = "http://example.com";
+        // WHEN parsing the HTML
+        Document doc = parser.parseInput(html, uri);
+        // THEN should produce a Document with a <p> element containing "test" and preserve baseUri
+        assertEquals("test", doc.select("p").text());
+        assertEquals("http://example.com", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) with empty HTML returns empty body (boundary empty input)")
+    void test_TC02_O1() {
+        // GIVEN a real HTML parser and empty HTML
+        Parser parser = Parser.htmlParser();
+        String html = "";
+        String uri = "base";
+        // WHEN parsing the empty HTML
+        Document doc = parser.parseInput(html, uri);
+        // THEN the resulting body should have no children
+        assertTrue(doc.body().children().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) with null html throws NullPointerException on StringReader constructor (exception branch)")
+    void test_TC03_O1() {
+        // GIVEN a real HTML parser and a null html input
+        Parser parser = Parser.htmlParser();
+        String html = null;
+        String uri = "u";
+        // WHEN & THEN a NullPointerException should be thrown by new StringReader(null)
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, uri));
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with simple HTML Reader returns Document containing p (normal branch)")
+    void test_TC04_O2() {
+        // GIVEN a real HTML parser and a StringReader with <p>rdr</p>
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("<p>rdr</p>");
+        String uri = "u";
+        // WHEN parsing from the Reader
+        Document doc = parser.parseInput(reader, uri);
+        // THEN should produce a Document with <p>rdr</p>
+        assertEquals("rdr", doc.select("p").text());
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with null Reader throws NullPointerException when lock and parse called (exception branch)")
+    void test_TC05_O2() {
+        // GIVEN a real HTML parser and a null Reader
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        String uri = "u";
+        // WHEN & THEN parsing should throw NullPointerException due to reader null access
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, uri));
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with Reader throwing IOException causes UncheckedIOException (exception branch)")
+    void test_TC06_O2() {
+        // GIVEN a real HTML parser and a Reader stub that throws IOException
+        Parser parser = Parser.htmlParser();
+        Reader reader = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("io");
+            }
+            @Override
+            public void close() throws IOException {
+                // no-op
+            }
+        };
+        String uri = "u";
+        // WHEN & THEN an UncheckedIOException should propagate
+        assertThrows(UncheckedIOException.class, () -> parser.parseInput(reader, uri));
+    }
+
+    @Test
+    @DisplayName("sequential parseInput(String,String) calls reuse same Parser produce distinct Documents (branch-reentrant)")
+    void test_TC07_O1() {
+        // GIVEN a real HTML parser and two different HTML strings
+        Parser parser = Parser.htmlParser();
+        String html1 = "<p>1</p>";
+        String html2 = "<p>2</p>";
+        String uri = "u";
+        // WHEN parsing twice sequentially
+        Document d1 = parser.parseInput(html1, uri);
+        Document d2 = parser.parseInput(html2, uri);
+        // THEN should get distinct Document instances with their own content
+        assertAll(
+            () -> assertNotSame(d1, d2),
+            () -> assertEquals("1", d1.select("p").text()),
+            () -> assertEquals("2", d2.select("p").text())
+        );
+    }
+
+    @Test
+    @DisplayName("parseInput(String,String) does not change trackPosition setting (branch-state)")
+    void test_TC08_O1() {
+        // GIVEN a real HTML parser with trackPosition enabled
+        Parser parser = Parser.htmlParser().setTrackPosition(true);
+        String html = "";
+        String uri = "b";
+        // WHEN parsing empty HTML
+        parser.parseInput(html, uri);
+        // THEN trackPosition flag remains true
+        assertTrue(parser.isTrackPosition());
+    }
+
+    @Test
+    @DisplayName("parseInput(String,String) with custom stub TreeBuilder returns stub Document (branch-custom-builder)")
+    void test_TC09_O1() {
+        // GIVEN a stub TreeBuilder that returns a dummy Document
+        Document dummy = new Document("");
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Document parse(Reader input, String baseUri, Parser parser) {
+                return dummy;
+            }
+            @Override
+            public List<Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+            @Override
+            public org.jsoup.nodes.TagSet defaultTagSet() {
+                return null;
+            }
+            @Override
+            public org.jsoup.nodes.ParseSettings defaultSettings() {
+                return null;
+            }
+            @Override
+            public String defaultNamespace() {
+                return "";
+            }
+            @Override
+            public void process(Token token) {
+                // no-op for stub
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "x";
+        String uri = "u";
+        // WHEN parsing with stub builder
+        Document result = parser.parseInput(html, uri);
+        // THEN the same dummy instance should be returned
+        assertSame(dummy, result);
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader,String) with stub TreeBuilder.parse throwing RuntimeException propagates same exception (exception branch)")
+    void test_TC10_O2() {
+        // GIVEN a stub TreeBuilder whose parse(...) throws IllegalStateException
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Document parse(Reader input, String baseUri, Parser parser) {
+                throw new IllegalStateException("fail");
+            }
+            @Override
+            public List<Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+            @Override
+            public org.jsoup.nodes.TagSet defaultTagSet() {
+                return null;
+            }
+            @Override
+            public org.jsoup.nodes.ParseSettings defaultSettings() {
+                return null;
+            }
+            @Override
+            public String defaultNamespace() {
+                return "";
+            }
+            @Override
+            public void process(Token token) {
+                // no-op for stub
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Reader rdr = new StringReader("x");
+        String uri = "u";
+        // WHEN & THEN the IllegalStateException should propagate unchanged
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(rdr, uri));
+        assertEquals("fail", ex.getMessage());
+    }
+}

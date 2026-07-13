@@ -1,0 +1,99 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException when child is null",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "branch-true",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node child = null;",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild(firstChild) initializes childNodes and adds one child with sibling index 0",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "parent.childNodeSize() == 1 and parent.iterator().next() == child and child.siblingIndex() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0→1",
+        "initialization",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node child = new Element(\"span\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1; assert parent.child(0) == child; assert child.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild(secondChild) reuses existing childNodes without re-initialization and sets sibling index to 1",
+      "path": "B0→B3→B4→B5",
+      "precondition": "parent.childNodes already initialized with one element",
+      "expectedResult": "parent.childNodeSize() == 2 and secondChild.siblingIndex() == 1",
+      "tags": [
+        "branch-false",
+        "loop-1→2",
+        "reuse",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node first = new Element(\"p\"); parent.appendChild(first); Node second = new Element(\"a\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2; assert parent.child(1) == second; assert second.siblingIndex() == 1;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild(childWithParent) moves child from old parent to new parent and updates sibling index",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "oldParent has childUnderTest; verify stub reparenting behavior",
+      "expectedResult": "oldParent.childNodeSize() == 0 and newParent.childNodeSize() == 1 and childUnderTest.parent() == newParent and childUnderTest.siblingIndex() == 0",
+      "tags": [
+        "branch-true",
+        "reparenting",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent-child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"ul\"); Element newParent = new Element(\"ol\"); Element childUnderTest = new Element(\"li\"); oldParent.appendChild(childUnderTest);",
+        "  WHEN",
+        "    newParent.appendChild(childUnderTest);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0; assert newParent.childNodeSize() == 1; assert childUnderTest.parent() == newParent; assert childUnderTest.siblingIndex() == 0;"
+      ]
+    }
+  ]
+}

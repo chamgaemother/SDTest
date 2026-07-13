@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parser.tagSet() returns empty set when underlying TreeBuilder provides no tags",
+      "path": "B0→B2(override)→B4→B5",
+      "precondition": "Parser created and TreeBuilder stubbed to return empty set",
+      "expectedResult": "returned Set is empty",
+      "tags": [
+        "positive",
+        "empty",
+        "override"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 tagSet empty from custom TreeBuilder",
+        "  GIVEN",
+        "    // Arrange: stub TreeBuilder to return empty tag set",
+        "    class EmptyBuilder extends HtmlTreeBuilder {",
+        "      @Override public Set<String> defaultTagSet() { return Collections.emptySet(); }",
+        "    }",
+        "    Parser parser = new Parser(new EmptyBuilder());",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parser.tagSet() returns uppercase tags when case-preserving settings applied",
+      "path": "B0→B1→B3(casePreserve)→B4→B5",
+      "precondition": "Parser with default HtmlTreeBuilder",
+      "expectedResult": "Set contains uppercase HTML tag names",
+      "tags": [
+        "positive",
+        "settings",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 tagSet respects preserve-case setting",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    // Apply case-sensitive parse settings",
+        "    parser.settings(ParseSettings.preserveCase);",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assertTrue(tags.contains(\"HTML\"), \"Expected uppercase 'HTML'\");",
+        "    assertTrue(tags.contains(\"BODY\"), \"Expected uppercase 'BODY'\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "private tagSet() reflectively invoked on XML parser returns same set as public call",
+      "path": "B0→B1(xml)→B6(reflect)→B7",
+      "precondition": "Parser.xmlParser() and reflection access allowed",
+      "expectedResult": "reflective invocation yields identical Set to parser.tagSet()",
+      "tags": [
+        "positive",
+        "reflection",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 private xmlParser.tagSet via reflection",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Set<String> direct = parser.tagSet();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\");",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    Set<String> reflect = (Set<String>) m.invoke(parser);",
+        "  THEN",
+        "    assertEquals(direct, reflect);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "reflective invocation without accessibility throws IllegalAccessException for private tagSet",
+      "path": "B0→B1(html)→B6(noSetAccessible)→B8",
+      "precondition": "Parser.htmlParser() and reflection without setAccessible",
+      "expectedResult": "IllegalAccessException thrown",
+      "tags": [
+        "negative",
+        "reflection",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 calling private tagSet without setAccessible",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\");",
+        "    // do not call setAccessible(true)",
+        "  WHEN",
+        "    invoke m on parser",
+        "  THEN",
+        "    assertThrows(IllegalAccessException.class);",
+        "END"
+      ]
+    }
+  ]
+}

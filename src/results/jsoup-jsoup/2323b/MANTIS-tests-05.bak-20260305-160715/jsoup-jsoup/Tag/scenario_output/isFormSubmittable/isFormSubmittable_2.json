@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "valueOf known tag 'input' with wrong namespace returns a new Tag instance that is not submittable",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "Parser.NamespaceHtml ≠ custom namespace, settings.preserveTagCase() == true",
+      "expectedResult": "returns a new Tag (not == static), tag.isFormSubmittable() == false, tag.isInline() == false",
+      "tags": [
+        "namespace-mismatch",
+        "negative",
+        "factory-default"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 valueOf known tag wrong-namespace",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = \"http://example.com/other\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    assert tag != Tag.valueOf(\"input\");",
+        "    assertFalse(tag.isFormSubmittable());",
+        "    assertFalse(tag.isBlock());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf with different case and preserveTagCase false returns static tag with normalized name",
+      "path": "B0→B1→B2→B5→B7",
+      "precondition": "ParseSettings where preserveTagCase() == false, namespace = Parser.NamespaceHtml",
+      "expectedResult": "returns static Tag instance for 'div', tag.getName().equals(\"div\"), isFormSubmittable() == false",
+      "tags": [
+        "settings-variation",
+        "positive",
+        "normalization"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf preserveTagCase-false",
+        "  GIVEN",
+        "    String tagName = \"DiV\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase.inverse(); // mimic preserveTagCase=false",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    assert tag == Tag.valueOf(\"div\");",
+        "    assertEquals(\"div\", tag.getName());",
+        "    assertFalse(tag.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(String, ParseSettings) overload returns static tag for known 'textarea' and preserves formSubmit",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use overload valueOf(tagName, settings), default namespace = Parser.NamespaceHtml",
+      "expectedResult": "returns static Tag instance for 'textarea', tag.isFormSubmittable() == false, tag.preserveWhitespace() == true",
+      "tags": [
+        "overload",
+        "positive",
+        "inline-property"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 valueOf overload preserves properties",
+        "  GIVEN",
+        "    String tagName = \"textarea\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assert tag == Tag.valueOf(\"textarea\");",
+        "    assertFalse(tag.isFormSubmittable());",
+        "    assertTrue(tag.preserveWhitespace());",
+        "END"
+      ]
+    }
+  ]
+}

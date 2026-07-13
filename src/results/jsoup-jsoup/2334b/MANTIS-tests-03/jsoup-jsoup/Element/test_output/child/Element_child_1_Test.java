@@ -1,0 +1,43 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(0) on element with only non-Element child nodes throws IndexOutOfBoundsException")
+    public void test_TC09() {
+        // GIVEN: an Element with only a TextNode child, so childElementsList() is empty and loop finds no Element
+        Element el = new Element("div");
+        el.appendText("hello"); // adds a TextNode, not an Element
+
+        // WHEN / THEN: calling child(0) should throw, because there are no element children (index out of bounds)
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(0);
+        });
+    }
+
+    @Test
+    @DisplayName("child(n) after cache primed then new Element added triggers cache invalidation and returns correct new child")
+    public void test_TC10() {
+        // GIVEN: an Element with two <li> children
+        Element el = new Element("ul");
+        Element first = el.appendElement("li");
+        Element second = el.appendElement("li");
+        // prime the cache by calling child(1) so shadowChildrenRef is populated
+        Element primed = el.child(1);
+        assertSame(second, primed, "Cache primed with second element");
+
+        // WHEN: append a new <li>, shadowChildrenRef should be invalidated by nodelistChanged()
+        Element thirdAppended = el.appendElement("li");
+
+        // THEN: child(2) should reflect the new child, not the old cache
+        Element result = el.child(2);
+        assertEquals("li", result.tagName(), "Expected new third child tag to be 'li'");
+        assertSame(thirdAppended, result, "Expected the returned element to be the newly appended one");
+    }
+}

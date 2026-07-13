@@ -1,0 +1,94 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class BM25InvertedIndex_search_0_Test {
+
+    @Test
+    @DisplayName("TC01: Term not in index triggers B0 false and returns empty list")
+    void test_TC01() {
+        // GIVEN a fresh BM25InvertedIndex with no movies added -> index.containsKey(term) is false -> B0 false
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        // WHEN searching for an absent term
+        List<SearchResult> results = idx.search("inexistent");
+        // THEN the returned list is empty
+        assertTrue(results.isEmpty(), "Expected no results when term is not in index");
+    }
+
+    @Test
+    @DisplayName("TC02: Term present but termDocs map empty triggers B0 true then B7 zero iterations and returns empty")
+    void test_TC02() throws Exception {
+        // GIVEN an index with a key "foo" mapped to an empty termDocs, and movies map empty
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        // Reflection to access private 'index' field
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        indexMap.put("foo", new HashMap<>()); // B0 true, B2->B7 zero iterations
+        // WHEN searching for "foo"
+        List<SearchResult> results = idx.search("foo");
+        // THEN the returned list is empty
+        assertTrue(results.isEmpty(), "Expected no results when termDocs is empty");
+    }
+
+    @Test
+    @DisplayName("TC03: Single document contains term triggers one loop iteration and returns single SearchResult with correct score")
+    void test_TC03() {
+        // GIVEN an index with one movie containing term "a"
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "A", 5.0, 2020, "A");
+        // The only document has docLength == avgDocumentLength == 2 words -> score simplifies to idf = log((1-1+0.5)/(1+0.5))
+        double expectedIdf = Math.log((1.0 - 1 + 0.5) / (1 + 0.5));
+        // WHEN searching for "a" (lowercased)
+        List<SearchResult> results = idx.search("a");
+        // THEN one result with docId=1 and relevanceScore==expectedIdf
+        assertEquals(1, results.size(), "Expected exactly one search result");
+        SearchResult sr = results.get(0);
+        assertEquals(1, sr.getDocId(), "DocId should be 1");
+        assertEquals(expectedIdf, sr.getRelevanceScore(), 1e-9,
+                     "Relevance score should equal computed IDF when docLength == avgDocumentLength");
+    }
+
+    @Test
+    @DisplayName("TC04: Multiple documents with term triggers loop and sorts by relevance descending")
+    void test_TC04() {
+        // GIVEN two movies: doc1 has term twice, doc2 has term once -> doc2 shorter so higher normalized score
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "Test", 4.0, 2000, "term term"); // term frequency 2, doc length 3
+        idx.addMovie(2, "Test", 4.0, 2000, "term");      // term frequency 1, doc length 2
+        // WHEN searching for "term"
+        List<SearchResult> results = idx.search("term");
+        // THEN two results, first docId=2 (higher score), then docId=1
+        assertEquals(2, results.size(), "Expected two search results");
+        assertEquals(2, results.get(0).getDocId(), "Expected docId 2 first due to higher BM25 score");
+        assertEquals(1, results.get(1).getDocId(), "Expected docId 1 second due to lower BM25 score");
+    }
+
+    @Test
+    @DisplayName("TC05: termDocs entry exists for docId missing in movies triggers skip branch and returns empty list")
+    void test_TC05() throws Exception {
+        // GIVEN an index with a term "ghost" pointing to docId=999 but movies map is empty -> movie==null -> skip B5
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        // Reflection to put termDocs for "ghost"
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        Map<Integer, Integer> termDocs = new HashMap<>();
+        termDocs.put(999, 1);
+        indexMap.put("ghost", termDocs);
+        // WHEN searching for "ghost"
+        List<SearchResult> results = idx.search("ghost");
+        // THEN the returned list is empty because the movie with id 999 does not exist
+        assertTrue(results.isEmpty(), "Expected no results when all termDocs entries refer to missing movies");
+    }
+}

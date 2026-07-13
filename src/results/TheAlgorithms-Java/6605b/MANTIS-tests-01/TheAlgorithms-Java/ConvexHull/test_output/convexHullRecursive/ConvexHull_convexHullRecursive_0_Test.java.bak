@@ -1,0 +1,92 @@
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import com.thealgorithms.geometry.ConvexHull;
+import com.thealgorithms.geometry.Point;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class ConvexHull_convexHullRecursive_Test {
+
+    @Test
+    @DisplayName("TC01: empty list input triggers IndexOutOfBoundsException at points.get(0)")
+    void test_TC01() {
+        // GIVEN an empty point list
+        List<Point> points = Collections.emptyList();
+        // WHEN & THEN calling convexHullRecursive should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            ConvexHull.convexHullRecursive(points);
+        });
+    }
+
+    @Test
+    @DisplayName("TC02: single-point list returns that single point without looping (loop-0)")
+    void test_TC02() {
+        // GIVEN a list with exactly one point P0
+        Point p0 = new Point(0, 0);
+        List<Point> points = Collections.singletonList(p0);
+        // WHEN computing the convex hull
+        List<Point> hull = ConvexHull.convexHullRecursive(points);
+        // THEN result should be [P0]
+        assertEquals(Collections.singletonList(p0), hull);
+    }
+
+    @Test
+    @DisplayName("TC03: two-point list returns both points sorted without looping (loop-0)")
+    void test_TC03() {
+        // GIVEN two distinct points P1 < P2 by natural order
+        Point p1 = new Point(0, 0);
+        Point p2 = new Point(1, 1);
+        List<Point> points = Arrays.asList(p1, p2);
+        // WHEN computing the convex hull
+        List<Point> hull = ConvexHull.convexHullRecursive(points);
+        // THEN both points are returned in natural (sorted) order [P1, P2]
+        assertEquals(Arrays.asList(p1, p2), hull);
+    }
+
+    @Test
+    @DisplayName("TC04: three colinear points only endpoints in hull (det==0 both branches)")
+    void test_TC04() {
+        // GIVEN three colinear points A < B < C on x-axis: orientation is zero for middle point
+        Point a = new Point(0, 0);
+        Point b = new Point(1, 0);
+        Point c = new Point(2, 0);
+        List<Point> points = Arrays.asList(a, b, c);
+        // WHEN computing the convex hull
+        List<Point> hull = ConvexHull.convexHullRecursive(points);
+        // THEN only endpoints [A, C] should remain
+        assertEquals(Arrays.asList(a, c), hull);
+    }
+
+    @Test
+    @DisplayName("TC05: three non-colinear triangle returns all three points (upperHull non-empty, lowerHull empty)")
+    void test_TC05() {
+        // GIVEN triangle points L, M, R where M lies above line L->R (positive orientation)
+        Point l = new Point(0, 0);
+        Point m = new Point(1, 1);
+        Point r = new Point(2, 0);
+        List<Point> points = Arrays.asList(l, m, r);
+        // WHEN computing the convex hull
+        List<Point> hull = ConvexHull.convexHullRecursive(points);
+        // THEN all three vertices sorted: [L, M, R]
+        assertEquals(Arrays.asList(l, m, r), hull);
+    }
+
+    @Test
+    @DisplayName("TC06: four points forming a square returns all four hull points (mixed upper and lower, loop-N)")
+    void test_TC06() {
+        // GIVEN square corners: BL, TL, TR, BR
+        Point bl = new Point(0, 0);
+        Point tl = new Point(0, 1);
+        Point tr = new Point(1, 1);
+        Point br = new Point(1, 0);
+        // The intended hull order is clockwise starting at bottom-left: [BL, BR, TR, TL]
+        List<Point> points = Arrays.asList(bl, tl, tr, br);
+        // WHEN computing the convex hull
+        List<Point> hull = ConvexHull.convexHullRecursive(points);
+        // THEN the hull should list all four corners in clockwise order as intended
+        assertEquals(Arrays.asList(bl, br, tr, tl), hull);
+    }
+}

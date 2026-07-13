@@ -1,0 +1,97 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+import org.davidmoten.text.utils.WordWrap.Builder;
+import org.davidmoten.text.utils.LineConsumer;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("wrap() on InputStream+charset source exercises from(InputStream,Charset) overload and default breakWords behavior")
+    public void test_TC17() throws IOException {
+        // Input "one two three" bytes; maxWidth=3 triggers breaking of "three" into "thr" + "ee"
+        byte[] bytes = "one two three".getBytes(StandardCharsets.UTF_8);
+        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+        Builder b = WordWrap.from(in, StandardCharsets.UTF_8).maxWidth(3);
+        String result = b.wrap();
+        // Expect lines "one","two","thr","ee"
+        assertEquals("one\ntwo\nthr\nee", result);
+    }
+
+    @Test
+    @DisplayName("wrap() with includeExtraWordChars treating punctuation as word char skips punctuation split branch")
+    public void test_TC18() throws IOException {
+        // Input "a!b" with '!' included as word char so the punctuation isn't split or treated separately
+        String input = "a!b";
+        Builder b = WordWrap.from(new StringReader(input))
+            .includeExtraWordChars("!")
+            .maxWidth(5);
+        String result = b.wrap();
+        // entire "a!b" is under maxWidth and punctuation is part of word
+        assertEquals("a!b", result);
+    }
+
+    @Test
+    @DisplayName("wrap(LineConsumer) writes directly to custom consumer without closing reader when closeReader=false")
+    public void test_TC19() throws IOException {
+        // Using from(CharSequence) sets closeReader=false; maxWidth=2 forces break "ab cd" into ["ab","cd"]
+        String text = "ab cd";
+        Builder b = WordWrap.from(text).maxWidth(2);
+        List<String> received = new ArrayList<>();
+        LineConsumer consumer = new LineConsumer() {
+            private StringBuilder sb = new StringBuilder();
+
+            @Override
+            public void write(char[] chars, int offset, int length) {
+                // accumulate chars until newline
+                sb.append(chars, offset, length);
+            }
+
+            @Override
+            public void writeNewLine() {
+                // on newline, push built string then reset
+                received.add(sb.toString());
+                sb.setLength(0);
+            }
+        };
+        b.wrap(consumer);
+        // Expect two lines: "ab" then "cd"
+        assertEquals(List.of("ab", "cd"), received);
+    }
+
+    @Test
+    @DisplayName("wrapUtf8(String) writes to file via wrapUtf8(File) and wrap(File,Charset)")
+    public void test_TC20() throws IOException {
+        // Create temp file; wrap "hello world" with maxWidth=5 splits into "hello" and "world"
+        File temp = File.createTempFile("w", ".txt");
+        temp.deleteOnExit();
+        Builder b = WordWrap.from(new StringReader("hello world")).maxWidth(5);
+        b.wrapUtf8(temp.getAbsolutePath());
+        String out = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);
+        assertEquals("hello\nworld", out);
+    }
+
+    @Test
+    @DisplayName("wrap() on input with trailing spaces and newline triggers rightTrim branch to remove trailing whitespace")
+    public void test_TC21() throws IOException {
+        // Input has "ab   \ncd"; trailing spaces before newline should be trimmed to "ab"
+        String input = "ab   \ncd";
+        Builder b = WordWrap.from(new StringReader(input));
+        String result = b.wrap();
+        assertEquals("ab\ncd", result);
+    }
+}

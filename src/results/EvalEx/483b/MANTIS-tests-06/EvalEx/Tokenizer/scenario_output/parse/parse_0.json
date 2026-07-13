@@ -1,0 +1,249 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty expression returns empty token list (r14==null exit)",
+      "path": "B0→B1→B7→B9→B11",
+      "precondition": "configuration: default (implictMultiplicationAllowed=false, arraysAllowed=false, structuresAllowed=false)",
+      "expectedResult": "return value is empty list",
+      "tags": [
+        "loop-0",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-expression",
+        "  GIVEN",
+        "    String expr = \"\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert tokens.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single number literal parses one token (implicitMultiplicationPossible=false)",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "configuration: default",
+      "expectedResult": "return list with one NUMBER_LITERAL token whose text is \"42\"",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-number",
+        "  GIVEN",
+        "    String expr = \"42\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;",
+        "    assert tokens.get(0).getText().equals(\"42\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Paired parentheses produce BRACE_OPEN and BRACE_CLOSE tokens",
+      "path": "B0→B1→B2→B6(loop×2)→B1→B7→B9→B11",
+      "precondition": "configuration: default",
+      "expectedResult": "return tokens [BRACE_OPEN \"(\", BRACE_CLOSE \")\"]",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse empty-parentheses",
+        "  GIVEN",
+        "    String expr = \"()\";",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert tokens.size() == 2;",
+        "    assert tokens.get(0).getType() == TokenType.BRACE_OPEN;",
+        "    assert tokens.get(1).getType() == TokenType.BRACE_CLOSE;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Implicit multiplication inserts '*' before '(' and throws on missing closing brace",
+      "path": "B0→B1→B2(true)→B4→B6→B1→B7→B8",
+      "precondition": "configuration: implicitMultiplicationAllowed=true",
+      "expectedResult": "throws ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 implicit-multiplication and missing-brace",
+        "  GIVEN",
+        "    String expr = \"2(\";",
+        "    configuration.setImplicitMultiplicationAllowed(true);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().contains(\"Closing brace not found\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Implicit multiplication disallowed throws Missing operator",
+      "path": "B0→B1→B2(true)→B3→B5",
+      "precondition": "configuration: implicitMultiplicationAllowed=false",
+      "expectedResult": "throws ParseException of type ParseException with message \"Missing operator\"",
+      "tags": [
+        "branch-true",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 implicit-multiplication-not-allowed",
+        "  GIVEN",
+        "    String expr = \"2(\";",
+        "    configuration.setImplicitMultiplicationAllowed(false);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().equals(\"Missing operator\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Unexpected token after infix operator when ')' follows '+'",
+      "path": "B0→B1→B2→B6→B1→B2(false)→B6→B1",
+      "precondition": "configuration: default",
+      "expectedResult": "throws ParseException with message \"Unexpected token after infix operator\"",
+      "tags": [
+        "exception",
+        "branch-false",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 unexpected-after-infix",
+        "  GIVEN",
+        "    String expr = \"1+)\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().equals(\"Unexpected token after infix operator\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Misplaced structure operator at start throws in parseStructureSeparator",
+      "path": "B0→B1→[getNextToken]->parseStructureSeparator",
+      "precondition": "configuration: structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Structure separator not allowed here\"",
+      "tags": [
+        "exception",
+        "branch-structure",
+        "parseStructureSeparator"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 misplaced-structure-separator",
+        "  GIVEN",
+        "    String expr = \".a\";",
+        "    configuration.setStructuresAllowed(true);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().equals(\"Structure separator not allowed here\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Unclosed brace alone throws Closing brace not found",
+      "path": "B0→B1→B2→B6→B1→B7→B8",
+      "precondition": "configuration: default",
+      "expectedResult": "throws ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "exception",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 unclosed-brace",
+        "  GIVEN",
+        "    String expr = \"(\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().contains(\"Closing brace not found\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Unclosed array throws Closing array not found",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B10",
+      "precondition": "configuration: arraysAllowed=true",
+      "expectedResult": "throws ParseException with message \"Closing array not found\"",
+      "tags": [
+        "exception",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 unclosed-array",
+        "  GIVEN",
+        "    String expr = \"[1\";",
+        "    configuration.setArraysAllowed(true);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "    assert exception.getMessage().contains(\"Closing array not found\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Array with one element parses ARRAY_OPEN, NUMBER_LITERAL, ARRAY_CLOSE",
+      "path": "B0→B1→B2→B6(loop×3)→B1→B7→B9→B11",
+      "precondition": "configuration: arraysAllowed=true",
+      "expectedResult": "return tokens [ARRAY_OPEN \"[\", NUMBER_LITERAL \"5\", ARRAY_CLOSE \"]\"]",
+      "tags": [
+        "loop-N",
+        "normal-return",
+        "arrays"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse simple-array",
+        "  GIVEN",
+        "    String expr = \"[5]\";",
+        "    configuration.setArraysAllowed(true);",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == TokenType.ARRAY_OPEN;",
+        "    assert tokens.get(1).getText().equals(\"5\");",
+        "    assert tokens.get(2).getType() == TokenType.ARRAY_CLOSE;"
+      ]
+    }
+  ]
+}

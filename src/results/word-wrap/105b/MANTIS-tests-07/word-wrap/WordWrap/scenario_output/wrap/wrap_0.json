@@ -1,0 +1,245 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrapToList produces single-line list for input shorter than maxWidth (no wrapping, loop-1)",
+      "path": "Bstart→BreadAllChars(loop×1)→BpostLoop→BwriteResult",
+      "precondition": "none",
+      "expectedResult": "returns List with one element equal to input text",
+      "tags": [
+        "overload:wrapToList",
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 wrapToList single short line",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\").maxWidth(10);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.size() == 1;",
+        "    assert lines.get(0).equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "wrap returns full string without newline for empty input (loop-0)",
+      "path": "Bstart→BreadAllChars(loop×0)→BpostLoopEmptyLine→BwriteEmpty",
+      "precondition": "none",
+      "expectedResult": "returns empty string",
+      "tags": [
+        "overload:wrap()",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 wrap empty input",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03_O3",
+      "description": "wrap(Writer) throws IORuntimeException when Writer.write throws IOException (exception)",
+      "path": "Bstart→BreadChar→BcallWordWrap→BIOException→BcatchWrap",
+      "precondition": "Writer stub throws IOException on any write; why mocking: isolate IOException path",
+      "expectedResult": "throws IORuntimeException",
+      "tags": [
+        "overload:wrap(Writer)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O3 wrap Writer IOException",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a\");",
+        "    Writer w = stubWriterThatThrows();",
+        "  WHEN",
+        "    call b.wrap(w);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC04_O4",
+      "description": "wrap(File,Charset) reads file and writes UTF-8 output to new file (file exists, loop-1)",
+      "path": "Bstart→BreadAllChars(loop×1)→BpostLoop→BwriteResult→BcloseReader",
+      "precondition": "input File with content \"abc def\" exists; output File temp is writable",
+      "expectedResult": "output file contains exactly \"abc def\"",
+      "tags": [
+        "overload:wrap(File,Charset)",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O4 wrap File to File UTF-8",
+        "  GIVEN",
+        "    File in = tempFileWithContent(\"abc def\");",
+        "    File out = newTempFile();",
+        "  WHEN",
+        "    WordWrap.from(in, StandardCharsets.UTF_8).wrap(out, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    assert readFile(out, UTF_8).equals(\"abc def\");"
+      ]
+    },
+    {
+      "id": "TC05_O5",
+      "description": "wrapUtf8(String) creates file when invoked with filename (branch-true)",
+      "path": "Bstart→BreadAllChars(loop×1)→BpostLoop→BwriteResult→BcloseReader",
+      "precondition": "Builder from(CharSequence) uses temp resource; filename temp does not exist",
+      "expectedResult": "file exists and contains the wrapped text",
+      "tags": [
+        "overload:wrapUtf8(String)",
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O5 wrapUtf8 by filename",
+        "  GIVEN",
+        "    String name = tempFilename();",
+        "    Builder b = WordWrap.from(\"one two\");",
+        "  WHEN",
+        "    b.wrapUtf8(name);",
+        "  THEN",
+        "    assert new File(name).exists();",
+        "    assert readFile(new File(name), UTF_8).equals(\"one two\");"
+      ]
+    },
+    {
+      "id": "TC06_O6",
+      "description": "wrap(String,Charset) writes using given charset and wraps long line at space (branch-true, loop-N)",
+      "path": "Bstart→BreadAllChars(loop×N)→BspaceWrap→BwriteResult",
+      "precondition": "input text with repeated words that exceed width 5; temp file",
+      "expectedResult": "output file lines each ≤5 chars at spaces",
+      "tags": [
+        "overload:wrap(String,Charset)",
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O6 wrap to file with charset and wrap on spaces",
+        "  GIVEN",
+        "    String name = tempFilename();",
+        "    Builder b = WordWrap.from(\"aa bb cc dd\").maxWidth(5);",
+        "  WHEN",
+        "    b.wrap(name, StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    List<String> lines = readLines(name, US_ASCII);",
+        "    assert lines.get(0).equals(\"aa bb\");",
+        "    assert lines.get(1).equals(\"cc dd\");"
+      ]
+    },
+    {
+      "id": "TC07_O7",
+      "description": "wrap(LineConsumer) processes CRLF and ignores '\\r' (branch-false, loop-N)",
+      "path": "Bstart→BreadAllChars(loop×N)→BskipCR→BwriteLine",
+      "precondition": "none",
+      "expectedResult": "LineConsumer receives only LF-delimited lines without CR",
+      "tags": [
+        "overload:wrap(LineConsumer)",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O7 wrap with LineConsumer skips CR",
+        "  GIVEN",
+        "    LineCollector c = new LineCollector();",
+        "    Builder b = WordWrap.from(\"a\\r\\nb\");",
+        "  WHEN",
+        "    b.wrap(c);",
+        "  THEN",
+        "    assert c.getLines().equals(Arrays.asList(\"a\",\"b\"));"
+      ]
+    },
+    {
+      "id": "TC08_O8",
+      "description": "wrapUtf8(File) wraps and writes then closes input reader (loop-1, closeReader-true)",
+      "path": "Bstart→BreadAllChars(loop×1)→BpostLoop→BwriteResult→BcloseReader",
+      "precondition": "input File with content \"x y\"; deleteOnExit",
+      "expectedResult": "file contains \"x y\" and original reader closed without exception",
+      "tags": [
+        "overload:wrapUtf8(File)",
+        "loop-1",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O8 wrapUtf8 File overload",
+        "  GIVEN",
+        "    File in = tempFileWithContent(\"x y\");",
+        "    Builder b = WordWrap.from(in, UTF_8);",
+        "    File out = newTempFile();",
+        "  WHEN",
+        "    b.wrapUtf8(out);",
+        "  THEN",
+        "    assert readFile(out, UTF_8).equals(\"x y\");"
+      ]
+    },
+    {
+      "id": "TC09_O9",
+      "description": "wrap with includeExtraWordChars handles punctuation as word char (branch-true)",
+      "path": "Bstart→BreadAllChars(loop×1)→BpuncAsWord→BwriteResult",
+      "precondition": "none",
+      "expectedResult": "punctuation appended to word not split",
+      "tags": [
+        "overload:wrap()",
+        "branch-true",
+        "extraWordChars"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O9 includeExtraWordChars punctuation",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a.b c\").includeExtraWordChars(\".\").maxWidth(3);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a.b\\nc\");"
+      ]
+    },
+    {
+      "id": "TC10_O10",
+      "description": "wrap disables breakWords when false so long word remains unsplit (branch-false)",
+      "path": "Bstart→BreadAllChars(loop×1)→BwordTooLong→BbrokenFalse→BappendWord→BwriteResult",
+      "precondition": "none",
+      "expectedResult": "long word appears unbroken on its own line",
+      "tags": [
+        "overload:wrap()",
+        "branch-false",
+        "breakWords:false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O10 breakWords false keeps word intact",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(3).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcdef\");"
+      ]
+    }
+  ]
+}

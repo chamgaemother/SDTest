@@ -1,0 +1,70 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.WeakReference;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild preserves existing childNodes list instance when non-empty (ensureChildNodes skip creation)")
+    public void test_TC06() {
+        // GIVEN an Element with an initialized childNodes list
+        Element parent = new Element("div");
+        // ensureChildNodes() creates a NodeList instance (branch B3→B4 for empty->created)
+        List<Node> before = parent.ensureChildNodes();
+        assertNotNull(before, "ensureChildNodes should create a NodeList when empty");
+        // WHEN appending a TextNode child (branch B5 actual append path)
+        TextNode child = new TextNode("x");
+        parent.appendChild(child);
+        // THEN the childNodes instance remains the same (reuse existing list)
+        List<Node> after = parent.ensureChildNodes(); // skip creation path
+        assertSame(before, after, "appendChild should reuse the existing childNodes instance");
+    }
+
+    @Test
+    @DisplayName("appendChild resets shadowChildrenRef cache on element parent (nodelistChanged path)")
+    @SuppressWarnings("unchecked")
+    public void test_TC07() throws Exception {
+        // GIVEN a parent with one Element child so that shadowChildrenRef is populated
+        Element parent = new Element("div");
+        Element child1 = new Element("p");
+        parent.appendChild(child1);
+        // populate shadowChildrenRef cache via childElementsList()
+        parent.childElementsList();
+        // reflectively verify shadowChildrenRef is non-null before next append
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        Object refBeforeObj = shadowField.get(parent);
+        assertNotNull(refBeforeObj, "shadowChildrenRef should be non-null after childElementsList()");
+        // WHEN appending another Element child (branch B6 nodelistChanged called)
+        Element child2 = new Element("span");
+        parent.appendChild(child2);
+        // THEN shadowChildrenRef is invalidated (set to null)
+        Object refAfterObj = shadowField.get(parent);
+        assertNull(refAfterObj, "appendChild should reset shadowChildrenRef to null");
+    }
+
+    @Test
+    @DisplayName("appendChild of an Element node correctly reparents and assigns sibling index")
+    public void test_TC08() {
+        // GIVEN an Element moved from oldParent to newParent
+        Element oldParent = new Element("div");
+        Element newParent = new Element("section");
+        Element child = new Element("article");
+        // first append to oldParent (ensures child has parent and siblingIndex 0)
+        oldParent.appendChild(child);
+        assertEquals(1, oldParent.childNodeSize(), "oldParent should have one child initially");
+        // WHEN reparenting child to newParent via appendChild
+        Element returned = newParent.appendChild(child);
+        // THEN appendChild returns the same element (this), reparented with correct siblingIndex and sizes
+        assertSame(newParent, returned, "appendChild should return the parent element for chaining");
+        assertEquals(0, child.siblingIndex(), "child should have siblingIndex 0 in newParent");
+        assertEquals(1, newParent.childNodeSize(), "newParent should now have exactly one child");
+        assertEquals(0, oldParent.childNodeSize(), "oldParent should have no children after reparenting");
+        assertSame(newParent, child.parent(), "child.parent() should point to newParent after reparenting");
+    }
+}

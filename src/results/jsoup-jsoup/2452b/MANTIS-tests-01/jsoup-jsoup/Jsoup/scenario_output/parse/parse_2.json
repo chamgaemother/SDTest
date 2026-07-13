@@ -1,0 +1,177 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parse(File, charsetName, baseUri, parser) uses custom XML parser override branch",
+      "path": "B0→B1→B2(parser non-null)→B3",
+      "precondition": "existing HTML file with <elem>XML</elem> content",
+      "expectedResult": "Document outputSettings().syntax() matches xml parser syntax and body contains <elem>XML</elem>",
+      "tags": [
+        "positive",
+        "overload",
+        "parser-override"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse File with custom parser",
+        "  GIVEN",
+        "    File f = tempFile(\"<elem>XML</elem>\", \".xml\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, charset, baseUri, xml);",
+        "  THEN",
+        "    assert doc.outputSettings().syntax() == xml.getSettings().syntax();",
+        "    assert doc.body().html().contains(\"<elem>XML</elem>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path, charsetName, baseUri, parser) uses custom XML parser override branch",
+      "path": "B0→B1→B2(parser non-null)→B3",
+      "precondition": "existing HTML Path with <n>5</n> content",
+      "expectedResult": "Document outputSettings().syntax() matches xml parser syntax and body contains <n>5</n>",
+      "tags": [
+        "positive",
+        "overload",
+        "parser-override"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse Path with custom parser",
+        "  GIVEN",
+        "    Path p = tempPath(\"<n>5</n>\", \".xml\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://pbase/\";",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri, xml);",
+        "  THEN",
+        "    assert doc.outputSettings().syntax() == xml.getSettings().syntax();",
+        "    assert doc.body().html().contains(\"<n>5</n>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(InputStream, charsetName, baseUri, parser) uses custom XML parser override branch",
+      "path": "B0→B1→B2(parser non-null)→B3",
+      "precondition": "InputStream of <x>7</x> content",
+      "expectedResult": "Document outputSettings().syntax() matches xml parser syntax and body contains <x>7</x>",
+      "tags": [
+        "positive",
+        "overload",
+        "parser-override"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse InputStream with custom parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<x>7</x>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://i/uri\";",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, xml);",
+        "  THEN",
+        "    assert doc.outputSettings().syntax() == xml.getSettings().syntax();",
+        "    assert doc.body().html().contains(\"<x>7</x>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL, timeout) throws SocketTimeoutException when connection times out",
+      "path": "B0→B1(connect)→B2(timeout)→B3(get→timeoutException)",
+      "precondition": "Mock HttpConnection.connect(url) returns Connection whose get() throws SocketTimeoutException",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "exception",
+        "timeout",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parse URL timeout throws SocketTimeoutException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com\");",
+        "    int timeout = 10;",
+        "    Connection mock = mock(Connection.class);",
+        "    when(mock.timeout(timeout)).thenReturn(mock);",
+        "    when(mock.get()).thenThrow(new java.net.SocketTimeoutException());",
+        "    mockStatic(HttpConnection.class).when(() -> HttpConnection.connect(url)).thenReturn(mock);",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws SocketTimeoutException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(URL, timeout) throws HttpStatusException when HTTP status not OK",
+      "path": "B0→B1(connect)→B2(timeout)→B3(get→HttpStatusException)",
+      "precondition": "Mock Connection.get() throws HttpStatusException",
+      "expectedResult": "org.jsoup.HttpStatusException is thrown",
+      "tags": [
+        "exception",
+        "http-status",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 parse URL timeout throws HttpStatusException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com\");",
+        "    int timeout = 20;",
+        "    HttpStatusException ex = new HttpStatusException(\"err\", 500, \"\");",
+        "    Connection mock = mock(Connection.class);",
+        "    when(mock.timeout(timeout)).thenReturn(mock);",
+        "    when(mock.get()).thenThrow(ex);",
+        "    mockStatic(HttpConnection.class).when(() -> HttpConnection.connect(url)).thenReturn(mock);",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws HttpStatusException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(URL, timeout) throws UnsupportedMimeTypeException on unsupported MIME",
+      "path": "B0→B1(connect)→B2(timeout)→B3(get→UnsupportedMimeTypeException)",
+      "precondition": "Mock Connection.get() throws UnsupportedMimeTypeException",
+      "expectedResult": "org.jsoup.UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "exception",
+        "mime-type",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse URL timeout throws UnsupportedMimeTypeException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com\");",
+        "    int timeout = 30;",
+        "    UnsupportedMimeTypeException ex = new UnsupportedMimeTypeException(\"type\", \"url\");",
+        "    Connection mock = mock(Connection.class);",
+        "    when(mock.timeout(timeout)).thenReturn(mock);",
+        "    when(mock.get()).thenThrow(ex);",
+        "    mockStatic(HttpConnection.class).when(() -> HttpConnection.connect(url)).thenReturn(mock);",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException",
+        "END"
+      ]
+    }
+  ]
+}

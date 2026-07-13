@@ -1,0 +1,59 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("Removing an entry from the dataset view updates the underlying element attributes (view-removal)")
+    public void test_TC07() {
+        // GIVEN: an element with two data-attributes
+        Element el = new Element("div");
+        el.attr("data-one", "1");
+        el.attr("data-two", "2");
+        // WHEN: get the dataset view and remove key "one"
+        Map<String, String> ds = el.dataset();
+        // removal should propagate to attributes
+        ds.remove("one"); // branches: B2(remove)→B3
+        // THEN: data-one should be gone, data-two remains
+        assertFalse(el.attributes().hasKey("data-one"), "data-one attribute should have been removed");
+        assertTrue(el.attributes().hasKey("data-two"), "data-two attribute should remain after removal of data-one");
+    }
+
+    @Test
+    @DisplayName("Clearing the dataset view removes all data- attributes from the element (view-clear)")
+    public void test_TC08() {
+        // GIVEN: an element with three data-attributes
+        Element el = new Element("p");
+        el.attr("data-a", "A");
+        el.attr("data-b", "B");
+        el.attr("data-c", "C");
+        // WHEN: get the dataset view and clear it
+        Map<String, String> ds = el.dataset();
+        ds.clear(); // branches: B2(clear)→B3
+        // THEN: none of the data- attributes remain
+        assertFalse(el.attributes().hasKey("data-a"), "data-a should be removed by clear");
+        assertFalse(el.attributes().hasKey("data-b"), "data-b should be removed by clear");
+        assertFalse(el.attributes().hasKey("data-c"), "data-c should be removed by clear");
+    }
+
+    @Test
+    @DisplayName("Multi-part hyphenated data- attribute names are converted to camelCase keys in dataset (key-normalization)")
+    public void test_TC09() {
+        // GIVEN: an element with a multi-hyphenated data- attribute
+        Element el = new Element("span");
+        el.attr("data-user-name-id", "XYZ");
+        // WHEN: get the dataset view
+        Map<String, String> ds = el.dataset(); // branches: B2(hyphen)→B3
+        // THEN: the key is normalized to camelCase and maps to the original value
+        assertTrue(ds.containsKey("userNameId"), "Hyphenated key should normalize to camelCase 'userNameId'");
+        assertEquals("XYZ", ds.get("userNameId"), "Value for 'userNameId' should match the original attribute value");
+    }
+}

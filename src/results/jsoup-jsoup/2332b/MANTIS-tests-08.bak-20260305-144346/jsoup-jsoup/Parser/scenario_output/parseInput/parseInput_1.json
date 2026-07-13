@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Reader overload throws IllegalArgumentException when baseUri is null and stubBuilder rejects it",
+      "path": "B0→B_rd→exception",
+      "precondition": "Parser created with TreeBuilder stub that throws IAE on null baseUri",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 reader-overload-null-baseUri",
+        "  GIVEN",
+        "    StringReader input = new StringReader(\"<div>ok</div>\");",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        if (baseUri == null) throw new IllegalArgumentException(\"baseUri must not be null\");",
+        "        return new Document(\"unused\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader r, Element c, String b, Parser p) { return null; }",
+        "      @Override public boolean isContentForTagData(String n) { return false; }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token t) { }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    Reader reader = input;",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "String overload with real HtmlTreeBuilder returns a non-null Document containing parsed elements",
+      "path": "B0→B_str→B_rd→B_exit",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "Document is returned with one <p> element child in its body",
+      "tags": [
+        "positive",
+        "integration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 string-overload-integration",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>Hello</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.body().select(\"p\").size() == 1;",
+        "    assert doc.body().select(\"p\").first().text().equals(\"Hello\");",
+        "END"
+      ]
+    }
+  ]
+}

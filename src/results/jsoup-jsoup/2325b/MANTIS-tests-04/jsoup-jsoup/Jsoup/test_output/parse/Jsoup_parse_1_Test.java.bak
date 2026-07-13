@@ -1,0 +1,141 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+import org.jsoup.Connection;
+import org.jsoup.helper.HttpConnection;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC10: parse(File file) reads file and sets baseUri to file absolute path")
+    void test_TC10() throws Exception {
+        // create temp file with simple HTML
+        File f = File.createTempFile("tc10", ".html");
+        f.deleteOnExit();
+        try (Writer w = new FileWriter(f)) {
+            w.write("<p>F</p>");
+        }
+        // branch: DataUtil.load(file, null, baseUri) path for parse(File)
+        Document doc = Jsoup.parse(f);
+        // verify content and baseUri
+        assertTrue(doc.html().contains("<p>F</p>"));
+        assertEquals(f.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC11: parse(Path path, String charsetName, String baseUri) reads path with explicit charset and baseUri")
+    void test_TC11() throws Exception {
+        // write HTML to temp path
+        Path p = Files.createTempFile("tc11", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<div>p</div>".getBytes("UTF-8"));
+        // branch: DataUtil.load(path, charsetName, baseUri)
+        Document doc = Jsoup.parse(p, "UTF-8", "http://base/");
+        assertTrue(doc.html().contains("<div>p</div>"));
+        assertEquals("http://base/", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC12: parse(Path path, String charsetName) reads path and uses path.toAbsolutePath() as baseUri")
+    void test_TC12() throws Exception {
+        Path p = Files.createTempFile("tc12", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<span>z</span>".getBytes("ISO-8859-1"));
+        // branch: DataUtil.load(path, charsetName) overload
+        Document doc = Jsoup.parse(p, "ISO-8859-1");
+        assertTrue(doc.html().contains("<span>z</span>"));
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC13: parse(Path path) reads path with auto charset and uses path.toAbsolutePath() as baseUri")
+    void test_TC13() throws Exception {
+        Path p = Files.createTempFile("tc13", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<h1>H</h1>".getBytes("UTF-8"));
+        // branch: DataUtil.load(path, null) overload path auto charset
+        Document doc = Jsoup.parse(p);
+        assertTrue(doc.html().contains("<h1>H</h1>"));
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC14: parse(InputStream in, String charsetName, String baseUri) reads stream and sets baseUri")
+    void test_TC14() throws Exception {
+        byte[] bytes = "<ul><li>1</li></ul>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(bytes);
+        // branch: DataUtil.load(InputStream, charsetName, baseUri)
+        Document doc = Jsoup.parse(in, "UTF-8", "http://in/");
+        assertTrue(doc.html().contains("<li>1</li>"));
+        assertEquals("http://in/", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC15: parseBodyFragment(String bodyHtml) returns a document with empty baseUri")
+    void test_TC15() {
+        String frag = "<em>x</em>";
+        // branch: Parser.parseBodyFragment(html, "")
+        Document doc = Jsoup.parseBodyFragment(frag);
+        assertTrue(doc.body().html().contains("<em>x</em>"));
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC16: clean(String bodyHtml, Safelist) removes relative links when preserveRelativeLinks is false")
+    void test_TC16() {
+        String html = "<a href='/y'>y</a>";
+        Safelist list = Safelist.basic(); // preserveRelativeLinks() is false by default
+        // branch: clean(html, "", safelist) path where baseUri empty and preserveRelativeLinks false
+        String out = Jsoup.clean(html, list);
+        assertFalse(out.contains("href=\"/y\""));
+    }
+
+    @Test
+    @DisplayName("TC17: clean(String, String, Safelist, OutputSettings) applies outputSettings prettyPrint=false")
+    void test_TC17() {
+        String html = "<p>a</p><p>b</p>";
+        Safelist sl = Safelist.none();
+        // disable pretty printing to test no newlines or indent
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+        String out = Jsoup.clean(html, "http://b/", sl, os);
+        assertEquals("<p>a</p><p>b</p>", out);
+    }
+
+    @Test
+    @DisplayName("TC18: isValid returns false when HTML contains disallowed tag <script>")
+    void test_TC18() {
+        String html = "<script>alert(1)</script>";
+        Safelist sl = Safelist.basic();
+        // branch: Cleaner.isValidBodyHtml returns false for script tag
+        boolean ok = Jsoup.isValid(html, sl);
+        assertFalse(ok);
+    }
+
+    @Test
+    @DisplayName("TC19: isValid returns true when HTML is compliant with safelist")
+    void test_TC19() {
+        String html = "<p>safe</p>";
+        Safelist sl = Safelist.basic();
+        // branch: Cleaner.isValidBodyHtml returns true for allowed tag
+        boolean ok = Jsoup.isValid(html, sl);
+        assertTrue(ok);
+    }
+
+    @Test
+    @DisplayName("TC20: parse(URL url, int timeoutMillis) throws MalformedURLException for non-http protocol")
+    void test_TC20() throws Exception {
+        URL url = new URL("ftp://example.com/");
+        // branch: HttpConnection.connect(url) should throw MalformedURLException on ftp
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, 500));
+    }
+}

@@ -1,0 +1,133 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() on new Element with no attributes returns an empty map (attributes==null branch, no data-* entries)",
+      "path": "B0→B1(true)→B2(empty)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); // attributes is null",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "no-data-attrs",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 dataset empty when no attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() on Element with non-data attributes returns an empty map (attributes!=null, but no keys start with data-)",
+      "path": "B0→B1(false)→B2(filter loop×1 no-match)→B3→B4",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"class\",\"header\");",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "no-data-attrs",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 dataset empty when no data- attrs present",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"class\",\"header\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() on Element with one data-* attribute returns a singleton map (loop-1, include data-foo)",
+      "path": "B0→B1(false)→B2(filter loop×1 match)→B3→B4",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-foo\",\"bar\");",
+      "expectedResult": "returned map contains exactly {\"foo\"=\"bar\"}",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "single-data-attr",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 dataset one data attr",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-foo\",\"bar\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.get(\"foo\").equals(\"bar\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() on Element with mixed attributes returns only data-* entries in insertion order (loop-3 with two matches and one non-match)",
+      "path": "B0→B1(false)→B2(filter loop×3 match×2)→B3→B4",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-a\",\"1\"); el.attr(\"id\",\"X\"); el.attr(\"data-b\",\"2\");",
+      "expectedResult": "returned map equals {\"a\"=\"1\",\"b\"=\"2\"} and excludes \"id\"",
+      "tags": [
+        "branch-false",
+        "loop-3",
+        "multi-data-attrs",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 dataset mixed attrs filters data only",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\",\"1\");",
+        "    el.attr(\"id\",\"X\");",
+        "    el.attr(\"data-b\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2;",
+        "    assert new ArrayList<>(ds.keySet()).equals(Arrays.asList(\"a\",\"b\"));"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() returns a live view: updates to returned map reflect in Element.attributes (modify-after loop)",
+      "path": "B0→B1(false)→B2(filter loop×0)→B3→B4→B5",
+      "precondition": "Element el = new Element(\"div\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.put(\"new\",\"val\"), el.attr(\"data-new\").equals(\"val\")",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "live-view",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 dataset live view updates attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"new\",\"val\");",
+        "  THEN",
+        "    assert el.attr(\"data-new\").equals(\"val\");"
+      ]
+    }
+  ]
+}

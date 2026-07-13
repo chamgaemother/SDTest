@@ -1,0 +1,229 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName, baseUri, Parser) uses the provided parser and loads file successfully",
+      "path": "B0→B12→B13→B14→B15",
+      "precondition": "temporary HTML file exists with content \"<div>X</div>\"",
+      "expectedResult": "Document body html is \"<div>X</div>\"",
+      "tags": [
+        "positive",
+        "file",
+        "parser",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse(File,charset,baseUri,parser) with xml parser",
+        "  GIVEN",
+        "    File tmp = create temp file containing \"<div>X</div>\"",
+        "    String charset = \"UTF-8\"",
+        "    String baseUri = \"http://example.org/\"",
+        "    Parser parser = Parser.xmlParser()",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(tmp, charset, baseUri, parser)",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>X</div>\")"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File, charsetName) loads file and infers baseUri from file path",
+      "path": "B0→B12→B16→B17",
+      "precondition": "temporary HTML file exists with content \"<span>Y</span>\"",
+      "expectedResult": "Document body text is \"Y\"",
+      "tags": [
+        "positive",
+        "file",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse(File,charsetName) default baseUri",
+        "  GIVEN",
+        "    File tmp = create temp file containing \"<span>Y</span>\"",
+        "    String charset = \"ISO-8859-1\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(tmp, charset)",
+        "  THEN",
+        "    assert doc.body().text().equals(\"Y\")"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path, charsetName, baseUri) reads path and applies baseUri correctly",
+      "path": "B0→B18→B19→B20",
+      "precondition": "Path to HTML file with \"<p>Z</p>\" exists",
+      "expectedResult": "Document body text is \"Z\"",
+      "tags": [
+        "positive",
+        "path",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse(Path,charsetName,baseUri)",
+        "  GIVEN",
+        "    Path p = create temp file path with content \"<p>Z</p>\"",
+        "    String charset = null",
+        "    String baseUri = \"http://host/\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri)",
+        "  THEN",
+        "    assert doc.body().text().equals(\"Z\")"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path) reads path, infers UTF-8 and baseUri from path",
+      "path": "B0→B18→B21→B22",
+      "precondition": "Path to HTML file with \"<h1>H</h1>\" exists",
+      "expectedResult": "Document body text is \"H\"",
+      "tags": [
+        "positive",
+        "path",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse(Path) default charset and baseUri",
+        "  GIVEN",
+        "    Path p = create temp file path with content \"<h1>H</h1>\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p)",
+        "  THEN",
+        "    assert doc.body().text().equals(\"H\")"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path, charsetName, baseUri, Parser) uses parser on path-based file",
+      "path": "B0→B18→B19→B23→B24",
+      "precondition": "Path to HTML file with \"<q>Q</q>\" exists",
+      "expectedResult": "Document body html is \"<q>Q</q>\"",
+      "tags": [
+        "positive",
+        "path",
+        "parser",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse(Path,charset,baseUri,parser)",
+        "  GIVEN",
+        "    Path p = create temp file path with content \"<q>Q</q>\"",
+        "    String charset = \"UTF-8\"",
+        "    String baseUri = \"\"",
+        "    Parser parser = Parser.htmlParser()",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri, parser)",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<q>Q</q>\")"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri) reads stream successfully",
+      "path": "B0→B25→B26→B27",
+      "precondition": "InputStream wrapping bytes \"<li>L</li>\"",
+      "expectedResult": "Document body text is \"L\"",
+      "tags": [
+        "positive",
+        "stream",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse(InputStream,charset,baseUri)",
+        "  GIVEN",
+        "    InputStream in = ByteArrayInputStream of \"<li>L</li>\"",
+        "    String charset = \"UTF-8\"",
+        "    String baseUri = \"http://u/\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri)",
+        "  THEN",
+        "    assert doc.body().text().equals(\"L\")"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) uses parser on stream",
+      "path": "B0→B25→B26→B28→B29",
+      "precondition": "InputStream wrapping bytes \"<em>E</em>\"",
+      "expectedResult": "Document body html is \"<em>E</em>\"",
+      "tags": [
+        "positive",
+        "stream",
+        "parser",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse(InputStream,charset,baseUri,parser)",
+        "  GIVEN",
+        "    InputStream in = ByteArrayInputStream of \"<em>E</em>\"",
+        "    String charset = null",
+        "    String baseUri = \"\"",
+        "    Parser parser = Parser.xmlParser()",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser)",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<em>E</em>\")"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(String, String) with non-empty baseUri resolves relative links",
+      "path": "B0→B30→B31",
+      "precondition": "none",
+      "expectedResult": "body html contains absolute img src",
+      "tags": [
+        "positive",
+        "fragment",
+        "relative-resolution"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment resolves relative URL",
+        "  GIVEN",
+        "    String frag = \"<img src='img.png'>\"",
+        "    String baseUri = \"http://cdn/\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(frag, baseUri)",
+        "  THEN",
+        "    assert doc.body().html().contains(\"http://cdn/img.png\")"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(String) without baseUri leaves src attribute unchanged",
+      "path": "B0→B30→B32",
+      "precondition": "none",
+      "expectedResult": "body html contains src=\"img.png\"",
+      "tags": [
+        "positive",
+        "fragment",
+        "no-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment without baseUri",
+        "  GIVEN",
+        "    String frag = \"<img src='img.png'>\"",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(frag)",
+        "  THEN",
+        "    assert doc.body().html().contains(\"src=\\\"img.png\\\"\")"
+      ]
+    }
+  ]
+}

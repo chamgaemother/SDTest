@@ -1,0 +1,39 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("Uppercase known form-submittable tag with preserveCase=true triggers clone branch and returns submittable")
+    public void test_TC07() {
+        // Given an uppercase known form-submittable tag and preserve-case settings,
+        // the static registry contains a lowercase "input" which is form-submittable.
+        String tagName = "INPUT";
+        // Using preserveCase to force a clone when matching known tag by normalName.
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When retrieving the tag
+        Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);
+        // Then we expect a new clone rather than the shared instance, so names differ by instance
+        Tag shared = Tag.valueOf("input", Parser.NamespaceHtml, settings);
+        assertNotSame(shared, tag, "Expected a cloned instance when preserveCase=true and tagName differs in case");
+        // And the clone should preserve the given case in tagName
+        assertEquals("INPUT", tag.getName(), "Expected tagName to remain uppercase as provided");
+        // And because "input" is in the form-submit tag list, isFormSubmittable() should be true
+        assertTrue(tag.isFormSubmittable(), "Expected form-submittable flag to be true for input tag");
+    }
+
+    @Test
+    @DisplayName("Null namespace passed to valueOf triggers IllegalArgumentException")
+    public void test_TC08() {
+        // Given a valid tagName and settings but a null namespace,
+        String tagName = "input";
+        String namespace = null;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When calling valueOf with null namespace, Validate.notNull should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(tagName, namespace, settings);
+        }, "Expected IllegalArgumentException when namespace is null");
+    }
+}

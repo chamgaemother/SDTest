@@ -1,0 +1,59 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_0_Test {
+
+    @Test
+    @DisplayName("parse(null) returns null for null input (version==null branch)")
+    void test_TC01() {
+        // Input is null to exercise the branch where the method returns null immediately
+        String version = null;
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing a null version string");
+    }
+
+    @Test
+    @DisplayName("parse(\"\") returns null for empty string after trimming (constructor throws)")
+    void test_TC02() {
+        // Empty string after trim causes the constructor or parser to throw, leading to a null return
+        String version = "";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing an empty version string");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.0.0\") returns Semver(\"1.0.0\") for valid version")
+    void test_TC03() {
+        // Valid simple semver string, should produce a non-null Semver with correct fields
+        String version = "1.0.0";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver instance for valid version");
+        assertEquals("1.0.0", result.getVersion(), "Version string should match input");
+        assertEquals(1, result.getMajor(), "Major version should be parsed as 1");
+        assertEquals(0, result.getMinor(), "Minor version should be parsed as 0");
+        assertEquals(0, result.getPatch(), "Patch version should be parsed as 0");
+        assertTrue(result.getPreRelease().isEmpty(), "Pre-release list should be empty");
+        assertTrue(result.getBuild().isEmpty(), "Build metadata list should be empty");
+    }
+
+    @Test
+    @DisplayName("parse(\" 2.3.4-alpha.1+exp.sha \") trims input and returns correct Semver")
+    void test_TC04() {
+        // Input with leading/trailing whitespace and containing pre-release and build metadata
+        String version = " 2.3.4-alpha.1+exp.sha ";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for trimmed valid version");
+        assertEquals("2.3.4-alpha.1+exp.sha", result.getVersion(), "Version string should be trimmed and formatted correctly");
+        // Verify pre-release tokens
+        assertEquals(2, result.getPreRelease().size(), "There should be two pre-release identifiers");
+        assertEquals("alpha", result.getPreRelease().get(0), "First pre-release identifier should be 'alpha'");
+        assertEquals("1", result.getPreRelease().get(1), "Second pre-release identifier should be '1'");
+        // Verify build metadata tokens
+        assertEquals(2, result.getBuild().size(), "There should be two build metadata identifiers");
+        assertEquals("exp", result.getBuild().get(0), "First build identifier should be 'exp'");
+        assertEquals("sha", result.getBuild().get(1), "Second build identifier should be 'sha'");
+    }
+}

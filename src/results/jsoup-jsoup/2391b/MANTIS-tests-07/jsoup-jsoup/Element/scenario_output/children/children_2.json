@@ -1,0 +1,32 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() recomputes list when cachedChildren exists but modCount has changed (cache stale)",
+      "path": "B0→B3→B4→stash→B3→cachedChildren→modCountMismatch→filter→stash→return",
+      "precondition": "Element with initial element children and userData cache populated",
+      "expectedResult": "children() returns updated list after cache invalidation due to modification",
+      "tags": [
+        "cache",
+        "modcount",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children stale-cache after removal",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    el.appendElement(\"b\");",
+        "    Elements first = el.children(); // caches two children",
+        "  WHEN",
+        "    el.empty();                    // clear children, modCount changes",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertEquals(0, second.size());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Constructor default-pattern branch when newPattern is null and parsing valid date",
+      "path": "B0→B1(newPattern==null)→B2→B3(trimmed.isEmpty()==false)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "stub.addedObject equals LocalDate.of(2021, 12, 31)",
+      "tags": [
+        "constructor",
+        "default-pattern",
+        "positive",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 default-pattern-constructor",
+        "  GIVEN",
+        "    // Arrange a DateSchemaColumn with null pattern to trigger default",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"d\", null);",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"2021-12-31\";",
+        "  WHEN",
+        "    // Act",
+        "    column.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    // Assert the parsed date is added",
+        "    assert stub.addedObject.equals(LocalDate.of(2021, 12, 31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Whitespace-trimmed non-empty input branch with leading/trailing spaces",
+      "path": "B0→B1(newPattern!=null)→B2→B3(trimmed.isEmpty()==false)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "stub.addedObject equals LocalDate.of(1999, 1, 1)",
+      "tags": [
+        "trim",
+        "whitespace",
+        "positive",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 whitespace-trim-parse",
+        "  GIVEN",
+        "    // Arrange with explicit pattern",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"  1999-1-1  \";",
+        "  WHEN",
+        "    // Act",
+        "    column.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    // Assert whitespace is trimmed before parse",
+        "    assert stub.addedObject.equals(LocalDate.of(1999, 1, 1));",
+        "END"
+      ]
+    }
+  ]
+}

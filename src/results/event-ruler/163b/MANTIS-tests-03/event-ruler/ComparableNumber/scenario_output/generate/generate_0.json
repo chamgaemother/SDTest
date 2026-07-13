@@ -1,0 +1,123 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "generate(f) throws IllegalArgumentException when f is less than -5e9 (lower bound violation)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message containing \"Value must be between -5000000000.0 and 5000000000.0\"; no string returned",
+      "tags": [
+        "exception",
+        "branch-true",
+        "lower-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate below-minimum",
+        "  GIVEN",
+        "    double f = -5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "generate(f) returns correct 14-char hex string when f equals -5e9 (lower boundary)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is new String of length 14 representing hex of ( (5e9 + (-5e9)) * 1e6 ) = 0 padded to 14 chars",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "lower-bound",
+        "normal-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate lower-bound",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "generate(f) throws IllegalArgumentException when f is greater than 5e9 (upper bound violation)",
+      "path": "B0→B1→B3→B4",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message containing \"Value must be between -5000000000.0 and 5000000000.0\"; no string returned",
+      "tags": [
+        "exception",
+        "branch-true",
+        "upper-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate above-maximum",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "generate(f) returns correct hex string when f equals 5e9 (upper boundary)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is new String of length 14 representing hex of ( (5e9 + 5e9) * 1e6 )",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "upper-bound",
+        "normal-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate upper-bound",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "generate(f) returns correct hex string for typical fractional value within range",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is new String of length 14 representing hex of ( (5e9 + 123.456789) * 1e6 ) with 6-decimal precision",
+      "tags": [
+        "normal",
+        "branch-false",
+        "typical-value",
+        "fractional"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate typical-fraction",
+        "  GIVEN",
+        "    double f = 123.456789;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;"
+      ]
+    }
+  ]
+}

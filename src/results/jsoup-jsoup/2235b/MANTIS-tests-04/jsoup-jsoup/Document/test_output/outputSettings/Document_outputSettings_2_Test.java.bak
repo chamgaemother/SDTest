@@ -1,0 +1,58 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities.EscapeMode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_outputSettings_Test {
+
+    @Test
+    @DisplayName("TC05: outputSettings(OutputSettings) with chaining on Document retains all mutated OutputSettings fields")
+    public void test_TC05() {
+        // GIVEN: a new Document and a custom OutputSettings with various mutations
+        Document doc = new Document("http://example.com");
+        OutputSettings os = new OutputSettings()
+            .charset("ISO-8859-1")           // set non-default charset
+            .escapeMode(EscapeMode.extended)    // set non-default escape mode
+            .prettyPrint(false)                 // disable pretty print
+            .outline(true)                      // enable outline mode
+            .indentAmount(5)                    // set indent amount > default
+            .maxPaddingWidth(100)               // set max padding width > default
+            .syntax(OutputSettings.Syntax.xml); // switch syntax to xml (ensures xml branch in ensureMetaCharsetElement)
+
+        // WHEN: calling the setter method
+        Document returnedDoc = doc.outputSettings(os); // path B0→B1→B2 covers normal setter branch
+
+        // THEN: the call should chain (return this) and preserve the instance and its fields
+        assertSame(doc, returnedDoc, "Setter should return the same Document instance for chaining");
+        assertSame(os, doc.outputSettings(), "Getter should return the identical OutputSettings instance set earlier");
+        assertEquals("ISO-8859-1", os.charset().name(), "Charset name should be preserved");
+        assertEquals(EscapeMode.extended, os.escapeMode(), "EscapeMode should be preserved");
+        assertFalse(os.prettyPrint(), "PrettyPrint flag should remain false");
+        assertTrue(os.outline(), "Outline flag should remain true");
+        assertEquals(5, os.indentAmount(), "IndentAmount should remain as set");
+        assertEquals(100, os.maxPaddingWidth(), "MaxPaddingWidth should remain as set");
+        assertEquals(OutputSettings.Syntax.xml, os.syntax(), "Syntax should remain xml as set");
+    }
+
+    @Test
+    @DisplayName("TC06: outputSettings(null) triggers IllegalArgumentException message formatting correctly")
+    public void test_TC06() {
+        // GIVEN: a new Document
+        Document doc = new Document("http://example.com");
+        // WHEN & THEN: passing null should throw IllegalArgumentException mentioning 'outputSettings' and 'null'
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            doc.outputSettings(null); // path B0→B3 covers null-check branch
+        }, "Expected setter to throw IllegalArgumentException when passed null");
+        String msg = ex.getMessage();
+        assertNotNull(msg, "Exception message should not be null");
+        assertTrue(msg.contains("outputSettings"), "Exception message should mention the parameter name 'outputSettings'");
+        assertTrue(msg.toLowerCase().contains("null"), "Exception message should indicate null value");
+    }
+}

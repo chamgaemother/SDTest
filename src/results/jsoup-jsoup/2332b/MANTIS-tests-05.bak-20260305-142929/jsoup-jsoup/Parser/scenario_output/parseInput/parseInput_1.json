@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "String overload with real HTML parser returns Document with expected element structure",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser.htmlParser() created",
+      "expectedResult": "Document contains <p>Test</p> in body",
+      "tags": [
+        "positive",
+        "integration",
+        "html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput html real-parser",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<html><body><p>Test</p></body></html>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"p\").text().equals(\"Test\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Reader overload with real XML parser returns Document whose root is <root>",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Parser.xmlParser() created",
+      "expectedResult": "Document.documentElement().tagName() is \"root\"",
+      "tags": [
+        "positive",
+        "integration",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput xml real-parser",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader reader = new StringReader(\"<root><child/></root>\");",
+        "    String baseUri = \"urn:test\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.documentElement().tagName().equals(\"root\");",
+        "    assert doc.select(\"child\").size() == 1;",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "String overload with real HTML parser and null baseUri returns Document with empty baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser.htmlParser() created",
+      "expectedResult": "Document.baseUri() is empty string and body parsed",
+      "tags": [
+        "positive",
+        "boundary",
+        "null-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput html null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<div>Edge</div>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"div\").text().equals(\"Edge\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    }
+  ]
+}

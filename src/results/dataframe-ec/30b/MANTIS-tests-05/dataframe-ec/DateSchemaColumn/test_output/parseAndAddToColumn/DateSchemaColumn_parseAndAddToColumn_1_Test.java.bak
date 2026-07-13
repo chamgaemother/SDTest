@@ -1,0 +1,53 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
+
+public class DateSchemaColumn_parseAndAddToColumn_Test {
+
+    @Test
+    @DisplayName("parseAndAddToColumn trims whitespace and parses a valid date with default pattern")
+    public void test_TC08() {
+        // B0->B1: newPattern is null -> default pattern "uuuu-M-d" is set
+        // B2(false): aString is not null
+        // B3: trimmed is not empty -> parse proceeds
+        String aString = " 2021-7-4 ";
+        // Use a Mockito mock to capture the added object without needing full DfColumn implementation
+        DfColumn stubColumn = mock(DfColumn.class);
+        DateSchemaColumn schema = new DateSchemaColumn(null, "col", null);
+
+        schema.parseAndAddToColumn(aString, stubColumn);
+
+        // Capture the argument passed to addObject and assert it matches expected LocalDate
+        ArgumentCaptor<Object> captor = ArgumentCaptor.forClass(Object.class);
+        verify(stubColumn).addObject(captor.capture());
+        Object added = captor.getValue();
+        assertTrue(added instanceof LocalDate, "Expected a LocalDate to be added");
+        assertEquals(LocalDate.of(2021, 7, 4), added);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn with custom pattern throws DateTimeParseException for mismatched input")
+    public void test_TC09() {
+        // B0->B1: newPattern is provided -> custom formatter uses "MM-dd-uuuu"
+        // B2(false): aString is not null
+        // B3(exception): trimmed non-empty but parse fails -> exception
+        String aString = "2021/12/31"; // wrong delimiters for pattern MM-dd-uuuu
+        DfColumn stubColumn = mock(DfColumn.class);
+        DateSchemaColumn schema = new DateSchemaColumn(null, "col", "MM-dd-uuuu");
+
+        DateTimeParseException thrown = assertThrows(
+            DateTimeParseException.class,
+            () -> schema.parseAndAddToColumn(aString, stubColumn),
+            "Expected parseAndAddToColumn to throw DateTimeParseException for mismatched input"
+        );
+        // Ensure no object was added on exception path
+        verify(stubColumn, never()).addObject(any());
+    }
+}

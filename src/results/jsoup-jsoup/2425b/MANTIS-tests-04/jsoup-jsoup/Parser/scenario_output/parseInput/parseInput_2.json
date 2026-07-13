@@ -1,0 +1,106 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "parseInput(String,String) with real HtmlTreeBuilder produces Document with expected element",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "parser = Parser.htmlParser()",
+      "expectedResult": "Document contains a <p> element with text 'Hello'",
+      "tags": [
+        "positive",
+        "integration",
+        "HtmlTreeBuilder"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 real-html-parse",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>Hello</p>\";",
+        "    String baseUri = \"http://example/\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.selectFirst(\"p\").text().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseInput(Reader,String) with real XmlTreeBuilder produces Document with expected root element",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "parser = Parser.xmlParser()",
+      "expectedResult": "Document contains an <root> element with child <a>",
+      "tags": [
+        "positive",
+        "integration",
+        "XmlTreeBuilder"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 real-xml-parse",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader reader = new StringReader(\"<root><a>X</a></root>\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.child(0).tagName().equals(\"root\");",
+        "    assert doc.selectFirst(\"a\").text().equals(\"X\");"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseInput(String,String) with trackErrors enabled captures mismatched-tag parse error",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "parser = Parser.htmlParser().setTrackErrors(1)",
+      "expectedResult": "getErrors().size() == 1",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 track-errors-capture",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackErrors(1);",
+        "    String html = \"<div><span></div>\"; // mismatched tags",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert parser.getErrors().size() == 1;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parseInput(String,String) with trackPosition enabled assigns positions to nodes",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "parser = Parser.htmlParser().setTrackPosition(true)",
+      "expectedResult": "first Element has non-null source range start",
+      "tags": [
+        "positive",
+        "position-tracking",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 track-position-assignment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true);",
+        "    String html = \"<p>Pos</p>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    Node p = doc.selectFirst(\"p\");",
+        "    assert p.hasAttr(\"start\"); // or use p.sourceRange().start != null"
+      ]
+    }
+  ]
+}

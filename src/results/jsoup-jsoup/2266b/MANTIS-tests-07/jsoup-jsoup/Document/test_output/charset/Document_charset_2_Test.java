@@ -1,0 +1,62 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_2_Test {
+
+    @Test
+    @DisplayName("charset(Charset) with default html syntax and only obsolete <meta name=charset> removes it and adds new <meta charset>")
+    public void test_TC07() {
+        // Given a shell document with default html syntax
+        Document doc = Document.createShell("http://example.com");
+        // Precondition: add obsolete <meta name=charset> only, no <meta charset>
+        doc.head().appendElement("meta").attr("name", "charset");
+        Charset cs = StandardCharsets.UTF_8;
+        
+        // When: set charset, triggers updateMetaCharsetElement(true) and ensureMetaCharsetElement()
+        doc.charset(cs);
+        
+        // Then: update flag should be true
+        assertTrue(doc.updateMetaCharsetElement(), "Expected updateMetaCharsetElement to be true after charset() call");
+        // There must be exactly one <meta charset> appended since none existed before (B3→B5)
+        Elements charsetMeta = doc.head().select("meta[charset]");
+        assertEquals(1, charsetMeta.size(), "Expected one meta[charset] element to be present");
+        // The display name of charset attribute must match the provided charset
+        assertEquals(cs.displayName(), charsetMeta.get(0).attr("charset"), "Expected charset attribute to equal the displayName of the provided charset");
+        // There should be no obsolete <meta name=charset> elements remaining (B6)
+        assertTrue(doc.head().select("meta[name=charset]").isEmpty(), "Expected obsolete meta[name=charset] to be removed");
+    }
+
+    @Test
+    @DisplayName("charset(Charset) with default html syntax, existing <meta charset> and obsolete <meta name=charset> updates charset attr and removes obsolete")
+    public void test_TC08() {
+        // Given a shell document with default html syntax
+        Document doc = Document.createShell("http://example.com");
+        // Precondition: add an existing <meta charset="UTF-8"> and an obsolete <meta name=charset>
+        doc.head().appendElement("meta").attr("charset", "UTF-8");
+        doc.head().appendElement("meta").attr("name", "charset");
+        Charset cs = StandardCharsets.US_ASCII;
+        
+        // When: set charset to a different one, triggers update and update of existing meta[charset]
+        doc.charset(cs);
+        
+        // Then: update flag should be true
+        assertTrue(doc.updateMetaCharsetElement(), "Expected updateMetaCharsetElement to be true after charset() call");
+        // Only one meta[charset] should remain after removal of obsolete
+        Elements updated = doc.head().select("meta[charset]");
+        assertEquals(1, updated.size(), "Expected exactly one meta[charset] after update");
+        // The charset attribute must be updated to the new charset display name (B4→B5)
+        assertEquals(cs.displayName(), updated.get(0).attr("charset"), "Expected existing meta[charset] to be updated to new charset displayName");
+        // No obsolete meta[name=charset] should remain (B6)
+        assertTrue(doc.head().select("meta[name=charset]").isEmpty(), "Expected obsolete meta[name=charset] to be removed");
+    }
+}

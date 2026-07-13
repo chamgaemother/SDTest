@@ -1,0 +1,156 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when no child nodes (childNodeSize==0 branch)",
+      "path": "B0→B1→B3",
+      "precondition": "new Element(\"div\") with no children",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-true",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() filters out non-Element nodes and returns single Element child (one iteration of loop)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element has one TextNode and one Element as childNodes",
+      "expectedResult": "returned Elements contains exactly the one Element child at index 0",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 children single-element-filter",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"text\");",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1; && result.get(0) == child;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns all Element children in order when multiple childNodes (multiple iterations)",
+      "path": "B0→B1→B2(loop×5)→B3",
+      "precondition": "Element has mixed Node types: 3 Elements and 2 TextNodes appended",
+      "expectedResult": "returned Elements contains the 3 Element children in append order",
+      "tags": [
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 children multiple-elements",
+        "  GIVEN",
+        "    Element p = new Element(\"p\");",
+        "    p.appendChild(new TextNode(\"A\"));",
+        "    Element e1 = new Element(\"a\"); p.appendChild(e1);",
+        "    p.appendText(\"B\");",
+        "    Element e2 = new Element(\"b\"); p.appendChild(e2);",
+        "    Element e3 = new Element(\"c\"); p.appendChild(e3);",
+        "  WHEN",
+        "    Elements result = p.children();",
+        "  THEN",
+        "    assert result.size() == 3; && result.get(0)==e1 && result.get(1)==e2 && result.get(2)==e3;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() uses cached shadowChildrenRef on second call (cache true branch)",
+      "path": "B0→B1→B2(loop×2)→B3→B1→B3",
+      "precondition": "Element has two Element children; cache built on first call",
+      "expectedResult": "second children() returns Elements backed by same cached list instance",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "cache-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 children cache-hit",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\"); el.appendChild(c1);",
+        "    Element c2 = new Element(\"span\"); el.appendChild(c2);",
+        "  WHEN",
+        "    List<Element> first = el.childElementsList();",
+        "    List<Element> second = el.childElementsList();",
+        "  THEN",
+        "    assert first == second;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() rebuilds cache after nodelistChanged clears shadowChildrenRef",
+      "path": "B0→B1→B2(loop×1)→B3→B1→B2(loop×2)→B3",
+      "precondition": "Element has one child then append another child after clearing cache via prependChild",
+      "expectedResult": "after nodelistChanged, childElementsList returns new list not equal to old",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "cache-cleared",
+        "nodelistChanged"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children cache-rebuild",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\"); el.appendChild(c1);",
+        "    List<Element> before = el.childElementsList();",
+        "    el.prependChild(new Element(\"span\"));",
+        "  WHEN",
+        "    List<Element> after = el.childElementsList();",
+        "  THEN",
+        "    assert before != after; && after.size() == 2;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() returns empty list even after attributes-only mutation (no childNodes change)",
+      "path": "B0→B1→B3",
+      "precondition": "Element has no childNodes but has attributes set",
+      "expectedResult": "returned Elements remains empty despite attributes present",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "attributes-only"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children attributes-only-no-effect",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"class\",\"x\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    }
+  ]
+}

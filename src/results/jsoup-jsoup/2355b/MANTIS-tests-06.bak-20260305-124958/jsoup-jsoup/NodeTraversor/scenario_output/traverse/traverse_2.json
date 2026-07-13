@@ -1,0 +1,117 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "traverse(visitor,Elements) throws IllegalArgumentException when visitor is null",
+      "path": "B0→Validate.notNull(visitor)→exception",
+      "precondition": "elements non-null (e.g. new Elements())",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 traverse overload null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null;",
+        "    Elements elements = new Elements();",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "traverse(visitor,Elements) throws IllegalArgumentException when elements is null",
+      "path": "B0→Validate.notNull(elements)→exception",
+      "precondition": "visitor non-null (no-op)",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 traverse overload null-elements",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d)->{};",
+        "    Elements elements = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "removing the last sibling in head triggers the ‘removed and next=null’ branch (B9→next==null)",
+      "path": "B5→B6(parent!=null&&hasParent)→B7(origSize!=size)→B9(next==null)→continue→ascend",
+      "precondition": "root has two children a and b; visitor.head removes 'b'",
+      "expectedResult": "tail for 'b' is skipped; traversal ascends to root after removal",
+      "tags": [
+        "branch",
+        "negative",
+        "removal",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 remove-last-sibling",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\"), b = new Element(\"b\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(Node n,int d){ events.add(\"H:\"+n.nodeName()); if(n.nodeName().equals(\"b\")) n.remove(); }",
+        "      tail(Node n,int d){ events.add(\"T:\"+n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert events.contains(\"H:b\");",
+        "    assertFalse(events.contains(\"T:b\"));",
+        "    assertTrue(events.contains(\"H:a\") && events.contains(\"T:a\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "root removal in head skips parent-based branches (parent==null) and completes traversal",
+      "path": "B5→B6(parent==null)→B11(childNodeSize<=0)→descend?no→ascend→tail→exit",
+      "precondition": "single-node root; visitor.head removes root (parentNode()==null)",
+      "expectedResult": "head called once; tail called once; no errors",
+      "tags": [
+        "branch",
+        "removal",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 remove-root-node",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(Node n,int d){ events.add(\"H:\"+n.nodeName()+\":\"+d); n.remove(); }",
+        "      tail(Node n,int d){ events.add(\"T:\"+n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(Arrays.asList(\"H:div:0\",\"T:div:0\"), events);",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "valueOf(null,normal,ns) throws NullPointerException at Validate.notNull(tagName)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "validation",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf null-tagName throws NPE",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String normalName = \"n\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "valueOf(empty-string,normal,ns) throws IllegalArgumentException at Validate.notEmpty(tagName)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "validation",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 valueOf blank-tagName throws IAE",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String normalName = \"n\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "valueOf(name,normal,null) throws NullPointerException at Validate.notNull(namespace)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "validation",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 valueOf null-namespace throws NPE",
+        "  GIVEN",
+        "    String tagName = \"abc\";",
+        "    String normalName = \"abc\";",
+        "    String namespace = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Uppercase known tag with preserveCase but tagName equals normalName returns static instance without clone",
+      "path": "B0→B1→B5→B6",
+      "precondition": "static Tags contains 'div' with formSubmit=false",
+      "expectedResult": "returns static Tag instance with name 'div'",
+      "tags": [
+        "positive",
+        "branch",
+        "preserve-case"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 valueOf uppercase-known without clone",
+        "  GIVEN",
+        "    String tagName = \"DIV\";",
+        "    String normalName = \"div\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag result = Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    assertSame(Tag.valueOf(\"div\"), result);",
+        "    assertEquals(\"div\", result.getName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Known form-submittable tag 'button' returns true",
+      "path": "B0→B1→B2",
+      "precondition": "static Tags contains 'button' with formSubmit=true",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "smoke"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 isFormSubmittable button true",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"button\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assertTrue(result);",
+        "END"
+      ]
+    }
+  ]
+}

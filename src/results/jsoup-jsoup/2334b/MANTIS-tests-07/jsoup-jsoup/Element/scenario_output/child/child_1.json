@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "child(index) returns correct Element on second access using cached shadowChildrenRef",
+      "path": "B0→B3→B4",
+      "precondition": "Element parent with three Element children and initial cache populated",
+      "expectedResult": "second call returns second child without recomputing shadow list",
+      "tags": [
+        "positive",
+        "cache-hit",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child uses cached childElementsList",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"p\");",
+        "    Element e2 = new Element(\"span\");",
+        "    Element e3 = new Element(\"a\");",
+        "    parent.appendChild(e1); parent.appendChild(e2); parent.appendChild(e3);",
+        "    // Populate cache with first access",
+        "    parent.child(0);",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(e2, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "child(index) throws IndexOutOfBoundsException on cached shadowChildrenRef when index out of range",
+      "path": "B0→B3→B5",
+      "precondition": "Element parent with two Element children and cache populated",
+      "expectedResult": "throws IndexOutOfBoundsException on second access with invalid index",
+      "tags": [
+        "negative",
+        "cache-hit",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child cache-hit out-of-range",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"p\");",
+        "    Element e2 = new Element(\"span\");",
+        "    parent.appendChild(e1); parent.appendChild(e2);",
+        "    // Populate cache",
+        "    parent.child(0);",
+        "  WHEN",
+        "    call parent.child(2);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    }
+  ]
+}

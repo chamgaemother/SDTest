@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "second invocation on element with only non-Element children uses cached empty list and still throws IndexOutOfBoundsException",
+      "path": "B0→B3→B4→B5",
+      "precondition": "parent has only TextNode children",
+      "expectedResult": "IndexOutOfBoundsException thrown on both first and second child(0) call",
+      "tags": [
+        "exception",
+        "cache",
+        "empty",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child empty-cached",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"foo\"));",
+        "  WHEN",
+        "    assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0));",
+        "    // second invocation uses cached shadowChildrenRef",
+        "    assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(1) returns second Element in mixed children with interleaved non-Element nodes",
+      "path": "B0→B3→B4(loop×4)→B5",
+      "precondition": "parent has 4 childNodes: TextNode, el1, TextNode, el2",
+      "expectedResult": "child(1) returns the second Element instance",
+      "tags": [
+        "positive",
+        "iteration",
+        "mixed"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 child mixed-interleaved",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"t1\"));",
+        "    Element el1 = new Element(\"span\");",
+        "    parent.appendChild(el1);",
+        "    parent.appendChild(new TextNode(\"t2\"));",
+        "    Element el2 = new Element(\"a\");",
+        "    parent.appendChild(el2);",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(el2, result);",
+        "END"
+      ]
+    }
+  ]
+}

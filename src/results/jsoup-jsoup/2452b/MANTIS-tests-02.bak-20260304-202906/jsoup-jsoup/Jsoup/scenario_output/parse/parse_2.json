@@ -1,0 +1,189 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(html, Parser) throws IllegalArgumentException when html is null with non-null parser",
+      "path": "B0→B1→B2",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse(html=null, parser) throws IAE",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(html, Parser) throws IllegalArgumentException when parser is null and html non-null",
+      "path": "B0→B1→B3",
+      "precondition": "String html = \"<p>OK</p>\"",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse(html, parser=null) throws IAE",
+        "  GIVEN",
+        "    String html = \"<p>OK</p>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(Path, charsetName) returns a document when Path exists and charset non-null",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Path path points to a temp .html file with content \"<h2>H</h2>\", charsetName=\"UTF-8\"",
+      "expectedResult": "Document with tag h2 text 'H' and baseUri = path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "file-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse(Path,cs) valid path",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"tc21\", \".html\");",
+        "    Files.write(path, \"<h2>H</h2>\".getBytes(StandardCharsets.UTF_8));",
+        "    String cs = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, cs);",
+        "  THEN",
+        "    assert doc.select(\"h2\").text().equals(\"H\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path, charsetName) with null charsetName uses default BOM/meta detection",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Path path to a .html file with \"<div>D</div>\", charsetName=null",
+      "expectedResult": "Document with tag div text 'D' and baseUri = path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "boundary",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse(Path,null) default charset",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"tc22\", \".html\");",
+        "    Files.write(path, \"<div>D</div>\".getBytes(StandardCharsets.UTF_8));",
+        "    String cs = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, cs);",
+        "  THEN",
+        "    assert doc.select(\"div\").text().equals(\"D\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(Path, charsetName, baseUri, Parser) returns Document when all parameters non-null",
+      "path": "B0→B1→B7→B8",
+      "precondition": "Path path to temp .html file with \"<span>S</span>\", charsetName=\"UTF-8\", baseUri=\"http://x/\", parser=xmlParser",
+      "expectedResult": "Document with span text 'S' and baseUri 'http://x/'",
+      "tags": [
+        "positive",
+        "overload",
+        "file-path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse(Path,cs,baseUri,parser)",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"tc23\", \".html\");",
+        "    Files.write(path, \"<span>S</span>\".getBytes(StandardCharsets.UTF_8));",
+        "    String cs = \"UTF-8\";",
+        "    String base = \"http://x/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, cs, base, parser);",
+        "  THEN",
+        "    assert doc.select(\"span\").text().equals(\"S\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(File) returns Document when file exists, single-arg File overload",
+      "path": "B0→B1→B9→B10",
+      "precondition": "File tmp exists with content \"<p>P</p>\"",
+      "expectedResult": "Document with p text 'P' and baseUri = tmp.getAbsolutePath()",
+      "tags": [
+        "positive",
+        "overload",
+        "file"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse(File) valid file",
+        "  GIVEN",
+        "    File tmp = File.createTempFile(\"tc24\", \".html\");",
+        "    try (FileWriter w = new FileWriter(tmp)) { w.write(\"<p>P</p>\"); }",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(tmp);",
+        "  THEN",
+        "    assert doc.select(\"p\").text().equals(\"P\");",
+        "    assert doc.baseUri().equals(tmp.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(html, baseUri) throws IllegalArgumentException when baseUri is null and html non-null",
+      "path": "B0→B1→B11",
+      "precondition": "String html = \"<b>B</b>\", baseUri = null",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse(html, baseUri=null) throws IAE",
+        "  GIVEN",
+        "    String html = \"<b>B</b>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

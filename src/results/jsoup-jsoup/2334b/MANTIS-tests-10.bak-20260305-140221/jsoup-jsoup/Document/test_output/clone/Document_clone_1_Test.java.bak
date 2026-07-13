@@ -1,0 +1,59 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Document.QuirksMode;
+import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
+import org.jsoup.nodes.FormElement;
+import org.jsoup.nodes.Document.OutputSettings.Syntax;
+import org.jsoup.nodes.Entities;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() preserves a non-null connection field so clone.connection() returns the same instance")
+    public void test_TC11() {
+        // GIVEN: an original Document with a non-null connection set -> covers branch where connection != null
+        Document original = new Document("http://example.com");
+        Connection session = Jsoup.newSession();
+        original.connection(session);
+        // WHEN: clone is invoked -> takes B0→B1→B2→B3→B4 path in clone()
+        Document cloned = original.clone();
+        // THEN: cloned.connection() should return the exact same instance (not a new session)
+        assertSame(session, cloned.connection(),
+                "Expected clone.connection() to return the same Connection instance set on the original");
+    }
+
+    @Test
+    @DisplayName("clone() deep-clones OutputSettings syntax=xml so subsequent changes to original.settings do not affect clone")
+    public void test_TC12() {
+        // GIVEN: an original Document with outputSettings syntax xml and escapeMode extended -> triggers xml branch in ensureMetaCharsetElement logic later
+        Document original = new Document("http://base.uri");
+        // Set syntax to xml (which also sets escapeMode to xhtml internally), then set escapeMode to extended
+        original.outputSettings()
+                .syntax(OutputSettings.Syntax.xml)
+                .escapeMode(Entities.EscapeMode.extended);
+        // WHEN: clone is invoked, and then original is modified -> ensures deep copy
+        Document cloned = original.clone();
+        // Mutate original's settings after clone
+        original.outputSettings()
+                .syntax(OutputSettings.Syntax.html)
+                .escapeMode(Entities.EscapeMode.base);
+        // THEN: cloned.settings should remain with xml syntax and extended escapeMode
+        assertAll(
+                () -> assertEquals(OutputSettings.Syntax.xml, cloned.outputSettings().syntax(),
+                        "Expected cloned syntax to remain xml"),
+                () -> assertEquals(Entities.EscapeMode.extended, cloned.outputSettings().escapeMode(),
+                        "Expected cloned escapeMode to remain extended")
+        );
+    }
+}

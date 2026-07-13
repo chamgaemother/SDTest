@@ -1,0 +1,83 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "tagSet eliminates duplicate tags regardless of case, returning unique lowercase entries",
+      "path": "B0→B2(loop×4)→B3→B4",
+      "precondition": "Parser from htmlParser(), settings list contains duplicate and mixed-case names, trackPosition=false",
+      "expectedResult": "Set contains only ‘div’ and ‘span’ once each",
+      "tags": [
+        "positive",
+        "deduplication",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 tagSet removes duplicates",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings s = new ParseSettings(Arrays.asList(\"Div\",\"div\",\"SPAN\",\"span\"), Locale.ROOT);",
+        "    parser.settings(s);",
+        "  WHEN",
+        "    invoke private tagSet via reflection",
+        "  THEN",
+        "    result.size() == 2",
+        "    result.containsAll(Set.of(\"div\",\"span\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "tagSet lowercases using Turkish locale mapping (uppercase I → dotless ı)",
+      "path": "B0→B2(loop×1)→B3→B4",
+      "precondition": "Parser from htmlParser(), settings list contains “I”, Locale.forLanguageTag(\"tr\")",
+      "expectedResult": "Set contains the Turkish dotless-i ‘ı’",
+      "tags": [
+        "locale",
+        "boundary",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 tagSet locale-specific lowercase",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings s = new ParseSettings(Arrays.asList(\"I\"), Locale.forLanguageTag(\"tr\"));",
+        "    parser.settings(s);",
+        "  WHEN",
+        "    invoke private tagSet via reflection",
+        "  THEN",
+        "    result.equals(Set.of(\"ı\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "tagSet returns lowercase tags when trackPosition=true and no nulls are present",
+      "path": "B0→B1(trackPosition path)→B2(loop×2)→B3→B4",
+      "precondition": "Parser from htmlParser(), setTrackPosition(true), settings list has no nulls",
+      "expectedResult": "Set contains expected lowercase tags without exception",
+      "tags": [
+        "positive",
+        "trackPosition",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 tagSet with trackPosition true no-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true);",
+        "    ParseSettings s = new ParseSettings(Arrays.asList(\"P\",\"Span\"), Locale.ROOT);",
+        "    parser.settings(s);",
+        "  WHEN",
+        "    invoke private tagSet via reflection",
+        "  THEN",
+        "    assert result.equals(Set.of(\"p\",\"span\"));",
+        "END"
+      ]
+    }
+  ]
+}

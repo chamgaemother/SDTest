@@ -1,0 +1,242 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(html, baseUri) with non-empty html and baseUri returns Document with correct baseUri",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals provided baseUri and Document.body() parsed content",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parse html with baseUri",
+        "  GIVEN",
+        "    String html = \"<p>hello</p>\"; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"http://example.com/\"); assert doc.body().html().equals(\"<p>hello</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(html, \"\") with empty baseUri returns Document with empty baseUri",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals empty string",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parse html empty baseUri",
+        "  GIVEN",
+        "    String html = \"<div/>\"; String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\"); assert doc.body().html().equals(\"<div></div>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parse(html) delegates to parse(html, \"\")",
+      "path": "B0→B3→B2",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals empty string",
+      "tags": [
+        "overload:String",
+        "positive",
+        "delegation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parse html no baseUri",
+        "  GIVEN",
+        "    String html = \"<span>t</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\"); assert doc.body().html().equals(\"<span>t</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O3",
+      "description": "parse(html, parser) with valid parser invokes parser.parseInput",
+      "path": "B0→B4→B2",
+      "precondition": "Parser stub returns Document with marker",
+      "expectedResult": "returned Document contains marker from stub parser",
+      "tags": [
+        "overload:String,Parser",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O3 parse html with custom parser",
+        "  GIVEN",
+        "    String html = \"x\"; Parser parser = new StubParser(); // stub parseInput returns Document with title=\"stub\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.title().equals(\"stub\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O4",
+      "description": "parse(html, baseUri, parser) with custom parser",
+      "path": "B0→B5→B2",
+      "precondition": "Parser stub returns Document with title=\"p3\"",
+      "expectedResult": "returned Document.title() equals \"p3\"",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O4 parse html with baseUri and parser",
+        "  GIVEN",
+        "    String html = \"x\"; String baseUri = \"u\"; Parser parser = new StubParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"u\"); assert doc.title().equals(\"p3\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O5",
+      "description": "parse(File, charset, baseUri) with valid file reads contents",
+      "path": "B0→B6→B2",
+      "precondition": "file exists with HTML content",
+      "expectedResult": "returned Document.body().html() equals file HTML",
+      "tags": [
+        "overload:File,String,String",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O5 parse file with charset and baseUri",
+        "  GIVEN",
+        "    File file = TempFile.write(\"<h1>h</h1>\"); String charset = \"UTF-8\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"u\"); assert doc.body().html().equals(\"<h1>h</h1>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O5",
+      "description": "parse(File, charset) delegates baseUri to file path",
+      "path": "B0→B7→B2",
+      "precondition": "file exists named file.html",
+      "expectedResult": "returned Document.baseUri() equals file.getAbsolutePath()",
+      "tags": [
+        "overload:File,String",
+        "boundary",
+        "delegation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O5 parse file charset only",
+        "  GIVEN",
+        "    File file = TempFile.write(\"<i>i</i>\"); String charset = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset);",
+        "  THEN",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O5",
+      "description": "parse(File) with null charsetName delegates to load(file,null)",
+      "path": "B0→B8→B2",
+      "precondition": "file exists",
+      "expectedResult": "returned Document.body().html() equals file HTML",
+      "tags": [
+        "overload:File",
+        "branch-normal",
+        "delegation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O5 parse file no charset",
+        "  GIVEN",
+        "    File file = TempFile.write(\"<b/>\\n\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<b>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O9",
+      "description": "parse(URL, timeout) with non-http URL throws MalformedURLException",
+      "path": "B0→B9→exception",
+      "precondition": "URL = new URL(\"ftp://x\")",
+      "expectedResult": "throws java.net.MalformedURLException; no Document returned",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O9 parse URL invalid protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://x\"); int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.MalformedURLException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O9",
+      "description": "parse(URL, timeout) with valid http URL and timeout returns Document",
+      "path": "B0→B9→B10→B11",
+      "precondition": "embedded HTTP server returns HTML",
+      "expectedResult": "returned Document.body().html() equals server HTML",
+      "tags": [
+        "overload:URL,int",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O9 parse URL with timeout",
+        "  GIVEN",
+        "    URL url = new URL(server.address()); server responds \"<h2>ok</h2>\"; int timeout = 2000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h2>ok</h2>\");",
+        "END"
+      ]
+    }
+  ]
+}

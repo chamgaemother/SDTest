@@ -1,0 +1,98 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "String overload with real htmlParser and non-null context returns actual parsed elements",
+      "path": "B0→B1→B3→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "List contains a single <p> Element with text \"one\"",
+      "tags": [
+        "positive",
+        "integration",
+        "string-overload",
+        "htmlParser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput string real-htmlParser",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String fragment = \"<p>one</p>\";",
+        "    Element ctx = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, ctx, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element p = (Element) result.get(0);",
+        "    assert p.tagName().equals(\"p\");",
+        "    assert p.text().equals(\"one\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Reader overload with real htmlParser and null context returns parsed nodes at document fragment root",
+      "path": "B0→B1→B3→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "List contains two Elements \"a\" and \"b\" in order",
+      "tags": [
+        "positive",
+        "integration",
+        "reader-overload",
+        "htmlParser",
+        "null-context"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseFragmentInput reader real-htmlParser null-context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<a></a><b></b>\");",
+        "    Element ctx = null;",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, ctx, baseUri);",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"a\");",
+        "    assert ((Element)result.get(1)).tagName().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Reader overload with real xmlParser and non-null context (ignored) returns XML nodes",
+      "path": "B0→B1→B3→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "List contains one Element \"item\" with attribute id=\"1\"",
+      "tags": [
+        "positive",
+        "integration",
+        "reader-overload",
+        "xmlParser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseFragmentInput reader real-xmlParser",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<item id=\\\"1\\\">X</item>\";",
+        "    Reader reader = new StringReader(xml);",
+        "    Element ctx = new Element(\"ignore\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, ctx, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element item = (Element) result.get(0);",
+        "    assert item.tagName().equals(\"item\");",
+        "    assert item.attr(\"id\").equals(\"1\");",
+        "END"
+      ]
+    }
+  ]
+}

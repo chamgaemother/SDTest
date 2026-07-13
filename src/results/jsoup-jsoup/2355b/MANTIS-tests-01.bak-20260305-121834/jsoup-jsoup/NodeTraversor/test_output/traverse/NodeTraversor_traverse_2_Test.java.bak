@@ -1,0 +1,89 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertIterableEquals;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("traverse visits two sibling leaf nodes under root exercising skip-removal logic (parent!=null && hasParent→B6→B11 path)")
+    public void test_TC14() {
+        // GIVEN: root with two leaf children, depth-first traversal without removals
+        Element root = new Element("div");
+        Element c1 = new Element("p");
+        Element c2 = new Element("span");
+        root.appendChild(c1); // sibling index 0
+        root.appendChild(c2); // sibling index 1
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                // depth 0 for root, then 1 for children
+                log.add(node.nodeName() + ":head:" + depth);
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                log.add(node.nodeName() + ":tail:" + depth);
+            }
+        };
+
+        // WHEN: traverse over tree with two siblings
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: expect head/tail on root, then each child, then root tail in document order
+        List<String> expected = List.of(
+                "div:head:0",  // root head
+                "p:head:1",    // first child head
+                "p:tail:1",    // first child tail
+                "span:head:1", // second child head
+                "span:tail:1", // second child tail
+                "div:tail:0"   // root tail
+        );
+        assertIterableEquals(expected, log);
+    }
+
+    @Test
+    @DisplayName("traverse removes first of two siblings triggering removal branch with non-null nextSibling (B9→B10)")
+    public void test_TC15() {
+        // GIVEN: root with two leaf children; visitor removes first child in head
+        Element root = new Element("div");
+        Element c1 = new Element("a");
+        Element c2 = new Element("b");
+        root.appendChild(c1); // sibling index 0
+        root.appendChild(c2); // sibling index 1
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                log.add(node.nodeName() + ":head:" + depth);
+                if (node == c1) {
+                    node.remove(); // removal at head triggers branch B9→B10
+                }
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                log.add(node.nodeName() + ":tail:" + depth);
+            }
+        };
+
+        // WHEN: traverse over tree where first child is removed
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: first child's tail is skipped, second child is visited, then root tail
+        List<String> expected = List.of(
+                "div:head:0",  // root head
+                "a:head:1",    // first child head (removed, so no tail)
+                "b:head:1",    // second child head
+                "b:tail:1",    // second child tail
+                "div:tail:0"   // root tail
+        );
+        assertIterableEquals(expected, log);
+    }
+}

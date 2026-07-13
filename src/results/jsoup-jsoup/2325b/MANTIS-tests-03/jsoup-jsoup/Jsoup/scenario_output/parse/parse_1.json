@@ -1,0 +1,313 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parse(String, String, Parser) with XML parser returns XML content type",
+      "path": "B0→B2→B5→B7→B9",
+      "precondition": "none",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse-string-baseuri-parser",
+        "  GIVEN",
+        "    String html = \"<root><a/></root>\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(String) without baseUri defaults to empty and returns parsed body",
+      "path": "B0→B3→B6→B8",
+      "precondition": "none",
+      "expectedResult": "body.html() matches input fragment",
+      "tags": [
+        "overload",
+        "positive",
+        "default-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse-string-no-baseuri",
+        "  GIVEN",
+        "    String html = \"<div>Hi</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>Hi</div>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parse(File, charsetName, baseUri, Parser) uses custom parser on file input",
+      "path": "B0→B4→B6→B10",
+      "precondition": "temp file exists with XML content",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse-file-charset-baseuri-parser",
+        "  GIVEN",
+        "    File file = createTempFile(\"<root/>.xml\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://example.org/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parse(Path, charsetName, baseUri) loads HTML from path with explicit charset and baseUri",
+      "path": "B0→B5→B9",
+      "precondition": "temp Path exists with HTML content",
+      "expectedResult": "body.html() equals file content",
+      "tags": [
+        "overload",
+        "path",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse-path-charset-baseuri",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"t\", \".html\");",
+        "    write(path, \"<p>Path</p>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Path</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(Path, charsetName) with null charsetName and default baseUri",
+      "path": "B0→B5→B9",
+      "precondition": "temp Path exists with BOM and HTML content",
+      "expectedResult": "body.html() equals file content after BOM consumed",
+      "tags": [
+        "overload",
+        "path",
+        "null-charset"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse-path-null-charset",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"b\", \".html\");",
+        "    write(path, BOM_UTF8 + \"<span>Test</span>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, null);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>Test</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path) with default charset and baseUri uses BOM/UTF-8 fallback",
+      "path": "B0→B5→B9",
+      "precondition": "temp Path exists with UTF-8 HTML",
+      "expectedResult": "body.html() equals content",
+      "tags": [
+        "overload",
+        "path",
+        "default"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse-path-default",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"d\", \".html\");",
+        "    write(path, \"<h2>Hi</h2>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h2>Hi</h2>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path, charsetName, baseUri, Parser) invokes custom parser on path",
+      "path": "B0→B5→B11",
+      "precondition": "temp Path exists with XML content",
+      "expectedResult": "contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse-path-charset-baseuri-parser",
+        "  GIVEN",
+        "    Path path = writeTempPath(\"<root/>\", \".xml\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(InputStream, charsetName, baseUri) reads and parses stream content",
+      "path": "B0→B6→B8→B10",
+      "precondition": "InputStream over HTML bytes",
+      "expectedResult": "body.html() equals stream content",
+      "tags": [
+        "overload",
+        "stream",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse-stream-charset-baseuri",
+        "  GIVEN",
+        "    InputStream in = toStream(\"<em>In</em>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<em>In</em>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) uses custom parser on stream",
+      "path": "B0→B6→B8→B11",
+      "precondition": "InputStream over XML bytes",
+      "expectedResult": "contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse-stream-charset-baseuri-parser",
+        "  GIVEN",
+        "    InputStream in = toStream(\"<root/>\", \"UTF-8\");",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, \"UTF-8\", \"\");",
+        "    Document xml = Jsoup.parse(in, \"UTF-8\", \"\", parser);",
+        "  THEN",
+        "    assert xml.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(URL, timeout) with valid HTTP URL returns parsed HTML",
+      "path": "B0→B7→B12→B14",
+      "precondition": "HTTP server responds 200 OK with HTML",
+      "expectedResult": "body.html() equals server response",
+      "tags": [
+        "overload",
+        "network",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parse-url-success",
+        "  GIVEN",
+        "    startHttpServer(200, \"<p>OK</p>\");",
+        "    URL url = new URL(\"http://localhost:<port>/\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>OK</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(URL, timeout) for HTTP 404 throws HttpStatusException",
+      "path": "B0→B7→B12→B13",
+      "precondition": "HTTP server responds 404 Not Found",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "overload",
+        "network",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse-url-404",
+        "  GIVEN",
+        "    startHttpServer(404, \"Not Found\");",
+        "    URL url = new URL(\"http://localhost:<port>/missing\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws HttpStatusException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(URL, timeout) for unsupported mime type throws UnsupportedMimeTypeException",
+      "path": "B0→B7→B12→B13",
+      "precondition": "HTTP server responds 200 with application/pdf",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "overload",
+        "network",
+        "exception",
+        "mime"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parse-url-unsupported-mime",
+        "  GIVEN",
+        "    startHttpServer(200, \"PDFDATA\", \"application/pdf\");",
+        "    URL url = new URL(\"http://localhost:<port>/file.pdf\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException;",
+        "END"
+      ]
+    }
+  ]
+}

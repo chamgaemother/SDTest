@@ -1,0 +1,114 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.ParseSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_2_Test {
+
+    @Test
+    @DisplayName("TC04: parseInput(Reader, baseUri) propagates runtime exception from custom TreeBuilder.parse and unlocks for subsequent calls")
+    void test_TC04() throws Exception {
+        // Arrange stub TreeBuilder that always throws IllegalStateException on parse
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }
+            @Override
+            public TreeBuilder newInstance() { return this; }
+            @Override
+            public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException("boom"); }
+            @Override
+            public List<Node> parseFragment(Reader in, Element c, String u, Parser p) { return null; }
+            @Override
+            public void process(org.jsoup.parser.Token t) { }
+            @Override
+            public org.jsoup.parser.TagSet defaultTagSet() { return org.jsoup.parser.TagSet.Html(); }
+        };
+        Parser parser = new Parser(stub);
+        // reflect into private lock field
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(parser);
+
+        Reader r1 = new StringReader("<x/>);
+        // Before first call, lock should be free
+        assertFalse(lock.isLocked(), "Lock must not be held before first parseInput call");
+        // Act & Assert first call throws IllegalStateException("boom")
+        IllegalStateException ex1 = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(r1, "uri"),
+            "Expected IllegalStateException on first parseInput call");
+        assertEquals("boom", ex1.getMessage());
+        // After exception, lock should have been released
+        assertFalse(lock.isLocked(), "Lock must be unlocked after exception in first call");
+
+        // Act & Assert second call throws same exception, confirming lock is reusable
+        Reader r2 = new StringReader("<x/>);
+        assertFalse(lock.isLocked(), "Lock must not be held before second parseInput call");
+        IllegalStateException ex2 = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(r2, "uri"),
+            "Expected IllegalStateException on second parseInput call");
+        assertEquals("boom", ex2.getMessage());
+        // After second exception, lock should again be released
+        assertFalse(lock.isLocked(), "Lock must be unlocked after exception in second call");
+    }
+
+    @Test
+    @DisplayName("TC05: parseInput(String, baseUri) propagates runtime exception from stub HtmlTreeBuilder.parse and unlocks for subsequent calls")
+    void test_TC05() throws Exception {
+        // Arrange stub HtmlTreeBuilder that always throws IllegalArgumentException on parse
+        org.jsoup.parser.HtmlTreeBuilder stub = new org.jsoup.parser.HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String uri, Parser p) {
+                throw new IllegalArgumentException("fail");
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+            @Override
+            public void process(org.jsoup.parser.Token t) { }
+        };
+        Parser parser = new Parser(stub);
+        // reflect into private lock field
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(parser);
+
+        String html = "<div/>";
+        String base = "u";
+
+        // Before first call, lock must be free
+        assertFalse(lock.isLocked(), "Lock must not be held before first parseInput(String) call");
+        // Act & Assert first call throws IllegalArgumentException("fail")
+        IllegalArgumentException ex1 = assertThrows(IllegalArgumentException.class,
+            () -> parser.parseInput(html, base),
+            "Expected IllegalArgumentException on first parseInput(String) call");
+        assertEquals("fail", ex1.getMessage());
+        // After exception, lock should be released
+        assertFalse(lock.isLocked(), "Lock must be unlocked after exception in first call");
+
+        // Before second call, confirm lock still free
+        assertFalse(lock.isLocked(), "Lock must not be held before second parseInput(String) call");
+        // Act & Assert second call throws same exception, confirming unlock
+        IllegalArgumentException ex2 = assertThrows(IllegalArgumentException.class,
+            () -> parser.parseInput(html, base),
+            "Expected IllegalArgumentException on second parseInput(String) call");
+        assertEquals("fail", ex2.getMessage());
+        // After second exception, lock should again be released
+        assertFalse(lock.isLocked(), "Lock must be unlocked after exception in second call");
+    }
+}

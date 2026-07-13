@@ -1,0 +1,146 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_0_Test {
+
+    // A fake TreeBuilder that returns a dummy Document
+    static class FakeTreeBuilder extends TreeBuilder {
+        static final Document DUMMY_DOC = new Document("http://dummy");
+
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            return DUMMY_DOC;
+        }
+
+        @Override
+        public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            return null;
+        }
+
+        @Override
+        public void process(Token token) {} // Implemented to satisfy TreeBuilder contract
+    }
+
+    // A fake TreeBuilder that always throws IllegalStateException
+    static class FakeTreeBuilderThrows extends TreeBuilder {
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            throw new IllegalStateException("builder failure");
+        }
+
+        @Override
+        public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            return null;
+        }
+
+        @Override
+        public void process(Token token) {} // Implemented to satisfy TreeBuilder contract
+    }
+
+    // A fake TreeBuilder that always throws IllegalArgumentException
+    static class FakeTreeBuilderThrowsArg extends TreeBuilder {
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            throw new IllegalArgumentException("builder arg failure");
+        }
+
+        @Override
+        public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            return null;
+        }
+
+        @Override
+        public void process(Token token) {} // Implemented to satisfy TreeBuilder contract
+    }
+
+    @Test
+    @DisplayName("TC01: parseInput(String, String) where html and baseUri are non-null invokes treeBuilder.parse and returns Document")
+    void test_TC01() {
+        // GIVEN parser with FakeTreeBuilder that returns DUMMY_DOC
+        Parser p = new Parser(new FakeTreeBuilder());
+        String html = "<div>test</div>";
+        String baseUri = "http://example.com";
+
+        // WHEN parsing via String overload
+        Document doc = p.parseInput(html, baseUri);
+
+        // THEN should return the dummy instance from FakeTreeBuilder
+        assertEquals(FakeTreeBuilder.DUMMY_DOC, doc);
+    }
+
+    @Test
+    @DisplayName("TC02_O2: parseInput(Reader, String) where reader and baseUri are non-null invokes treeBuilder.parse and returns Document")
+    void test_TC02_O2() {
+        // GIVEN parser with FakeTreeBuilder that returns DUMMY_DOC
+        Parser p = new Parser(new FakeTreeBuilder());
+        Reader reader = new StringReader("<p/>");
+        String baseUri = "http://test";
+
+        // WHEN parsing via Reader overload
+        Document doc = p.parseInput(reader, baseUri);
+
+        // THEN should return the dummy instance from FakeTreeBuilder
+        assertEquals(FakeTreeBuilder.DUMMY_DOC, doc);
+    }
+
+    @Test
+    @DisplayName("TC03: parseInput(String, String) with null html throws NullPointerException before parse")
+    void test_TC03() {
+        // GIVEN parser with real HtmlTreeBuilder
+        Parser p = new Parser(new HtmlTreeBuilder());
+        String html = null;
+        String baseUri = "x";
+
+        // WHEN & THEN expect NullPointerException due to null Reader source
+        assertThrows(NullPointerException.class, () -> p.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04: parseInput(Reader, String) with null Reader throws NullPointerException before parse")
+    void test_TC04() {
+        // GIVEN parser with real XmlTreeBuilder
+        Parser p = new Parser(new XmlTreeBuilder());
+        Reader reader = null;
+        String baseUri = "u";
+
+        // WHEN & THEN expect NullPointerException immediately on call
+        assertThrows(NullPointerException.class, () -> p.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05: parseInput(String, String) where treeBuilder.parse throws IllegalStateException propagates exception")
+    void test_TC05() {
+        // GIVEN parser with FakeTreeBuilderThrows that throws IllegalStateException
+        Parser p = new Parser(new FakeTreeBuilderThrows());
+        String html = "x";
+        String baseUri = "y";
+
+        // WHEN & THEN expect IllegalStateException from builder.parse
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> p.parseInput(html, baseUri));
+        assertEquals("builder failure", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseInput(Reader, String) where treeBuilder.parse throws IllegalArgumentException propagates exception")
+    void test_TC06_O2() {
+        // GIVEN parser with FakeTreeBuilderThrowsArg that throws IllegalArgumentException
+        Parser p = new Parser(new FakeTreeBuilderThrowsArg());
+        Reader reader = new StringReader("z");
+        String baseUri = "u";
+
+        // WHEN & THEN expect IllegalArgumentException from builder.parse
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> p.parseInput(reader, baseUri));
+        assertEquals("builder arg failure", ex.getMessage());
+    }
+}

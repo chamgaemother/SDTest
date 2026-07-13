@@ -1,0 +1,135 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parse(html, baseUri, parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse with null parser",
+        "  GIVEN",
+        "    String html = \"<p>x</p>\";",
+        "    String baseUri = \"http://example/\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, (Parser) null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File, charsetName, baseUri) with invalid charsetName throws IOException",
+      "path": "B0→B2→B4→B6",
+      "precondition": "file does not exist or charset invalid",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse file with invalid charset",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent.html\");",
+        "    String invalidCharset = \"BAD-CHARSET\";",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    call Jsoup.parse(f, invalidCharset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path) on non-existent path throws IOException",
+      "path": "B0→B3→B7",
+      "precondition": "Path does not exist",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse non-existent Path",
+        "  GIVEN",
+        "    Path p = Paths.get(\"no_such_file.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(p);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, timeoutMillis) with valid HTTP URL returns parsed Document",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "embedded HTTP server running at http://localhost:8080/test.html returning '<div>ok</div>'",
+      "expectedResult": "Document contains body html '<div>ok</div>'",
+      "tags": [
+        "positive",
+        "http",
+        "integration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse with HTTP URL",
+        "  GIVEN",
+        "    // start simple HTTP server on localhost:8080 serving /test.html",
+        "    URL url = new URL(\"http://localhost:8080/test.html\");",
+        "    int timeout = 5000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>ok</div>\");",
+        "    server.stop();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL, timeoutMillis) with too-small timeout throws SocketTimeoutException",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "embedded HTTP server on localhost delayed beyond timeout",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout",
+        "http"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse URL with small timeout",
+        "  GIVEN",
+        "    // start HTTP server on localhost:8081 with artificial delay 200ms",
+        "    URL url = new URL(\"http://localhost:8081/delay.html\");",
+        "    int timeout = 50;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws SocketTimeoutException;",
+        "    server.stop();",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("children() reuses cached shadowChildrenRef on second call when no structural change")
+    public void test_TC06() throws Exception {
+        // GIVEN: a parent element with two child elements and no intervening mutation
+        Element parent = new Element("div");
+        // appendElement creates Element children and triggers ensureChildNodes + childNodes addition
+        Element child1 = parent.appendElement("span");  // first child, triggers childElementsList cache on first call
+        Element child2 = parent.appendElement("em");    // second child
+
+        // WHEN: first call to children() should populate shadowChildrenRef cache
+        Elements first = parent.children();
+        // WHEN: second call to children() should reuse the cached list without rebuilding
+        Elements second = parent.children();
+
+        // THEN: size of returned Elements lists is 2 (two element children)
+        assertEquals(2, first.size(), "First children() call should return two children");
+        assertEquals(2, second.size(), "Second children() call should return two children");
+
+        // THEN: the underlying cached list instance (shadowChildrenRef.get()) is reused between calls
+        // Use reflection to inspect private shadowChildrenRef field
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<java.util.List<Element>> weakRef =
+                (WeakReference<java.util.List<Element>>) refField.get(parent);
+        java.util.List<Element> cachedList1 = weakRef.get();
+
+        // Subsequent call should not change the cached list instance
+        // Access again after second children() call
+        @SuppressWarnings("unchecked")
+        WeakReference<java.util.List<Element>> weakRef2 =
+                (WeakReference<java.util.List<Element>>) refField.get(parent);
+        java.util.List<Element> cachedList2 = weakRef2.get();
+
+        // Assert that the same list instance was used for both cache retrievals
+        assertSame(cachedList1, cachedList2,
+                "Children list should be reused from shadowChildrenRef cache on second invocation");
+    }
+}

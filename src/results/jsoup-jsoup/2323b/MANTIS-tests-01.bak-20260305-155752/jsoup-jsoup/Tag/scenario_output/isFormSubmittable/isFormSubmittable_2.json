@@ -1,0 +1,140 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "valueOf throws NullPointerException when tagName is null",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 null-tagName",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String normal = \"anything\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normal, ns, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "valueOf throws IllegalArgumentException when tagName is empty or blank",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 empty-tagName",
+        "  GIVEN",
+        "    String tagName = \"  \";",
+        "    String normal = \"\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normal, ns, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf throws NullPointerException when namespace is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null-namespace",
+        "  GIVEN",
+        "    String tagName = \"foo\";",
+        "    String normal = \"foo\";",
+        "    String ns = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, normal, ns, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Known non-submit tag \"div\" returns same static instance with formSubmit=false",
+      "path": "B0→B4→return",
+      "precondition": "static Tags initialized",
+      "expectedResult": "returned instance == Tag.valueOf(\"div\") and isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "instance-eq",
+        "non-submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 known-non-submit-same-instance",
+        "  GIVEN",
+        "    Tag base = Tag.valueOf(\"div\");",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(\"div\");",
+        "  THEN",
+        "    assert t == base;",
+        "    assertFalse(t.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Uppercase known submit tag with preserveTagCase=false returns static instance formSubmit=true via second-lookup path",
+      "path": "B0→B2→B4→return",
+      "precondition": "static Tags initialized, settings.preserveTagCase() == false",
+      "expectedResult": "returned instance == Tag.valueOf(\"input\") and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "case-normalization",
+        "submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 uppercase-submit-no-preserve",
+        "  GIVEN",
+        "    Tag base = Tag.valueOf(\"input\");",
+        "    String name = \"INPUT\";",
+        "    String normal = ParseSettings.normalName(name);",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.htmlDefault; // preserveTagCase() == false",
+        "  WHEN",
+        "    Tag t = Tag.valueOf(name, normal, ns, settings);",
+        "  THEN",
+        "    assert t == base;",
+        "    assertTrue(t.isFormSubmittable());",
+        "END"
+      ]
+    }
+  ]
+}

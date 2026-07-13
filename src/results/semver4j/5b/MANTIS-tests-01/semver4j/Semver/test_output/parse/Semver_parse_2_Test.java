@@ -1,0 +1,46 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_2_Test {
+
+    @Test
+    @DisplayName("parse(\".1.2.3\") catches parsing error for leading dot and returns null (invalid format branch)")
+    public void test_TC13() {
+        // Leading dot before major version is invalid per semver spec, triggers parse exception branch
+        String version = ".1.2.3";
+        Semver result = Semver.parse(version);
+        // Expect null when input has invalid leading dot
+        assertNull(result, "Expected null for version with leading dot");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3-alpha+build.meta.1\") returns Semver instance with complex pre-release and build tokens (valid complex branch)")
+    public void test_TC14() {
+        // Valid semver with one pre-release token and multiple build tokens separated by dots
+        String version = "1.2.3-alpha+build.meta.1";
+        Semver result = Semver.parse(version);
+        // Expect non-null Semver for a well-formed version
+        assertNotNull(result, "Expected non-null result for valid complex semver");
+        // Pre-release should contain exactly ["alpha"]
+        List<String> expectedPre = List.of("alpha");
+        assertEquals(expectedPre, result.getPreRelease(), "Pre-release tokens did not match expected list");
+        // Build metadata should contain exactly ["build","meta","1"]
+        List<String> expectedBuild = List.of("build", "meta", "1");
+        assertEquals(expectedBuild, result.getBuild(), "Build metadata tokens did not match expected list");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3+build_1\") catches parse error for invalid build identifier character and returns null (invalid-build branch)")
+    public void test_TC15() {
+        // Underscore is not allowed in build identifiers per semver spec, should cause parse failure
+        String version = "1.2.3+build_1";
+        Semver result = Semver.parse(version);
+        // Expect null when build identifier contains invalid character
+        assertNull(result, "Expected null for version with invalid build identifier underscore");
+    }
+}

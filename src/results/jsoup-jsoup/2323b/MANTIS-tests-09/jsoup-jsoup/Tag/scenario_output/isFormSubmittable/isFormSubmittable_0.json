@@ -1,0 +1,132 @@
+{
+  "method": "isFormSubmittable",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Known form-submittable tag 'input' returns true (formSubmit==true)",
+      "path": "B0→B1",
+      "precondition": "Tags static init contains 'input' with formSubmit set to true",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "known-tag",
+        "formSubmit-true",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 isFormSubmittable known form-submittable",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"input\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Known non-form-submittable tag 'div' returns false (formSubmit==false)",
+      "path": "B0→B1",
+      "precondition": "Tags static init contains 'div' with formSubmit default false",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "known-tag",
+        "formSubmit-false",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 isFormSubmittable known non-form-submittable",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"div\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Unknown tag 'custom' returns false (generic tag formSubmit default false)",
+      "path": "B0→B1",
+      "precondition": "No prior registration for tagName 'custom'",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "unknown-tag",
+        "formSubmit-false",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 isFormSubmittable unknown tag",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"custom\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Case-sensitive overload with ParseSettings preserves case but formSubmit remains false for unknown tag",
+      "path": "B0→B1",
+      "precondition": "No prior registration for tagName 'MyTag'; using ParseSettings.preserveCase",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "unknown-tag",
+        "preserveCase",
+        "formSubmit-false",
+        "branch-false",
+        "overload:String,ParseSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 isFormSubmittable unknown tag with settings",
+        "  GIVEN",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "    Tag tag = Tag.valueOf(\"MyTag\", settings);",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Invoking isFormSubmittable on null reference throws NullPointerException",
+      "path": "B0→Exception",
+      "precondition": "Tag reference is null",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "exception",
+        "null-object",
+        "branch-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 isFormSubmittable null reference",
+        "  GIVEN",
+        "    Tag tag = null;",
+        "  WHEN",
+        "    call tag.isFormSubmittable();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,163 @@
+package org.jsoup;
+
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.jsoup.internal.SharedConstants.DummyUri;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(String, String, Parser) with null baseUri throws IllegalArgumentException")
+    public void test_TC19() {
+        String html = "<p>OK</p>";
+        String baseUri = null;
+        Parser parser = Parser.htmlParser();
+        // baseUri == null should trigger IllegalArgumentException per spec
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, Parser) returns Document from DataUtil.load with custom parser")
+    public void test_TC20() throws IOException {
+        // create temp file with simple XML-like content
+        Path temp = Files.createTempFile("jsoup-test-", ".html");
+        Files.write(temp, "<x/>".getBytes());
+        File f = temp.toFile();
+        String charset = "UTF-8";
+        String baseUri = "http://a/";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(f, charset, baseUri, parser);
+        // xmlParser preserves self-closing tag and sets baseUri
+        assertEquals("<x/>", doc.body().html());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri, Parser) returns Document using Path overload")
+    public void test_TC21() throws IOException {
+        Path temp = Files.createTempFile("jsoup-test-", ".html");
+        Files.write(temp, "<h/>".getBytes());
+        String charset = "UTF-8";
+        String baseUri = "https://site/";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(temp, charset, baseUri, parser);
+        // path overload should behave like file overload
+        assertEquals("<h/>", doc.body().html());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri, Parser) returns Document using InputStream overload")
+    public void test_TC22() throws IOException {
+        byte[] data = "<i/>".getBytes();
+        InputStream in = new ByteArrayInputStream(data);
+        String charset = "UTF-8";
+        String baseUri = "http://b/";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(in, charset, baseUri, parser);
+        // stream overload should parse same as file/path
+        assertEquals("<i/>", doc.body().html());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) throws SocketTimeoutException on slow response")
+    public void test_TC23() throws Exception {
+        // start a simple HTTP server that delays response
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", exchange -> {
+            try {
+                Thread.sleep(200); // delay longer than client timeout
+                byte[] resp = "<html></html>".getBytes();
+                exchange.sendResponseHeaders(200, resp.length);
+                exchange.getResponseBody().write(resp);
+            } catch (InterruptedException ignored) {
+            } finally {
+                exchange.close();
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            URL url = new URL("http://localhost:" + port + "/");
+            // timeoutMillis=50 < 200ms delay triggers SocketTimeoutException
+            assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, 50));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=true assigns DummyUri")
+    public void test_TC24() {
+        String html = "<a href=\"p.html\">x</a>";
+        String baseUri = "";
+        Safelist safelist = Safelist.relaxed().preserveRelativeLinks(true);
+        // empty baseUri & preserveRelativeLinks true triggers DummyUri assignment
+        String out = Jsoup.clean(html, baseUri, safelist);
+        assertTrue(out.contains("href=\"" + DummyUri), "Expected href to start with DummyUri");
+    }
+
+    @Test
+    @DisplayName("clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=false removes relative href")
+    public void test_TC25() {
+        String html = "<a href=\"p.html\">x</a>";
+        String baseUri = "";
+        Safelist safelist = Safelist.none(); // default preserveRelativeLinks=false
+        String out = Jsoup.clean(html, baseUri, safelist);
+        assertFalse(out.contains("href"), "Expected no href attribute when not preserving relative links");
+    }
+
+    @Test
+    @DisplayName("clean(String, String, Safelist, Document.OutputSettings) applies outputSettings to cleaned document")
+    public void test_TC26() {
+        String html = "<div><p>x</p></div>";
+        String baseUri = "";
+        Safelist safelist = Safelist.simpleText();
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+        // disabling prettyPrint should remove extra indentation/newlines
+        String out = Jsoup.clean(html, baseUri, safelist, os);
+        assertEquals("<p>x</p>", out);
+    }
+
+    @Test
+    @DisplayName("isValid(String, Safelist) returns true for HTML matching safelist")
+    public void test_TC27() {
+        String html = "<p>ok</p>";
+        Safelist safelist = Safelist.simpleText();
+        // simpleText allows <p>
+        boolean valid = Jsoup.isValid(html, safelist);
+        assertTrue(valid);
+    }
+
+    @Test
+    @DisplayName("isValid(String, Safelist) returns false for HTML with disallowed tags")
+    public void test_TC28() {
+        String html = "<script>evil()</script>";
+        Safelist safelist = Safelist.simpleText();
+        // simpleText disallows <script>
+        boolean valid = Jsoup.isValid(html, safelist);
+        assertFalse(valid);
+    }
+}

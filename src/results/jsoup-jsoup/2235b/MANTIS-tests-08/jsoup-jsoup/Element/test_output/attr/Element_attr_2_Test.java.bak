@@ -1,0 +1,36 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("TC10: attr(String,String) with empty key stores an attribute entry with empty name")
+    public void test_TC10() {
+        // Given an element and empty key/value to cover branch where key is empty string (boundary condition)
+        Element el = new Element("div");
+        String key = "";
+        String val = "v";
+        // When: calling attr with empty string key and a value should store the entry
+        el.attr(key, val);
+        // Then: expect the attributes map to contain the empty string key and correct value
+        assertTrue(el.attributes().hasKey(""), "Expected empty-string key to be present in attributes");
+        assertEquals("v", el.attributes().get(""), "Expected value 'v' for the empty-string key");
+    }
+
+    @Test
+    @DisplayName("TC11: attr(String,boolean) false removes an existing non-boolean attribute keyed by empty string")
+    public void test_TC11() {
+        // Given an element with an existing attribute under empty key to cover removal branch when boolean false
+        Element el = new Element("span");
+        el.attr("", "x");
+        assertTrue(el.attributes().hasKey(""), "Precondition: empty-string key must exist before boolean remove");
+        // When: calling attr with false boolean should remove the empty-string key attribute
+        el.attr("", false);
+        // Then: expect that the empty-string key no longer exists in attributes
+        assertFalse(el.attributes().hasKey(""), "Expected empty-string key to be removed when passing false");
+    }
+}

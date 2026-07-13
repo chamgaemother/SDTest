@@ -1,0 +1,99 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "three-level nested tree exercises multiple descend (B12) and ascend-without-siblings (B16→B19) branches",
+      "path": "B0→B1→B5→B11→B12(loop×2)→B23×2→B16(loop ascend until depth=0)→B20→B21",
+      "precondition": "Element root with child level1; level1 with child level2",
+      "expectedResult": "visitor.head and tail called in depth-first order for three levels",
+      "tags": [
+        "positive",
+        "depth",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 three-level depth-first",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element l1 = new Element(\"span\");",
+        "    Element l2 = new Element(\"em\");",
+        "    root.appendChild(l1); l1.appendChild(l2);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(n,d)-> seq.add(n.nodeName()+\"@\"+d);",
+        "      tail(n,d)-> seq.add(n.nodeName()+\"@\"+d);",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert seq equals [\"div@0\",\"span@1\",\"em@2\",\"em@2\",\"span@1\",\"div@0\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "root with two children exercises sibling branch (B16→B17→B20→B22) at depth>0",
+      "path": "B0→B1→B5→B11→B12→B23→B1→B11→B16→B17→B20→B22→B23→B1→B24",
+      "precondition": "Element root with two immediate children childA and childB",
+      "expectedResult": "visitor visits childA then childB, handling nextSibling branch correctly",
+      "tags": [
+        "positive",
+        "sibling",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 two-sibling navigation",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(n,d)-> seq.add(n.nodeName());",
+        "      tail(n,d)-> seq.add(n.nodeName());",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert seq equals [\"div\",\"a\",\"a\",\"b\",\"b\",\"div\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Elements overload with multiple elements exercises loop branch (B1→B2×2→B3)",
+      "path": "B0→B1→B2(loop×2)→B1→B3",
+      "precondition": "Elements list with two separate Element roots",
+      "expectedResult": "traverse called for each element, visitor sees head+tail per element",
+      "tags": [
+        "positive",
+        "overload",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 traverse Elements multiple",
+        "  GIVEN",
+        "    Element x = new Element(\"x\");",
+        "    Element y = new Element(\"y\");",
+        "    Elements els = new Elements(x,y);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(n,d)-> seq.add(n.nodeName());",
+        "      tail(n,d)-> seq.add(n.nodeName());",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, els);",
+        "  THEN",
+        "    assert seq equals [\"x\",\"x\",\"y\",\"y\"];",
+        "END"
+      ]
+    }
+  ]
+}

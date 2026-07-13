@@ -1,0 +1,77 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.children() covering empty, filtering, and caching behavior.
+ */
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty list when no childNodes (childNodeSize==0)")
+    public void test_TC01() {
+        // Given: an element with no children -> childNodeSize == 0 triggers the shortcut in childElementsList
+        Element el = new Element("div");
+        // When: calling children()
+        Elements result = el.children();
+        // Then: the returned Elements is empty (size 0)
+        assertEquals(0, result.size(), "Expected no child elements when there are no child nodes");
+    }
+
+    @Test
+    @DisplayName("TC02: children() filters out non-Element nodes when only TextNode present (childNodeSize>0 but no Element instances)")
+    public void test_TC02() {
+        // Given: an element with one TextNode child only -> childNodeSize > 0 but no Element instances
+        Element el = new Element("p");
+        el.appendChild(new TextNode("text"));
+        // When: calling children()
+        Elements result = el.children();
+        // Then: the returned Elements is empty, since non-Element nodes should be filtered out
+        assertEquals(0, result.size(), "Expected no child elements when only a TextNode is present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() returns only Element instances when mixed Node types present (filters correctly)")
+    public void test_TC03() {
+        // Given: an element with mixed children -> two Element children and one TextNode
+        Element parent = new Element("div");
+        Element child1 = new Element("span");
+        parent.appendChild(child1);
+        parent.appendChild(new TextNode("t"));  // filtered out
+        Element child2 = new Element("a");
+        parent.appendChild(child2);
+        // When: calling children(), should iterate over childNodes and pick only Element instances
+        Elements result = parent.children();
+        // Then: result contains exactly child1 and child2 in insertion order
+        assertAll("Filtered Elements",
+            () -> assertEquals(2, result.size(), "Expected two element children"),
+            () -> assertSame(child1, result.get(0), "First element should be child1"),
+            () -> assertSame(child2, result.get(1), "Second element should be child2")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: children() uses cached shadowChildrenRef on subsequent call (no rebuild)")
+    public void test_TC04() {
+        // Given: an element with one child element, cache initially empty
+        Element el = new Element("div");
+        Element c = new Element("span");
+        el.appendChild(c);
+        // When: first call builds the shadowChildrenRef cache
+        Elements first = el.children();
+        // When: second call should reuse the cache (no structural change, but we observe same content)
+        Elements second = el.children();
+        // Then: both calls return a single-element list containing the same child object
+        assertAll("Cache behavior",
+            () -> assertEquals(1, first.size(), "First call should return one element"),
+            () -> assertSame(c, first.get(0), "First call element should be c"),
+            () -> assertEquals(1, second.size(), "Second call should return one element"),
+            () -> assertSame(c, second.get(0), "Second call element should be c")
+        );
+    }
+}

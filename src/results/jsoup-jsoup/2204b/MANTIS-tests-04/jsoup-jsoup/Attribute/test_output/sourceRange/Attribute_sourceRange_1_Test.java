@@ -1,0 +1,36 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+/**
+ * JUnit 5 tests for {@link Attribute#sourceRange()} method.
+ */
+public class Attribute_sourceRange_1_Test {
+
+    @Test
+    @DisplayName("TC02: sourceRange delegates to parent.sourceRange when parent is non-null (parent != null branch)")
+    public void test_TC02() {
+        // GIVEN: a key and a stubbed AttributeRange; parent != null so delegation path is taken
+        String key = "k";
+        Range.AttributeRange expected = new Range.AttributeRange(5, 10); // Fixed constructor parameters
+        // Stub Attributes to return our expected range regardless of input key
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // always return the stubbed range to verify delegation
+                return expected;
+            }
+        };
+        // Create Attribute with non-null parent to force delegation
+        Attribute attr = new Attribute(key, "v", stubParent);
+
+        // WHEN: calling sourceRange on the attribute
+        Range.AttributeRange result = attr.sourceRange();
+
+        // THEN: the returned range should be exactly the stubbed instance
+        assertSame(expected, result, "Expected sourceRange to delegate to parent.sourceRange and return the stubbed instance");
+    }
+}

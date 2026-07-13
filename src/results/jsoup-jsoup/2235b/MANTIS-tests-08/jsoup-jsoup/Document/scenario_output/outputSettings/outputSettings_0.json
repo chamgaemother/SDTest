@@ -1,0 +1,78 @@
+{
+  "method": "outputSettings",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Getter returns the default OutputSettings instance without mutation",
+      "path": "B0→B1→B2",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // default outputSettings initialized",
+      "expectedResult": "returned instance is the same as doc.outputSettings field and is non-null",
+      "tags": [
+        "getter",
+        "positive",
+        "branch-none"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 Document.outputSettings getter default",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    OutputSettings settings = doc.outputSettings();",
+        "  THEN",
+        "    assert settings == doc.outputSettings();"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "Setter with non-null OutputSettings updates field and returns this Document",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Document doc = new Document(\"base\"); OutputSettings newSettings = new OutputSettings().prettyPrint(false);",
+      "expectedResult": "returned Document is same instance as doc and doc.outputSettings() == newSettings",
+      "tags": [
+        "setter",
+        "positive",
+        "overload:OutputSettings",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 setter non-null updates outputSettings",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://base\");",
+        "    OutputSettings newSettings = new OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    Document returned = doc.outputSettings(newSettings);",
+        "  THEN",
+        "    assert returned == doc;",
+        "    assert doc.outputSettings() == newSettings;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "Setter throws IllegalArgumentException when passed null OutputSettings",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Document doc = new Document(\"base\"); // Validate.notNull enforces non-null",
+      "expectedResult": "throws IllegalArgumentException; doc.outputSettings remains unchanged",
+      "tags": [
+        "setter",
+        "exception",
+        "overload:OutputSettings",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 setter null throws",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://base\");",
+        "  WHEN",
+        "    call doc.outputSettings(null);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

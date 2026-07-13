@@ -1,0 +1,104 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(0) on element with no children throws IndexOutOfBoundsException (empty filtered list)")
+    public void test_TC01() {
+        // GIVEN an element with no children -> childElementsList is empty (branch-false, loop-0)
+        Element el = new Element("div");
+        // WHEN & THEN expect IndexOutOfBoundsException since no elements to return
+        assertThrows(IndexOutOfBoundsException.class, new Executable() {
+            public void execute() { el.child(0); }
+        });
+    }
+
+    @Test
+    @DisplayName("child(-1) on element with no children throws IndexOutOfBoundsException for negative index")
+    public void test_TC02() {
+        // GIVEN an element with no children -> filtered list empty
+        Element el = new Element("span");
+        // WHEN & THEN negative index should also throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(-1));
+    }
+
+    @Test
+    @DisplayName("child(0) on element with only non-Element childNodes throws IndexOutOfBoundsException (filtered empty)")
+    public void test_TC03() {
+        // GIVEN an element with a single TextNode child (filter-skips non-elements)
+        Element el = new Element("p");
+        el.appendChild(new TextNode("text"));
+        // WHEN accessing child(0) -> no Element children -> IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+        // Ensure the underlying childNodes still contains the TextNode only
+        assertEquals(1, el.childNodeSize());
+    }
+
+    @Test
+    @DisplayName("child(0) returns first element when exactly one child Element present")
+    public void test_TC04() {
+        // GIVEN an element with one child element (loop-1, branch-true)
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // WHEN retrieving first element
+        Element result = parent.child(0);
+        // THEN the returned instance must be the same child
+        assertSame(child, result);
+    }
+
+    @Test
+    @DisplayName("child(1) on element with two mixed children returns second Element (filter skips non-elements)")
+    public void test_TC05() {
+        // GIVEN a parent with: TextNode, Element a, Element b (filter skips TextNode, loop over 3 nodes)
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("t1"));
+        Element e1 = new Element("a"); parent.appendChild(e1);
+        Element e2 = new Element("b"); parent.appendChild(e2);
+        // WHEN requesting index 1 in filtered Element list -> should skip TextNode and pick e2
+        Element result = parent.child(1);
+        // THEN result matches second element child e2
+        assertSame(e2, result);
+    }
+
+    @Test
+    @DisplayName("child(size) on element with two child Elements throws IndexOutOfBoundsException (upper bound)")
+    public void test_TC06() {
+        // GIVEN a parent with two Element children -> filtered list size is 2
+        Element parent = new Element("ul");
+        parent.appendChild(new Element("li"));
+        parent.appendChild(new Element("li"));
+        int size = parent.childrenSize();
+        assertEquals(2, size);
+        // WHEN index equals size -> should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(size));
+    }
+
+    @Test
+    @DisplayName("child(0) uses cached shadowChildrenRef on second invocation (skip rebuild)")
+    public void test_TC07() throws Exception {
+        // GIVEN a parent with one child and initial empty cache
+        Element parent = new Element("div");
+        Element child = new Element("i");
+        parent.appendChild(child);
+        // WHEN first call builds cache and returns child
+        Element first = parent.child(0);
+        // THEN ensure returned matches
+        assertSame(child, first);
+        // WHEN second call should use cached shadowChildrenRef (cache-hit)
+        Element second = parent.child(0);
+        // THEN still returns same instance
+        assertSame(child, second);
+
+        // Additionally verify shadowChildrenRef is non-null via reflection to show cache retained
+        java.lang.reflect.Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        java.lang.ref.WeakReference<?> ref = (java.lang.ref.WeakReference<?>) refField.get(parent);
+        assertNotNull(ref.get(), "Expected shadowChildrenRef cache to hold children list");
+    }
+}

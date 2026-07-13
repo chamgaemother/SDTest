@@ -1,0 +1,143 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "childNodeSize == 0 returns an empty Elements list without iterating loop",
+      "path": "B0→B1[childNodeSize==0]→B2",
+      "precondition": "Element el = new Element(\"div\"); // no children added",
+      "expectedResult": "returned Elements is empty (size==0)",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "childNodeSize > 0 with non-Element children returns empty but still iterates loop",
+      "path": "B0→B1[childNodeSize>0]→B3[shadowChildrenRef==null]→B4(loop×1)→B5 cache→B6 return",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"text\"));",
+      "expectedResult": "returned Elements is empty (size==0)",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "filter-none",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 children non-element-only",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "childNodeSize > 0 with one Element child returns list of one Element and caches it",
+      "path": "B0→B1[childNodeSize>0]→B3[shadowChildrenRef==null]→B4(loop×1 adds Element)→B5 cache→B6 return",
+      "precondition": "Element el = new Element(\"ul\"); Element li = new Element(\"li\"); el.appendChild(li);",
+      "expectedResult": "returned Elements contains exactly [li]",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "filter-element",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 children single-element",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    el.appendChild(li);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == li;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "subsequent call uses cached shadowChildrenRef path and does not re-compute filter",
+      "path": "B0→B1[childNodeSize>0]→B3[shadowChildrenRef!=null]→B7 return-cached",
+      "precondition": "Element el = new Element(\"ul\"); Element li = new Element(\"li\"); el.appendChild(li); el.children(); // populate cache",
+      "expectedResult": "second call returns same Elements instance as first call",
+      "tags": [
+        "branch-cache",
+        "loop-0",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 children cached-instance",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    el.appendChild(li);",
+        "    Elements first = el.children();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert second == first;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "childNodeSize > 0 with mixed Node types returns only Element children in order",
+      "path": "B0→B1[childNodeSize>0]→B3[shadowChildrenRef==null]→B4(loop×3 adds 2 elements only)→B5 cache→B6 return",
+      "precondition": "Element el = new Element(\"div\"); Node n1 = new TextNode(\"t1\"); Element e1 = new Element(\"span\"); Node n2 = new Comment(\"c\"); Element e2 = new Element(\"b\"); el.appendChild(n1); el.appendChild(e1); el.appendChild(n2); el.appendChild(e2);",
+      "expectedResult": "returned Elements contains [e1, e2] in that order",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "filter-mixed",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children mixed-node-types",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"t1\"));",
+        "    Element e1 = new Element(\"span\");",
+        "    el.appendChild(e1);",
+        "    el.appendChild(new Comment(\"c\"));",
+        "    Element e2 = new Element(\"b\");",
+        "    el.appendChild(e2);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0) == e1;",
+        "    assert result.get(1) == e2;",
+        "END"
+      ]
+    }
+  ]
+}

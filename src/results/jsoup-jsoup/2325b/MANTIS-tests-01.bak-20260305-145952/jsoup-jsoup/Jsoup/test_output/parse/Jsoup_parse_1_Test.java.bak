@@ -1,0 +1,157 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri) reads HTML file with explicit charset and baseUri")
+    void test_TC07() throws IOException {
+        // Bypass default BOM or null charset path: explicit charset triggers DataUtil.load(file, charset, baseUri)
+        File file = File.createTempFile("tc07", ".html");
+        file.deleteOnExit();
+        String content = "<p>File</p>";
+        Files.write(file.toPath(), content.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://file.example/";
+        Document doc = Jsoup.parse(file, charset, baseUri);
+        assertEquals("<p>File</p>", doc.body().html(), "Body HTML should match file content");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be as provided");
+    }
+
+    @Test
+    @DisplayName("parse(File, null charsetName) auto-detects charset and uses file path as baseUri")
+    void test_TC08() throws IOException {
+        // Null charset triggers BOM/meta detection path and baseUri defaults to file.getAbsolutePath()
+        File file = File.createTempFile("tc08", ".html");
+        file.deleteOnExit();
+        String content = "<div>Auto</div>";
+        Files.write(file.toPath(), content.getBytes());
+        String charset = null;
+        Document doc = Jsoup.parse(file, charset);
+        assertEquals("<div>Auto</div>", doc.body().html(), "Body HTML should match file content");
+        assertEquals(file.getAbsolutePath(), doc.baseUri(), "Base URI should default to file absolute path");
+    }
+
+    @Test
+    @DisplayName("parse(File) calls DataUtil.load with null charset and file path as baseUri")
+    void test_TC09() throws IOException {
+        // Default overload: null charset, path -> DataUtil.load(File, null, path)
+        File file = File.createTempFile("tc09", ".html");
+        file.deleteOnExit();
+        String content = "<span>X</span>";
+        Files.write(file.toPath(), content.getBytes());
+        Document doc = Jsoup.parse(file);
+        assertEquals("<span>X</span>", doc.body().html(), "Body HTML should match file content");
+        assertEquals(file.getAbsolutePath(), doc.baseUri(), "Base URI should default to file absolute path");
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, Parser) uses custom Parser for file input")
+    void test_TC10() throws IOException {
+        // Custom parser stub path: DataUtil.load should call parser.parseInput internally
+        File file = File.createTempFile("tc10", ".html");
+        file.deleteOnExit();
+        Files.write(file.toPath(), "irrelevant".getBytes());
+        Parser stub = new Parser(null) {
+            @Override public Document parseInput(String in, String base) {
+                return new Document("stub-base").parser(stub);
+            }
+        };
+        Document result = Jsoup.parse(file, "UTF-8", "base", stub);
+        // The returned Document should have our stub set as parser
+        assertSame(stub, result.parser(), "Parser of returned Document should be the stub");
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri) reads HTML Path with explicit charset")
+    void test_TC11() throws IOException {
+        // Explicit charset and baseUri path overload -> DataUtil.load(Path, charset, baseUri)
+        Path path = Files.createTempFile("tc11", ".html");
+        Files.write(path, "<p>Path</p>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://path.example/";
+        Document doc = Jsoup.parse(path, charset, baseUri);
+        assertEquals("<p>Path</p>", doc.body().html(), "Body HTML should match path content");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be as provided");
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName) uses file path as baseUri when charset provided")
+    void test_TC12() throws IOException {
+        // Charset provided but no baseUri -> baseUri defaults to path.toAbsolutePath().toString()
+        Path path = Files.createTempFile("tc12", ".html");
+        Files.write(path, "<em>C</em>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        Document doc = Jsoup.parse(path, charset);
+        assertEquals("<em>C</em>", doc.body().html(), "Body HTML should match path content");
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri(), "Base URI should default to path absolute string");
+    }
+
+    @Test
+    @DisplayName("parse(Path) default overload with null charset uses path as baseUri")
+    void test_TC13() throws IOException {
+        // Default Path overload: null charset, baseUri defaults to path absolute
+        Path path = Files.createTempFile("tc13", ".html");
+        Files.write(path, "<div>D</div>".getBytes());
+        Document doc = Jsoup.parse(path);
+        assertEquals("<div>D</div>", doc.body().html(), "Body HTML should match path content");
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri(), "Base URI should default to path absolute string");
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri) reads from a stream")
+    void test_TC14() throws IOException {
+        // Stream overload: explicit charset and baseUri
+        String html = "<h1>Stream</h1>";
+        try (InputStream in = new ByteArrayInputStream(html.getBytes("UTF-8"))) {
+            String charset = "UTF-8";
+            String baseUri = "http://stream.example/";
+            Document doc = Jsoup.parse(in, charset, baseUri);
+            assertEquals("<h1>Stream</h1>", doc.body().html(), "Body HTML should match stream content");
+            assertEquals(baseUri, doc.baseUri(), "Base URI should be as provided");
+        }
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri, Parser) uses stub parser for streams")
+    void test_TC15() throws IOException {
+        // Custom parser for stream path -> DataUtil.load(InputStream, charset, baseUri, parser)
+        byte[] data = "X".getBytes();
+        try (InputStream in = new ByteArrayInputStream(data)) {
+            Parser stub = new Parser(null) {
+                @Override public Document parseInput(String inHtml, String baseUri) {
+                    return new Document("s").parser(stub);
+                }
+            };
+            Document result = Jsoup.parse(in, null, "base", stub);
+            assertSame(stub, result.parser(), "Parser of returned Document should be the stub");
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) throws MalformedURLException on unsupported protocol")
+    void test_TC16() {
+        // URL with ftp scheme should trigger MalformedURLException in URL validation path
+        assertThrows(MalformedURLException.class, () -> {
+            URL url = new URL("ftp://example.com");
+            Jsoup.parse(url, 1000);
+        }, "Unsupported protocol should throw MalformedURLException");
+    }
+}

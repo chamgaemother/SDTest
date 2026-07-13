@@ -1,0 +1,86 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild throws IllegalArgumentException when child is null (Validate.notNull)",
+      "path": "B0→B1",
+      "precondition": "Element parent = new Element(\"div\"); // no children; child == null triggers validation",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "branch-true",
+        "child-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild on empty children list creates childNodes and adds child at index 0 (ensureChildNodes branch true)",
+      "path": "B0→B2→B3→B4",
+      "precondition": "Element parent = new Element(\"span\"); // childNodes == EmptyNodes initially",
+      "expectedResult": "parent.childNodeSize() == 1; child.getSiblingIndex() == 0; child.parent() == parent",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "first-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"span\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.getSiblingIndex() == 0;",
+        "    assert child.parent() == parent;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild on non-empty children list skips creation and adds child at next index (ensureChildNodes branch false)",
+      "path": "B0→B2→B3→B4",
+      "precondition": "Element parent = new Element(\"p\"); parent.appendChild(new TextNode(\"one\")); // childNodes != EmptyNodes",
+      "expectedResult": "parent.childNodeSize() == 2; newChild.getSiblingIndex() == 1; newChild.parent() == parent",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "subsequent-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode newChild = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(newChild);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert newChild.getSiblingIndex() == 1;",
+        "    assert newChild.parent() == parent;",
+        "END"
+      ]
+    }
+  ]
+}

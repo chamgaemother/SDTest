@@ -1,0 +1,73 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.ParseSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC06: parseInput(Reader, String) with non-empty HTML delegates to TreeBuilder.parse and returns parsed Document")
+    public void test_TC06() {
+        // GIVEN a standard HTML parser and a non-empty HTML fragment
+        Parser parser = Parser.htmlParser(); // uses HtmlTreeBuilder under the hood
+        Reader rdr = new StringReader("<div>Hi</div>"); // fragment has a div with text
+        String baseUri = "http://example.com"; // non-null baseUri
+        
+        // WHEN parsing the input
+        Document doc = parser.parseInput(rdr, baseUri);
+        
+        // THEN the body text should be "Hi" (ensures path B2->B4->B5 where parse succeeds)
+        assertEquals("Hi", doc.body().text());
+    }
+
+    @Test
+    @DisplayName("TC07: parseInput(Reader, String) propagates IllegalStateException from TreeBuilder.parse")
+    public void test_TC07() {
+        // GIVEN a Parser with a stub TreeBuilder that always throws IllegalStateException
+        class StubBuilder extends TreeBuilder {
+            StubBuilder() {
+                super(new ParseSettings());
+            }
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new IllegalStateException("fail"); // simulate parse error
+            }
+            @Override
+            protected void process(Token token) {
+                // no-op
+            }
+        }
+        Parser parser = new Parser(new StubBuilder()); // uses stub
+        Reader rdr = new StringReader("x"); // content irrelevant, stub always fails
+        String baseUri = "u";
+        
+        // WHEN & THEN it should propagate the IllegalStateException with message "fail" (path B2->B4->B6)
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> parser.parseInput(rdr, baseUri));
+        assertEquals("fail", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC08: parseInput(Reader, String) throws NullPointerException when baseUri is null")
+    public void test_TC08() {
+        // GIVEN an XML parser and a null baseUri
+        Parser parser = Parser.xmlParser(); // uses XmlTreeBuilder, path should check baseUri
+        Reader rdr = new StringReader("<a/>");
+        String baseUri = null; // null baseUri triggers NPE
+        
+        // WHEN & THEN a NullPointerException is thrown (path B2->B4->B7)
+        assertThrows(NullPointerException.class, () -> parser.parseInput(rdr, baseUri));
+    }
+}

@@ -1,0 +1,76 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for org.jsoup.nodes.Element#child(int)
+ */
+public class Element_child_0_Test {
+
+    @Test
+    @DisplayName("TC01: child(0) throws IndexOutOfBoundsException when element has no children (childNodeSize()==0)")
+    public void test_TC01() {
+        // GIVEN: a new element with no children (childNodeSize==0 triggers B1[T])
+        Element el = new Element("div");
+        // WHEN & THEN: requesting child(0) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(0);
+        });
+    }
+
+    @Test
+    @DisplayName("TC02: child(-1) throws IndexOutOfBoundsException when index is negative and no children exist")
+    public void test_TC02() {
+        // GIVEN: a new element with no children (childNodeSize==0 triggers B1[T])
+        Element el = new Element("span");
+        // WHEN & THEN: negative index should also be out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(-1);
+        });
+    }
+
+    @Test
+    @DisplayName("TC03: child(0) returns first element when single child element present")
+    public void test_TC03() {
+        // GIVEN: element with one child (childNodeSize>0, B1[F], loop executes once B2)
+        Element el = new Element("ul");
+        Element li = new Element("li");
+        el.appendChild(li);
+        // WHEN: retrieving the 0th child
+        Element result = el.child(0);
+        // THEN: should get the appended li element
+        assertEquals("li", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC04: child(1) returns correct second element when multiple children mixed with non-elements")
+    public void test_TC04() {
+        // GIVEN: element with mixed children: TextNode then two Elements
+        Element el = new Element("ol");
+        el.appendChild(new TextNode("t"));  // non-Element node
+        Element firstLi = new Element("li");
+        Element secondLi = new Element("li");
+        el.appendChild(firstLi);
+        el.appendChild(secondLi);
+        // childElementsList loop will visit 3 nodes (loop×3 at B2), and filtered list has two Elements
+        // WHEN: retrieving child at filtered index 1 (second Element)
+        Element result = el.child(1);
+        // THEN: should get the secondLi element
+        assertEquals("li", result.tagName());
+        assertSame(secondLi, result);
+    }
+
+    @Test
+    @DisplayName("TC05: child(2) throws IndexOutOfBoundsException when index equals filtered children size")
+    public void test_TC05() {
+        // GIVEN: element with one Element child (filtered size==1, index 2 equals size triggers exception)
+        Element el = new Element("div");
+        el.appendChild(new Element("p"));  // one child => filtered size=1
+        // WHEN & THEN: requesting child(1) which is out of filtered range
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            el.child(1);
+        });
+    }
+}

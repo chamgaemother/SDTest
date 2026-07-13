@@ -1,0 +1,133 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild throws IllegalArgumentException when child is null (Validate.notNull)",
+      "path": "B0→B1→B2(exception)",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "branch-true",
+        "overload:Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild on empty children creates NodeList, adds child, sets sibling index to 0",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "parent.childNodes == EmptyNodes (fresh element)",
+      "expectedResult": "parent.childNodeSize() == 1; parent.child(0) == child; child.parent() == parent; child.siblingIndex == 0",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "overload:Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1 && parent.child(0) == child && child.parent() == parent && child.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild on non-empty children adds second child at index 1",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "parent already has one child (ensureChildNodes executed)",
+      "expectedResult": "parent.childNodeSize() == 2; parent.child(1) == second; second.siblingIndex == 1",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "overload:Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2 && parent.child(1) == second && second.siblingIndex() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild moves node from old parent to new, removing from old parent's children",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "oldParent.childNodes contains child; newParent.childNodes may be empty",
+      "expectedResult": "oldParent.childNodeSize() == 0; child.parent() == newParent; newParent.childNodeSize() == 1",
+      "tags": [
+        "branch-false",
+        "reparent",
+        "overload:Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"span\");",
+        "    TextNode child = new TextNode(\"x\");",
+        "    oldParent.appendChild(child);",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0 && newParent.childNodeSize() == 1 && child.parent() == newParent;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "appendChild chaining returns same element for fluent API",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned == parent instance",
+      "tags": [
+        "fluent",
+        "overload:Node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild returns-self",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"t\");",
+        "  WHEN",
+        "    Element returned = parent.appendChild(child);",
+        "  THEN",
+        "    assert returned == parent;",
+        "END"
+      ]
+    }
+  ]
+}

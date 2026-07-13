@@ -1,0 +1,190 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "f < -5e9 triggers lower-bound IllegalArgumentException branch",
+      "path": "B0→B1→B8",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"; no return value",
+      "tags": [
+        "exception",
+        "branch-true",
+        "lower-bound",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate lower bound exception",
+        "  GIVEN",
+        "    double f = -5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "f > 5e9 triggers upper-bound IllegalArgumentException branch",
+      "path": "B0→B1→B2→B8",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"; no return value",
+      "tags": [
+        "exception",
+        "branch-false",
+        "branch-true",
+        "upper-bound",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate upper bound exception",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "f == -5e9 produces minimal value hex string \"00000000000000\"",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is \"00000000000000\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "branch-false",
+        "zero-result",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate at lower bound",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00000000000000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "f == 5e9 produces maximal value hex string \"2386F26FC10000\"",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is \"2386F26FC10000\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "branch-false",
+        "max-result",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate at upper bound",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"2386F26FC10000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "f = 0.0 produces middle-range hex string of length 14 with valid hex digits",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value length is 14 and matches regex \"[0-9A-F]{14}\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "normal",
+        "format",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate zero offset",
+        "  GIVEN",
+        "    double f = 0.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;",
+        "    assert result.matches(\"[0-9A-F]{14}\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "f = 1.234567 produces hex string of length 14 with fractional-precision applied",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value length is 14 and matches regex \"[0-9A-F]{14}\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "fraction",
+        "precision-6",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 generate positive fraction",
+        "  GIVEN",
+        "    double f = 1.234567;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;",
+        "    assert result.matches(\"[0-9A-F]{14}\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "f = -1.234567 produces hex string of length 14 with fractional-precision applied",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value length is 14 and matches regex \"[0-9A-F]{14}\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "negative",
+        "fraction",
+        "precision-6",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 generate negative fraction",
+        "  GIVEN",
+        "    double f = -1.234567;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.length() == 14;",
+        "    assert result.matches(\"[0-9A-F]{14}\");",
+        "END"
+      ]
+    }
+  ]
+}

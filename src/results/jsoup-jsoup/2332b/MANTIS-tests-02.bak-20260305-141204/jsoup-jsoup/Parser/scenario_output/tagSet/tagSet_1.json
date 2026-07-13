@@ -1,0 +1,185 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "settings(ParseSettings) replaces the parser’s settings and settings() returns the new instance",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "parser.settings() returns the custom ParseSettings passed",
+      "tags": [
+        "positive",
+        "settings",
+        "setter-getter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 replace-parse-settings",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings custom = new ParseSettings(true, false);",
+        "  WHEN",
+        "    parser.settings(custom);",
+        "  THEN",
+        "    assertSame(custom, parser.settings());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors(5) enables error tracking and isTrackErrors() returns true and getErrors().getMaxSize()==5",
+      "path": "B0→B1→B2(true)→B4",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "isTrackErrors() is true and getErrors().getMaxSize()==5",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 enable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assertTrue(parser.isTrackErrors());",
+        "    assertEquals(5, parser.getErrors().getMaxSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackErrors(0) disables tracking: isTrackErrors() returns false and getErrors().getMaxSize()==0",
+      "path": "B0→B1→B2(false)→B3",
+      "precondition": "Parser created via Parser.newInstance()",
+      "expectedResult": "isTrackErrors() is false and getErrors().getMaxSize()==0",
+      "tags": [
+        "negative",
+        "error-tracking",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 disable-error-tracking",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser();",
+        "    Parser parser = original.newInstance();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assertFalse(parser.isTrackErrors());",
+        "    assertEquals(0, parser.getErrors().getMaxSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "setTrackPosition(true) and then setTrackPosition(false) toggles trackPosition flag correctly",
+      "path": "B0→B5(true)→B6→B5(false)→B6",
+      "precondition": "Parser created via new Parser(new XmlTreeBuilder())",
+      "expectedResult": "isTrackPosition() true after first, false after second",
+      "tags": [
+        "positive",
+        "position-tracking",
+        "toggle"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 toggle-track-position",
+        "  GIVEN",
+        "    Parser parser = new Parser(new XmlTreeBuilder());",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assertTrue(parser.isTrackPosition());",
+        "  WHEN",
+        "    parser.setTrackPosition(false);",
+        "  THEN",
+        "    assertFalse(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() produces independent copy: modifying original’s trackPosition does not affect clone",
+      "path": "B0→C0(copy)→C1→C2",
+      "precondition": "Parser with trackPosition=false",
+      "expectedResult": "clone().isTrackPosition()==false; original.setTrackPosition(true) leaves clone false",
+      "tags": [
+        "positive",
+        "clone",
+        "independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone-independence",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    parser.setTrackPosition(false);",
+        "  WHEN",
+        "    Parser copy = parser.clone();",
+        "  THEN",
+        "    assertFalse(copy.isTrackPosition());",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assertFalse(copy.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "unescapeEntities converts &amp;lt; and &amp;gt; correctly in attribute mode",
+      "path": "B0→U0(strict)→U1",
+      "precondition": "none",
+      "expectedResult": "\"<tag>\" returned by unescapeEntities(\"&amp;lt;tag&amp;gt;\", true)",
+      "tags": [
+        "positive",
+        "unescape",
+        "attribute-mode"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 unescape-attribute-entities",
+        "  GIVEN",
+        "    String input = \"&lt;tag&gt;\";",
+        "  WHEN",
+        "    String out = Parser.unescapeEntities(input, true);",
+        "  THEN",
+        "    assertEquals(\"<tag>\", out);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "unescapeEntities preserves unknown &amp;zz; sequences in non-attribute mode",
+      "path": "B0→U0(lax)→U2",
+      "precondition": "none",
+      "expectedResult": "\"&zz;\" returned unchanged by unescapeEntities(\"&zz;\", false)",
+      "tags": [
+        "positive",
+        "unescape",
+        "lax-mode"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 unescape-lax-unknown-entity",
+        "  GIVEN",
+        "    String input = \"&zz;\";",
+        "  WHEN",
+        "    String out = Parser.unescapeEntities(input, false);",
+        "  THEN",
+        "    assertEquals(\"&zz;\", out);",
+        "END"
+      ]
+    }
+  ]
+}

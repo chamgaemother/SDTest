@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "load() without systemProperties and parser returns multiple entries exercises B0→B2 with loop>0",
+      "path": "B0→B2",
+      "precondition": "Mock DotenvParser.parse() returns a list of two entries",
+      "expectedResult": "DotenvImpl.entries() contains both parser entries plus system env entries",
+      "tags": [
+        "positive",
+        "iteration",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 load without systemProperties multiple-parser-entries",
+        "  GIVEN",
+        "    // Stub parser to return two file entries",
+        "    List<DotenvEntry> entries = List.of(new DotenvEntry(\"K1\",\"V1\"), new DotenvEntry(\"K2\",\"V2\"));",
+        "    Mock construction of DotenvParser so parse() returns entries",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().containsAll(entries);",
+        "    assertEquals(\"V1\", dotenv.get(\"K1\"));",
+        "    assertEquals(\"V2\", dotenv.get(\"K2\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "load() with ignoreIfMissing and non-existent directory does not throw and yields only system env entries",
+      "path": "B0→B2",
+      "precondition": "Directory path does not exist; throwIfMissing=false via ignoreIfMissing()",
+      "expectedResult": "No exception; entries() equals system environment entries only",
+      "tags": [
+        "positive",
+        "boundary",
+        "missing-file",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 load ignoreIfMissing on missing directory",
+        "  GIVEN",
+        "    String badDir = \"./no_such_dir_xyz\";",
+        "    DotenvBuilder builder = new DotenvBuilder().ignoreIfMissing().directory(badDir);",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    Set<DotenvEntry> expected = System.getenv().entrySet().stream()",
+        "      .map(e->new DotenvEntry(e.getKey(),e.getValue())).collect(toSet());",
+        "    assertEquals(expected, dotenv.entries());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "load() throws DotenvException when throwIfMalformed=true and parser.parse() signals malformed data",
+      "path": "B0→B1?→B2?→[exception]",
+      "precondition": "Mock DotenvParser.parse() to throw DotenvException(\"malformed\")",
+      "expectedResult": "DotenvException with message 'malformed' is propagated",
+      "tags": [
+        "negative",
+        "exception",
+        "malformed",
+        "branch-any"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 load throws on malformed file",
+        "  GIVEN",
+        "    Mock construction of DotenvParser so parse() throws new DotenvException(\"malformed\");",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "  WHEN",
+        "    call builder.load()",
+        "  THEN",
+        "    throws DotenvException with message 'malformed';",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "method": "convexHullRecursive",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty input list throws IndexOutOfBoundsException at initial access",
+      "path": "B0",
+      "precondition": "points = empty List<Point>",
+      "expectedResult": "throws IndexOutOfBoundsException; no modifications",
+      "tags": [
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 convexHullRecursive empty-list",
+        "  GIVEN",
+        "    List<Point> points = new ArrayList<>();",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single-element list returns that element (loop 0)",
+      "path": "B0→B7→B6",
+      "precondition": "points contains one Point(0,0)",
+      "expectedResult": "return list [Point(0,0)]",
+      "tags": [
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 convexHullRecursive single-element",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0)));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Two-point list returns both endpoints (loop 0)",
+      "path": "B0→B7→B6",
+      "precondition": "points contains [Point(0,0), Point(1,1)]",
+      "expectedResult": "return sorted list [Point(0,0), Point(1,1)]",
+      "tags": [
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 convexHullRecursive two-points",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(1,1), new Point(0,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0), new Point(1,1)));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Three collinear points return only endpoints (det==0 branch)",
+      "path": "B0→B7→B1→B3→B5→B7→B6",
+      "precondition": "points contains [Point(0,0), Point(1,0), Point(2,0)]",
+      "expectedResult": "return [Point(0,0), Point(2,0)]",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 convexHullRecursive collinear-three",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0), new Point(1,0), new Point(2,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0), new Point(2,0)));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Three points with middle above baseline include all (det>0 branch)",
+      "path": "B0→B7→B1→B2→B5→B7→B6",
+      "precondition": "points contains [Point(0,0), Point(1,1), Point(2,0)]",
+      "expectedResult": "return sorted [Point(0,0), Point(1,1), Point(2,0)]",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 convexHullRecursive simple-triangle-upper",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(2,0), new Point(1,1), new Point(0,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0), new Point(1,1), new Point(2,0)));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Three points with middle below baseline include all (det<0 branch)",
+      "path": "B0→B7→B1→B3→B4→B5→B7→B6",
+      "precondition": "points contains [Point(0,0), Point(1,-1), Point(2,0)]",
+      "expectedResult": "return sorted [Point(0,0), Point(1,-1), Point(2,0)]",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 convexHullRecursive simple-triangle-lower",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(0,0), new Point(1,-1), new Point(2,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0), new Point(1,-1), new Point(2,0)));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Four points with both upper and lower hull processed (multiple iterations)",
+      "path": "B0→B7→B1→B2→B5→B7→B1→B3→B4→B5→B7→B6",
+      "precondition": "points contains [Point(0,0), Point(1,1), Point(2,-1), Point(3,0)]",
+      "expectedResult": "return sorted [Point(0,0), Point(1,1), Point(2,-1), Point(3,0)]",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 convexHullRecursive mixed-hull",
+        "  GIVEN",
+        "    List<Point> points = List.of(new Point(3,0), new Point(1,1), new Point(2,-1), new Point(0,0));",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(new Point(0,0), new Point(1,1), new Point(2,-1), new Point(3,0)));",
+        "END"
+      ]
+    }
+  ]
+}

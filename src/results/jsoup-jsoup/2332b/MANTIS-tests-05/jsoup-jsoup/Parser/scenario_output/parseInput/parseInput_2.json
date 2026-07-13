@@ -1,0 +1,77 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader, String) propagates IllegalStateException when TreeBuilder.parse(Reader) throws",
+      "path": "B0→B3→B5",
+      "precondition": "Parser with stubbed TreeBuilder whose parse(Reader,baseUri,parser) throws IllegalStateException(\"stub read fail\")",
+      "expectedResult": "IllegalStateException(\"stub read fail\") is thrown",
+      "tags": [
+        "exception",
+        "stub",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput Reader-exception-propagation",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        throw new IllegalStateException(\"stub read fail\");",
+        "      }",
+        "      @Override public org.jsoup.parser.ParseSettings defaultSettings() { return parser.settings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(String html, String baseUri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader in, org.jsoup.nodes.Element context, String uri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public void process(org.jsoup.parser.Token token) {}",
+        "    };",
+        "    parser.setTreeBuilder(stub);",
+        "    Reader reader = new StringReader(\"irrelevant\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"http://base\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub read fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(String, String) propagates IllegalStateException when TreeBuilder.parse(Reader) throws via string overload",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser with stubbed TreeBuilder whose parse(Reader,baseUri,parser) throws IllegalStateException(\"stub string fail\")",
+      "expectedResult": "IllegalStateException(\"stub string fail\") is thrown",
+      "tags": [
+        "exception",
+        "stub",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput String-exception-propagation",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        throw new IllegalStateException(\"stub string fail\");",
+        "      }",
+        "      @Override public org.jsoup.parser.ParseSettings defaultSettings() { return parser.settings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(String html, String baseUri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader in, org.jsoup.nodes.Element context, String uri, Parser p) { throw new UnsupportedOperationException(); }",
+        "      @Override public void process(org.jsoup.parser.Token token) {}",
+        "    };",
+        "    parser.setTreeBuilder(stub);",
+        "    String html = \"<p>x</p>\";",
+        "    String base = \"http://base\";",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub string fail\";",
+        "END"
+      ]
+    }
+  ]
+}

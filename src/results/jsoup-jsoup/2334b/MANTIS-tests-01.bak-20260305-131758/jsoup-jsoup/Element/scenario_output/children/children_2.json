@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() filters out mixed non-Element node types (TextNode, DataNode, Comment) and retains Element nodes in correct order",
+      "path": "B0→B3→B4(loop×5)→B5",
+      "precondition": "Element el with mixed childNodes: TextNode, DataNode, Comment, Element, CDataNode, Element",
+      "expectedResult": "Elements list size is 2, with only the two Element children in insertion order",
+      "tags": [
+        "filter",
+        "mixed-nodes",
+        "iteration>1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children mixed non-Element nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "    el.appendChild(new DataNode(\"data\"));",
+        "    el.appendChild(new Comment(\"cmt\", \"\"));",
+        "    Element span = new Element(\"span\");",
+        "    el.appendChild(span);",
+        "    el.appendChild(new CDataNode(\"cdata\"));",
+        "    Element p = new Element(\"p\");",
+        "    el.appendChild(p);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assertEquals(2, result.size());",
+        "    assertSame(span, result.get(0));",
+        "    assertSame(p, result.get(1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() rebuilds cache when only non-Element children added after initial cache build",
+      "path": "B0→B3(cache build)→B6(nodelistChanged)→B3(cache rebuild)→B4(loop×0)→B5",
+      "precondition": "Element el with one Element child, children() called to build cache",
+      "expectedResult": "After appending a TextNode post-cache, children() returns same single Element child and cache is rebuilt",
+      "tags": [
+        "cache",
+        "invalid-cached",
+        "non-element"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children cache invalidated by non-Element addition",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    Elements first = el.children();  // cache built with one element",
+        "  WHEN",
+        "    el.appendChild(new TextNode(\"more\")); // nodelistChanged should invalidate",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assertNotSame(first, result);",
+        "    assertEquals(1, result.size());",
+        "    assertSame(child, result.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

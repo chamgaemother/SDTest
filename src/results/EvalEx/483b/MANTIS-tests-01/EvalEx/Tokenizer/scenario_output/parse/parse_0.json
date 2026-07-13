@@ -1,0 +1,155 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty expression returns empty token list (loop-0, braceBalance>0 false, arrayBalance>0 false)",
+      "path": "B0→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings (implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true)",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "loop-0",
+        "normal-return",
+        "branch-false",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-expression",
+        "  GIVEN",
+        "    Tokenizer tokenizer = new Tokenizer(\"\", configuration);",
+        "  WHEN",
+        "    List<Token> result = tokenizer.parse();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Implicit multiplication disallowed causes Missing operator for NUMBER_LITERAL→BRACE_OPEN (branch-true at B2, branch-true at B3)",
+      "path": "B0→B2→B3→B5",
+      "precondition": "ExpressionConfiguration with isImplicitMultiplicationAllowed=false",
+      "expectedResult": "throws ParseException with message \"Missing operator\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "implicit-multiplication",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse implicit-mult-disallowed",
+        "  GIVEN",
+        "    String expr = \"2(x)\";",
+        "    configuration.setImplicitMultiplicationAllowed(false);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Implicit multiplication allowed inserts '*' token between NUMBER_LITERAL and BRACE_OPEN",
+      "path": "B0→B2→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with isImplicitMultiplicationAllowed=true",
+      "expectedResult": "tokens sequence is [NUMBER_LITERAL(\"2\"), INFIX_OPERATOR(\"*\"), BRACE_OPEN,\"x\", BRACE_CLOSE]",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "implicit-multiplication"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse implicit-mult-insert",
+        "  GIVEN",
+        "    String expr = \"2(x)\";",
+        "    configuration.setImplicitMultiplicationAllowed(true);",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert tokens.size() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Unclosed brace throws Closing brace not found after end-of-input (branch-false at B1 loop exit, branch-true at B7, branch-true at B8)",
+      "path": "B0→B6→B1→B7→B8",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "throws ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "exception",
+        "brace-balance",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse unclosed-brace",
+        "  GIVEN",
+        "    String expr = \"(1+2\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Unclosed array throws Closing array not found after end-of-input (branch-false at B1 loop exit, branch-true at B7, branch-false at B8, branch-true at B9, branch-true at B10)",
+      "path": "B0→B6→B1→B7→B9→B10",
+      "precondition": "ExpressionConfiguration with isArraysAllowed=true",
+      "expectedResult": "throws ParseException with message \"Closing array not found\"",
+      "tags": [
+        "exception",
+        "array-balance",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse unclosed-array",
+        "  GIVEN",
+        "    String expr = \"[1,2\";",
+        "    configuration.setArraysAllowed(true);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Misplaced structure operator at start throws Misplaced structure operator",
+      "path": "B0→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with isStructuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Misplaced structure operator\"",
+      "tags": [
+        "exception",
+        "structure-separator",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse misplaced-structure",
+        "  GIVEN",
+        "    String expr = \".x\";",
+        "    configuration.setStructuresAllowed(true);",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException;",
+        "END"
+      ]
+    }
+  ]
+}

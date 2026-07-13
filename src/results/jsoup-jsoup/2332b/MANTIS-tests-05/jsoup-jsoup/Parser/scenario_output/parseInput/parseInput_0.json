@@ -1,0 +1,126 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String html, String baseUri) returns a Document with parsed <p> element when given simple HTML",
+      "path": "B0→B1→B2",
+      "precondition": "Parser using default HtmlTreeBuilder; no mocks",
+      "expectedResult": "returned Document contains a <p> element whose text() is \"text\" and baseUri equals supplied baseUri",
+      "tags": [
+        "positive",
+        "overload:String,baseUri",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput simple HTML",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = \"<p>text</p>\"; String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, base);",
+        "  THEN",
+        "    assert doc.select(\"p\").text().equals(\"text\"); assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader inputHtml, String baseUri) returns a Document with parsed <div> element for Reader input",
+      "path": "B0→B3→B2",
+      "precondition": "Parser using default HtmlTreeBuilder; no mocks",
+      "expectedResult": "returned Document contains a <div> element whose text() is \"hello\"",
+      "tags": [
+        "positive",
+        "overload:Reader,baseUri",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput Reader overload",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader r = new StringReader(\"<div>hello</div>\"); String base = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(r, base);",
+        "  THEN",
+        "    assert doc.select(\"div\").text().equals(\"hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String html, String baseUri) throws NullPointerException when html is null",
+      "path": "B0→B1→B4",
+      "precondition": "Parser using default HtmlTreeBuilder; no mocks",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String,baseUri",
+        "branch-html-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = null; String base = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader inputHtml, String baseUri) throws IllegalArgumentException when inputHtml is null",
+      "path": "B0→B3→B4",
+      "precondition": "Parser using default HtmlTreeBuilder; no mocks",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "overload:Reader,baseUri",
+        "branch-input-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput null-Reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader r = null; String base = \"\";",
+        "  WHEN",
+        "    call parser.parseInput(r, base);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader inputHtml, String baseUri) propagates treeBuilder.parse exception from stubbed TreeBuilder",
+      "path": "B0→B3→B5",
+      "precondition": "Parser.setTreeBuilder uses a stub TreeBuilder whose parse(...) throws IllegalStateException for isolation",
+      "expectedResult": "throws IllegalStateException with message \"stub parse fail\"",
+      "tags": [
+        "exception",
+        "overload:Reader,baseUri",
+        "branch-stubbed",
+        "why-mocking: simulate treeBuilder.parse failure"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput stubbed-treebuilder exception",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); TreeBuilder stub = new TreeBuilderStub(){ public Document parse(Reader in,String base,Parser p){throw new IllegalStateException(\"stub parse fail\");}}; parser.setTreeBuilder(stub); Reader r = new StringReader(\"irrelevant\");",
+        "  WHEN",
+        "    call parser.parseInput(r, \"http://base\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub parse fail\";",
+        "END"
+      ]
+    }
+  ]
+}

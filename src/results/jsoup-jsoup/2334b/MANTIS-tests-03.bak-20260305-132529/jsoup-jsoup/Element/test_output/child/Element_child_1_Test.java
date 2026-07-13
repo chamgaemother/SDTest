@@ -1,0 +1,39 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.child method covering scenarios TC05 and TC06.
+ */
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("TC05: child(0) on element with only non-Element child nodes throws IndexOutOfBoundsException (childNodeSize()>0, filtered list empty branch)")
+    public void test_TC05() {
+        // GIVEN an Element with a single TextNode child (childNodeSize()>0, but no Element children)
+        Element parent = new Element("div");
+        parent.appendText("text"); // adds a TextNode, not an Element
+        // WHEN/THEN: accessing child(0) should attempt to get from filtered empty list and throw
+        assertThrows(IndexOutOfBoundsException.class,
+            () -> parent.child(0),
+            "Expected IndexOutOfBoundsException when no element children exist");
+    }
+
+    @Test
+    @DisplayName("TC06: child(1) uses cached shadowChildrenRef on second invocation without rebuilding list (shadowChildrenRef branch)")
+    public void test_TC06() {
+        // GIVEN an Element with two Element children
+        Element parent = new Element("ul");
+        Element first = parent.appendElement("li"); // first child element
+        Element second = parent.appendElement("li"); // second child element
+        // WHEN: first call to child(0) builds shadowChildrenRef cache (populates list)
+        Element result0 = parent.child(0);
+        assertSame(first, result0, "First child should be the first appended element");
+        // THEN: second call to child(1) should return from cached shadowChildrenRef without rebuilding
+        Element result1 = parent.child(1);
+        assertSame(second, result1, "Second child should be the second appended element from cache");
+    }
+}

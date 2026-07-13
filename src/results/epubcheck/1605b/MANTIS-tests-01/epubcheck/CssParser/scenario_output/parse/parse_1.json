@@ -1,0 +1,124 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "handleRuleSet throws PrematureEOFException → suppressed, parser breaks loop and calls endDocument",
+      "path": "B0→B1→B2(type!=ATKEYWORD)→B3→B5→B7→B1→B8",
+      "precondition": "stub scan() → iterator yielding single IDENT; stub private handleRuleSet to throw PrematureEOFException",
+      "expectedResult": "no exception; doc.startDocument() and doc.endDocument() are called exactly once",
+      "tags": [
+        "exception",
+        "loop-break",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 handleRuleSet PrematureEOF suppressed",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "    CssTokenIterator iter = singleTokenIterator(CssToken.Type.IDENT);",
+        "    stubScan(parser, iter);",
+        "    // stub handleRuleSet to throw PrematureEOFException",
+        "    doThrow(new PrematureEOFException()).when(parser).invokePrivate(\"handleRuleSet\", any(), any(), any(), any());",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"\"), \"sys\", err, doc);",
+        "  THEN",
+        "    verify(doc, times(1)).startDocument();",
+        "    verify(doc, times(1)).endDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Three tokens [IDENT, ATKEYWORD, IDENT] → handleRuleSet, handleAtRule, handleRuleSet called in order",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B4→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "stub scan() → iterator yielding [IDENT, ATKEYWORD, IDENT]; stub both handlers to do nothing",
+      "expectedResult": "handler calls: handleRuleSet once, handleAtRule once, handleRuleSet once; then endDocument",
+      "tags": [
+        "iteration",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 three-token mixed sequence",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "    CssToken t1 = new CssToken(CssToken.Type.IDENT, \"id\", loc(1,1));",
+        "    CssToken t2 = new CssToken(CssToken.Type.ATKEYWORD, \"@a\", loc(1,2));",
+        "    CssToken t3 = new CssToken(CssToken.Type.IDENT, \"id2\", loc(1,3));",
+        "    CssTokenIterator iter = iteratorOf(t1,t2,t3);",
+        "    stubScan(parser, iter);",
+        "    doNothing().when(parser).invokePrivate(\"handleRuleSet\", any(), any(), any(), any());",
+        "    doNothing().when(parser).invokePrivate(\"handleAtRule\", any(), any(), any(), any());",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"\"), \"sys\", err, doc);",
+        "  THEN",
+        "    verify(parser, times(2)).invokePrivate(\"handleRuleSet\", any(), any(), any(), any());",
+        "    verify(parser, times(1)).invokePrivate(\"handleAtRule\", any(), any(), any(), any());",
+        "    verify(doc).endDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "handleAtRule throws generic CssException → propagate to caller",
+      "path": "B0→B1→B2(type==ATKEYWORD)→B4→B5→B7→B1→... exception",
+      "precondition": "stub scan() → iterator yielding single ATKEYWORD; stub private handleAtRule to throw CssException",
+      "expectedResult": "CssException is thrown by parse",
+      "tags": [
+        "exception",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 handleAtRule throws CssException",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "    CssTokenIterator iter = singleTokenIterator(CssToken.Type.ATKEYWORD);",
+        "    stubScan(parser, iter);",
+        "    doThrow(new CssException(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN, loc(1,1), Locale.ENGLISH, \"err\"))",
+        "      .when(parser).invokePrivate(\"handleAtRule\", any(), any(), any(), any());",
+        "  WHEN",
+        "    call parser.parse(new StringReader(\"\"), \"sys\", err, doc);",
+        "  THEN",
+        "    throws CssException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "scan throws RuntimeException → propagate unchecked exception",
+      "path": "B0→ exception",
+      "precondition": "stub scan() to throw new IllegalStateException(\"boom\")",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "runtime"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 scan throws RuntimeException",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    doThrow(new IllegalStateException(\"boom\"))",
+        "      .when(parser).invokePrivate(\"scan\", any(), any(), any());",
+        "  WHEN",
+        "    call parser.parse(new StringReader(\"\"), \"sys\", mock(CssErrorHandler.class), mock(CssContentHandler.class));",
+        "  THEN",
+        "    throws IllegalStateException;",
+        "END"
+      ]
+    }
+  ]
+}

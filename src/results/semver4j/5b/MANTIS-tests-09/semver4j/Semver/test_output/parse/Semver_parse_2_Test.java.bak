@@ -1,0 +1,41 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Semver_parse_Test {
+
+    @Test
+    @DisplayName("parse(\"1.2.3-alpha.beta.gamma\") returns Semver covering multi-segment pre-release without exception")
+    void test_TC06() {
+        // Input contains main version and multi-segment pre-release, so trim yields non-empty and StrictParser should parse it
+        String version = "1.2.3-alpha.beta.gamma";
+
+        Semver result = Semver.parse(version);
+
+        // Expect a non-null Semver object with exact version and correct preRelease segments
+        assertNotNull(result, "Expected non-null Semver for a valid multi-segment pre-release version");
+        assertEquals("1.2.3-alpha.beta.gamma", result.getVersion(), 
+                "Resulting version string should match the input including pre-release segments");
+        List<String> expectedPre = Arrays.asList("alpha", "beta", "gamma");
+        assertEquals(expectedPre, result.getPreRelease(), 
+                "Pre-release segments should be split on dots into the correct list");
+    }
+
+    @Test
+    @DisplayName("parse(\"   \") returns null covering exception path when input is only whitespace")
+    void test_TC07() {
+        // Input is whitespace-only, trim() yields empty string, so StrictParser.parse should throw and parse() returns null
+        String version = "   ";
+
+        Semver result = Semver.parse(version);
+
+        // Expect null as parsing an empty version string is invalid
+        assertNull(result, "Expected null for whitespace-only input due to parsing failure");
+    }
+}

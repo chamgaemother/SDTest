@@ -1,0 +1,107 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Null pattern in constructor leads to default pattern and valid date is parsed correctly",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty==false)→B3(parse)→B5(return)",
+      "precondition": "newPattern == null in constructor",
+      "expectedResult": "LocalDate.of(2021,12,5) added to column",
+      "tags": [
+        "positive",
+        "constructor-null-pattern",
+        "default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 default-pattern-via-null-constructor with valid date",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"name\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String input = \"2021-12-5\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stub);",
+        "  THEN",
+        "    assert stub.getLastAdded() == LocalDate.of(2021,12,5);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Null pattern in constructor with structurally matching but invalid date throws parse exception",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty==false)→B3(parse)→B4(exception)",
+      "precondition": "newPattern == null in constructor",
+      "expectedResult": "DateTimeParseException is thrown; no object added",
+      "tags": [
+        "negative",
+        "constructor-null-pattern",
+        "strict-resolver",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 default-pattern with invalid date structure",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"name\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String input = \"2021-02-29\"; // non-leap year invalid day",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(input, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert stub.getLastAdded() == null;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Valid leap year date parsed correctly under default pattern",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty==false)→B3(parse)→B5(return)",
+      "precondition": "none",
+      "expectedResult": "LocalDate.of(2020,2,29) added to column",
+      "tags": [
+        "positive",
+        "leap-year",
+        "default-pattern"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parse leap-year date",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"name\", \"uuuu-M-d\");",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String input = \"2020-2-29\"; // valid leap day",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stub);",
+        "  THEN",
+        "    assert stub.getLastAdded() == LocalDate.of(2020,2,29);"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Structurally matching date with out-of-range month throws DateTimeParseException",
+      "path": "B0→B1(aString!=null)→B2(trimmed.isEmpty==false)→B3(parse)→B4(exception)",
+      "precondition": "none",
+      "expectedResult": "DateTimeParseException is thrown; no object added",
+      "tags": [
+        "negative",
+        "range-check",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 out-of-range month throws exception",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"name\", \"uuuu-M-d\");",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String input = \"2021-13-1\"; // month=13 invalid",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(input, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert stub.getLastAdded() == null;"
+      ]
+    }
+  ]
+}

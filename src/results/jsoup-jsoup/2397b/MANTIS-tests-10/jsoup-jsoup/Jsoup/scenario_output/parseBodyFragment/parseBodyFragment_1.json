@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Empty bodyHtml with non-empty baseUri returns empty body without errors",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() is empty string, baseUri preserved",
+      "tags": [
+        "boundary",
+        "empty-input",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseBodyFragment empty-html",
+        "  GIVEN",
+        "    String bodyHtml = \"\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Relative link in fragment is resolved to absolute URL when baseUri is non-empty",
+      "path": "B0→B1→B4→B6",
+      "precondition": "none",
+      "expectedResult": "href attribute rewritten to absolute URL",
+      "tags": [
+        "positive",
+        "relative-resolution"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseBodyFragment resolve-relative-link",
+        "  GIVEN",
+        "    String bodyHtml = \"<a href='page.html'>link</a>\";",
+        "    String baseUri = \"http://example.com/dir/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    String out = doc.body().select(\"a\").attr(\"href\");",
+        "    assert out.equals(\"http://example.com/dir/page.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Fragment containing <base> tag overrides provided baseUri for subsequent link resolution",
+      "path": "B0→B1→B4→B6",
+      "precondition": "none",
+      "expectedResult": "href resolved against <base> href, not the method baseUri",
+      "tags": [
+        "positive",
+        "base-tag",
+        "relative-resolution"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment base-tag-override",
+        "  GIVEN",
+        "    String bodyHtml = \"<base href='http://other.com/dir/'/><a href='x.html'>x</a>\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"a\").attr(\"href\").equals(\"http://other.com/dir/x.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Multiple sibling nodes in fragment are all parsed into body children",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "body contains two <p> elements in order",
+      "tags": [
+        "positive",
+        "multiple-nodes",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment multiple-siblings",
+        "  GIVEN",
+        "    String bodyHtml = \"<p>One</p><p>Two</p>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    List<Element> ps = doc.body().select(\"p\");",
+        "    assert ps.size() == 2;",
+        "    assert ps.get(0).text().equals(\"One\");",
+        "    assert ps.get(1).text().equals(\"Two\");",
+        "END"
+      ]
+    }
+  ]
+}

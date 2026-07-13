@@ -1,0 +1,156 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class EvalEx_Tokenizer_Test {
+
+    @Test
+    @DisplayName("TC01: Empty expression should throw closing brace not found (r14==null, braceBalance<=0)")
+    void test_TC01() {
+        // GIVEN an empty expression and default configuration
+        String expr = "";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN/THEN parse() should fail at final braceBalance check
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertEquals("Closing brace not found", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC02: Single closing brace should throw unexpected closing brace (immediate negative braceBalance)")
+    void test_TC02() {
+        // GIVEN input ")" so first token is BRACE_CLOSE and braceBalance becomes -1
+        String expr = ")";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN/THEN parse() should throw on unexpected closing brace in parseBraceClose()
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Unexpected closing brace"));
+    }
+
+    @Test
+    @DisplayName("TC03: Unbalanced opening brace should throw Closing brace not found after tokens")
+    void test_TC03() {
+        // GIVEN input "(" so one BRACE_OPEN token left unclosed
+        String expr = "(";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN/THEN parse() should report missing closing brace at end
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        // Intended behavior is to signal unclosed brace
+        assertEquals("Closing brace not found", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC04: Simple number literal returns single NUMBER_LITERAL token (implicitMultiplication false)")
+    void test_TC04() throws ParseException {
+        // GIVEN a plain number "123"; no implicit multiplication path is taken
+        String expr = "123";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN parse()
+        List<Token> tokens = tokenizer.parse();
+        // THEN one NUMBER_LITERAL token with value 123
+        assertEquals(1, tokens.size());
+        Token t = tokens.get(0);
+        assertEquals(TokenType.NUMBER_LITERAL, t.getType());
+        assertEquals("123", t.getTokenString());
+    }
+
+    @Test
+    @DisplayName("TC05: Simple infix expression returns NUMBER, INFIX_OPERATOR, NUMBER tokens (loop-N)")
+    void test_TC05() throws ParseException {
+        // GIVEN expression "1+2" triggers three iterations of getNextToken and no implicit multiplication
+        String expr = "1+2";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN parse()
+        List<Token> tokens = tokenizer.parse();
+        // THEN tokens are ["1", "+", "2"]
+        assertEquals(3, tokens.size());
+        assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+        assertEquals(TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+        assertEquals("+", tokens.get(1).getTokenString());
+        assertEquals(TokenType.NUMBER_LITERAL, tokens.get(2).getType());
+    }
+
+    @Test
+    @DisplayName("TC06: Implicit multiplication allowed inserts '*' between number and variable (1x)")
+    void test_TC06() throws ParseException {
+        // GIVEN "1x" and implicit multiplication enabled triggers insertion of '*'
+        String expr = "1x";
+        ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+            .setImplicitMultiplicationAllowed(true)
+            .build();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN parse()
+        List<Token> tokens = tokenizer.parse();
+        // THEN tokens = ["1", "*", "x"]
+        assertEquals(3, tokens.size());
+        assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+        assertEquals("*", tokens.get(1).getTokenString());
+        assertEquals(TokenType.VARIABLE_OR_CONSTANT, tokens.get(2).getType());
+    }
+
+    @Test
+    @DisplayName("TC07: Implicit multiplication disallowed throws Missing operator exception between number and variable")
+    void test_TC07() {
+        // GIVEN "2y" with implicit multiplication disabled should error at missing operator
+        String expr = "2y";
+        ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+            .setImplicitMultiplicationAllowed(false)
+            .build();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN/THEN
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertEquals("Missing operator", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC08: Misplaced structure separator at start throws Misplaced structure operator")
+    void test_TC08() {
+        // GIVEN expression starting with '.' and structures allowed causes misplaced separator
+        String expr = ".prop";
+        ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+            .setStructuresAllowed(true)
+            .build();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN/THEN
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertEquals("Misplaced structure operator", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC09: Valid parentheses expression returns BRACE_OPEN, BRACE_CLOSE tokens")
+    void test_TC09() throws ParseException {
+        // GIVEN "()" should parse an open then close brace
+        String expr = "()";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN
+        List<Token> tokens = tokenizer.parse();
+        // THEN two tokens of types BRACE_OPEN and BRACE_CLOSE
+        assertEquals(2, tokens.size());
+        assertEquals(TokenType.BRACE_OPEN, tokens.get(0).getType());
+        assertEquals(TokenType.BRACE_CLOSE, tokens.get(1).getType());
+    }
+
+    @Test
+    @DisplayName("TC10: Multiple iterations parse number, operator, variable, operator, number sequence")
+    void test_TC10() throws ParseException {
+        // GIVEN "3+a*5" exercises number, infix '+', variable, infix '*', number
+        String expr = "3+a*5";
+        ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();
+        Tokenizer tokenizer = new Tokenizer(expr, cfg);
+        // WHEN
+        List<Token> tokens = tokenizer.parse();
+        // THEN check variable at position 2 and '*' at position 3
+        assertEquals(TokenType.VARIABLE_OR_CONSTANT, tokens.get(2).getType());
+        assertEquals("*", tokens.get(3).getTokenString());
+    }
+}

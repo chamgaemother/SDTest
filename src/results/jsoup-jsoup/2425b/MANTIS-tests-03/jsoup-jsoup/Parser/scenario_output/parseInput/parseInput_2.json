@@ -1,0 +1,40 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, String) propagates RuntimeException from custom TreeBuilder.parse",
+      "path": "B0→B4→B6",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(Reader,String,Parser) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown with original message",
+      "tags": [
+        "exception",
+        "propagation",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput propagates runtime exception",
+        "  GIVEN",
+        "    // Arrange stub TreeBuilder that always throws IllegalStateException",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.defaultSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(Reader r, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"fail-runtime\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader r, Element context, String baseUri, Parser parser) { return null; }",
+        "      @Override public void process(Token token) { /* no-op */ }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    Reader input = new StringReader(\"<p>test</p>\");",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    IllegalStateException ex is thrown with message \"fail-runtime\";",
+        "END"
+      ]
+    }
+  ]
+}

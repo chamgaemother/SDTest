@@ -1,0 +1,69 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06_O2",
+      "description": "Reader overload with non-null context and two sibling elements returns two nodes",
+      "path": "B0→B1→B2→B3→B4→B6",
+      "precondition": "Document shell created, context = doc.body()",
+      "expectedResult": "return list size is 2 with tagNames 'div' and 'span'",
+      "tags": [
+        "positive",
+        "iteration",
+        "reader-overload",
+        "non-null-context"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseFragmentInput Reader overload multi-elements with context",
+        "  GIVEN",
+        "    // Arrange",
+        "    Reader fragment = new StringReader(\"<div>one</div><span>two</span>\");",
+        "    Document doc = Document.createShell(\"http://x\");",
+        "    Element context = doc.body();",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    // Act",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"http://x\");",
+        "  THEN",
+        "    // Assert",
+        "    assert result.size() == 2;",
+        "    assert ((Element) result.get(0)).tagName().equals(\"div\");",
+        "    assert ((Element) result.get(1)).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "String overload returns single TextNode when fragment has only text and non-null context",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "Document shell created, context = doc.body()",
+      "expectedResult": "return list size is 1, containing a TextNode with text 'plain text'",
+      "tags": [
+        "positive",
+        "boundary",
+        "string-overload",
+        "text-node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseFragmentInput String overload plain text fragment",
+        "  GIVEN",
+        "    // Arrange",
+        "    String fragment = \"plain text\";",
+        "    Document doc = Document.createShell(\"http://y\");",
+        "    Element context = doc.body();",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    // Act",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"http://y\");",
+        "  THEN",
+        "    // Assert",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).toString().equals(\"plain text\");",
+        "END"
+      ]
+    }
+  ]
+}

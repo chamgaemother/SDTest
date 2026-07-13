@@ -1,0 +1,148 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_0_Test {
+
+    @Test
+    @DisplayName("TC01: charset(html) on HTML syntax with no existing <meta charset> adds new meta[charset] and removes none")
+    public void test_TC01() {
+        // GIVEN: a shell HTML document with default html syntax and no meta charset
+        Document doc = Document.createShell("http://example");
+        // WHEN: calling charset should insert a new <meta charset> in head
+        doc.charset(StandardCharsets.ISO_8859_1);
+        // THEN: the new meta[charset] has correct value, and no obsolete meta[name=charset] exist
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta, "Expected a newly added <meta charset> element");
+        assertEquals(StandardCharsets.ISO_8859_1.displayName(), meta.attr("charset"),
+                     "Meta[charset] should be set to ISO-8859-1");
+        Elements obsolete = doc.select("meta[name=charset]");
+        assertEquals(0, obsolete.size(), "No obsolete meta[name=charset] should remain");
+    }
+
+    @Test
+    @DisplayName("TC02: charset(html) on HTML syntax with existing multiple obsolete <meta name=charset> removes all and updates existing <meta charset>")
+    public void test_TC02() {
+        // GIVEN: HTML document with an existing <meta charset=UTF-8> and two obsolete <meta name=charset>
+        Document doc = Document.createShell("/");
+        doc.head().appendElement("meta").attr("charset", "UTF-8");
+        doc.head().appendElement("meta").attr("name", "charset");
+        doc.head().appendElement("meta").attr("name", "charset");
+        // WHEN: setting charset to US-ASCII should update existing and remove obsolete ones
+        doc.charset(StandardCharsets.US_ASCII);
+        // THEN: the original meta[charset] is updated, and no meta[name=charset] remain
+        Element updated = doc.head().selectFirst("meta[charset]");
+        assertNotNull(updated, "Expected existing <meta charset> to be present");
+        assertEquals(StandardCharsets.US_ASCII.displayName(), updated.attr("charset"),
+                     "Meta[charset] should be updated to US-ASCII");
+        Elements obsolete = doc.select("meta[name=charset]");
+        assertEquals(0, obsolete.size(), "All obsolete meta[name=charset] elements should be removed");
+    }
+
+    @Test
+    @DisplayName("TC03: charset(xml) on XML syntax with first child XmlDeclaration named 'xml' with version attr updates encoding only")
+    public void test_TC03() throws Exception {
+        // GIVEN: XML document with an XmlDeclaration "xml" version=1.0 at first position
+        Document doc = new Document("/");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(true);
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        decl.attr("version", "1.0");
+        doc.prependChild(decl);
+        // WHEN: setting charset to US-ASCII should only change encoding, not version
+        doc.charset(StandardCharsets.US_ASCII);
+        // THEN: reflect to childNodes to inspect the declaration
+        Field nodesField = Node.class.getDeclaredField("childNodes");
+        nodesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Node> nodes = (List<Node>) nodesField.get(doc);
+        assertFalse(nodes.isEmpty(), "childNodes should not be empty");
+        Node first = nodes.get(0);
+        assertTrue(first instanceof XmlDeclaration, "First node should be an XmlDeclaration");
+        XmlDeclaration xmlDecl = (XmlDeclaration) first;
+        assertEquals(StandardCharsets.US_ASCII.displayName(), xmlDecl.attr("encoding"),
+                     "Encoding attribute should be updated to US-ASCII");
+        assertEquals("1.0", xmlDecl.attr("version"),
+                     "Version attribute should remain unchanged as 1.0");
+    }
+
+    @Test
+    @DisplayName("TC04: charset(xml) on XML syntax with first child XmlDeclaration named other creates new xml decl prepended")
+    public void test_TC04() throws Exception {
+        // GIVEN: XML document with wrong-named XmlDeclaration at head
+        Document doc = new Document("/");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(true);
+        XmlDeclaration wrong = new XmlDeclaration("foo", false);
+        doc.prependChild(wrong);
+        // WHEN: setting charset to UTF-8 should prepend a correct xml declaration before the wrong one
+        doc.charset(StandardCharsets.UTF_8);
+        // THEN: reflect to childNodes and examine first element
+        Field nodesField = Node.class.getDeclaredField("childNodes");
+        nodesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Node> nodes = (List<Node>) nodesField.get(doc);
+        assertTrue(nodes.size() >= 1, "At least one child should exist");
+        Node first = nodes.get(0);
+        assertTrue(first instanceof XmlDeclaration, "First node should be an XmlDeclaration");
+        XmlDeclaration xmlDecl = (XmlDeclaration) first;
+        assertEquals("xml", xmlDecl.name(),
+                     "Name of new declaration should be 'xml'");
+        assertEquals("1.0", xmlDecl.attr("version"),
+                     "New xml declaration should have version=1.0");
+        assertEquals(StandardCharsets.UTF_8.displayName(), xmlDecl.attr("encoding"),
+                     "New xml declaration should have encoding=UTF-8");
+    }
+
+    @Test
+    @DisplayName("TC05: charset(xml) on XML syntax with no XmlDeclaration creates new xml decl prepended")
+    public void test_TC05() throws Exception {
+        // GIVEN: XML document with no XmlDeclaration at all
+        Document doc = new Document("/");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(true);
+        // WHEN: setting charset to UTF-16 should create and prepend a new xml declaration
+        Charset utf16 = Charset.forName("UTF-16");
+        doc.charset(utf16);
+        // THEN: reflect to childNodes to verify the new declaration
+        Field nodesField = Node.class.getDeclaredField("childNodes");
+        nodesField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        List<Node> nodes = (List<Node>) nodesField.get(doc);
+        assertFalse(nodes.isEmpty(), "childNodes should not be empty after charset");
+        Node first = nodes.get(0);
+        assertTrue(first instanceof XmlDeclaration, "First node should be an XmlDeclaration");
+        XmlDeclaration xmlDecl = (XmlDeclaration) first;
+        assertEquals("xml", xmlDecl.name(),
+                     "Name of new declaration should be 'xml'");
+        assertEquals("1.0", xmlDecl.attr("version"),
+                     "New xml declaration should have version=1.0");
+        assertEquals(utf16.displayName(), xmlDecl.attr("encoding"),
+                     "New xml declaration should have encoding UTF-16");
+    }
+
+    @Test
+    @DisplayName("TC06: charset(null) throws NullPointerException on null charset parameter")
+    public void test_TC06() {
+        // GIVEN: a fresh Document
+        Document doc = new Document("/");
+        // WHEN & THEN: calling charset with null should throw NPE
+        assertThrows(NullPointerException.class, () -> doc.charset(null),
+                     "Calling charset(null) should throw NullPointerException");
+    }
+}

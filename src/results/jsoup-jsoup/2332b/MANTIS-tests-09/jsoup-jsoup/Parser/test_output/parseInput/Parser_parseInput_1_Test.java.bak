@@ -1,0 +1,56 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.Token;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(String,\"base\") with empty HTML delegates to Reader overload and returns empty body")
+    public void test_TC04() {
+        // Given: an HTML parser and empty HTML string
+        Parser parser = Parser.htmlParser();
+        String html = "";
+        String base = "http://example.com";
+        // When: parseInput is called with empty string
+        Document doc = parser.parseInput(html, base);
+        // Then: the body text should be empty (no content nodes)
+        // This input hits the String-overload (B0→B1) and Reader overload (B2→B3) branches
+        assertEquals("", doc.body().text(), "Expected empty body text for empty input");
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader,base) propagates exception thrown by TreeBuilder.parse")
+    public void test_TC05() {
+        // Given: a StubBuilder that throws IllegalStateException in parse
+        class StubBuilder extends TreeBuilder {
+            public StubBuilder() {
+                super(Parser.htmlParser().settings()); // delegate settings
+            }
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new IllegalStateException("fail");
+            }
+            @Override
+            protected void process(Token token) {
+                // no-op
+            }
+        }
+        Parser parser = new Parser(new StubBuilder());
+        Reader rdr = new StringReader("<p>x</p>");
+        String base = "test";
+        // When/Then: calling parseInput should propagate IllegalStateException from the tree builder
+        // This input exercises the Reader-overload call (B2) and triggers exception branch
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> parser.parseInput(rdr, base));
+        assertEquals("fail", ex.getMessage(), "Exception message should be propagated unchanged");
+    }
+}

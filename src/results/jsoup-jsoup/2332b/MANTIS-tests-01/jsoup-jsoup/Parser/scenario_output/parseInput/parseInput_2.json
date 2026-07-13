@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) with real HTML parser returns a Document containing the parsed element",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "Document contains a <div> element with text 'hello'",
+      "tags": [
+        "positive",
+        "overload-delegation",
+        "html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 real-html-parse-success",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<div>hello</div>\";",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.selectFirst(\"div\").text().equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) propagates IllegalArgumentException from custom TreeBuilder.parse",
+      "path": "B0→B1→B3",
+      "precondition": "Parser with ExceptionTreeBuilder",
+      "expectedResult": "IllegalArgumentException is thrown with message 'parse failed'",
+      "tags": [
+        "negative",
+        "exception",
+        "overload-delegation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 overload-exception-propagation",
+        "  GIVEN",
+        "    class ExceptionTreeBuilder extends TreeBuilder {",
+        "      override parse(...) { throw new IllegalArgumentException(\"parse failed\"); }",
+        "      override process(Token token) {}",
+        "    }",
+        "    Parser parser = new Parser(new ExceptionTreeBuilder());",
+        "    String html = \"<invalid>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException with message containing \"parse failed\""
+      ]
+    }
+  ]
+}

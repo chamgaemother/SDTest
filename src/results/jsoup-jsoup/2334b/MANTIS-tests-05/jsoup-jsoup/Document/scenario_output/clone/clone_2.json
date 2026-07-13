@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "connection() returns a new Jsoup Connection when no connection field is set (null branch)",
+      "path": "B0→B1( connection==null )→B2",
+      "precondition": "new Document without calling connection(Connection)",
+      "expectedResult": "connection() returns a non-null Jsoup Connection instance that is not the same across separate calls",
+      "tags": [
+        "positive",
+        "branch",
+        "connection-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 connection() default session",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Connection c1 = doc.connection();",
+        "    Connection c2 = doc.connection();",
+        "  THEN",
+        "    assertNotNull(c1);",
+        "    assertNotNull(c2);",
+        "    assertNotSame(c1, c2);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() preserves an explicitly set Connection (non-null branch of connection())",
+      "path": "B0→super.clone→assign→B1( connection!=null )→B3",
+      "precondition": "Document with a custom Connection set via connection(Connection)",
+      "expectedResult": "clone.connection() returns the same custom Connection instance, not a new session",
+      "tags": [
+        "positive",
+        "branch",
+        "connection-non-null",
+        "clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone with custom connection",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    Connection custom = Jsoup.connect(\"http://foo\");",
+        "    doc.connection(custom);",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "    Connection c = cloned.connection();",
+        "  THEN",
+        "    assertSame(custom, c);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() on a Document with a custom Parser preserves and isolates tracked error settings",
+      "path": "B0→super.clone→assign→B4(parser.clone)→B5",
+      "precondition": "Document with Parser configured via Parser.setTrackErrors",
+      "expectedResult": "cloned parser has same error tracking count; modifying clone's parser errors does not affect original",
+      "tags": [
+        "positive",
+        "branch",
+        "parser",
+        "clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone with custom parser",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    Parser custom = Parser.htmlParser().setTrackErrors(5);",
+        "    doc.parser(custom);",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc.parser(), cloned.parser());",
+        "    assertEquals(5, cloned.parser().getErrorsTracked());",
+        "  WHEN",
+        "    cloned.parser().setTrackErrors(0);",
+        "  THEN",
+        "    assertNotEquals(doc.parser().getErrorsTracked(), cloned.parser().getErrorsTracked());"
+      ]
+    }
+  ]
+}

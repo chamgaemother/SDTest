@@ -1,0 +1,107 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DateSchemaColumn_parseAndAddToColumn_Test {
+
+    // Simple stub for DfColumn to record added objects and count
+    private static class StubDfColumn implements DfColumn {
+        Object lastAdded;
+        int addCount = 0;
+
+        @Override
+        public void addObject(Object obj) {
+            this.lastAdded = obj;
+            this.addCount++;
+        }
+
+        // The rest of DfColumn methods are not used in these tests.
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when input string is null (aString == null branch)")
+    void test_TC01() {
+        // GIVEN stubDfColumn and a DateSchemaColumn with default pattern
+        StubDfColumn stubDfColumn = new StubDfColumn();
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        
+        // WHEN parsing null (triggers aString == null branch)
+        col.parseAndAddToColumn(null, stubDfColumn);
+        
+        // THEN lastAdded must be null and exactly one addObject invocation
+        assertNull(stubDfColumn.lastAdded, "Expected null to be added for null input");
+        assertEquals(1, stubDfColumn.addCount, "Expected addObject to be called once");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() == true branch)")
+    void test_TC02() {
+        // GIVEN stubDfColumn and a DateSchemaColumn with default pattern
+        StubDfColumn stubDfColumn = new StubDfColumn();
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        
+        // WHEN parsing a string of spaces (after trim it's empty, triggers trimmed.isEmpty branch)
+        col.parseAndAddToColumn("   ", stubDfColumn);
+        
+        // THEN lastAdded must be null and exactly one addObject invocation
+        assertNull(stubDfColumn.lastAdded, "Expected null to be added for empty trimmed input");
+        assertEquals(1, stubDfColumn.addCount, "Expected addObject to be called once");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses valid date string after trim (successful parse branch)")
+    void test_TC03() {
+        // GIVEN stubDfColumn and a DateSchemaColumn with default pattern uuuu-M-d
+        StubDfColumn stubDfColumn = new StubDfColumn();
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        
+        // WHEN parsing a well-formed date string with extra whitespace
+        col.parseAndAddToColumn(" 2023-12-5 ", stubDfColumn);
+        
+        // THEN lastAdded must equal LocalDate.of(2023,12,5), and one addition
+        assertEquals(LocalDate.of(2023, 12, 5), stubDfColumn.lastAdded,
+            "Expected correct LocalDate parsed from trimmed input");
+        assertEquals(1, stubDfColumn.addCount, "Expected addObject to be called once");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for malformed date (parse error branch)")
+    void test_TC04() {
+        // GIVEN stubDfColumn and a DateSchemaColumn with default pattern
+        StubDfColumn stubDfColumn = new StubDfColumn();
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        
+        // WHEN parsing an invalid date string (Feb 29 on non-leap year)
+        DateTimeParseException exception = assertThrows(
+            DateTimeParseException.class,
+            () -> col.parseAndAddToColumn("2023-02-29", stubDfColumn),
+            "Expected DateTimeParseException for invalid date"
+        );
+        
+        // THEN no object should have been added
+        assertEquals(0, stubDfColumn.addCount, "Expected no addition on parse failure");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses with custom pattern (pattern=\"d/MM/uuuu\") and adds correct LocalDate")
+    void test_TC05() {
+        // GIVEN stubDfColumn and a DateSchemaColumn with custom pattern d/MM/uuuu
+        StubDfColumn stubDfColumn = new StubDfColumn();
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "d/MM/uuuu");
+        
+        // WHEN parsing a date string matching the custom pattern
+        col.parseAndAddToColumn("7/03/2021", stubDfColumn);
+        
+        // THEN lastAdded must equal LocalDate.of(2021,3,7), and one addition
+        assertEquals(LocalDate.of(2021, 3, 7), stubDfColumn.lastAdded,
+            "Expected LocalDate parsed according to custom pattern");
+        assertEquals(1, stubDfColumn.addCount, "Expected addObject to be called once");
+    }
+}

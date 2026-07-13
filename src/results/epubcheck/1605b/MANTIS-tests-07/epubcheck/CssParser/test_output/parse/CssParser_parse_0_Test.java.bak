@@ -1,0 +1,282 @@
+package org.idpf.epubcheck.util.css;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.NoSuchElementException;
+import java.util.function.Predicate;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Generated test class for CssParser.parse(Reader, String, CssErrorHandler, CssContentHandler)
+ * covering scenarios TC01–TC10.
+ */
+public class CssParser_parse_Test {
+
+  /**
+   * A stubbed CssErrorHandler that does nothing.
+   */
+  static class StubErrorHandler implements CssErrorHandler {
+    @Override public void error(CssGrammarException exception) { /* no-op */ }
+  }
+
+  /**
+   * A stubbed CssContentHandler that tracks startDocument/endDocument calls.
+   */
+  static class StubContentHandler implements CssContentHandler {
+    int startCount = 0;
+    int endCount = 0;
+
+    @Override public void startDocument() { startCount++; }
+    @Override public void endDocument() { endCount++; }
+    // other methods are no-ops:
+    @Override public void selectors(java.util.List<CssSelector> selectors) { }
+    @Override public void endSelectors(java.util.List<CssSelector> selectors) { }
+    @Override public void declaration(CssDeclaration declaration) { }
+    @Override public void startAtRule(CssAtRule rule) { }
+    @Override public void endAtRule(String name) { }
+  }
+
+  /**
+   * A parser subclass that allows overriding scan() and tracks handler invocations.
+   */
+  static class SpyParser extends CssParser {
+    int atRuleCount = 0;
+    int ruleSetCount = 0;
+    final CssTokenIterator iteratorOverride;
+    final Exception scanException;
+
+    SpyParser(CssTokenIterator iteratorOverride, Exception scanException) {
+      super();
+      this.iteratorOverride = iteratorOverride;
+      this.scanException = scanException;
+    }
+
+    @Override
+    CssTokenIterator scan(Reader reader, String systemID, CssErrorHandler err)
+        throws IOException, CssException {
+      // optionally throw exception for TC05/TC06
+      if (scanException != null) {
+        if (scanException instanceof IOException) throw (IOException) scanException;
+        if (scanException instanceof CssException) throw (CssException) scanException;
+      }
+      return iteratorOverride;
+    }
+
+    @Override
+    void handleAtRule(CssToken start, CssTokenIterator iter, CssContentHandler doc, CssErrorHandler err) {
+      atRuleCount++;
+    }
+
+    @Override
+    void handleRuleSet(CssToken start, CssTokenIterator iter, CssContentHandler doc, CssErrorHandler err) {
+      ruleSetCount++;
+    }
+  }
+
+  /**
+   * A minimal fake iterator supporting hasNext(filter) and next(filter).
+   */
+  static class FakeIterator implements CssTokenIterator {
+    final CssToken[] tokens;
+    int idx = 0;
+    final RuntimeException nextException;
+    final Predicate<CssToken> defaultFilter = t -> true;
+    CssToken last;
+
+    FakeIterator(CssToken[] tokens, RuntimeException nextException) {
+      this.tokens = tokens;
+      this.nextException = nextException;
+    }
+
+    @Override
+    public boolean hasNext() { return idx < tokens.length; }
+
+    @Override
+    public CssToken next() {
+      if (nextException != null && idx == tokens.length) {
+        throw nextException;
+      }
+      if (!hasNext()) throw new NoSuchElementException();
+      last = tokens[idx++];
+      return last;
+    }
+
+    @Override
+    public CssToken next(Predicate<CssToken> filter) {
+      // ignore filter for stubs; just call next()
+      return next();
+    }
+
+    @Override
+    public boolean hasNext(Predicate<CssToken> filter) {
+      // ignore filter for stub scenarios, simulate hasNext same as hasNext()
+      return hasNext();
+    }
+
+    @Override public int index() { return idx; }
+    @Override public CssToken peek() { return idx < tokens.length ? tokens[idx] : null; }
+    @Override public java.util.List<CssToken> list() { throw new UnsupportedOperationException(); }
+    @Override public Predicate<CssToken> filter() { return defaultFilter; }
+  }
+
+  private Reader rdr(String s) { return new StringReader(s); }
+
+  @Test
+  @DisplayName("TC01: parse(): scanner yields no tokens, endDocument only (hasNext false)")
+  void test_TC01() throws Exception {
+    // No tokens => iterator.hasNext(false) immediately => startDocument/endDocument only
+    FakeIterator it = new FakeIterator(new CssToken[0], null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount, "startDocument should be called once");
+    assertEquals(1, doc.endCount, "endDocument should be called once");
+    assertEquals(0, p.atRuleCount, "no at-rule should be invoked");
+    assertEquals(0, p.ruleSetCount, "no rule-set should be invoked");
+  }
+
+  @Test
+  @DisplayName("TC02: parse(): one token ATKEYWORD, handleAtRule invoked once then endDocument")
+  void test_TC02() throws Exception {
+    // Single ATKEYWORD token => branch to handleAtRule
+    CssToken t = new CssToken(CssToken.Type.ATKEYWORD, "@x", null, 0);
+    FakeIterator it = new FakeIterator(new CssToken[]{t}, null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(1, p.atRuleCount, "handleAtRule should be called once");
+    assertEquals(0, p.ruleSetCount, "handleRuleSet should not be called");
+  }
+
+  @Test
+  @DisplayName("TC03: parse(): one token non-ATKEYWORD, handleRuleSet invoked once then endDocument")
+  void test_TC03() throws Exception {
+    // Single IDENT token => branch to handleRuleSet
+    CssToken t = new CssToken(CssToken.Type.IDENT, "id", null, 0);
+    FakeIterator it = new FakeIterator(new CssToken[]{t}, null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(0, p.atRuleCount, "no at-rule should be invoked");
+    assertEquals(1, p.ruleSetCount, "handleRuleSet should be called once");
+  }
+
+  @Test
+  @DisplayName("TC04: parse(): two iterations, first ATKEYWORD then IDENT, both handlers invoked")
+  void test_TC04() throws Exception {
+    // First ATKEYWORD then IDENT => atRuleCount=1, ruleSetCount=1
+    CssToken t1 = new CssToken(CssToken.Type.ATKEYWORD, "@a", null, 0);
+    CssToken t2 = new CssToken(CssToken.Type.IDENT, "z", null, 0);
+    FakeIterator it = new FakeIterator(new CssToken[]{t1, t2}, null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(1, p.atRuleCount);
+    assertEquals(1, p.ruleSetCount);
+  }
+
+  @Test
+  @DisplayName("TC05: parse(): scan throws IOException, exception propagated")
+  void test_TC05() {
+    // scan throws IOException before startDocument
+    SpyParser p = new SpyParser(null, new IOException("io error"));
+    StubContentHandler doc = new StubContentHandler();
+    IOException ex = assertThrows(IOException.class,
+        () -> p.parse(rdr(""), "sid", new StubErrorHandler(), doc));
+    assertEquals("io error", ex.getMessage());
+    assertEquals(0, doc.startCount, "startDocument should not be called");
+  }
+
+  @Test
+  @DisplayName("TC06: parse(): scan throws CssException, exception propagated")
+  void test_TC06() {
+    // scan throws CssException before startDocument
+    CssException ce = new CssGrammarException(null, 0, null, "");
+    SpyParser p = new SpyParser(null, ce);
+    StubContentHandler doc = new StubContentHandler();
+    CssException ex = assertThrows(CssException.class,
+        () -> p.parse(rdr(""), "sid", new StubErrorHandler(), doc));
+    assertSame(ce, ex, "the same CssException instance should be propagated");
+    assertEquals(0, doc.startCount);
+  }
+
+  @Test
+  @DisplayName("TC07: parse(): three iterations non-ATKEYWORD tokens, 3 handleRuleSet calls")
+  void test_TC07() throws Exception {
+    // Three IDENT tokens => three handleRuleSet invocations
+    CssToken[] arr = {
+        new CssToken(CssToken.Type.IDENT, "a", null, 0),
+        new CssToken(CssToken.Type.IDENT, "b", null, 0),
+        new CssToken(CssToken.Type.IDENT, "c", null, 0)
+    };
+    FakeIterator it = new FakeIterator(arr, null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(0, p.atRuleCount);
+    assertEquals(3, p.ruleSetCount, "handleRuleSet should be called three times");
+  }
+
+  @Test
+  @DisplayName("TC08: parse(): two ATKEYWORD tokens, 2 handleAtRule calls")
+  void test_TC08() throws Exception {
+    // Two ATKEYWORD tokens => two handleAtRule invocations
+    CssToken[] arr = {
+        new CssToken(CssToken.Type.ATKEYWORD, "@1", null, 0),
+        new CssToken(CssToken.Type.ATKEYWORD, "@2", null, 0)
+    };
+    FakeIterator it = new FakeIterator(arr, null);
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(2, p.atRuleCount, "handleAtRule should be called twice");
+    assertEquals(0, p.ruleSetCount);
+  }
+
+  @Test
+  @DisplayName("TC09: parse(): first call hasNext true then immediate NoSuchElementException breaks loop")
+  void test_TC09() throws Exception {
+    // Iterator.hasNext true, next() throws NSE on first next(FILTER_S_CMNT_CDO_CDC)
+    FakeIterator it = new FakeIterator(new CssToken[0], new NoSuchElementException());
+    // override hasNext to return true initially
+    it.idx = 0;
+    it.tokens = new CssToken[1]; // hasNext true once
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    // Should catch internal NSE and still endDocument
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+  }
+
+  @Test
+  @DisplayName("TC10: parse(): mixed loop of 1 IDENT then next throws NoSuchElementException")
+  void test_TC10() throws Exception {
+    // First iteration: IDENT; second next() throws NSE
+    CssToken t = new CssToken(CssToken.Type.IDENT, "x", null, 0);
+    FakeIterator it = new FakeIterator(new CssToken[]{t}, new NoSuchElementException());
+    SpyParser p = new SpyParser(it, null);
+    StubContentHandler doc = new StubContentHandler();
+    p.parse(rdr(""), "sid", new StubErrorHandler(), doc);
+    assertEquals(1, doc.startCount);
+    assertEquals(1, doc.endCount);
+    assertEquals(1, p.ruleSetCount, "handleRuleSet should be called once before NSE");
+  }
+}

@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn trims input and correctly parses a valid date with surrounding whitespace under custom pattern",
+      "path": "B0→B1→B3→B4",
+      "precondition": "DateSchemaColumn created with custom pattern 'dd/MM/uuuu'",
+      "expectedResult": "adds LocalDate.of(2020,12,31) after trimming",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "trim",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 custom-pattern with whitespace",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"dd/MM/uuuu\");",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \" 31/12/2020 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getCountAdded() == 1;",
+        "    assert dfColumn.getLastAdded().equals(LocalDate.of(2020,12,31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseAndAddToColumn parses the minimum representable date under default pattern",
+      "path": "B0→B1→B3→B4",
+      "precondition": "DateSchemaColumn created with default pattern",
+      "expectedResult": "adds LocalDate.of(1,1,1)",
+      "tags": [
+        "boundary",
+        "positive",
+        "default-pattern"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 default-pattern minimum date",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"0001-1-1\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getCountAdded() == 1;",
+        "    assert dfColumn.getLastAdded().equals(LocalDate.of(1,1,1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "constructor throws IllegalArgumentException when pattern is syntactically invalid (empty string)",
+      "path": "ctor→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown during DateSchemaColumn instantiation",
+      "tags": [
+        "negative",
+        "constructor",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 invalid-pattern-constructor",
+        "  GIVEN",
+        "    String badPattern = \"\";",
+        "  WHEN",
+        "    call new DateSchemaColumn(null, \"d\", badPattern);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

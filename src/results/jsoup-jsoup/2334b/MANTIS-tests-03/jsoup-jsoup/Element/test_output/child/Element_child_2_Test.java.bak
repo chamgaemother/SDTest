@@ -1,0 +1,38 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for Element.child(int) behavior, especially cache rebuild after nodelistChanged.
+ */
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("TC11: child(n) rebuilds shadowChildrenList when cache exists but invalidated via nodelistChanged")
+    public void test_TC11() throws Exception {
+        // GIVEN: an Element with two element children, so childElementsList cache will be primed
+        Element el = new Element("div");
+        // append two children <a> and <b>
+        Element a = el.appendElement("a");
+        Element b = el.appendElement("b");
+
+        // Prime the shadowChildrenRef cache by calling child(1)
+        // This traverses B0->B1->B2(loop twice)->B3 (cache created)
+        Element prime = el.child(1);
+        assertEquals("b", prime.tagName(), "Primed cache should return second child 'b'");
+
+        // Invalidate the cache by invoking the package-private nodelistChanged() via reflection
+        Method nodelistChanged = Element.class.getDeclaredMethod("nodelistChanged");
+        nodelistChanged.setAccessible(true);
+        // WHEN: cache is invalidated (shadowChildrenRef cleared)
+        nodelistChanged.invoke(el); // branches B4 taken, invalidating cache
+
+        // THEN: child(0) should rebuild the cache and return the first child 'a'
+        // This goes through B2 loop again and then B5
+        Element result = el.child(0);
+        assertEquals("a", result.tagName(), "After cache invalidation, child(0) should rebuild cache and return 'a'");
+    }
+}

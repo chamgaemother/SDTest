@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "clone() preserves the XML parser instance independently of original after modification",
+      "path": "B0→super.clone()→B1→B2(parser.clone)→B3",
+      "precondition": "Document.orig.parser set to XML parser",
+      "expectedResult": "copy.parser().getName() equals \"xml\" and differs from original after changing orig.parser to HTML",
+      "tags": [
+        "branch",
+        "parser",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone preserves XML parser",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.parser(Parser.xmlParser());",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.parser(Parser.htmlParser());",
+        "  THEN",
+        "    assert copy.parser().getName().equals(\"xml\");",
+        "    assert orig.parser().getName().equals(\"html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() with null connection returns default newSession() without invoking original connection",
+      "path": "B0→super.clone()→B1→B2→B3→connection()==null branch",
+      "precondition": "orig.connection null (default)",
+      "expectedResult": "copy.connection().newRequest().timeoutMillis() equals Jsoup.newSession().newRequest().timeoutMillis()",
+      "tags": [
+        "branch",
+        "connection",
+        "default-session"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 clone default connection",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.connection().newRequest().timeoutMillis() == Jsoup.newSession().newRequest().timeoutMillis();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() preserves a custom Connection independently of subsequent changes on original",
+      "path": "B0→super.clone()→B1→B2→B3→connection()!=null branch",
+      "precondition": "orig.connection set to custom session",
+      "expectedResult": "copy.connection() == originalConnection and differs after orig.connection reset",
+      "tags": [
+        "branch",
+        "connection",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 clone preserves custom connection",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    Connection custom = Jsoup.newSession();",
+        "    orig.connection(custom);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.connection(Jsoup.connect(\"http://other\"));",
+        "  THEN",
+        "    assert copy.connection() == custom;",
+        "    assert orig.connection() != custom;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "clone() preserves quirksMode setting across clone boundary",
+      "path": "B0→super.clone()→B1→B2→B3",
+      "precondition": "orig.quirksMode set to limitedQuirks",
+      "expectedResult": "copy.quirksMode() equals Document.QuirksMode.limitedQuirks",
+      "tags": [
+        "branch",
+        "quirksMode",
+        "state-preservation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 clone preserves quirksMode",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.quirksMode() == Document.QuirksMode.limitedQuirks;",
+        "END"
+      ]
+    }
+  ]
+}

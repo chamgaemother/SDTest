@@ -1,0 +1,108 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on element with no child nodes returns empty list (childNodeSize()==0 short-circuit)",
+      "path": "B1→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-false-childNodeSize>0",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() filters out non-Element nodes: mixed TextNode and Element yields only Element",
+      "path": "B1→B2(loop×1)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"text\")); el.appendChild(new Element(\"span\"));",
+      "expectedResult": "returned Elements contains exactly one child: the <span> element",
+      "tags": [
+        "branch-true-childNodeSize>0",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"t\"));",
+        "    el.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0).tagName().equals(\"span\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() with multiple Element children returns all in order (loop N>1)",
+      "path": "B1→B2(loop×2)→B3",
+      "precondition": "Element el = new Element(\"ul\"); el.appendChild(new Element(\"li\")); el.appendChild(new Element(\"li\"));",
+      "expectedResult": "returned Elements contains two <li> children in insertion order",
+      "tags": [
+        "branch-true-childNodeSize>0",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children multiple-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).tagName().equals(\"li\");",
+        "    assert result.get(1).tagName().equals(\"li\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() respects shadowChildrenRef cache: after first call and then mutation, cache is invalidated and rebuilt",
+      "path": "B1→B2(loop×1)→B3→B2(loop×2)→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"p\")); // initial child; second call after mutation",
+      "expectedResult": "first children() returns one <p>; after el.appendChild(new Element(\"span\")), children() returns two in order <p>,<span>",
+      "tags": [
+        "branch-true-childNodeSize>0",
+        "loop-1",
+        "cache-invalidate",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-invalidation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"p\"));",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    el.appendChild(new Element(\"span\"));",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert first.get(0).tagName().equals(\"p\");",
+        "    assert second.size() == 2;",
+        "    assert second.get(1).tagName().equals(\"span\");"
+      ]
+    }
+  ]
+}

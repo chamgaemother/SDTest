@@ -1,0 +1,143 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.config.FunctionDictionaryIfc;
+import com.ezylang.evalex.config.OperatorDictionaryIfc;
+import com.ezylang.evalex.functions.FunctionIfc;
+import com.ezylang.evalex.operators.OperatorIfc;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+public class Tokenizer_parse_Test {
+
+  private static final OperatorDictionaryIfc EMPTY_OP_DICT = new OperatorDictionaryIfc() {
+    public boolean hasPrefixOperator(String s) { return false; }
+    public boolean hasPostfixOperator(String s) { return false; }
+    public boolean hasInfixOperator(String s) { return false; }
+    public OperatorIfc getPrefixOperator(String s) { return null; }
+    public OperatorIfc getPostfixOperator(String s) { return null; }
+    public OperatorIfc getInfixOperator(String s) { return null; }
+  };
+  private static final FunctionDictionaryIfc EMPTY_FN_DICT = new FunctionDictionaryIfc() {
+    public boolean hasFunction(String name) { return false; }
+    public FunctionIfc getFunction(String name) { return null; }
+  };
+
+  @Test
+  @DisplayName("Hexadecimal literal '0x1F' is parsed as NUMBER_LITERAL")
+  void test_TC22() throws Exception {
+    // 0x prefix triggers hex parsing path
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, false);
+    Tokenizer tz = new Tokenizer("0x1F", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(1, tokens.size());
+    Token t = tokens.get(0);
+    assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType());
+    assertEquals("0x1F", t.getTokenValue());
+  }
+
+  @Test
+  @DisplayName("Prefix operator '-' at start is parsed then NUMBER_LITERAL")
+  void test_TC23() throws Exception {
+    // no previous token, prefix allowed, '-' is recognized
+    OperatorIfc opMock = Mockito.mock(OperatorIfc.class);
+    OperatorDictionaryIfc opDict = new OperatorDictionaryIfc() {
+      public boolean hasPrefixOperator(String s) { return "-".equals(s); }
+      public OperatorIfc getPrefixOperator(String s) { return opMock; }
+      public boolean hasPostfixOperator(String s) { return false; }
+      public OperatorIfc getPostfixOperator(String s) { return null; }
+      public boolean hasInfixOperator(String s) { return false; }
+      public OperatorIfc getInfixOperator(String s) { return null; }
+    };
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        opDict, EMPTY_FN_DICT, false, false, false);
+    Tokenizer tz = new Tokenizer("-5", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(2, tokens.size());
+    Token t0 = tokens.get(0);
+    assertEquals(Token.TokenType.PREFIX_OPERATOR, t0.getType());
+    assertEquals("-", t0.getTokenValue());
+    Token t1 = tokens.get(1);
+    assertEquals("5", t1.getTokenValue());
+  }
+
+  @Test
+  @DisplayName("Postfix operator '!' after number is parsed as POSTFIX_OPERATOR")
+  void test_TC24() throws Exception {
+    // after number, postfix allowed, '!' is recognized
+    OperatorIfc opMock = Mockito.mock(OperatorIfc.class);
+    OperatorDictionaryIfc opDict = new OperatorDictionaryIfc() {
+      public boolean hasPostfixOperator(String s) { return "!".equals(s); }
+      public OperatorIfc getPostfixOperator(String s) { return opMock; }
+      public boolean hasPrefixOperator(String s) { return false; }
+      public OperatorIfc getPrefixOperator(String s) { return null; }
+      public boolean hasInfixOperator(String s) { return false; }
+      public OperatorIfc getInfixOperator(String s) { return null; }
+    };
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        opDict, EMPTY_FN_DICT, false, false, false);
+    Tokenizer tz = new Tokenizer("5!", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(2, tokens.size());
+    assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+    Token t1 = tokens.get(1);
+    assertEquals(Token.TokenType.POSTFIX_OPERATOR, t1.getType());
+    assertEquals("!", t1.getTokenValue());
+  }
+
+  @Test
+  @DisplayName("Decimal literal with leading dot '.5' parsed as NUMBER_LITERAL")
+  void test_TC25() throws Exception {
+    // leading dot with digit triggers decimal path
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, false);
+    Tokenizer tz = new Tokenizer(".5", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(1, tokens.size());
+    Token t = tokens.get(0);
+    assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType());
+    assertEquals(".5", t.getTokenValue());
+  }
+
+  @Test
+  @DisplayName("Valid structure separator between variables produces VARIABLE, STRUCTURE_SEPARATOR, VARIABLE")
+  void test_TC26() throws Exception {
+    // a . b with structures allowed, dot not digit triggers separator path
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, true);
+    Tokenizer tz = new Tokenizer("a.b", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(3, tokens.size());
+    assertEquals(Token.TokenType.VARIABLE_OR_CONSTANT, tokens.get(0).getType());
+    assertEquals(Token.TokenType.STRUCTURE_SEPARATOR, tokens.get(1).getType());
+    assertEquals("b", tokens.get(2).getTokenValue());
+  }
+
+  @Test
+  @DisplayName("Implicit multiplication between two grouped expressions (BRACE_CLOSE→BRACE_OPEN) when allowed")
+  void test_TC27() throws Exception {
+    // two parenthesis groups, implicit mult allowed, '*' in infix dict
+    OperatorIfc mul = Mockito.mock(OperatorIfc.class);
+    OperatorDictionaryIfc opDict = new OperatorDictionaryIfc() {
+      public boolean hasInfixOperator(String s) { return "*".equals(s); }
+      public OperatorIfc getInfixOperator(String s) { return mul; }
+      public boolean hasPrefixOperator(String s) { return false; }
+      public OperatorIfc getPrefixOperator(String s) { return null; }
+      public boolean hasPostfixOperator(String s) { return false; }
+      public OperatorIfc getPostfixOperator(String s) { return null; }
+    };
+    ExpressionConfiguration cfg = new ExpressionConfiguration(
+        opDict, EMPTY_FN_DICT, true, false, false);
+    Tokenizer tz = new Tokenizer("(1)(2)", cfg);
+    List<Token> tokens = tz.parse();
+    assertEquals(7, tokens.size());
+    Token implicitMult = tokens.get(3);
+    assertEquals(Token.TokenType.INFIX_OPERATOR, implicitMult.getType());
+    assertEquals("*", implicitMult.getTokenValue());
+  }
+}

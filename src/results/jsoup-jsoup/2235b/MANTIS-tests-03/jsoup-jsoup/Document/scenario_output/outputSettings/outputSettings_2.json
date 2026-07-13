@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "outputSettings() returns live internal instance that reflects subsequent mutations",
+      "path": "B0→B3",
+      "precondition": "Document doc = new Document(\"http://x/\");",
+      "expectedResult": "mutations via returned OutputSettings are visible through doc.outputSettings()",
+      "tags": [
+        "positive",
+        "state",
+        "getter"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 outputSettings live-reference",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://x/\");",
+        "    OutputSettings settings = doc.outputSettings();",
+        "  WHEN",
+        "    settings.prettyPrint(false).indentAmount(5);",
+        "  THEN",
+        "    assertFalse(doc.outputSettings().prettyPrint());",
+        "    assertEquals(5, doc.outputSettings().indentAmount());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "outputSettings(custom) replaces internal settings instance allowing new settings object mutation",
+      "path": "B0→B3",
+      "precondition": "Document doc = new Document(\"http://y/\"); OutputSettings custom = new OutputSettings().outline(true);",
+      "expectedResult": "doc.outputSettings() returns custom and internal reference is replaced",
+      "tags": [
+        "positive",
+        "setter",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 outputSettings setter replaces instance",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://y/\");",
+        "    OutputSettings custom = new OutputSettings().outline(true);",
+        "  WHEN",
+        "    Document returned = doc.outputSettings(custom);",
+        "  THEN",
+        "    assertSame(doc, returned);",
+        "    assertSame(custom, doc.outputSettings());",
+        "    custom.escapeMode(Entities.EscapeMode.extended);",
+        "    assertEquals(Entities.EscapeMode.extended, doc.outputSettings().escapeMode());",
+        "END"
+      ]
+    }
+  ]
+}

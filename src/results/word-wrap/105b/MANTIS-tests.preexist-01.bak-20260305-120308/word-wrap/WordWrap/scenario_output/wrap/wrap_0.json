@@ -1,0 +1,236 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap() on empty input returns empty string (loop zero iterations)",
+      "path": "B0→B1→B2(loop×0)→B10",
+      "precondition": "Builder created via WordWrap.from(\"\")",
+      "expectedResult": "return value is \"\"",
+      "tags": [
+        "loop-0",
+        "boundary",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-input",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap() with single word shorter than default maxWidth returns same word (no wrapping)",
+      "path": "B0→B1→B2(loop×N)→B5→B10",
+      "precondition": "Builder from(\"hello\")",
+      "expectedResult": "return value is \"hello\"",
+      "tags": [
+        "loop-1",
+        "positive",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 short-word-no-wrap",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap() with word longer than maxWidth breaks with hyphens (breakWords=true, insertHyphens=true)",
+      "path": "B0→B1→B2(loop×N)→B3→B4→B7→B9→B10",
+      "precondition": "Builder from(\"abcdefghij\").maxWidth(4)",
+      "expectedResult": "return value is \"abcd-\\nefgh-\\nij\"",
+      "tags": [
+        "branch-true",
+        "breakWords-true",
+        "insertHyphens-true",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 break-word-with-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdefghij\").maxWidth(4);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcd-\\nefgh-\\nij\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap() with word longer than maxWidth and breakWords=false leaves broken flag and no hyphens",
+      "path": "B0→B1→B2(loop×N)→B3→B4→B7(false)→B9→B10",
+      "precondition": "Builder from(\"abcdefghij\").maxWidth(4).breakWords(false)",
+      "expectedResult": "return value is \"abcdefghij\"",
+      "tags": [
+        "branch-false",
+        "breakWords-false",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 breakWords-false-no-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdefghij\").maxWidth(4).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcdefghij\");"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "wrap() with embedded newline resets line buffer and does not include empty lines",
+      "path": "B0→B1→B2(loop×N)→B6(true)→B8→B10",
+      "precondition": "Builder from(\"one\\ntwo\")",
+      "expectedResult": "return value is \"one\\ntwo\"",
+      "tags": [
+        "branch-true",
+        "newline-handling",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 embedded-newline",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"one\\ntwo\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"one\\ntwo\");"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "wrap(Writer) throws IORuntimeException when underlying Writer throws IOException",
+      "path": "B0→B1→wrap→catch(IOException)→throw IORuntimeException",
+      "precondition": "Stub Writer w throws IOException on write(s), why mocking necessary: simulate IO failure",
+      "expectedResult": "throws IORuntimeException; no reader state leaking",
+      "tags": [
+        "exception",
+        "overload:wrap(Writer)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 writer-io-exception",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"data\");",
+        "    Writer w = new StubWriter().setWriteThrows(IOException.class);",
+        "  WHEN",
+        "    call b.wrap(w);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC07_O3",
+      "description": "wrapToList() returns list of single short line (loop-1)",
+      "path": "B0→B1→B2(loop×1)→B10",
+      "precondition": "Builder from(\"abc\")",
+      "expectedResult": "return list [\"abc\"]",
+      "tags": [
+        "loop-1",
+        "overload:wrapToList()"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrapToList-single-line",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abc\");",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"abc\"));"
+      ]
+    },
+    {
+      "id": "TC08_O4",
+      "description": "wrap(LineConsumer) writes multiple lines via consumer callbacks (loop-N)",
+      "path": "B0→B1→B2(loop×N)→callback-writeNewLine→final-flush",
+      "precondition": "Builder from(\"a b c\").maxWidth(1)",
+      "expectedResult": "consumer receives \"a\",\"b\",\"c\" each via writeNewLine",
+      "tags": [
+        "loop-N",
+        "overload:wrap(LineConsumer)"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 lineconsumer-multiple-calls",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a b c\").maxWidth(1);",
+        "    RecordingConsumer consumer = new RecordingConsumer();",
+        "  WHEN",
+        "    b.wrap(consumer);",
+        "  THEN",
+        "    assert consumer.getLines().equals(Arrays.asList(\"a\",\"b\",\"c\"));"
+      ]
+    },
+    {
+      "id": "TC09_O5",
+      "description": "wrap(File,Charset) writes output file in specified charset and closes reader",
+      "path": "B0→B1→B2(loop×1)→file-write→closeReader",
+      "precondition": "temp file f, Builder from(\"xyz\").wrap(f, StandardCharsets.US_ASCII)",
+      "expectedResult": "file content is \"xyz\" in US_ASCII encoding; reader is closed",
+      "tags": [
+        "file-output",
+        "overload:wrap(File,Charset)"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 file-output-charset",
+        "  GIVEN",
+        "    File f = tempFile();",
+        "    Builder b = WordWrap.from(\"xyz\");",
+        "  WHEN",
+        "    b.wrap(f, StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    assert readFile(f, US_ASCII).equals(\"xyz\");"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "wrap() with custom stringWidth function uses width correctly to wrap",
+      "path": "B0→B1→B2(loop×N)→tooLong(true)→wrap-branch→B10",
+      "precondition": "Builder from(\"aa bb cc\").maxWidth(3).stringWidth(s->s.length()/2)",
+      "expectedResult": "return value is \"aa bb\\n cc\"",
+      "tags": [
+        "branch-true",
+        "custom-stringWidth",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 custom-stringWidth",
+        "  GIVEN",
+        "    Function<CharSequence,Number> f = s -> s.length()/2;",
+        "    Builder b = WordWrap.from(\"aa bb cc\").maxWidth(3).stringWidth(f);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"aa bb\\n cc\");"
+      ]
+    }
+  ]
+}

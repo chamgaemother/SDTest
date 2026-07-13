@@ -1,0 +1,139 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty input yields no rulesets or at-rules (loop-0)",
+      "path": "B0→B1→B8",
+      "precondition": "Use a StringReader over an empty string; real scan(), real handlers",
+      "expectedResult": "CssContentHandler.startDocument() called once; CssContentHandler.endDocument() called once; no other handler methods invoked",
+      "tags": [
+        "loop-0",
+        "branch-not-entered",
+        "normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse empty-input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new CollectingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1;",
+        "    assert doc.endDocumentCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single at-rule processed then endDocument (one iteration, branch-true)",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Use StringReader over \"@charset \\\"UTF-8\\\";\"; real scan(), real handlers",
+      "expectedResult": "startDocument(), startAtRule(\"charset\"), endAtRule(\"charset\"), endDocument(); no exceptions",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "atrule",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse single-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@charset \\\"UTF-8\\\";\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.sequence.equals([\"startDocument\",\"startAtRule:charset\",\"endAtRule:charset\",\"endDocument\"]);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single ruleset processed then endDocument (one iteration, branch-false)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Use StringReader over \"h1 { color: red; }\"; real scan(), real handlers",
+      "expectedResult": "startDocument(), selectors([\"h1\"]), declaration(color:red), endSelectors, endDocument(); no exceptions",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "ruleset",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color: red; }\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.sequence.containsAll([\"startDocument\",\"selectors:h1\",\"declaration:color=red\",\"endSelectors\",\"endDocument\"]);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Premature EOF inside ruleset triggers break and endDocument (exception path)",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Use StringReader over \"h1 { color: blue;\" (missing '}'); real scan(), real handlers",
+      "expectedResult": "startDocument(), error(GRAMMAR_PREMATURE_EOF), endDocument(); no uncaught exception",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception",
+        "prematureEOF"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse ruleset-premature-EOF",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color: blue;\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.contains(GRAMMAR_PREMATURE_EOF);",
+        "    assert doc.endDocumentCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "IOException from scan is thrown",
+      "path": "B0",
+      "precondition": "Use a Reader stub that throws IOException on read; real handlers",
+      "expectedResult": "IOException is thrown; no calls on ContentHandler",
+      "tags": [
+        "exception",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parse io-exception",
+        "  GIVEN",
+        "    Reader reader = new Reader() { public int read(char[] c, int off, int len) throws IOException { throw new IOException(\"fail\"); } };",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    }
+  ]
+}

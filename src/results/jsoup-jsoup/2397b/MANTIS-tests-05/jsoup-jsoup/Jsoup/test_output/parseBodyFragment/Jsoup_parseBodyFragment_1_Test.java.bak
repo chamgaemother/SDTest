@@ -1,0 +1,38 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("TC06 parseBodyFragment uses a <base href> tag to override the provided baseUri for resolving relative links")
+    public void test_TC06() {
+        // Scenario TC06: baseTagOverride path B0→B1→B2(baseTagOverride)→B3
+        // GIVEN a base href in the fragment that is non-empty to trigger override of provided baseUri
+        String bodyHtml = "<base href='http://override.com/sub/'><a href='p.html'>x</a>";
+        String baseUri = "https://example.com/";
+        // WHEN parsing the body fragment
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        // THEN the link's absUrl should be resolved against the <base> href, not the provided baseUri
+        Element link = doc.body().selectFirst("a");
+        assertEquals("http://override.com/sub/p.html", link.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC07 parseBodyFragment ignores an empty <base href> tag and falls back to the provided baseUri for resolution")
+    public void test_TC07() {
+        // Scenario TC07: emptyBaseTag path B0→B1→B2(emptyBaseTag)→B3
+        // GIVEN an empty base href to trigger fallback to provided baseUri
+        String bodyHtml = "<base href=''><a href='page.html'>link</a>";
+        String baseUri = "https://example.com/root/";
+        // WHEN parsing the body fragment
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        // THEN the link's absUrl should be resolved against the provided baseUri
+        Element link = doc.body().selectFirst("a");
+        assertEquals("https://example.com/root/page.html", link.absUrl("href"));
+    }
+}

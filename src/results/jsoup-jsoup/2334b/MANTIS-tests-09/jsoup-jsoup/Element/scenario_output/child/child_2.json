@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "child(1) returns second element when mixed element and non-element childNodes are present",
+      "path": "B0→B3→B5(loop×4)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return second Element instance among filtered children",
+      "tags": [
+        "positive",
+        "filter",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child returns correct element with mixed children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = parent.appendElement(\"span\");",
+        "    parent.appendChild(new TextNode(\"foo\"));",
+        "    Element second = parent.appendElement(\"a\");",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(second, result);"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "childElementsList cache is invalidated after mutation and new element is returned on subsequent child() call",
+      "path": "B0→B3→B5(loop×n)→B7(cache)→nodelistChanged→B3→B5(loop×m)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "child(1) returns newly appended element after cache invalidation",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 child cache invalidation after mutation",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    // build cache",
+        "    parent.child(0);",
+        "  WHEN",
+        "    Element newChild = parent.appendElement(\"li\");",
+        "    Element second = parent.child(1);",
+        "  THEN",
+        "    assertSame(newChild, second);"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "child(-2) on element with two element children should throw IndexOutOfBoundsException (negative index beyond filtered lower bound)",
+      "path": "B0→B3→B5(loop×2)→B7→B8(get index)→exception",
+      "precondition": "none",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "boundary",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 child negative index beyond lower bound",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"p\");",
+        "    parent.appendElement(\"span\");",
+        "  WHEN",
+        "    call parent.child(-2);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    }
+  ]
+}

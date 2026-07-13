@@ -1,0 +1,240 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setTrackErrors enables and disables error tracking and affects isTrackErrors",
+      "path": "B0→B2→B3→B4→B5→B6",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "isTrackErrors returns true after setTrackErrors(5) and false after setTrackErrors(0)",
+      "tags": [
+        "positive",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 setTrackErrors toggles tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == true;",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackPosition toggles position tracking and isTrackPosition reflects it",
+      "path": "B0→B2→B7→B8",
+      "precondition": "Parser created with XmlTreeBuilder",
+      "expectedResult": "isTrackPosition returns true after setTrackPosition(true)",
+      "tags": [
+        "positive",
+        "branch",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 setTrackPosition enables tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert parser.isTrackPosition() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "htmlParser.defaultNamespace returns HTML namespace",
+      "path": "B0→B9→B10",
+      "precondition": "Parser created via htmlParser()",
+      "expectedResult": "defaultNamespace returns Parser.NamespaceHtml",
+      "tags": [
+        "positive",
+        "static",
+        "namespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 htmlParser defaultNamespace",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceHtml);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "xmlParser.defaultNamespace returns XML namespace",
+      "path": "B0→B11→B10",
+      "precondition": "Parser created via xmlParser()",
+      "expectedResult": "defaultNamespace returns Parser.NamespaceXml",
+      "tags": [
+        "positive",
+        "static",
+        "namespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 xmlParser defaultNamespace",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceXml);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseBodyFragment with two top-level nodes exercises backward removal and append loops",
+      "path": "B0→B12→B13(loop×1)→B14(loop×2)→B15",
+      "precondition": "none",
+      "expectedResult": "Document body contains both <p>one</p> and <p>two</p> in order",
+      "tags": [
+        "positive",
+        "loop",
+        "static",
+        "fragment",
+        "body"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseBodyFragment two nodes",
+        "  GIVEN",
+        "    String html = \"<p>one</p><p>two</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    List<Element> ps = doc.body().getElementsByTag(\"p\");",
+        "    assert ps.get(0).text().equals(\"one\");",
+        "    assert ps.get(1).text().equals(\"two\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "unescapeEntities unescapes with inAttribute=false and with inAttribute=true",
+      "path": "B0→B16→B17→B18",
+      "precondition": "none",
+      "expectedResult": "ampersand entities unescaped differently in attribute mode",
+      "tags": [
+        "positive",
+        "static",
+        "entities"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 unescapeEntities modes",
+        "  GIVEN",
+        "    String input = \"one &amp; two\";",
+        "    String inputAttr = \"one &amp; two\";",
+        "  WHEN",
+        "    String out1 = Parser.unescapeEntities(input, false);",
+        "    String out2 = Parser.unescapeEntities(inputAttr, true);",
+        "  THEN",
+        "    assert out1.equals(\"one & two\");",
+        "    assert out2.equals(\"one & two\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone and newInstance create independent parser instances with same settings",
+      "path": "B0→B2→B19→B20→B21",
+      "precondition": "Parser with custom settings and trackPosition=true",
+      "expectedResult": "cloned parser has separate treeBuilder and same trackPosition",
+      "tags": [
+        "positive",
+        "clone",
+        "newInstance"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone and newInstance independence",
+        "  GIVEN",
+        "    Parser p0 = Parser.htmlParser().setTrackPosition(true).settings(ParseSettings.preserveCase);",
+        "  WHEN",
+        "    Parser p1 = p0.clone();",
+        "    Parser p2 = p0.newInstance();",
+        "  THEN",
+        "    assert p1 != p0 && p2 != p0;",
+        "    assert p1.isTrackPosition() == true && p2.isTrackPosition() == true;",
+        "    assert p1.settings().equals(p0.settings());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "isContentForTagData returns true for 'script' and false for 'div'",
+      "path": "B0→B2→B22→B23→B24",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "true for 'script', false for 'div'",
+      "tags": [
+        "positive",
+        "branch",
+        "content-for-data"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 isContentForTagData various tags",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    boolean b1 = parser.isContentForTagData(\"script\");",
+        "    boolean b2 = parser.isContentForTagData(\"div\");",
+        "  THEN",
+        "    assert b1 == true;",
+        "    assert b2 == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseFragmentInput overloads with null context and String input trigger parseFragment",
+      "path": "B0→B25→B26→B27",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "returns non-empty List<Node> for simple fragment",
+      "tags": [
+        "positive",
+        "overload",
+        "fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput overloads",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String frag = \"<span>ok</span>\";",
+        "  WHEN",
+        "    List<Node> list1 = parser.parseFragmentInput(frag, null, \"\");",
+        "    List<Node> list2 = parser.parseFragmentInput(new StringReader(frag), null, \"\");",
+        "  THEN",
+        "    assert list1.size() == 1 && list2.size() == 1;",
+        "    assert ((Element)list1.get(0)).tagName().equals(\"span\");",
+        "END"
+      ]
+    }
+  ]
+}

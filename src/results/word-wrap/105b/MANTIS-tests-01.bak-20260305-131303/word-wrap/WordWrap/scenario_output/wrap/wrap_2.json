@@ -1,0 +1,128 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "wrap(String filename, Charset) writes wrapped output to named file and reads it back via wrapUtf8(String)",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "file path pointing to writable temporary file",
+      "expectedResult": "file contains same wrapped text as direct wrap()",
+      "tags": [
+        "positive",
+        "overload",
+        "file-io"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 wrap filename overload",
+        "  GIVEN",
+        "    String text = \"alpha beta gamma\";",
+        "    String tmp = createTempFilename();",
+        "  WHEN",
+        "    WordWrap.from(text).maxWidth(6).wrap(tmp, StandardCharsets.UTF_8);",
+        "    String fileContent = readFile(tmp, UTF-8);",
+        "    String direct = WordWrap.from(text).maxWidth(6).wrap();",
+        "  THEN",
+        "    assert fileContent.equals(direct);"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "from(File,Charset) throws IORuntimeException when input file not found",
+      "path": "B0→B1→B2(exception)",
+      "precondition": "File reference to non-existent file",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file-io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 missing input file",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "Long word broken without hyphens when insertHyphens=false and breakWords=true (writeBrokenWord else-branch)",
+      "path": "B0→read loop→tooLong→writeBrokenWord→else-branch→final",
+      "precondition": "none",
+      "expectedResult": "word split across lines without hyphens",
+      "tags": [
+        "positive",
+        "branch",
+        "hyphen-disable"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 breakWords with no hyphens",
+        "  GIVEN",
+        "    String w = \"abcdef\"; // length 6",
+        "  WHEN",
+        "    String result = WordWrap.from(w).maxWidth(2).breakWords(true).insertHyphens(false).wrap();",
+        "  THEN",
+        "    assert result.startsWith(\"ab\");",
+        "    assert result.contains(\"\\n\");",
+        "    assert !result.contains(\"-\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Trailing spaces before newline are trimmed by rightTrim path",
+      "path": "B0→read '\\n' branch→tooLong false→writeNewLine→final",
+      "precondition": "none",
+      "expectedResult": "output line has no trailing spaces",
+      "tags": [
+        "positive",
+        "whitespace",
+        "trim"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 rightTrim trailing spaces",
+        "  GIVEN",
+        "    String text = \"foo    \\n\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"foo\\n\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "wrap(LineConsumer) uses custom consumer to collect char arrays and newLine events",
+      "path": "B0→B1→B2→wordWrap(LineConsumer)→consumer.write→consumer.writeNewLine→final",
+      "precondition": "none",
+      "expectedResult": "LineConsumer receives correct segments and new lines",
+      "tags": [
+        "positive",
+        "overload",
+        "consumer"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 custom LineConsumer",
+        "  GIVEN",
+        "    List<String> parts = new ArrayList<>();",
+        "    LineConsumer c = new LineConsumer() {",
+        "      write(chars,off,len): parts.add(new String(chars,off,len));",
+        "      writeNewLine(): parts.add(\"<NL>\");",
+        "    };",
+        "  WHEN",
+        "    WordWrap.from(\"a bc\").maxWidth(1).wrap(c);",
+        "  THEN",
+        "    assert parts.equals(Arrays.asList(\"a\",\"<NL>\",\"b\",\"<NL>\",\"c\"));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "childElementsList() returns cached list on second reflective call when shadowChildrenRef is non-null",
+      "path": "B0→B3→B5(cache-null)→B7(cache-set)→B3→B6(cache-not-null)→B8(return cached)",
+      "precondition": "Element el has two element children; reflective access to package-private childElementsList",
+      "expectedResult": "Second invocation returns same List instance as first (cached)",
+      "tags": [
+        "reflection",
+        "cache",
+        "positive",
+        "package-private"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 childElementsList caching behavior",
+        "  GIVEN",
+        "    // Arrange",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"a\");",
+        "    el.appendElement(\"b\");",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    // Act - first and second reflective calls",
+        "    List<Element> first = (List<Element>) m.invoke(el);",
+        "    List<Element> second = (List<Element>) m.invoke(el);",
+        "  THEN",
+        "    // Assert",
+        "    assertSame(first, second);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "childElementsList() rebuilds list after cache invalidation via nodelistChanged()",
+      "path": "B0→B3→B5(cache-null)→B7(cache-set)→mutation→B9(invalidate)→B3→B5(rebuild)→B8(return new)",
+      "precondition": "Element el has one element child, reflective access to childElementsList",
+      "expectedResult": "After appending a second child, reflective invocation returns new List with two elements",
+      "tags": [
+        "reflection",
+        "cache",
+        "invalidate",
+        "positive",
+        "package-private"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 childElementsList cache invalidation and rebuild",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "    List<Element> original = (List<Element>) m.invoke(el);",
+        "  WHEN",
+        "    el.appendElement(\"p\");",
+        "    List<Element> rebuilt = (List<Element>) m.invoke(el);",
+        "  THEN",
+        "    assertEquals(2, rebuilt.size());",
+        "    assertEquals(\"p\", rebuilt.get(1).tagName());",
+        "END"
+      ]
+    }
+  ]
+}

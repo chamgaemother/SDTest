@@ -1,0 +1,106 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "htmlParser.tagSet() returns non-empty set containing standard HTML5 tags",
+      "path": "B0→B1→B2→B5",
+      "precondition": "none",
+      "expectedResult": "Set contains at least \"html\",\"body\",\"div\" and size > 0",
+      "tags": [
+        "positive",
+        "html",
+        "default"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 default-html-tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.size() > 0;",
+        "    assert tags.contains(\"html\");",
+        "    assert tags.contains(\"body\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "xmlParser.tagSet() returns an empty or minimal set since XML has no predefined HTML tags",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Set is empty or contains only XML namespace markers",
+      "tags": [
+        "positive",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 xml-parser-tagSet-empty",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.isEmpty() || !tags.contains(\"html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "invoking private tagSet() by reflection without setAccessible throws IllegalAccessException",
+      "path": "B0→B4→B6",
+      "precondition": "Parser has a private tagSet method",
+      "expectedResult": "IllegalAccessException is thrown",
+      "tags": [
+        "negative",
+        "reflection",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 reflect-tagSet-illegal-access",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\");",
+        "    // DO NOT call m.setAccessible(true)",
+        "  WHEN",
+        "    call m.invoke(parser);",
+        "  THEN",
+        "    throws IllegalAccessException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "invoking private tagSet() by reflection with setAccessible returns same as public htmlParser.tagSet()",
+      "path": "B0→B4→B5",
+      "precondition": "Parser has a private tagSet method",
+      "expectedResult": "returned set equals htmlParser.tagSet() direct call",
+      "tags": [
+        "positive",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 reflect-tagSet-accessible",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\");",
+        "    m.setAccessible(true);",
+        "    Set<String> direct = parser.tagSet();",
+        "  WHEN",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    Set<String> reflect = (Set<String>) m.invoke(parser);",
+        "  THEN",
+        "    assert reflect.equals(direct);",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "clone() on a document with custom Parser settings yields a deep copy of parser without affecting original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document with parser set to non-default HTML parser configured (e.g. xml parser settings)",
+      "expectedResult": "cloned.parser().settings() equals original.parser().settings() but is a distinct instance; modifying clone.parser() does not alter original.parser()",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone preserves and isolates custom parser",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    Parser custom = Parser.htmlParser().setTrackErrors(5);",
+        "    doc.parser(custom);",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc.parser(), cloned.parser());",
+        "    assertEquals(doc.parser().getErrorsTracked(), cloned.parser().getErrorsTracked());",
+        "    // modify cloned parser and assert no effect on original",
+        "    cloned.parser().setTrackErrors(0);",
+        "    assertNotEquals(doc.parser().getErrorsTracked(), cloned.parser().getErrorsTracked());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() on a document with modified OutputSettings (escapeMode and charset) yields isolated copy retaining settings",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document with outputSettings modified: escapeMode=extended, charset=ISO-8859-1",
+      "expectedResult": "cloned.outputSettings().escapeMode() and charset() match original but are distinct; changes on clone do not affect original",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "outputSettings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone preserves and isolates custom outputSettings",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().escapeMode(Entities.EscapeMode.extended).charset(\"ISO-8859-1\");",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc.outputSettings(), cloned.outputSettings());",
+        "    assertEquals(Entities.EscapeMode.extended, cloned.outputSettings().escapeMode());",
+        "    assertEquals(Charset.forName(\"ISO-8859-1\"), cloned.outputSettings().charset());",
+        "    // modify clone and assert original unchanged",
+        "    cloned.outputSettings().escapeMode(Entities.EscapeMode.xhtml);",
+        "    assertNotEquals(doc.outputSettings().escapeMode(), cloned.outputSettings().escapeMode());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() on a document with nested child elements yields a deep copy of childNodes that can be altered independently",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document with additional nested elements and attributes under body",
+      "expectedResult": "cloned.childNodes() size equals original; modifying a child in clone does not affect original",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "childNodes"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone deep-copies child nodes",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    Element body = doc.body();",
+        "    Element div = body.appendElement(\"div\").attr(\"id\", \"orig\");",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assertEquals(doc.childNodes().size(), cloned.childNodes().size());",
+        "    Element clonedDiv = cloned.body().selectFirst(\"div#orig\");",
+        "    assertNotNull(clonedDiv);",
+        "    // modify cloned div and assert original unaffected",
+        "    clonedDiv.attr(\"id\", \"changed\");",
+        "    assertNull(doc.selectFirst(\"div#changed\"));",
+        "END"
+      ]
+    }
+  ]
+}

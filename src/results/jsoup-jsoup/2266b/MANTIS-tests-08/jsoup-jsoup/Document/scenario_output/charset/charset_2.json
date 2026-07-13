@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "charset(Charset.UTF_8) with updateMetaCharset disabled does not modify HTML head",
+      "path": "B0→B1(false)",
+      "precondition": "Document.createShell(\"http://example.com\"), updateMetaCharsetElement(false)",
+      "expectedResult": "no meta[charset] or meta[name=charset] in document",
+      "tags": [
+        "negative",
+        "html",
+        "no-update"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 no-update-html",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    assertTrue(doc.select(\"meta[charset]\").isEmpty());",
+        "    assertTrue(doc.select(\"meta[name=charset]\").isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "charset(Charset.ISO_8859_1) with updateMetaCharset disabled in XML mode does not prepend XmlDeclaration",
+      "path": "B0→B1(false)",
+      "precondition": "Document.createShell(\"http://example.com\"), updateMetaCharsetElement(false), outputSettings.syntax(xml)",
+      "expectedResult": "first child remains html element, no XmlDeclaration prepended",
+      "tags": [
+        "negative",
+        "xml",
+        "no-update"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 no-update-xml",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"ISO-8859-1\"));",
+        "  THEN",
+        "    Node first = doc.childNode(0);",
+        "    assertFalse(first instanceof XmlDeclaration);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "charset(Charset.UTF_16) in XML mode updates existing XmlDeclaration without version attr only encoding",
+      "path": "B0→B1(true)→B4(xml)→B5(instanceof XmlDeclaration && name='xml' && !hasVersion)",
+      "precondition": "Document.createShell(\"http://example.com\"), updateMetaCharsetElement(true), outputSettings.syntax(xml), prepend XmlDeclaration name='xml' without version",
+      "expectedResult": "XmlDeclaration encoding updated; no version attribute present",
+      "tags": [
+        "xml",
+        "existing",
+        "version-absent"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xml-existing-no-version",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    decl.attr(\"encoding\", \"OLD\");",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    Node first = doc.childNode(0);",
+        "    assertTrue(first instanceof XmlDeclaration);",
+        "    XmlDeclaration out = (XmlDeclaration) first;",
+        "    assertEquals(Charset.forName(\"UTF-16\").displayName(), out.attr(\"encoding\"));",
+        "    assertFalse(out.hasAttr(\"version\"));",
+        "END"
+      ]
+    }
+  ]
+}

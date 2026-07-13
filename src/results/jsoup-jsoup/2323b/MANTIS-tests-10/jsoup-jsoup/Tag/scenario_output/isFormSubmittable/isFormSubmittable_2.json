@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "valueOf with preserveCase true and mixed-case tag triggers clone path before isFormSubmittable",
+      "path": "B0→B1(tagName trim)→B2(Tags.get(tagName) null)→B3(Tags.get(normalName) found)→B4(preserveCase && tagName!=normalName)→B5(clone)→B6(return)",
+      "precondition": "Parser.NamespaceHtml initialized; Tag static map populated",
+      "expectedResult": "returns a new Tag instance with tagName='DiV' and isFormSubmittable()==false",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 mixed-case clone path",
+        "  GIVEN",
+        "    String tagName = \"DiV\";",
+        "    String normalName = \"div\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag cloned = Tag.valueOf(tagName, normalName, ns, settings);",
+        "    boolean result = cloned.isFormSubmittable();",
+        "  THEN",
+        "    assert cloned != Tag.valueOf(normalName, ns, settings);",
+        "    assert cloned.getName().equals(\"DiV\");",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "valueOf with null ParseSettings throws NullPointerException before isFormSubmittable",
+      "path": "B0→B1(tagName ok)→B2(not empty)→B3(not null ns)→B4(Tags.get(tagName) succeed)→B5(settings.preserveTagCase NPE)",
+      "precondition": "Parser.NamespaceHtml initialized; Tag static map populated",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-settings"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 null-settings NPE",
+        "  GIVEN",
+        "    String tagName = \"p\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = null;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "valueOf full-overload returns static known tag and isFormSubmittable true for 'input'",
+      "path": "B0→B1(trim)→B2(not empty)→B3(not null ns)→B4(Tags.get(tagName) found & ns match)→B6(return)",
+      "precondition": "Parser.NamespaceHtml initialized; Tag static map populated",
+      "expectedResult": "returns same static Tag for 'input' and isFormSubmittable()==true",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 full-overload known-input",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String normalName = \"input\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag == Tag.valueOf(\"input\");",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

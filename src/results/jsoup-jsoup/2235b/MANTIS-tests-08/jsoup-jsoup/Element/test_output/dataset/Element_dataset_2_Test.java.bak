@@ -1,0 +1,50 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("dataset().remove(\"\") removes the underlying 'data-' attribute for empty key")
+    public void test_TC15() {
+        // GIVEN an Element with an explicit 'data-' attribute
+        Element el = new Element("div");
+        el.attributes().put("data-", "e");
+        // WHEN removing the map entry for empty string key, which should target the 'data-' attribute
+        Map<String, String> ds = el.dataset();
+        ds.remove("");
+        // THEN the underlying attribute 'data-' is removed
+        assertFalse(el.hasAttr("data-"), "Expected 'data-' attribute to be removed after ds.remove("")");
+    }
+
+    @Test
+    @DisplayName("dataset().put(\"\",…) creates an underlying 'data-' attribute for the empty string key")
+    public void test_TC16() {
+        // GIVEN a fresh Element with no attributes
+        Element el = new Element("span");
+        Map<String, String> ds = el.dataset();
+        // WHEN inserting a value under the empty key, mapping to 'data-'
+        ds.put("", "v");
+        // THEN the element should have an attribute 'data-' with the given value
+        assertEquals("v", el.attr("data-"), "Expected el.attr('data-') to be 'v' after ds.put("")");
+    }
+
+    @Test
+    @DisplayName("dataset().put(camelCaseKey,…) converts camelCase key to hyphenated data- attribute name")
+    public void test_TC17() {
+        // GIVEN a fresh Element with no attributes
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset();
+        // WHEN putting under camelCase key 'userName', should translate to 'data-user-name'
+        ds.put("userName", "jane");
+        // THEN no attribute 'data-userName' should exist (camelCase not used),
+        assertFalse(el.hasAttr("data-userName"), "Expected no attribute 'data-userName' after ds.put camelCase key");
+        // and the normalized hyphenated attribute must be present with correct value
+        assertEquals("jane", el.attr("data-user-name"), "Expected attribute 'data-user-name' with value 'jane'");
+    }
+}

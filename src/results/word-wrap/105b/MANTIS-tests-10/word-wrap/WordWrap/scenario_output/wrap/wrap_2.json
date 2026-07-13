@@ -1,0 +1,124 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "maxWidth(0) throws IllegalArgumentException when non-positive width passed",
+      "path": "B0→Builder.maxWidth→Preconditions.checkArgument→throw",
+      "precondition": "builder created via WordWrap.from(CharSequence)",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 maxWidth zero-argument",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"text\");",
+        "  WHEN",
+        "    call builder.maxWidth(0);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "wrap(Writer) wraps IOException from Writer into IORuntimeException",
+      "path": "B0→wordWrap→IOException→wrap→throw IORuntimeException",
+      "precondition": "none",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "exception",
+        "io",
+        "error-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 writer-throws-ioexception",
+        "  GIVEN",
+        "    Reader in = new StringReader(\"data\");",
+        "    Builder builder = WordWrap.from(in);",
+        "    Writer out = stub Writer that throws IOException on write;",
+        "  WHEN",
+        "    call builder.wrap(out);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "from(File,Charset) throws IORuntimeException when input File not found",
+      "path": "B0→from(File,Charset)→FileInputStream→FileNotFoundException→throw IORuntimeException",
+      "precondition": "file does not exist",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "exception",
+        "io",
+        "file"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 missing-input-file",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "fromUtf8(InputStream) uses InputStream+charset overload and wraps text",
+      "path": "B0→fromUtf8→from(InputStream,Charset)→wrap→normal return",
+      "precondition": "InputStream contains 'X Y'",
+      "expectedResult": "wrapped output equals input 'X Y'",
+      "tags": [
+        "positive",
+        "overload",
+        "inputstream"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 fromUtf8 and wrap output",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"X Y\".getBytes(StandardCharsets.UTF_8));",
+        "    Builder builder = WordWrap.fromUtf8(in);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    builder.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"X Y\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "includeExtraWordChars treats punctuation as word so no punctuation branch",
+      "path": "B0→includeExtraWordChars→wordCharacter branch→append to word→normal end",
+      "precondition": "builder created",
+      "expectedResult": "output preserves '?' as part of word without splitting",
+      "tags": [
+        "positive",
+        "configuration",
+        "punctuation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 include-punctuation-as-word",
+        "  GIVEN",
+        "    Builder builder = WordWrap.from(\"?a\");",
+        "    builder.includeExtraWordChars(\"?\");",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"?a\");"
+      ]
+    }
+  ]
+}

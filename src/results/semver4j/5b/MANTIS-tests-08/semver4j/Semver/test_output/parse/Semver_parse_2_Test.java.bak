@@ -1,0 +1,64 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.semver4j.Semver;
+import java.util.Arrays;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Semver_parse_Test {
+
+    @Test
+    @DisplayName("parse(\"1.2.3-beta\") returns a Semver with single pre-release and no build (successful branch)")
+    void test_TC08() {
+        // Input has a pre-release segment without build metadata, exercising B0→B1→B2→B3 successful path
+        String version = "1.2.3-beta";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver when parsing valid pre-release-only string");
+        assertEquals("1.2.3-beta", result.getVersion(), "Version string should include the pre-release");
+        assertEquals(Arrays.asList("beta"), result.getPreRelease(), "Pre-release list should contain exactly 'beta'");
+        assertTrue(result.getBuild().isEmpty(), "Build metadata list should be empty for pre-release-only version");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3+exp.sha\") returns a Semver with single build metadata and no pre-release (successful branch)")
+    void test_TC09() {
+        // Input has build metadata with a dot separated tokens, exercising B0→B1→B2→B3 successful path
+        String version = "1.2.3+exp.sha";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver when parsing valid build-only string");
+        assertEquals("1.2.3+exp.sha", result.getVersion(), "Version string should include the build metadata");
+        assertTrue(result.getPreRelease().isEmpty(), "Pre-release list should be empty for build-only version");
+        assertEquals(Arrays.asList("exp", "sha"), result.getBuild(), "Build metadata list should contain 'exp' and 'sha'");
+    }
+
+    @Test
+    @DisplayName("parse(\"01.02.003\") accepts numeric segments with leading zeros (successful branch)")
+    void test_TC10() {
+        // Input has leading zeros in numeric segments, should normalize them, exercising B0→B1→B2→B3 successful path
+        String version = "01.02.003";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver when parsing numeric segments with leading zeros");
+        assertEquals("1.2.3", result.getVersion(), "Version string should normalize leading zeros to '1.2.3'");
+        assertEquals(1, result.getMajor(), "Major version should be parsed as 1");
+        assertEquals(2, result.getMinor(), "Minor version should be parsed as 2");
+        assertEquals(3, result.getPatch(), "Patch version should be parsed as 3");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3-rc.1+001#tag\") returns null when build contains invalid character '#' (exception branch)")
+    void test_TC11() {
+        // Input has invalid character '#' in build metadata, should fail parsing and return null, exercising B0→B1→B4 exception path
+        String version = "1.2.3-rc.1+001#tag";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null Semver when parsing build metadata containing invalid character '#'");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3-\") returns null when pre-release token is empty (exception branch)")
+    void test_TC12() {
+        // Input ends with a hyphen indicating empty pre-release token, should fail parsing and return null, exercising B0→B1→B4 exception path
+        String version = "1.2.3-";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null Semver when parsing a dangling hyphen pre-release indicator");
+    }
+}

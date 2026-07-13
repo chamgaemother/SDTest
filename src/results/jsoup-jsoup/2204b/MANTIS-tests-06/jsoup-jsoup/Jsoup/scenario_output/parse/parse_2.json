@@ -1,0 +1,295 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(html, baseUri) returns a Document whose body contains the fragment and correct baseUri",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals fragment and baseUri is applied",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span>F</span>\";",
+        "    String base = \"http://b/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>F</span>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(html) uses empty baseUri and returns Document with fragment in body",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals fragment and baseUri is empty",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment no-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<div>X</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div> X</div>\") || doc.body().html().contains(\"<div>X</div>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parseBodyFragment(null, baseUri) throws NullPointerException for null HTML",
+      "path": "B0→B2→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "fragment"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parseBodyFragment null-bodyHtml",
+        "  GIVEN",
+        "    String fragment = null;",
+        "    String base = \"http://b/\";",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parseBodyFragment(null) throws NullPointerException for null HTML",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "fragment"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parseBodyFragment single-arg null-bodyHtml",
+        "  GIVEN",
+        "    String fragment = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(File) throws IOException for non-existent file",
+      "path": "B0→B1→B7",
+      "precondition": "File file = new File(\"no-such-file.html\");",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse File non-existent",
+        "  GIVEN",
+        "    File file = new File(\"no-such.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(file);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(File,charsetName,baseUri,parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B2→B8",
+      "precondition": "File file exists with minimal HTML",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "parser",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse File with null parser",
+        "  GIVEN",
+        "    File file = File.createTempFile(\"tc23\",\".html\");",
+        "    write \"<p>t</p>\" to file;",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"http://x/\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(file, charset, base, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(InputStream,charsetName,baseUri,parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B2→B8",
+      "precondition": "InputStream in = new ByteArrayInputStream(\"<a/>\".getBytes());",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stream",
+        "parser",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse InputStream with null parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<e/>\".getBytes());",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, base, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(Path) throws IOException for non-existent path",
+      "path": "B0→B1→B7",
+      "precondition": "Path path = Paths.get(\"missing.html\");",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "path",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse Path non-existent",
+        "  GIVEN",
+        "    Path path = Paths.get(\"no-file.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(path);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(Path,charsetName,baseUri,parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B2→B8",
+      "precondition": "Path path exists with HTML content",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "path",
+        "parser",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 parse Path with null parser",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"tc26\",\".html\");",
+        "    write \"<t/>\" to path;",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(path, charset, base, parser);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "parse(InputStream,charsetName,baseUri) with null InputStream throws NullPointerException",
+      "path": "B0→B1→B9",
+      "precondition": "InputStream in = null;",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stream",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC27 parse InputStream null-in",
+        "  GIVEN",
+        "    InputStream in = null;",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "parse(URL, timeout) with HTTP URL returns Document and applies timeout",
+      "path": "B0→B1→B3→B10→B11",
+      "precondition": "URL url = new URL(\"http://httpbin.org/html\");",
+      "expectedResult": "Document contains html tag and no exception",
+      "tags": [
+        "positive",
+        "network",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC28 parse URL success",
+        "  GIVEN",
+        "    URL url = new URL(\"http://httpbin.org/html\");",
+        "    int timeout = 5000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.select(\"html\").size() > 0;",
+        "END"
+      ]
+    }
+  ]
+}

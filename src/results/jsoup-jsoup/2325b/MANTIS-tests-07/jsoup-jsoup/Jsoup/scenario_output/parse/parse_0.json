@@ -1,0 +1,218 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse(html,baseUri) with non-empty html and valid baseUri returns parsed Document via Parser.parse",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document has body html equal to input html wrapped in <html><head></head><body>",
+      "tags": [
+        "branch-false(htmlEmpty)",
+        "branch-false(baseUriEmpty)",
+        "positive",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse with html and baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Test</p>\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse(html,baseUri) with empty html returns empty Document body",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document has empty body html string",
+      "tags": [
+        "branch-true(htmlEmpty)",
+        "branch-false(baseUriEmpty)",
+        "boundary",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse with empty html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse(html,baseUri) with null html throws NullPointerException at entry",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "exception",
+        "null-input",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse null html",
+        "  GIVEN",
+        "    String html = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse(html,baseUri) with empty baseUri returns Document and baseUri preserved as empty",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals \"\"",
+      "tags": [
+        "branch-true(baseUriEmpty)",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse with empty baseUri",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parse(html,baseUri,parser) with custom Parser stub is invoked correctly",
+      "path": "B0→B1→B6→B7",
+      "precondition": "parser is stub implementing Parser with parseInput(html,baseUri) returning dummy Document",
+      "expectedResult": "returned Document is the dummy Document from stub parser",
+      "tags": [
+        "branch-false(htmlEmpty)",
+        "overload:String,String,Parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 custom parser overload",
+        "  GIVEN",
+        "    String html = \"<x/>\";",
+        "    String baseUri = \"b\";",
+        "    Parser parser = stub parser that returns dummyDoc;",
+        "  WHEN",
+        "    Document result = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert result == dummyDoc;"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "parse(html,baseUri,parser) with null parser throws NullPointerException",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-parser",
+        "overload:String,String,Parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 null parser overload",
+        "  GIVEN",
+        "    String html = \"<a/>\";",
+        "    String baseUri = \"u\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parse(html,parser) with non-empty html and valid parser returns Document via parser.parseInput",
+      "path": "B0→B3→B8→B9",
+      "precondition": "parser stub provided returns stubDoc",
+      "expectedResult": "returned Document is stubDoc",
+      "tags": [
+        "overload:String,Parser",
+        "branch-false(htmlEmpty)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parse(html,parser)",
+        "  GIVEN",
+        "    String html = \"<b/>\";",
+        "    Parser parser = stub parser that returns stubDoc;",
+        "  WHEN",
+        "    Document result = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert result == stubDoc;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(html) with non-empty html returns Document via Parser.parse with empty baseUri",
+      "path": "B0→B3→B10→B11",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals \"\"",
+      "tags": [
+        "overload:String",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parse(html)",
+        "  GIVEN",
+        "    String html = \"<i/>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(html) with empty html returns Document with empty body",
+      "path": "B0→B3→B10→B11",
+      "precondition": "none",
+      "expectedResult": "returned Document.body().html() equals \"\"",
+      "tags": [
+        "overload:String",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parse empty html overload",
+        "  GIVEN",
+        "    String html = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");"
+      ]
+    }
+  ]
+}

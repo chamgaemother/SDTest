@@ -1,0 +1,91 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class NodeTraversor_traverse_2_Test {
+
+    @Test
+    @DisplayName("visitor replaces a child node in head triggers the 'replaced' branch (origSize==childSize)")
+    void test_TC07() {
+        // GIVEN: a root element with one child <p>; child replacement triggers replaced-branch (origSize == childSize)
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("head:" + node.nodeName() + ":" + depth);
+                // on encountering <p>, replace it with <span> to hit replaced branch
+                if ("p".equals(node.nodeName())) {
+                    node.replaceWith(new Element("span"));
+                }
+            }
+
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node.nodeName() + ":" + depth);
+            }
+        };
+
+        // WHEN: perform traversal
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: expect head:div, head:p, head:span, tail:span, tail:div
+        assertEquals(
+            Arrays.asList(
+                "head:div:0",
+                "head:p:1",
+                "head:span:1",
+                "tail:span:1",
+                "tail:div:0"
+            ), calls
+        );
+    }
+
+    @Test
+    @DisplayName("tree with two sibling children exercises sibling-iteration branch at depth>0 (B17→B18)")
+    void test_TC08() {
+        // GIVEN: a root with two siblings <a> and <b>; will traverse sibling branch at depth>0
+        Element root = new Element("div");
+        Element a = new Element("a");
+        Element b = new Element("b");
+        root.appendChild(a);
+        root.appendChild(b);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("H:" + node.nodeName() + ":" + depth);
+            }
+
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("T:" + node.nodeName() + ":" + depth);
+            }
+        };
+
+        // WHEN: perform traversal
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: head/tail on <a> and <b> at depth1 then tail on root
+        assertEquals(
+            Arrays.asList(
+                "H:div:0",
+                "H:a:1",
+                "T:a:1",
+                "H:b:1",
+                "T:b:1",
+                "T:div:0"
+            ), calls
+        );
+    }
+}

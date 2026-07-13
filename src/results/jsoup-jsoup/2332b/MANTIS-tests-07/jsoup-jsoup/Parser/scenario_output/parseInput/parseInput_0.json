@@ -1,0 +1,241 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with non-empty HTML and non-null baseUri invokes treeBuilder.parse and returns Document",
+      "path": "B1→B2→B3",
+      "precondition": "Use FakeTreeBuilder stub where parse(input, uri, parser) returns a sentinel Document instance; html = \"<p>text</p>\", baseUri = \"http://example.com\"",
+      "expectedResult": "returned Document is the sentinel instance from FakeTreeBuilder.parse",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-non-empty",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 non-empty-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); String html = \"<p>text</p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc == fakeTreeBuilder.sentinelDoc;"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) with empty HTML string and non-null baseUri returns Document",
+      "path": "B1→B2→B3",
+      "precondition": "Use FakeTreeBuilder stub where parse(input, uri, parser) returns sentinel Document; html = \"\"; baseUri = \"http://example.com\"",
+      "expectedResult": "returned Document is the sentinel instance from FakeTreeBuilder.parse",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-empty",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 empty-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); String html = \"\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc == fakeTreeBuilder.sentinelDoc;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null html throws NullPointerException",
+      "path": "B1",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "overload:String,baseUri",
+        "exception",
+        "branch-null-html",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 null-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()); String html = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseInput(String, String) with null baseUri throws NullPointerException",
+      "path": "B1→B2",
+      "precondition": "Use FakeTreeBuilder stub; html = \"<div/>\"; baseUri = null",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "overload:String,baseUri",
+        "exception",
+        "branch-null-baseUri",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); String html = \"<div/>\"; String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) with Reader containing non-empty content and non-null baseUri returns Document",
+      "path": "B1→B2→B3",
+      "precondition": "Use FakeTreeBuilder stub where parse(reader, uri, parser) returns sentinel Document; reader = new StringReader(\"<span>hi</span>\"); baseUri = \"http://x\"",
+      "expectedResult": "returned Document is the sentinel instance from FakeTreeBuilder.parse",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-non-empty",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 reader-non-empty",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"<span>hi</span>\"); String baseUri = \"http://x\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc == fakeTreeBuilder.sentinelDoc;"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) with Reader containing empty content returns Document",
+      "path": "B1→B2→B3",
+      "precondition": "Use FakeTreeBuilder stub; reader = new StringReader(\"\"); baseUri = \"base\"",
+      "expectedResult": "returned Document is the sentinel instance from FakeTreeBuilder.parse",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-empty",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 reader-empty",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"\"); String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc == fakeTreeBuilder.sentinelDoc;"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parseInput(Reader, String) with null Reader throws NullPointerException",
+      "path": "B1",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "overload:Reader,baseUri",
+        "exception",
+        "branch-null-reader",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 null-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()); Reader reader = null; String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "parseInput(Reader, String) with null baseUri throws NullPointerException",
+      "path": "B1→B2",
+      "precondition": "Use FakeTreeBuilder stub; reader = new StringReader(\"x\"); baseUri = null",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "overload:Reader,baseUri",
+        "exception",
+        "branch-null-baseUri",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"x\"); String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parseInput(String, String) propagates exception thrown by treeBuilder.parse",
+      "path": "B1→B2",
+      "precondition": "Use FakeTreeBuilder stub set to throw IllegalStateException(\"parse failed\") on parse; html = \"<a>\"; baseUri = \"u\"",
+      "expectedResult": "throws IllegalStateException with message \"parse failed\"; no state mutated",
+      "tags": [
+        "overload:String,baseUri",
+        "exception",
+        "branch-builder-exception",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O1 builder-throws",
+        "  GIVEN",
+        "    FakeTreeBuilder stub throws IllegalStateException(\"parse failed\") when parse called; Parser parser = new Parser(fakeTreeBuilder); String html = \"<a>\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException(\"parse failed\");"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "parseInput(Reader, String) propagates exception thrown by treeBuilder.parse",
+      "path": "B1→B2",
+      "precondition": "Use FakeTreeBuilder stub set to throw IllegalArgumentException(\"err\") on parse; reader = new StringReader(\"<b>\"); baseUri = \"u\"",
+      "expectedResult": "throws IllegalArgumentException with message \"err\"; no state mutated",
+      "tags": [
+        "overload:Reader,baseUri",
+        "exception",
+        "branch-builder-exception",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O2 builder-throws",
+        "  GIVEN",
+        "    FakeTreeBuilder stub throws IllegalArgumentException(\"err\") when parse called; Parser parser = new Parser(fakeTreeBuilder); Reader reader = new StringReader(\"<b>\"); String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException(\"err\");"
+      ]
+    }
+  ]
+}

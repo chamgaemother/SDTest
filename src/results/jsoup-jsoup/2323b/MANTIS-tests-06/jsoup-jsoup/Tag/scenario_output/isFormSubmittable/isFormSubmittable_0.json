@@ -1,0 +1,79 @@
+{
+  "method": "isFormSubmittable",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Unknown tag created via valueOf(String) returns false for form submittable (branch: not in formSubmitTags)",
+      "path": "B1→B2",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "branch-false",
+        "unknown-tag",
+        "valueOf:String",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 unknown-tag-not-submittable",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"custom\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Known submit tag \"input\" returns true for form submittable (branch: in formSubmitTags)",
+      "path": "B1→B2",
+      "precondition": "static initialization has populated formSubmitTags with \"input\"",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "branch-true",
+        "known-tag",
+        "valueOf:String",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 input-tag-submittable",
+        "  GIVEN",
+        "    Tag tag = Tag.valueOf(\"input\");",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Known submit tag with preserved case returns true for form submittable after clone (branch: preserveTagCase true)",
+      "path": "B1→B2",
+      "precondition": "ParseSettings.preserveCase returns true; static formSubmitTags contains \"input\"; mocking not required",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "branch-true",
+        "known-tag",
+        "valueOf:String,ParseSettings",
+        "preserve-case",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 input-tag-preserve-case-submittable",
+        "  GIVEN",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "    Tag tag = Tag.valueOf(\"INPUT\",\"html\",settings);",
+        "  WHEN",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;"
+      ]
+    }
+  ]
+}

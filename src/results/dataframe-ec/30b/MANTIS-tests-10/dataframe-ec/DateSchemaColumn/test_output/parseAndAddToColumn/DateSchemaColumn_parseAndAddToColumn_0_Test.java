@@ -1,0 +1,85 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DataFrame;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DateSchemaColumn_parseAndAddToColumn_0_Test {
+
+    // A simple stub implementing DfColumn to record the argument passed to addObject
+    private static class StubColumn implements DfColumn {
+        Object addedObject;
+
+        @Override
+        public void addObject(Object object) {
+            this.addedObject = object;
+        }
+
+        // Implementing the missing abstract method from DfColumn
+        @Override
+        public void copyTo(DataFrame df) {
+            // No implementation needed for stub
+        }
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when input string is null (aString == null branch)")
+    public void test_TC01() {
+        // Input is null to trigger the aString == null branch
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        StubColumn stub = new StubColumn();
+        String aString = null;
+
+        column.parseAndAddToColumn(aString, (DfColumn) stub);
+
+        // Expect null was added
+        assertNull(stub.addedObject, "Expected addedObject to be null when input is null");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() branch)")
+    public void test_TC02() {
+        // Input consists of only whitespace to trigger trimmed.isEmpty() == true
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        StubColumn stub = new StubColumn();
+        String aString = "   ";
+
+        column.parseAndAddToColumn(aString, (DfColumn) stub);
+
+        // Expect null was added for empty trimmed string
+        assertNull(stub.addedObject, "Expected addedObject to be null when input is whitespace");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds LocalDate when input matches pattern (both branches false)")
+    public void test_TC03() {
+        // Valid date string matching the pattern to follow the normal parse path
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        StubColumn stub = new StubColumn();
+        String aString = "2020-1-2";
+
+        column.parseAndAddToColumn(aString, (DfColumn) stub);
+
+        // Expect the parsed LocalDate to be added
+        assertEquals(LocalDate.of(2020, 1, 2), stub.addedObject,
+            "Expected addedObject to equal LocalDate.of(2020, 1, 2) for valid input");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for invalid date string (parse error branch)")
+    public void test_TC04() {
+        // Invalid date string that does not match the pattern, causing a parse exception
+        DateSchemaColumn column = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        StubColumn stub = new StubColumn();
+        String aString = "bad-date";
+
+        // Expect DateTimeParseException to be thrown for invalid format
+        assertThrows(DateTimeParseException.class, () -> column.parseAndAddToColumn(aString, (DfColumn) stub));
+    }
+}

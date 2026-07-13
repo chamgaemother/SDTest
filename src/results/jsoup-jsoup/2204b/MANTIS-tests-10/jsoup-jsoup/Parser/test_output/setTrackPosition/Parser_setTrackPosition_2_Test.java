@@ -1,0 +1,48 @@
+package org.jsoup.parser;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * JUnit 5 tests for Parser newInstance copying trackPosition flag.
+ */
+public class Parser_setTrackPosition_2_Test {
+
+    @Test
+    @DisplayName("TC04: newInstance() copies a true trackPosition setting into the new Parser instance")
+    public void test_TC04() {
+        // GIVEN: set trackPosition=true on original parser (ensures branch B2 sets true flag in copy)
+        Parser parser = new Parser(new HtmlTreeBuilder()).setTrackPosition(true);
+        
+        // WHEN: create new instance via newInstance (enters B1->B2->B3 in copy constructor)
+        Parser newParser = parser.newInstance();
+        
+        // THEN: newParser must be a distinct object (not the same reference)
+        assertNotSame(parser, newParser, "newInstance should return a new Parser object, not the same reference");
+        // THEN: newParser should have trackPosition=true as copied
+        assertTrue(newParser.isTrackPosition(), "Copied parser should preserve trackPosition=true setting");
+    }
+
+    @Test
+    @DisplayName("TC05: newInstance() copies a false trackPosition setting into the new Parser instance")
+    public void test_TC05() {
+        // GIVEN: default parser has trackPosition=false by default (flag not set)
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // verify precondition: default is false
+        assertFalse(parser.isTrackPosition(), "Default parser should have trackPosition=false");
+        
+        // WHEN: create new instance; copying should preserve false (hits B1->B2->B3)
+        Parser newParser = parser.newInstance();
+        
+        // THEN: ensure distinct object reference
+        assertNotSame(parser, newParser, "newInstance should return a distinct Parser instance");
+        // THEN: preserve false flag
+        assertFalse(newParser.isTrackPosition(), "Copied parser should preserve trackPosition=false setting");
+    }
+}

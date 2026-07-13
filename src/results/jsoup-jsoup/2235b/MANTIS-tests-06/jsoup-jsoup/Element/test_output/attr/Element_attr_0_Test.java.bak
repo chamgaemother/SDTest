@@ -1,0 +1,138 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("TC01: attr(String,String) sets new attribute when key and value non-null covering normal branch")
+    public void test_TC01() {
+        // Given: a new element with no prior attributes, testing normal branch to set attribute
+        Element el = new Element("div");
+        String key = "title";
+        String value = "Jsoup";
+        // When: setting a new attribute
+        el.attr(key, value);
+        // Then: the attribute map should contain the key with the exact value
+        assertEquals("Jsoup", el.attributes().get("title"));
+    }
+
+    @Test
+    @DisplayName("TC02: attr(String,String) overrides existing attribute value covering update branch")
+    public void test_TC02() {
+        // Given: element already has attribute "data", testing override branch
+        Element el = new Element("span");
+        el.attr("data", "initial");
+        // When: overriding the existing attribute
+        el.attr("data", "updated");
+        // Then: the attribute value should be updated
+        assertEquals("updated", el.attributes().get("data"));
+    }
+
+    @Test
+    @DisplayName("TC03: attr(String,String) with empty value sets attribute to empty string covering boundary empty value")
+    public void test_TC03() {
+        // Given: a new element, testing boundary with empty string value
+        Element el = new Element("p");
+        String key = "empty";
+        String value = "";
+        // When: setting attribute with empty value
+        el.attr(key, value);
+        // Then: the attribute map should have key mapped to empty string
+        assertEquals("", el.attributes().get("empty"));
+    }
+
+    @Test
+    @DisplayName("TC04: attr(String,String) throws IllegalArgumentException when key is null covering exception on key null")
+    public void test_TC04() {
+        // Given: null key should trigger validation exception
+        Element el = new Element("div");
+        String key = null;
+        String value = "v";
+        // When/Then: expect IllegalArgumentException for null key
+        assertThrows(IllegalArgumentException.class, () -> el.attr(key, value));
+    }
+
+    @Test
+    @DisplayName("TC05: attr(String,String) throws IllegalArgumentException when value is null covering exception on value null")
+    public void test_TC05() {
+        // Given: null value should trigger validation exception
+        Element el = new Element("div");
+        String key = "k";
+        String value = null;
+        // When/Then: expect IllegalArgumentException for null value
+        assertThrows(IllegalArgumentException.class, () -> el.attr(key, value));
+    }
+
+    @Test
+    @DisplayName("TC06: attr(String,boolean) true adds boolean attribute covering boolean-true branch")
+    public void test_TC06() {
+        // Given: a new input element, testing boolean true branch adds attribute with empty string value
+        Element el = new Element("input");
+        String key = "checked";
+        boolean value = true;
+        // When: setting boolean attribute true
+        el.attr(key, value);
+        // Then: attribute map should contain the key and the stored value is empty string
+        assertTrue(el.attributes().hasKey("checked"));
+        assertEquals("", el.attributes().get("checked"));
+    }
+
+    @Test
+    @DisplayName("TC07: attr(String,boolean) false removes existing attribute covering boolean-false remove branch")
+    public void test_TC07() {
+        // Given: element has boolean attribute "disabled" set to true, testing removal on false
+        Element el = new Element("button");
+        el.attr("disabled", true);
+        String key = "disabled";
+        boolean value = false;
+        // When: setting boolean attribute false should remove it
+        el.attr(key, value);
+        // Then: attribute map should not have the key
+        assertFalse(el.attributes().hasKey("disabled"));
+    }
+
+    @Test
+    @DisplayName("TC08: attr(String,boolean) false on absent attribute does nothing covering boolean-false no-op")
+    public void test_TC08() {
+        // Given: element does not have "readonly", testing no-op on false
+        Element el = new Element("input");
+        String key = "readonly";
+        boolean value = false;
+        // When: setting boolean attribute false
+        el.attr(key, value);
+        // Then: attribute map should still not have the key
+        assertFalse(el.attributes().hasKey("readonly"));
+    }
+
+    @Test
+    @DisplayName("TC09: attr(String,String) with empty key sets attribute with empty name covering boundary empty key")
+    public void test_TC09() {
+        // Given: empty key allowed, tests boundary case storing value under empty key
+        Element el = new Element("div");
+        String key = "";
+        String value = "value";
+        // When: setting attribute with empty key
+        el.attr(key, value);
+        // Then: attribute map should have empty key and proper value
+        assertTrue(el.attributes().hasKey(""));
+        assertEquals("value", el.attributes().get(""));
+    }
+
+    @Test
+    @DisplayName("TC10: attr(String,boolean) true then false toggles attribute covering boolean toggle sequence")
+    public void test_TC10() {
+        // Given: a new element, testing toggle of boolean attribute sequence
+        Element el = new Element("div");
+        String key = "hidden";
+        // When: set true then false
+        el.attr(key, true);
+        // ensure it was added
+        assertTrue(el.attributes().hasKey("hidden"));
+        el.attr(key, false);
+        // Then: after false, attribute should be removed
+        assertFalse(el.attributes().hasKey("hidden"));
+    }
+}

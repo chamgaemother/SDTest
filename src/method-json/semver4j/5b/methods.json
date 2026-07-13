@@ -1,0 +1,1507 @@
+[
+  {
+    "clazz": "org.semver4j.RangesExpression",
+    "methodName": "and",
+    "signature": "org.semver4j.RangesExpression and(org.semver4j.RangesExpression)",
+    "visibility": "public",
+    "body": "{\n    RangesList rangesList \u003d rangeExpression.get();\n    List\u003cList\u003cRange\u003e\u003e lists \u003d rangesList.get();\n    for (List\u003cRange\u003e list : lists) {\n        andOperationRanges.addAll(list);\n        if (lists.size() \u003e 1) {\n            flushAndClearAndOperationRangesToRangesList();\n        }\n    }\n    return this;\n}",
+    "nodes": 6,
+    "edges": 7,
+    "cc": 3,
+    "flowSummary": [
+      "B1 : If($z0 \u003d\u003d 0) -\u003e B2 | else -\u003e B5",
+      "B2 : If($i0 \u003c\u003d 1) -\u003e B3 | else -\u003e B4"
+    ],
+    "blockList": [
+      "B0 {\n  RangesExpression\n  RangesExpression\n  $r1 \u003d r0.get()\n  $r2 \u003d $r1.get()\n  $r3 \u003d $r2.iterator()\n}",
+      "B1 {\n  $z0 \u003d $r3.hasNext()\n  if ($z0 \u003d\u003d 0) goto B2 else B5\n}",
+      "B2 {\n  $r5 \u003d $r3.next()\n  r6 \u003d List) $r5\n  $r7 \u003d List andOperationRanges\u003e\n  $r7.addAll(r6)\n  $i0 \u003d $r2.size()\n  if ($i0 \u003c\u003d 1) goto B3 else B4\n}",
+      "B3 {\n  r4.flushAndClearAndOperationRangesToRangesList()\n}",
+      "B4 {\n  goto B1\n}",
+      "B5 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B1 --\u003e B2",
+      "B1 --\u003e B5",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B4 --\u003e B1",
+      "B5 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "RangesExpression#flushAndClearAndOperationRangesToRangesList(...0)",
+        "body": "{\n    rangesList.add(new ArrayList\u003c\u003e(andOperationRanges));\n    andOperationRanges.clear();\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Coerce",
+    "methodName": "coerce",
+    "signature": "java.lang.String coerce(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    Matcher matcher \u003d PATTERN.matcher(version);\n    if (matcher.find()) {\n        String coercedMajor \u003d matcher.group(2);\n        String coercedMinor \u003d Optional.ofNullable(matcher.group(3)).orElse(\"0\");\n        String coercedPath \u003d Optional.ofNullable(matcher.group(4)).orElse(\"0\");\n        return format(Locale.ROOT, \"%s.%s.%s\", coercedMajor, coercedMinor, coercedPath);\n    }\n    return null;\n}",
+    "nodes": 3,
+    "edges": 2,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($z0 \u003d\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  String\n  $r1 \u003d Pattern PATTERN\u003e\n  $r2 \u003d $r1.matcher(r0)\n  $z0 \u003d $r2.find()\n  if ($z0 \u003d\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $r3 \u003d $r2.group(2)\n  $r4 \u003d $r2.group(3)\n  $r5 \u003d Optional.ofNullable($r4)\n  $r6 \u003d $r5.orElse(\"0\")\n  r7 \u003d String) $r6\n  $r8 \u003d $r2.group(4)\n  $r9 \u003d Optional.ofNullable($r8)\n  $r10 \u003d $r9.orElse(\"0\")\n  r11 \u003d String) $r10\n  $r13 \u003d Locale ROOT\u003e\n  $r12 \u003d Object)[3]\n  $r12[0] \u003d $r3\n  $r12[1] \u003d r7\n  $r12[2] \u003d r11\n  $r14 \u003d String.format($r13, \"%s.%s.%s\", $r12)\n  return\n}",
+      "B2 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Coerce#format(...5)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.StrictParser",
+    "methodName": "parse",
+    "signature": "org.semver4j.internal.StrictParser$Version parse(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    Matcher matcher \u003d pattern.matcher(version);\n    if (!matcher.matches()) {\n        throw new SemverException(format(Locale.ROOT, \"Version [%s] is not valid semver.\", version));\n    }\n    int major \u003d parseInt(matcher.group(1));\n    int minor \u003d parseInt(matcher.group(2));\n    int patch \u003d parseInt(matcher.group(3));\n    List\u003cString\u003e preRelease \u003d convertToList(matcher.group(4));\n    List\u003cString\u003e build \u003d convertToList(matcher.group(5));\n    return new Version(major, minor, patch, preRelease, build);\n}",
+    "nodes": 3,
+    "edges": 2,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  String\n  $r1 \u003d Pattern pattern\u003e\n  $r2 \u003d $r1.matcher(r0)\n  $z0 \u003d $r2.matches()\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $r11 \u003d SemverException\n  $r13 \u003d Locale ROOT\u003e\n  $r12 \u003d Object)[1]\n  $r12[0] \u003d r0\n  $r14 \u003d String.format($r13, \"Version %s is not valid semver.\", $r12)\n  new SemverException($r14)\n  throw $r11\n}",
+      "B2 {\n  $r3 \u003d $r2.group(1)\n  $i0 \u003d StrictParser.parseInt($r3)\n  $r4 \u003d $r2.group(2)\n  $i1 \u003d StrictParser.parseInt($r4)\n  $r5 \u003d $r2.group(3)\n  $i2 \u003d StrictParser.parseInt($r5)\n  $r6 \u003d $r2.group(4)\n  $r7 \u003d StrictParser.convertToList($r6)\n  $r8 \u003d $r2.group(5)\n  $r9 \u003d StrictParser.convertToList($r8)\n  $r10 \u003d StrictParser$Version\n  new StrictParser$Version($i0, $i1, $i2, $r7, $r9)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "StrictParser#format(...3)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "StrictParser#convertToList(...1)",
+        "body": "{\n    return toList \u003d\u003d null ? emptyList() : asList(toList.split(\"\\\\.\"));\n}"
+      },
+      {
+        "name": "StrictParser#parseInt(...1)",
+        "body": "{\n    BigInteger secureNumber \u003d new BigInteger(maybeInt);\n    if (maxInt.compareTo(secureNumber) \u003c 0) {\n        throw new SemverException(format(Locale.ROOT, \"Value [%s] is too big.\", maybeInt));\n    }\n    /*\n         * Do not use BigInteger.intValueExact() because it is not available on Android with API \u003c 31.\n         * The use of BigInteger.intValue() here is always valid since the above check guarantees that\n         * the BigInteger is not too big to fit in an int (non-negative integer \u003c\u003d Integer.MAX_VALUE).\n         * In other words, BigInteger.intValueExact() would never throw, meaning, it is not necessary.\n         */\n    return secureNumber.intValue();\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Comparator",
+    "methodName": "compareTo",
+    "signature": "int compareTo(org.semver4j.Semver,org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    int result \u003d mainCompare(version, other);\n    if (result \u003d\u003d 0) {\n        return preReleaseCompare(version, other);\n    }\n    return result;\n}",
+    "nodes": 3,
+    "edges": 2,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($i0 !\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d Comparator.mainCompare(r0, r1)\n  if ($i0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $i1 \u003d Comparator.preReleaseCompare(r0, r1)\n  return\n}",
+      "B2 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Comparator#preReleaseCompare(...2)",
+        "body": "{\n    if (!version.getPreRelease().isEmpty() \u0026\u0026 other.getPreRelease().isEmpty()) {\n        return -1;\n    } else if (version.getPreRelease().isEmpty() \u0026\u0026 !other.getPreRelease().isEmpty()) {\n        return 1;\n    } else if (version.getPreRelease().isEmpty() \u0026\u0026 other.getPreRelease().isEmpty()) {\n        return 0;\n    }\n    int maxElements \u003d max(version.getPreRelease().size(), other.getPreRelease().size());\n    int i \u003d 0;\n    do {\n        String a \u003d getString(i, version.getPreRelease());\n        String b \u003d getString(i, other.getPreRelease());\n        i++;\n        if (a.equals(UNDEFINED_MARKER) \u0026\u0026 b.equals(UNDEFINED_MARKER)) {\n            return 0;\n        } else if (b.equals(UNDEFINED_MARKER)) {\n            return 1;\n        } else if (a.equals(UNDEFINED_MARKER)) {\n            return -1;\n        } else if (a.equals(b)) {\n            continue;\n        }\n        return compareIdentifiers(a, b);\n    } while (maxElements \u003e i);\n    return 0;\n}"
+      },
+      {
+        "name": "Comparator#mainCompare(...2)",
+        "body": "{\n    int majorCompare \u003d Long.compare(version.getMajor(), other.getMajor());\n    if (majorCompare \u003d\u003d 0) {\n        int minorCompare \u003d Long.compare(version.getMinor(), other.getMinor());\n        if (minorCompare \u003d\u003d 0) {\n            return Long.compare(version.getPatch(), other.getPatch());\n        } else {\n            return minorCompare;\n        }\n    } else {\n        return majorCompare;\n    }\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Modifier",
+    "methodName": "nextMajor",
+    "signature": "org.semver4j.Semver nextMajor(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    int nextMajor \u003d version.getMajor();\n    // Prerelease version 1.0.0-5 bumps to 1.0.0\n    if (version.getMinor() !\u003d 0 || version.getPatch() !\u003d 0 || version.getPreRelease().isEmpty()) {\n        nextMajor \u003d nextMajor + 1;\n    }\n    String newVersion \u003d createFullVersion(version, format(Locale.ROOT, MAJOR_FORMAT, nextMajor), emptyList());\n    return new Semver(newVersion);\n}",
+    "nodes": 5,
+    "edges": 7,
+    "cc": 4,
+    "flowSummary": [
+      "B0 : If($i1 !\u003d 0) -\u003e B1 | else -\u003e B3",
+      "B1 : If($i2 !\u003d 0) -\u003e B2 | else -\u003e B3",
+      "B2 : If($z0 \u003d\u003d 0) -\u003e B3 | else -\u003e B4"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  $i0 \u003d r0.getMajor()\n  i3 \u003d $i0\n  $i1 \u003d r0.getMinor()\n  if ($i1 !\u003d 0) goto B1 else B3\n}",
+      "B1 {\n  $i2 \u003d r0.getPatch()\n  if ($i2 !\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $r1 \u003d r0.getPreRelease()\n  $z0 \u003d $r1.isEmpty()\n  if ($z0 \u003d\u003d 0) goto B3 else B4\n}",
+      "B3 {\n  i3 \u003d $i0 + 1\n}",
+      "B4 {\n  $r2 \u003d Locale ROOT\u003e\n  $r3 \u003d Object)[1]\n  $r4 \u003d Integer.valueOf(i3)\n  $r3[0] \u003d $r4\n  $r5 \u003d String.format($r2, \"%d.0.0\", $r3)\n  $r6 \u003d Collections.emptyList()\n  $r7 \u003d Modifier.createFullVersion(r0, $r5, $r6)\n  $r8 \u003d Semver\n  new Semver($r7)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B3",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B4 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Modifier#format(...3)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#emptyList(...0)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#createFullVersion(...3)",
+        "body": "{\n    return createFullVersion(main, preRelease, version.getBuild());\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Modifier",
+    "methodName": "nextMinor",
+    "signature": "org.semver4j.Semver nextMinor(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    int nextMinor \u003d version.getMinor();\n    // Prerelease version 1.2.0-5 bumps to 1.2.0\n    if (version.getPatch() !\u003d 0 || version.getPreRelease().isEmpty()) {\n        nextMinor \u003d nextMinor + 1;\n    }\n    String newVersion \u003d createFullVersion(version, format(Locale.ROOT, MAJOR_MINOR_FORMAT, version.getMajor(), nextMinor), emptyList());\n    return new Semver(newVersion);\n}",
+    "nodes": 4,
+    "edges": 5,
+    "cc": 3,
+    "flowSummary": [
+      "B0 : If($i1 !\u003d 0) -\u003e B1 | else -\u003e B2",
+      "B1 : If($z0 \u003d\u003d 0) -\u003e B2 | else -\u003e B3"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  $i0 \u003d r0.getMinor()\n  i2 \u003d $i0\n  $i1 \u003d r0.getPatch()\n  if ($i1 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $r1 \u003d r0.getPreRelease()\n  $z0 \u003d $r1.isEmpty()\n  if ($z0 \u003d\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  i2 \u003d $i0 + 1\n}",
+      "B3 {\n  $r2 \u003d Locale ROOT\u003e\n  $r3 \u003d Object)[2]\n  $i3 \u003d r0.getMajor()\n  $r4 \u003d Integer.valueOf($i3)\n  $r3[0] \u003d $r4\n  $r5 \u003d Integer.valueOf(i2)\n  $r3[1] \u003d $r5\n  $r6 \u003d String.format($r2, \"%d.%d.0\", $r3)\n  $r7 \u003d Collections.emptyList()\n  $r8 \u003d Modifier.createFullVersion(r0, $r6, $r7)\n  $r9 \u003d Semver\n  new Semver($r8)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Modifier#format(...4)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#emptyList(...0)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#createFullVersion(...3)",
+        "body": "{\n    return createFullVersion(main, preRelease, version.getBuild());\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Modifier",
+    "methodName": "nextPatch",
+    "signature": "org.semver4j.Semver nextPatch(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    int newPatch \u003d version.getPatch();\n    // Prerelease version 1.2.0-5 bumps to 1.2.0\n    if (version.getPreRelease().isEmpty()) {\n        newPatch \u003d newPatch + 1;\n    }\n    String newVersion \u003d createFullVersion(version, format(Locale.ROOT, FULL_FORMAT, version.getMajor(), version.getMinor(), newPatch), emptyList());\n    return new Semver(newVersion);\n}",
+    "nodes": 3,
+    "edges": 3,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($z0 \u003d\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  $i0 \u003d r0.getPatch()\n  i3 \u003d $i0\n  $r1 \u003d r0.getPreRelease()\n  $z0 \u003d $r1.isEmpty()\n  if ($z0 \u003d\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  i3 \u003d $i0 + 1\n}",
+      "B2 {\n  $r3 \u003d Locale ROOT\u003e\n  $r2 \u003d Object)[3]\n  $i1 \u003d r0.getMajor()\n  $r4 \u003d Integer.valueOf($i1)\n  $r2[0] \u003d $r4\n  $i2 \u003d r0.getMinor()\n  $r5 \u003d Integer.valueOf($i2)\n  $r2[1] \u003d $r5\n  $r6 \u003d Integer.valueOf(i3)\n  $r2[2] \u003d $r6\n  $r7 \u003d String.format($r3, \"%d.%d.%d\", $r2)\n  $r8 \u003d Collections.emptyList()\n  $r9 \u003d Modifier.createFullVersion(r0, $r7, $r8)\n  $r10 \u003d Semver\n  new Semver($r9)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Modifier#format(...5)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#emptyList(...0)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "Modifier#createFullVersion(...3)",
+        "body": "{\n    return createFullVersion(main, preRelease, version.getBuild());\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.Differ",
+    "methodName": "diff",
+    "signature": "org.semver4j.Semver$VersionDiff diff(org.semver4j.Semver,org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    if (version.getMajor() !\u003d other.getMajor()) {\n        return MAJOR;\n    }\n    if (version.getMinor() !\u003d other.getMinor()) {\n        return MINOR;\n    }\n    if (version.getPatch() !\u003d other.getPatch()) {\n        return PATCH;\n    }\n    if (!version.getPreRelease().equals(other.getPreRelease())) {\n        return PRE_RELEASE;\n    }\n    if (!version.getBuild().equals(other.getBuild())) {\n        return BUILD;\n    }\n    return NONE;\n}",
+    "nodes": 11,
+    "edges": 10,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($i0 \u003d\u003d $i1) -\u003e B1 | else -\u003e B2",
+      "B2 : If($i2 \u003d\u003d $i3) -\u003e B3 | else -\u003e B4",
+      "B4 : If($i4 \u003d\u003d $i5) -\u003e B5 | else -\u003e B6",
+      "B6 : If($z0 !\u003d 0) -\u003e B7 | else -\u003e B8",
+      "B8 : If($z1 !\u003d 0) -\u003e B9 | else -\u003e B10"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.getMajor()\n  $i1 \u003d r1.getMajor()\n  if ($i0 \u003d\u003d $i1) goto B1 else B2\n}",
+      "B1 {\n  $r11 \u003d Semver$VersionDiff MAJOR\u003e\n  return\n}",
+      "B2 {\n  $i2 \u003d r0.getMinor()\n  $i3 \u003d r1.getMinor()\n  if ($i2 \u003d\u003d $i3) goto B3 else B4\n}",
+      "B3 {\n  $r10 \u003d Semver$VersionDiff MINOR\u003e\n  return\n}",
+      "B4 {\n  $i4 \u003d r0.getPatch()\n  $i5 \u003d r1.getPatch()\n  if ($i4 \u003d\u003d $i5) goto B5 else B6\n}",
+      "B5 {\n  $r9 \u003d Semver$VersionDiff PATCH\u003e\n  return\n}",
+      "B6 {\n  $r2 \u003d r0.getPreRelease()\n  $r3 \u003d r1.getPreRelease()\n  $z0 \u003d $r2.equals($r3)\n  if ($z0 !\u003d 0) goto B7 else B8\n}",
+      "B7 {\n  $r8 \u003d Semver$VersionDiff PRE_RELEASE\u003e\n  return\n}",
+      "B8 {\n  $r4 \u003d r0.getBuild()\n  $r5 \u003d r1.getBuild()\n  $z1 \u003d $r4.equals($r5)\n  if ($z1 !\u003d 0) goto B9 else B10\n}",
+      "B9 {\n  $r7 \u003d Semver$VersionDiff BUILD\u003e\n  return\n}",
+      "B10 {\n  $r6 \u003d Semver$VersionDiff NONE\u003e\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e [EXIT]",
+      "B4 --\u003e B5",
+      "B4 --\u003e B6",
+      "B5 --\u003e [EXIT]",
+      "B6 --\u003e B7",
+      "B6 --\u003e B8",
+      "B7 --\u003e [EXIT]",
+      "B8 --\u003e B9",
+      "B8 --\u003e B10",
+      "B9 --\u003e [EXIT]",
+      "B10 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.HyphenProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    Matcher matcher \u003d pattern.matcher(range);\n    if (!matcher.matches()) {\n        return null;\n    }\n    String rangeFrom \u003d getRangeFrom(matcher);\n    String rangeTo \u003d getRangeTo(matcher);\n    return format(Locale.ROOT, \"%s %s\", rangeFrom, rangeTo);\n}",
+    "nodes": 3,
+    "edges": 2,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  HyphenProcessor\n  String\n  $r1 \u003d Pattern pattern\u003e\n  $r2 \u003d $r1.matcher(r0)\n  $z0 \u003d $r2.matches()\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  $r4 \u003d r3.getRangeFrom($r2)\n  $r5 \u003d r3.getRangeTo($r2)\n  $r7 \u003d Locale ROOT\u003e\n  $r6 \u003d Object)[2]\n  $r6[0] \u003d $r4\n  $r6[1] \u003d $r5\n  $r8 \u003d String.format($r7, \"%s %s\", $r6)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "HyphenProcessor#format(...4)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "HyphenProcessor#getRangeTo(...1)",
+        "body": "{\n    String to \u003d matcher.group(7);\n    int toMajor \u003d parseIntWithXSupport(matcher.group(8));\n    int toMinor \u003d parseIntWithXSupport(matcher.group(9));\n    int toPatch \u003d parseIntWithXSupport(matcher.group(10));\n    boolean minorIsX \u003d isX(toMinor);\n    boolean patchIsX \u003d isX(toPatch);\n    if (minorIsX) {\n        return format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (toMajor + 1));\n    } else {\n        if (patchIsX) {\n            return format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), toMajor, (toMinor + 1));\n        } else {\n            return format(Locale.ROOT, \"%s%s\", LTE.asString(), to);\n        }\n    }\n}"
+      },
+      {
+        "name": "HyphenProcessor#getRangeFrom(...1)",
+        "body": "{\n    String from \u003d matcher.group(1);\n    int fromMajor \u003d parseIntWithXSupport(matcher.group(2));\n    int fromMinor \u003d parseIntWithXSupport(matcher.group(3));\n    int fromPatch \u003d parseIntWithXSupport(matcher.group(4));\n    boolean minorIsX \u003d isX(fromMinor);\n    boolean patchIsX \u003d isX(fromPatch);\n    if (minorIsX) {\n        return format(Locale.ROOT, \"%s%d.0.0\", GTE.asString(), fromMajor);\n    } else {\n        if (patchIsX) {\n            return format(Locale.ROOT, \"%s%d.%d.0\", GTE.asString(), fromMajor, fromMinor);\n        } else {\n            return format(Locale.ROOT, \"%s%s\", GTE.asString(), from);\n        }\n    }\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.GreaterThanOrEqualZeroProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    if (range.equals(\"latest\") || range.equals(\"latest.integration\") || range.equals(\"*\") || range.isEmpty()) {\n        return format(Locale.ROOT, \"%s%s\", GTE.asString(), Semver.ZERO);\n    }\n    return null;\n}",
+    "nodes": 6,
+    "edges": 8,
+    "cc": 4,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B4",
+      "B1 : If($z1 !\u003d 0) -\u003e B2 | else -\u003e B4",
+      "B2 : If($z2 !\u003d 0) -\u003e B3 | else -\u003e B4",
+      "B3 : If($z3 \u003d\u003d 0) -\u003e B4 | else -\u003e B5"
+    ],
+    "blockList": [
+      "B0 {\n  GreaterThanOrEqualZeroProcessor\n  String\n  $z0 \u003d r0.equals(\"latest\")\n  if ($z0 !\u003d 0) goto B1 else B4\n}",
+      "B1 {\n  $z1 \u003d r0.equals(\"latest.integration\")\n  if ($z1 !\u003d 0) goto B2 else B4\n}",
+      "B2 {\n  $z2 \u003d r0.equals(\"*\")\n  if ($z2 !\u003d 0) goto B3 else B4\n}",
+      "B3 {\n  $z3 \u003d r0.isEmpty()\n  if ($z3 \u003d\u003d 0) goto B4 else B5\n}",
+      "B4 {\n  $r2 \u003d Locale ROOT\u003e\n  $r3 \u003d Object)[2]\n  $r4 \u003d Range$RangeOperator GTE\u003e\n  $r5 \u003d $r4.asString()\n  $r3[0] \u003d $r5\n  $r6 \u003d Semver ZERO\u003e\n  $r3[1] \u003d $r6\n  $r7 \u003d String.format($r2, \"%s%s\", $r3)\n  return\n}",
+      "B5 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B4",
+      "B1 --\u003e B2",
+      "B1 --\u003e B4",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B3 --\u003e B5",
+      "B4 --\u003e [EXIT]",
+      "B5 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "GreaterThanOrEqualZeroProcessor#format(...4)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.TildeProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    Matcher matcher \u003d pattern.matcher(range);\n    if (!matcher.matches()) {\n        return null;\n    }\n    int major \u003d parseIntWithXSupport(matcher.group(1));\n    int minor \u003d parseIntWithXSupport(matcher.group(2));\n    int path \u003d parseIntWithXSupport(matcher.group(3));\n    String preRelease \u003d matcher.group(4);\n    String from;\n    String to;\n    if (isX(minor)) {\n        from \u003d format(Locale.ROOT, \"%s%d.0.0\", GTE.asString(), major);\n        to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n    } else if (isX(path)) {\n        from \u003d format(Locale.ROOT, \"%s%d.%d.0\", GTE.asString(), major, minor);\n        to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n    } else if (isNotBlank(preRelease)) {\n        from \u003d format(Locale.ROOT, \"%s%d.%d.%d-%s\", GTE.asString(), major, minor, path, preRelease);\n        to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n    } else {\n        from \u003d format(Locale.ROOT, \"%s%d.%d.%d\", GTE.asString(), major, minor, path);\n        to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n    }\n    return format(Locale.ROOT, \"%s %s\", from, to);\n}",
+    "nodes": 10,
+    "edges": 12,
+    "cc": 4,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2",
+      "B2 : If($z1 \u003d\u003d 0) -\u003e B3 | else -\u003e B4",
+      "B4 : If($z2 \u003d\u003d 0) -\u003e B5 | else -\u003e B6",
+      "B6 : If($z3 \u003d\u003d 0) -\u003e B7 | else -\u003e B8"
+    ],
+    "blockList": [
+      "B0 {\n  TildeProcessor\n  String\n  $r1 \u003d Pattern pattern\u003e\n  $r2 \u003d $r1.matcher(r0)\n  $z0 \u003d $r2.matches()\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  $r3 \u003d $r2.group(1)\n  $i0 \u003d RangesUtils.parseIntWithXSupport($r3)\n  $r4 \u003d $r2.group(2)\n  $i1 \u003d RangesUtils.parseIntWithXSupport($r4)\n  $r5 \u003d $r2.group(3)\n  $i2 \u003d RangesUtils.parseIntWithXSupport($r5)\n  $r6 \u003d $r2.group(4)\n  $z1 \u003d RangesUtils.isX($i1)\n  if ($z1 \u003d\u003d 0) goto B3 else B4\n}",
+      "B3 {\n  $r47 \u003d Locale ROOT\u003e\n  $r45 \u003d Object)[2]\n  $r46 \u003d Range$RangeOperator GTE\u003e\n  $r48 \u003d $r46.asString()\n  $r45[0] \u003d $r48\n  $r49 \u003d Integer.valueOf($i0)\n  $r45[1] \u003d $r49\n  r56 \u003d String.format($r47, \"%s%d.0.0\", $r45)\n  $r52 \u003d Locale ROOT\u003e\n  $r50 \u003d Object)[2]\n  $r51 \u003d Range$RangeOperator LT\u003e\n  $r53 \u003d $r51.asString()\n  $r50[0] \u003d $r53\n  $i6 \u003d $i0 + 1\n  $r54 \u003d Integer.valueOf($i6)\n  $r50[1] \u003d $r54\n  r57 \u003d String.format($r52, \"%s%d.0.0\", $r50)\n  goto B9\n}",
+      "B4 {\n  $z2 \u003d RangesUtils.isX($i2)\n  if ($z2 \u003d\u003d 0) goto B5 else B6\n}",
+      "B5 {\n  $r35 \u003d Locale ROOT\u003e\n  $r33 \u003d Object)[3]\n  $r34 \u003d Range$RangeOperator GTE\u003e\n  $r36 \u003d $r34.asString()\n  $r33[0] \u003d $r36\n  $r37 \u003d Integer.valueOf($i0)\n  $r33[1] \u003d $r37\n  $r38 \u003d Integer.valueOf($i1)\n  $r33[2] \u003d $r38\n  r56 \u003d String.format($r35, \"%s%d.%d.0\", $r33)\n  $r41 \u003d Locale ROOT\u003e\n  $r39 \u003d Object)[3]\n  $r40 \u003d Range$RangeOperator LT\u003e\n  $r42 \u003d $r40.asString()\n  $r39[0] \u003d $r42\n  $r43 \u003d Integer.valueOf($i0)\n  $r39[1] \u003d $r43\n  $i5 \u003d $i1 + 1\n  $r44 \u003d Integer.valueOf($i5)\n  $r39[2] \u003d $r44\n  r57 \u003d String.format($r41, \"%s%d.%d.0\", $r39)\n  goto B9\n}",
+      "B6 {\n  $z3 \u003d RangesUtils.isNotBlank($r6)\n  if ($z3 \u003d\u003d 0) goto B7 else B8\n}",
+      "B7 {\n  $r22 \u003d Locale ROOT\u003e\n  $r20 \u003d Object)[5]\n  $r21 \u003d Range$RangeOperator GTE\u003e\n  $r23 \u003d $r21.asString()\n  $r20[0] \u003d $r23\n  $r24 \u003d Integer.valueOf($i0)\n  $r20[1] \u003d $r24\n  $r25 \u003d Integer.valueOf($i1)\n  $r20[2] \u003d $r25\n  $r26 \u003d Integer.valueOf($i2)\n  $r20[3] \u003d $r26\n  $r20[4] \u003d $r6\n  r56 \u003d String.format($r22, \"%s%d.%d.%d-%s\", $r20)\n  $r29 \u003d Locale ROOT\u003e\n  $r27 \u003d Object)[3]\n  $r28 \u003d Range$RangeOperator LT\u003e\n  $r30 \u003d $r28.asString()\n  $r27[0] \u003d $r30\n  $r31 \u003d Integer.valueOf($i0)\n  $r27[1] \u003d $r31\n  $i4 \u003d $i1 + 1\n  $r32 \u003d Integer.valueOf($i4)\n  $r27[2] \u003d $r32\n  r57 \u003d String.format($r29, \"%s%d.%d.0\", $r27)\n  goto B9\n}",
+      "B8 {\n  $r9 \u003d Locale ROOT\u003e\n  $r7 \u003d Object)[4]\n  $r8 \u003d Range$RangeOperator GTE\u003e\n  $r10 \u003d $r8.asString()\n  $r7[0] \u003d $r10\n  $r11 \u003d Integer.valueOf($i0)\n  $r7[1] \u003d $r11\n  $r12 \u003d Integer.valueOf($i1)\n  $r7[2] \u003d $r12\n  $r13 \u003d Integer.valueOf($i2)\n  $r7[3] \u003d $r13\n  r56 \u003d String.format($r9, \"%s%d.%d.%d\", $r7)\n  $r16 \u003d Locale ROOT\u003e\n  $r14 \u003d Object)[3]\n  $r15 \u003d Range$RangeOperator LT\u003e\n  $r17 \u003d $r15.asString()\n  $r14[0] \u003d $r17\n  $r18 \u003d Integer.valueOf($i0)\n  $r14[1] \u003d $r18\n  $i3 \u003d $i1 + 1\n  $r19 \u003d Integer.valueOf($i3)\n  $r14[2] \u003d $r19\n  r57 \u003d String.format($r16, \"%s%d.%d.0\", $r14)\n}",
+      "B9 {\n  $r58 \u003d Locale ROOT\u003e\n  $r59 \u003d Object)[2]\n  $r59[0] \u003d r56\n  $r59[1] \u003d r57\n  $r60 \u003d String.format($r58, \"%s %s\", $r59)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B9",
+      "B4 --\u003e B5",
+      "B4 --\u003e B6",
+      "B5 --\u003e B9",
+      "B6 --\u003e B7",
+      "B6 --\u003e B8",
+      "B7 --\u003e B9",
+      "B8 --\u003e B9",
+      "B9 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "TildeProcessor#format(...5)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#format(...4)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#isX(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#parseIntWithXSupport(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#isNotBlank(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#format(...7)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "TildeProcessor#format(...6)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.CaretProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    Matcher matcher \u003d pattern.matcher(range);\n    if (!matcher.matches()) {\n        return null;\n    }\n    int major \u003d parseIntWithXSupport(matcher.group(1));\n    int minor \u003d parseIntWithXSupport(matcher.group(2));\n    int path \u003d parseIntWithXSupport(matcher.group(3));\n    String preRelease \u003d matcher.group(4);\n    boolean minorIsX \u003d isX(minor);\n    boolean patchIsX \u003d isX(path);\n    String from;\n    String to;\n    if (minorIsX) {\n        from \u003d format(Locale.ROOT, \"%s%d.0.0\", GTE.asString(), major);\n        to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n    } else if (patchIsX) {\n        if (major \u003d\u003d 0) {\n            from \u003d format(Locale.ROOT, \"%s%d.%d.0\", GTE.asString(), major, minor);\n            to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n        } else {\n            from \u003d format(Locale.ROOT, \"%s%d.%d.0\", GTE.asString(), major, minor);\n            to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n        }\n    } else if (isNotBlank(preRelease)) {\n        if (major \u003d\u003d 0) {\n            if (minor \u003d\u003d 0) {\n                from \u003d format(Locale.ROOT, \"%s%d.%d.%d-%s\", GTE.asString(), major, minor, path, preRelease);\n                to \u003d format(Locale.ROOT, \"%s%d.%d.%d\", LT.asString(), major, minor, (path + 1));\n            } else {\n                from \u003d format(Locale.ROOT, \"%s%d.%d.%d-%s\", GTE.asString(), major, minor, path, preRelease);\n                to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n            }\n        } else {\n            from \u003d format(Locale.ROOT, \"%s%d.%d.%d-%s\", GTE.asString(), major, minor, path, preRelease);\n            to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n        }\n    } else {\n        if (major \u003d\u003d 0) {\n            if (minor \u003d\u003d 0) {\n                from \u003d format(Locale.ROOT, \"%s%d.%d.%d\", GTE.asString(), major, minor, path);\n                to \u003d format(Locale.ROOT, \"%s%d.%d.%d\", LT.asString(), major, minor, (path + 1));\n            } else {\n                from \u003d format(Locale.ROOT, \"%s%d.%d.%d\", GTE.asString(), major, minor, path);\n                to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n            }\n        } else {\n            from \u003d format(Locale.ROOT, \"%s%d.%d.%d\", GTE.asString(), major, minor, path);\n            to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n        }\n    }\n    return format(Locale.ROOT, \"%s %s\", from, to);\n}",
+    "nodes": 20,
+    "edges": 27,
+    "cc": 9,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2",
+      "B2 : If($z1 \u003d\u003d 0) -\u003e B3 | else -\u003e B4",
+      "B4 : If($z2 \u003d\u003d 0) -\u003e B5 | else -\u003e B8",
+      "B5 : If($i0 !\u003d 0) -\u003e B6 | else -\u003e B7",
+      "B8 : If($z3 \u003d\u003d 0) -\u003e B9 | else -\u003e B14",
+      "B9 : If($i0 !\u003d 0) -\u003e B10 | else -\u003e B13",
+      "B10 : If($i1 !\u003d 0) -\u003e B11 | else -\u003e B12",
+      "B14 : If($i0 !\u003d 0) -\u003e B15 | else -\u003e B18",
+      "B15 : If($i1 !\u003d 0) -\u003e B16 | else -\u003e B17"
+    ],
+    "blockList": [
+      "B0 {\n  CaretProcessor\n  String\n  $r1 \u003d Pattern pattern\u003e\n  $r2 \u003d $r1.matcher(r0)\n  $z0 \u003d $r2.matches()\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  $r3 \u003d $r2.group(1)\n  $i0 \u003d RangesUtils.parseIntWithXSupport($r3)\n  $r4 \u003d $r2.group(2)\n  $i1 \u003d RangesUtils.parseIntWithXSupport($r4)\n  $r5 \u003d $r2.group(3)\n  $i2 \u003d RangesUtils.parseIntWithXSupport($r5)\n  $r6 \u003d $r2.group(4)\n  $z1 \u003d RangesUtils.isX($i1)\n  $z2 \u003d RangesUtils.isX($i2)\n  if ($z1 \u003d\u003d 0) goto B3 else B4\n}",
+      "B3 {\n  $r110 \u003d Locale ROOT\u003e\n  $r108 \u003d Object)[2]\n  $r109 \u003d Range$RangeOperator GTE\u003e\n  $r111 \u003d $r109.asString()\n  $r108[0] \u003d $r111\n  $r112 \u003d Integer.valueOf($i0)\n  $r108[1] \u003d $r112\n  r119 \u003d String.format($r110, \"%s%d.0.0\", $r108)\n  $r115 \u003d Locale ROOT\u003e\n  $r113 \u003d Object)[2]\n  $r114 \u003d Range$RangeOperator LT\u003e\n  $r116 \u003d $r114.asString()\n  $r113[0] \u003d $r116\n  $i11 \u003d $i0 + 1\n  $r117 \u003d Integer.valueOf($i11)\n  $r113[1] \u003d $r117\n  r120 \u003d String.format($r115, \"%s%d.0.0\", $r113)\n  goto B19\n}",
+      "B4 {\n  if ($z2 \u003d\u003d 0) goto B5 else B8\n}",
+      "B5 {\n  if ($i0 !\u003d 0) goto B6 else B7\n}",
+      "B6 {\n  $r98 \u003d Locale ROOT\u003e\n  $r96 \u003d Object)[3]\n  $r97 \u003d Range$RangeOperator GTE\u003e\n  $r99 \u003d $r97.asString()\n  $r96[0] \u003d $r99\n  $r100 \u003d Integer.valueOf($i0)\n  $r96[1] \u003d $r100\n  $r101 \u003d Integer.valueOf($i1)\n  $r96[2] \u003d $r101\n  r119 \u003d String.format($r98, \"%s%d.%d.0\", $r96)\n  $r104 \u003d Locale ROOT\u003e\n  $r102 \u003d Object)[3]\n  $r103 \u003d Range$RangeOperator LT\u003e\n  $r105 \u003d $r103.asString()\n  $r102[0] \u003d $r105\n  $r106 \u003d Integer.valueOf($i0)\n  $r102[1] \u003d $r106\n  $i10 \u003d $i1 + 1\n  $r107 \u003d Integer.valueOf($i10)\n  $r102[2] \u003d $r107\n  r120 \u003d String.format($r104, \"%s%d.%d.0\", $r102)\n  goto B19\n}",
+      "B7 {\n  $r87 \u003d Locale ROOT\u003e\n  $r85 \u003d Object)[3]\n  $r86 \u003d Range$RangeOperator GTE\u003e\n  $r88 \u003d $r86.asString()\n  $r85[0] \u003d $r88\n  $r89 \u003d Integer.valueOf($i0)\n  $r85[1] \u003d $r89\n  $r90 \u003d Integer.valueOf($i1)\n  $r85[2] \u003d $r90\n  r119 \u003d String.format($r87, \"%s%d.%d.0\", $r85)\n  $r93 \u003d Locale ROOT\u003e\n  $r91 \u003d Object)[2]\n  $r92 \u003d Range$RangeOperator LT\u003e\n  $r94 \u003d $r92.asString()\n  $r91[0] \u003d $r94\n  $i9 \u003d $i0 + 1\n  $r95 \u003d Integer.valueOf($i9)\n  $r91[1] \u003d $r95\n  r120 \u003d String.format($r93, \"%s%d.0.0\", $r91)\n  goto B19\n}",
+      "B8 {\n  $z3 \u003d RangesUtils.isNotBlank($r6)\n  if ($z3 \u003d\u003d 0) goto B9 else B14\n}",
+      "B9 {\n  if ($i0 !\u003d 0) goto B10 else B13\n}",
+      "B10 {\n  if ($i1 !\u003d 0) goto B11 else B12\n}",
+      "B11 {\n  $r73 \u003d Locale ROOT\u003e\n  $r71 \u003d Object)[5]\n  $r72 \u003d Range$RangeOperator GTE\u003e\n  $r74 \u003d $r72.asString()\n  $r71[0] \u003d $r74\n  $r75 \u003d Integer.valueOf($i0)\n  $r71[1] \u003d $r75\n  $r76 \u003d Integer.valueOf($i1)\n  $r71[2] \u003d $r76\n  $r77 \u003d Integer.valueOf($i2)\n  $r71[3] \u003d $r77\n  $r71[4] \u003d $r6\n  r119 \u003d String.format($r73, \"%s%d.%d.%d-%s\", $r71)\n  $r80 \u003d Locale ROOT\u003e\n  $r78 \u003d Object)[4]\n  $r79 \u003d Range$RangeOperator LT\u003e\n  $r81 \u003d $r79.asString()\n  $r78[0] \u003d $r81\n  $r82 \u003d Integer.valueOf($i0)\n  $r78[1] \u003d $r82\n  $r83 \u003d Integer.valueOf($i1)\n  $r78[2] \u003d $r83\n  $i8 \u003d $i2 + 1\n  $r84 \u003d Integer.valueOf($i8)\n  $r78[3] \u003d $r84\n  r120 \u003d String.format($r80, \"%s%d.%d.%d\", $r78)\n  goto B19\n}",
+      "B12 {\n  $r60 \u003d Locale ROOT\u003e\n  $r58 \u003d Object)[5]\n  $r59 \u003d Range$RangeOperator GTE\u003e\n  $r61 \u003d $r59.asString()\n  $r58[0] \u003d $r61\n  $r62 \u003d Integer.valueOf($i0)\n  $r58[1] \u003d $r62\n  $r63 \u003d Integer.valueOf($i1)\n  $r58[2] \u003d $r63\n  $r64 \u003d Integer.valueOf($i2)\n  $r58[3] \u003d $r64\n  $r58[4] \u003d $r6\n  r119 \u003d String.format($r60, \"%s%d.%d.%d-%s\", $r58)\n  $r67 \u003d Locale ROOT\u003e\n  $r65 \u003d Object)[3]\n  $r66 \u003d Range$RangeOperator LT\u003e\n  $r68 \u003d $r66.asString()\n  $r65[0] \u003d $r68\n  $r69 \u003d Integer.valueOf($i0)\n  $r65[1] \u003d $r69\n  $i7 \u003d $i1 + 1\n  $r70 \u003d Integer.valueOf($i7)\n  $r65[2] \u003d $r70\n  r120 \u003d String.format($r67, \"%s%d.%d.0\", $r65)\n  goto B19\n}",
+      "B13 {\n  $r48 \u003d Locale ROOT\u003e\n  $r46 \u003d Object)[5]\n  $r47 \u003d Range$RangeOperator GTE\u003e\n  $r49 \u003d $r47.asString()\n  $r46[0] \u003d $r49\n  $r50 \u003d Integer.valueOf($i0)\n  $r46[1] \u003d $r50\n  $r51 \u003d Integer.valueOf($i1)\n  $r46[2] \u003d $r51\n  $r52 \u003d Integer.valueOf($i2)\n  $r46[3] \u003d $r52\n  $r46[4] \u003d $r6\n  r119 \u003d String.format($r48, \"%s%d.%d.%d-%s\", $r46)\n  $r55 \u003d Locale ROOT\u003e\n  $r53 \u003d Object)[2]\n  $r54 \u003d Range$RangeOperator LT\u003e\n  $r56 \u003d $r54.asString()\n  $r53[0] \u003d $r56\n  $i6 \u003d $i0 + 1\n  $r57 \u003d Integer.valueOf($i6)\n  $r53[1] \u003d $r57\n  r120 \u003d String.format($r55, \"%s%d.0.0\", $r53)\n  goto B19\n}",
+      "B14 {\n  if ($i0 !\u003d 0) goto B15 else B18\n}",
+      "B15 {\n  if ($i1 !\u003d 0) goto B16 else B17\n}",
+      "B16 {\n  $r34 \u003d Locale ROOT\u003e\n  $r32 \u003d Object)[4]\n  $r33 \u003d Range$RangeOperator GTE\u003e\n  $r35 \u003d $r33.asString()\n  $r32[0] \u003d $r35\n  $r36 \u003d Integer.valueOf($i0)\n  $r32[1] \u003d $r36\n  $r37 \u003d Integer.valueOf($i1)\n  $r32[2] \u003d $r37\n  $r38 \u003d Integer.valueOf($i2)\n  $r32[3] \u003d $r38\n  r119 \u003d String.format($r34, \"%s%d.%d.%d\", $r32)\n  $r41 \u003d Locale ROOT\u003e\n  $r39 \u003d Object)[4]\n  $r40 \u003d Range$RangeOperator LT\u003e\n  $r42 \u003d $r40.asString()\n  $r39[0] \u003d $r42\n  $r43 \u003d Integer.valueOf($i0)\n  $r39[1] \u003d $r43\n  $r44 \u003d Integer.valueOf($i1)\n  $r39[2] \u003d $r44\n  $i5 \u003d $i2 + 1\n  $r45 \u003d Integer.valueOf($i5)\n  $r39[3] \u003d $r45\n  r120 \u003d String.format($r41, \"%s%d.%d.%d\", $r39)\n  goto B19\n}",
+      "B17 {\n  $r21 \u003d Locale ROOT\u003e\n  $r19 \u003d Object)[4]\n  $r20 \u003d Range$RangeOperator GTE\u003e\n  $r22 \u003d $r20.asString()\n  $r19[0] \u003d $r22\n  $r23 \u003d Integer.valueOf($i0)\n  $r19[1] \u003d $r23\n  $r24 \u003d Integer.valueOf($i1)\n  $r19[2] \u003d $r24\n  $r25 \u003d Integer.valueOf($i2)\n  $r19[3] \u003d $r25\n  r119 \u003d String.format($r21, \"%s%d.%d.%d\", $r19)\n  $r28 \u003d Locale ROOT\u003e\n  $r26 \u003d Object)[3]\n  $r27 \u003d Range$RangeOperator LT\u003e\n  $r29 \u003d $r27.asString()\n  $r26[0] \u003d $r29\n  $r30 \u003d Integer.valueOf($i0)\n  $r26[1] \u003d $r30\n  $i4 \u003d $i1 + 1\n  $r31 \u003d Integer.valueOf($i4)\n  $r26[2] \u003d $r31\n  r120 \u003d String.format($r28, \"%s%d.%d.0\", $r26)\n  goto B19\n}",
+      "B18 {\n  $r9 \u003d Locale ROOT\u003e\n  $r7 \u003d Object)[4]\n  $r8 \u003d Range$RangeOperator GTE\u003e\n  $r10 \u003d $r8.asString()\n  $r7[0] \u003d $r10\n  $r11 \u003d Integer.valueOf($i0)\n  $r7[1] \u003d $r11\n  $r12 \u003d Integer.valueOf($i1)\n  $r7[2] \u003d $r12\n  $r13 \u003d Integer.valueOf($i2)\n  $r7[3] \u003d $r13\n  r119 \u003d String.format($r9, \"%s%d.%d.%d\", $r7)\n  $r16 \u003d Locale ROOT\u003e\n  $r14 \u003d Object)[2]\n  $r15 \u003d Range$RangeOperator LT\u003e\n  $r17 \u003d $r15.asString()\n  $r14[0] \u003d $r17\n  $i3 \u003d $i0 + 1\n  $r18 \u003d Integer.valueOf($i3)\n  $r14[1] \u003d $r18\n  r120 \u003d String.format($r16, \"%s%d.0.0\", $r14)\n}",
+      "B19 {\n  $r121 \u003d Locale ROOT\u003e\n  $r122 \u003d Object)[2]\n  $r122[0] \u003d r119\n  $r122[1] \u003d r120\n  $r123 \u003d String.format($r121, \"%s %s\", $r122)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B19",
+      "B4 --\u003e B5",
+      "B4 --\u003e B8",
+      "B5 --\u003e B6",
+      "B5 --\u003e B7",
+      "B6 --\u003e B19",
+      "B7 --\u003e B19",
+      "B8 --\u003e B9",
+      "B8 --\u003e B14",
+      "B9 --\u003e B10",
+      "B9 --\u003e B13",
+      "B10 --\u003e B11",
+      "B10 --\u003e B12",
+      "B11 --\u003e B19",
+      "B12 --\u003e B19",
+      "B13 --\u003e B19",
+      "B14 --\u003e B15",
+      "B14 --\u003e B18",
+      "B15 --\u003e B16",
+      "B15 --\u003e B17",
+      "B16 --\u003e B19",
+      "B17 --\u003e B19",
+      "B18 --\u003e B19",
+      "B19 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "CaretProcessor#format(...5)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#format(...4)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#isX(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#parseIntWithXSupport(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#isNotBlank(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#format(...7)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "CaretProcessor#format(...6)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.XRangeProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    String[] rangeVersions \u003d range.split(\"\\\\s+\");\n    List\u003cString\u003e objects \u003d new ArrayList\u003c\u003e();\n    for (String rangeVersion : rangeVersions) {\n        Matcher matcher \u003d pattern.matcher(rangeVersion);\n        if (matcher.matches()) {\n            String fullRange \u003d matcher.group(0);\n            String compareSign \u003d matcher.group(1);\n            int major \u003d parseIntWithXSupport(matcher.group(2));\n            int minor \u003d parseIntWithXSupport(matcher.group(3));\n            int patch \u003d parseIntWithXSupport(matcher.group(4));\n            if (compareSign.equals(EQ.asString()) \u0026\u0026 isX(patch)) {\n                compareSign \u003d EMPTY;\n            }\n            if (!compareSign.isEmpty() \u0026\u0026 isX(patch)) {\n                patch \u003d 0;\n                if (compareSign.equals(GT.asString())) {\n                    compareSign \u003d GTE.asString();\n                    if (isX(minor)) {\n                        major \u003d major + 1;\n                        minor \u003d 0;\n                    } else {\n                        minor \u003d minor + 1;\n                    }\n                } else if (compareSign.equals(LTE.asString())) {\n                    compareSign \u003d LT.asString();\n                    if (isX(minor)) {\n                        major \u003d major + 1;\n                        minor \u003d 0;\n                    } else {\n                        minor \u003d minor + 1;\n                    }\n                } else if (isX(minor)) {\n                    minor \u003d 0;\n                }\n                String from \u003d format(Locale.ROOT, \"%s%d.%d.%d\", compareSign, major, minor, patch);\n                objects.add(from);\n            } else if (isX(minor)) {\n                String from \u003d format(Locale.ROOT, \"%s%d.0.0\", GTE.asString(), major);\n                String to \u003d format(Locale.ROOT, \"%s%d.0.0\", LT.asString(), (major + 1));\n                objects.add(from);\n                objects.add(to);\n            } else if (isX(patch)) {\n                String from \u003d format(Locale.ROOT, \"%s%d.%d.0\", GTE.asString(), major, minor);\n                String to \u003d format(Locale.ROOT, \"%s%d.%d.0\", LT.asString(), major, (minor + 1));\n                objects.add(from);\n                objects.add(to);\n            } else {\n                objects.add(fullRange);\n            }\n        }\n    }\n    if (objects.isEmpty()) {\n        return null;\n    }\n    return join(SPACE, objects);\n}",
+    "nodes": 28,
+    "edges": 40,
+    "cc": 14,
+    "flowSummary": [
+      "B1 : If(i6 \u003e\u003d i0) -\u003e B2 | else -\u003e B25",
+      "B2 : If($z1 \u003d\u003d 0) -\u003e B3 | else -\u003e B24",
+      "B3 : If($z2 \u003d\u003d 0) -\u003e B4 | else -\u003e B6",
+      "B4 : If($z11 \u003d\u003d 0) -\u003e B5 | else -\u003e B6",
+      "B6 : If($z12 !\u003d 0) -\u003e B7 | else -\u003e B19",
+      "B7 : If($z5 \u003d\u003d 0) -\u003e B8 | else -\u003e B19",
+      "B8 : If($z6 \u003d\u003d 0) -\u003e B9 | else -\u003e B12",
+      "B9 : If($z10 \u003d\u003d 0) -\u003e B10 | else -\u003e B11",
+      "B12 : If($z7 \u003d\u003d 0) -\u003e B13 | else -\u003e B16",
+      "B13 : If($z9 \u003d\u003d 0) -\u003e B14 | else -\u003e B15",
+      "B16 : If($z8 \u003d\u003d 0) -\u003e B17 | else -\u003e B18",
+      "B19 : If($z3 \u003d\u003d 0) -\u003e B20 | else -\u003e B21",
+      "B21 : If($z4 \u003d\u003d 0) -\u003e B22 | else -\u003e B23",
+      "B25 : If($z0 \u003d\u003d 0) -\u003e B26 | else -\u003e B27"
+    ],
+    "blockList": [
+      "B0 {\n  XRangeProcessor\n  String\n  $r1 \u003d r0.split(\"\\\\s+\")\n  $r2 \u003d ArrayList\n  new ArrayList()\n  i0 \u003d lengthof $r1\n  i6 \u003d 0\n}",
+      "B1 {\n  if (i6 \u003e\u003d i0) goto B2 else B25\n}",
+      "B2 {\n  r4 \u003d $r1[i6]\n  $r5 \u003d Pattern pattern\u003e\n  $r6 \u003d $r5.matcher(r4)\n  $z1 \u003d $r6.matches()\n  if ($z1 \u003d\u003d 0) goto B3 else B24\n}",
+      "B3 {\n  $r7 \u003d $r6.group(0)\n  $r8 \u003d $r6.group(1)\n  r47 \u003d $r8\n  $r9 \u003d $r6.group(2)\n  $i1 \u003d RangesUtils.parseIntWithXSupport($r9)\n  i7 \u003d $i1\n  $r10 \u003d $r6.group(3)\n  $i2 \u003d RangesUtils.parseIntWithXSupport($r10)\n  i8 \u003d $i2\n  $r11 \u003d $r6.group(4)\n  $i3 \u003d RangesUtils.parseIntWithXSupport($r11)\n  $r12 \u003d Range$RangeOperator EQ\u003e\n  $r13 \u003d $r12.asString()\n  $z2 \u003d $r8.equals($r13)\n  if ($z2 \u003d\u003d 0) goto B4 else B6\n}",
+      "B4 {\n  $z11 \u003d RangesUtils.isX($i3)\n  if ($z11 \u003d\u003d 0) goto B5 else B6\n}",
+      "B5 {\n  r47 \u003d \"\"\n}",
+      "B6 {\n  $z12 \u003d r47.isEmpty()\n  if ($z12 !\u003d 0) goto B7 else B19\n}",
+      "B7 {\n  $z5 \u003d RangesUtils.isX($i3)\n  if ($z5 \u003d\u003d 0) goto B8 else B19\n}",
+      "B8 {\n  $r40 \u003d Range$RangeOperator GT\u003e\n  $r41 \u003d $r40.asString()\n  $z6 \u003d r47.equals($r41)\n  if ($z6 \u003d\u003d 0) goto B9 else B12\n}",
+      "B9 {\n  $r45 \u003d Range$RangeOperator GTE\u003e\n  r47 \u003d $r45.asString()\n  $z10 \u003d RangesUtils.isX($i2)\n  if ($z10 \u003d\u003d 0) goto B10 else B11\n}",
+      "B10 {\n  i7 \u003d $i1 + 1\n  i8 \u003d 0\n  goto B18\n}",
+      "B11 {\n  i8 \u003d $i2 + 1\n  goto B18\n}",
+      "B12 {\n  $r42 \u003d Range$RangeOperator LTE\u003e\n  $r43 \u003d $r42.asString()\n  $z7 \u003d r47.equals($r43)\n  if ($z7 \u003d\u003d 0) goto B13 else B16\n}",
+      "B13 {\n  $r44 \u003d Range$RangeOperator LT\u003e\n  r47 \u003d $r44.asString()\n  $z9 \u003d RangesUtils.isX($i2)\n  if ($z9 \u003d\u003d 0) goto B14 else B15\n}",
+      "B14 {\n  i7 \u003d $i1 + 1\n  i8 \u003d 0\n  goto B18\n}",
+      "B15 {\n  i8 \u003d $i2 + 1\n  goto B18\n}",
+      "B16 {\n  $z8 \u003d RangesUtils.isX($i2)\n  if ($z8 \u003d\u003d 0) goto B17 else B18\n}",
+      "B17 {\n  i8 \u003d 0\n}",
+      "B18 {\n  $r48 \u003d Locale ROOT\u003e\n  $r49 \u003d Object)[4]\n  $r49[0] \u003d r47\n  $r50 \u003d Integer.valueOf(i7)\n  $r49[1] \u003d $r50\n  $r51 \u003d Integer.valueOf(i8)\n  $r49[2] \u003d $r51\n  $r52 \u003d Integer.valueOf(0)\n  $r49[3] \u003d $r52\n  $r53 \u003d String.format($r48, \"%s%d.%d.%d\", $r49)\n  $r2.add($r53)\n  goto B24\n}",
+      "B19 {\n  $z3 \u003d RangesUtils.isX($i2)\n  if ($z3 \u003d\u003d 0) goto B20 else B21\n}",
+      "B20 {\n  $r30 \u003d Locale ROOT\u003e\n  $r28 \u003d Object)[2]\n  $r29 \u003d Range$RangeOperator GTE\u003e\n  $r31 \u003d $r29.asString()\n  $r28[0] \u003d $r31\n  $r32 \u003d Integer.valueOf($i1)\n  $r28[1] \u003d $r32\n  $r33 \u003d String.format($r30, \"%s%d.0.0\", $r28)\n  $r36 \u003d Locale ROOT\u003e\n  $r34 \u003d Object)[2]\n  $r35 \u003d Range$RangeOperator LT\u003e\n  $r37 \u003d $r35.asString()\n  $r34[0] \u003d $r37\n  $i5 \u003d $i1 + 1\n  $r38 \u003d Integer.valueOf($i5)\n  $r34[1] \u003d $r38\n  $r39 \u003d String.format($r36, \"%s%d.0.0\", $r34)\n  $r2.add($r33)\n  $r2.add($r39)\n  goto B24\n}",
+      "B21 {\n  $z4 \u003d RangesUtils.isX($i3)\n  if ($z4 \u003d\u003d 0) goto B22 else B23\n}",
+      "B22 {\n  $r16 \u003d Locale ROOT\u003e\n  $r14 \u003d Object)[3]\n  $r15 \u003d Range$RangeOperator GTE\u003e\n  $r17 \u003d $r15.asString()\n  $r14[0] \u003d $r17\n  $r18 \u003d Integer.valueOf($i1)\n  $r14[1] \u003d $r18\n  $r19 \u003d Integer.valueOf($i2)\n  $r14[2] \u003d $r19\n  $r20 \u003d String.format($r16, \"%s%d.%d.0\", $r14)\n  $r23 \u003d Locale ROOT\u003e\n  $r21 \u003d Object)[3]\n  $r22 \u003d Range$RangeOperator LT\u003e\n  $r24 \u003d $r22.asString()\n  $r21[0] \u003d $r24\n  $r25 \u003d Integer.valueOf($i1)\n  $r21[1] \u003d $r25\n  $i4 \u003d $i2 + 1\n  $r26 \u003d Integer.valueOf($i4)\n  $r21[2] \u003d $r26\n  $r27 \u003d String.format($r23, \"%s%d.%d.0\", $r21)\n  $r2.add($r20)\n  $r2.add($r27)\n  goto B24\n}",
+      "B23 {\n  $r2.add($r7)\n}",
+      "B24 {\n  i6 \u003d i6 + 1\n  goto B1\n}",
+      "B25 {\n  $z0 \u003d $r2.isEmpty()\n  if ($z0 \u003d\u003d 0) goto B26 else B27\n}",
+      "B26 {\n  return\n}",
+      "B27 {\n  $r3 \u003d String.join(\" \", $r2)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B1 --\u003e B2",
+      "B1 --\u003e B25",
+      "B2 --\u003e B3",
+      "B2 --\u003e B24",
+      "B3 --\u003e B4",
+      "B3 --\u003e B6",
+      "B4 --\u003e B5",
+      "B4 --\u003e B6",
+      "B5 --\u003e B6",
+      "B6 --\u003e B7",
+      "B6 --\u003e B19",
+      "B7 --\u003e B8",
+      "B7 --\u003e B19",
+      "B8 --\u003e B9",
+      "B8 --\u003e B12",
+      "B9 --\u003e B10",
+      "B9 --\u003e B11",
+      "B10 --\u003e B18",
+      "B11 --\u003e B18",
+      "B12 --\u003e B13",
+      "B12 --\u003e B16",
+      "B13 --\u003e B14",
+      "B13 --\u003e B15",
+      "B14 --\u003e B18",
+      "B15 --\u003e B18",
+      "B16 --\u003e B17",
+      "B16 --\u003e B18",
+      "B17 --\u003e B18",
+      "B18 --\u003e B24",
+      "B19 --\u003e B20",
+      "B19 --\u003e B21",
+      "B20 --\u003e B24",
+      "B21 --\u003e B22",
+      "B21 --\u003e B23",
+      "B22 --\u003e B24",
+      "B23 --\u003e B24",
+      "B24 --\u003e B1",
+      "B25 --\u003e B26",
+      "B25 --\u003e B27",
+      "B26 --\u003e [EXIT]",
+      "B27 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "XRangeProcessor#format(...5)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "XRangeProcessor#join(...2)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "XRangeProcessor#format(...4)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "XRangeProcessor#isX(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "XRangeProcessor#parseIntWithXSupport(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "XRangeProcessor#format(...6)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.AllVersionsProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    if (range.equals(\"*\") || range.isEmpty()) {\n        return format(Locale.ROOT, \"%s%s\", GTE.asString(), Semver.ZERO);\n    }\n    return null;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2",
+      "B1 : If($z1 \u003d\u003d 0) -\u003e B2 | else -\u003e B3"
+    ],
+    "blockList": [
+      "B0 {\n  AllVersionsProcessor\n  String\n  $z0 \u003d r0.equals(\"*\")\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $z1 \u003d r0.isEmpty()\n  if ($z1 \u003d\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $r3 \u003d Locale ROOT\u003e\n  $r1 \u003d Object)[2]\n  $r2 \u003d Range$RangeOperator GTE\u003e\n  $r4 \u003d $r2.asString()\n  $r1[0] \u003d $r4\n  $r5 \u003d Semver ZERO\u003e\n  $r1[1] \u003d $r5\n  $r6 \u003d String.format($r3, \"%s%s\", $r1)\n  return\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e [EXIT]",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "AllVersionsProcessor#format(...4)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.processor.IvyProcessor",
+    "methodName": "tryProcess",
+    "signature": "java.lang.String tryProcess(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    if (range.equals(LATEST) || range.equals(LATEST_INTEGRATION)) {\n        return ALL_RANGE;\n    }\n    Matcher matcher \u003d PATTERN.matcher(range);\n    if (!matcher.matches()) {\n        return null;\n    }\n    String openSign \u003d matcher.group(1);\n    int fromMajor \u003d parseIntWithXSupport(matcher.group(2));\n    int fromMinor \u003d parseIntWithXSupport(matcher.group(3));\n    int fromPatch \u003d parseIntWithXSupport(matcher.group(4));\n    int toMajor \u003d parseIntWithXSupport(matcher.group(5));\n    int toMinor \u003d parseIntWithXSupport(matcher.group(6));\n    int toPatch \u003d parseIntWithXSupport(matcher.group(7));\n    String closeSign \u003d matcher.group(8);\n    if (isX(fromMinor)) {\n        fromMinor \u003d 0;\n    }\n    if (isX(fromPatch)) {\n        fromPatch \u003d 0;\n    }\n    if (isX(toMinor)) {\n        toMinor \u003d 0;\n    }\n    if (isX(toPatch)) {\n        toPatch \u003d 0;\n    }\n    boolean openInclusive \u003d isInclusiveRange(openSign);\n    boolean closeInclusive \u003d isInclusiveRange(closeSign);\n    if (openInclusive \u0026\u0026 closeInclusive) {\n        if (openSign.equals(\"[\") \u0026\u0026 closeSign.equals(\"]\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d %s%d.%d.%d\", GTE.asString(), fromMajor, fromMinor, fromPatch, LTE.asString(), toMajor, toMinor, toPatch);\n        } else if (openSign.equals(\"[\") \u0026\u0026 closeSign.equals(\"[\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d %s%d.%d.%d\", GTE.asString(), fromMajor, fromMinor, fromPatch, LT.asString(), toMajor, toMinor, toPatch);\n        } else if (openSign.equals(\"]\") \u0026\u0026 closeSign.equals(\"]\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d %s%d.%d.%d\", GT.asString(), fromMajor, fromMinor, fromPatch, LTE.asString(), toMajor, toMinor, toPatch);\n        } else if (openSign.equals(\"]\") \u0026\u0026 closeSign.equals(\"[\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d %s%d.%d.%d\", GT.asString(), fromMajor, fromMinor, fromPatch, LT.asString(), toMajor, toMinor, toPatch);\n        }\n    } else if (closeSign.equals(\")\")) {\n        if (openSign.equals(\"[\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d\", GTE.asString(), fromMajor, fromMinor, fromPatch);\n        } else if (openSign.equals(\"]\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d\", GT.asString(), fromMajor, fromMinor, fromPatch);\n        }\n    } else if (openSign.equals(\"(\")) {\n        if (closeSign.equals(\"]\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d\", LTE.asString(), toMajor, toMinor, toPatch);\n        } else if (closeSign.equals(\"[\")) {\n            return format(Locale.ROOT, \"%s%d.%d.%d\", LT.asString(), toMajor, toMinor, toPatch);\n        }\n    }\n    return range;\n}",
+    "nodes": 38,
+    "edges": 50,
+    "cc": 14,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2",
+      "B1 : If($z1 \u003d\u003d 0) -\u003e B2 | else -\u003e B3",
+      "B3 : If($z2 !\u003d 0) -\u003e B4 | else -\u003e B5",
+      "B5 : If($z3 \u003d\u003d 0) -\u003e B6 | else -\u003e B7",
+      "B7 : If($z4 \u003d\u003d 0) -\u003e B8 | else -\u003e B9",
+      "B9 : If($z5 \u003d\u003d 0) -\u003e B10 | else -\u003e B11",
+      "B11 : If($z6 \u003d\u003d 0) -\u003e B12 | else -\u003e B13",
+      "B13 : If($z7 \u003d\u003d 0) -\u003e B14 | else -\u003e B27",
+      "B14 : If($z8 \u003d\u003d 0) -\u003e B15 | else -\u003e B27",
+      "B15 : If($z15 \u003d\u003d 0) -\u003e B16 | else -\u003e B18",
+      "B16 : If($z22 \u003d\u003d 0) -\u003e B17 | else -\u003e B18",
+      "B18 : If($z16 \u003d\u003d 0) -\u003e B19 | else -\u003e B21",
+      "B19 : If($z21 \u003d\u003d 0) -\u003e B20 | else -\u003e B21",
+      "B21 : If($z17 \u003d\u003d 0) -\u003e B22 | else -\u003e B24",
+      "B22 : If($z20 \u003d\u003d 0) -\u003e B23 | else -\u003e B24",
+      "B24 : If($z18 \u003d\u003d 0) -\u003e B25 | else -\u003e B37",
+      "B25 : If($z19 \u003d\u003d 0) -\u003e B26 | else -\u003e B37",
+      "B27 : If($z9 \u003d\u003d 0) -\u003e B28 | else -\u003e B32",
+      "B28 : If($z13 \u003d\u003d 0) -\u003e B29 | else -\u003e B30",
+      "B30 : If($z14 \u003d\u003d 0) -\u003e B31 | else -\u003e B37",
+      "B32 : If($z10 \u003d\u003d 0) -\u003e B33 | else -\u003e B37",
+      "B33 : If($z11 \u003d\u003d 0) -\u003e B34 | else -\u003e B35",
+      "B35 : If($z12 \u003d\u003d 0) -\u003e B36 | else -\u003e B37"
+    ],
+    "blockList": [
+      "B0 {\n  IvyProcessor\n  String\n  $z0 \u003d r0.equals(\"latest\")\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $z1 \u003d r0.equals(\"latest.integration\")\n  if ($z1 \u003d\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $r1 \u003d String ALL_RANGE\u003e\n  return\n}",
+      "B3 {\n  $r2 \u003d Pattern PATTERN\u003e\n  $r3 \u003d $r2.matcher(r0)\n  $z2 \u003d $r3.matches()\n  if ($z2 !\u003d 0) goto B4 else B5\n}",
+      "B4 {\n  return\n}",
+      "B5 {\n  $r4 \u003d $r3.group(1)\n  $r5 \u003d $r3.group(2)\n  $i0 \u003d RangesUtils.parseIntWithXSupport($r5)\n  $r6 \u003d $r3.group(3)\n  $i1 \u003d RangesUtils.parseIntWithXSupport($r6)\n  i6 \u003d $i1\n  $r7 \u003d $r3.group(4)\n  $i2 \u003d RangesUtils.parseIntWithXSupport($r7)\n  i7 \u003d $i2\n  $r8 \u003d $r3.group(5)\n  $i3 \u003d RangesUtils.parseIntWithXSupport($r8)\n  $r9 \u003d $r3.group(6)\n  $i4 \u003d RangesUtils.parseIntWithXSupport($r9)\n  i8 \u003d $i4\n  $r10 \u003d $r3.group(7)\n  $i5 \u003d RangesUtils.parseIntWithXSupport($r10)\n  i9 \u003d $i5\n  $r11 \u003d $r3.group(8)\n  $z3 \u003d RangesUtils.isX($i1)\n  if ($z3 \u003d\u003d 0) goto B6 else B7\n}",
+      "B6 {\n  i6 \u003d 0\n}",
+      "B7 {\n  $z4 \u003d RangesUtils.isX($i2)\n  if ($z4 \u003d\u003d 0) goto B8 else B9\n}",
+      "B8 {\n  i7 \u003d 0\n}",
+      "B9 {\n  $z5 \u003d RangesUtils.isX($i4)\n  if ($z5 \u003d\u003d 0) goto B10 else B11\n}",
+      "B10 {\n  i8 \u003d 0\n}",
+      "B11 {\n  $z6 \u003d RangesUtils.isX($i5)\n  if ($z6 \u003d\u003d 0) goto B12 else B13\n}",
+      "B12 {\n  i9 \u003d 0\n}",
+      "B13 {\n  $z7 \u003d r12.isInclusiveRange($r4)\n  $z8 \u003d r12.isInclusiveRange($r11)\n  if ($z7 \u003d\u003d 0) goto B14 else B27\n}",
+      "B14 {\n  if ($z8 \u003d\u003d 0) goto B15 else B27\n}",
+      "B15 {\n  $z15 \u003d $r4.equals(\"\")\n  if ($z15 \u003d\u003d 0) goto B16 else B18\n}",
+      "B16 {\n  $z22 \u003d $r11.equals(\"\")\n  if ($z22 \u003d\u003d 0) goto B17 else B18\n}",
+      "B17 {\n  $r86 \u003d Locale ROOT\u003e\n  $r84 \u003d Object)[8]\n  $r85 \u003d Range$RangeOperator GTE\u003e\n  $r87 \u003d $r85.asString()\n  $r84[0] \u003d $r87\n  $r88 \u003d Integer.valueOf($i0)\n  $r84[1] \u003d $r88\n  $r89 \u003d Integer.valueOf(i6)\n  $r84[2] \u003d $r89\n  $r90 \u003d Integer.valueOf(i7)\n  $r84[3] \u003d $r90\n  $r91 \u003d Range$RangeOperator LTE\u003e\n  $r92 \u003d $r91.asString()\n  $r84[4] \u003d $r92\n  $r93 \u003d Integer.valueOf($i3)\n  $r84[5] \u003d $r93\n  $r94 \u003d Integer.valueOf(i8)\n  $r84[6] \u003d $r94\n  $r95 \u003d Integer.valueOf(i9)\n  $r84[7] \u003d $r95\n  $r96 \u003d String.format($r86, \"%s%d.%d.%d %s%d.%d.%d\", $r84)\n  return\n}",
+      "B18 {\n  $z16 \u003d $r4.equals(\"\")\n  if ($z16 \u003d\u003d 0) goto B19 else B21\n}",
+      "B19 {\n  $z21 \u003d $r11.equals(\"\")\n  if ($z21 \u003d\u003d 0) goto B20 else B21\n}",
+      "B20 {\n  $r73 \u003d Locale ROOT\u003e\n  $r71 \u003d Object)[8]\n  $r72 \u003d Range$RangeOperator GTE\u003e\n  $r74 \u003d $r72.asString()\n  $r71[0] \u003d $r74\n  $r75 \u003d Integer.valueOf($i0)\n  $r71[1] \u003d $r75\n  $r76 \u003d Integer.valueOf(i6)\n  $r71[2] \u003d $r76\n  $r77 \u003d Integer.valueOf(i7)\n  $r71[3] \u003d $r77\n  $r78 \u003d Range$RangeOperator LT\u003e\n  $r79 \u003d $r78.asString()\n  $r71[4] \u003d $r79\n  $r80 \u003d Integer.valueOf($i3)\n  $r71[5] \u003d $r80\n  $r81 \u003d Integer.valueOf(i8)\n  $r71[6] \u003d $r81\n  $r82 \u003d Integer.valueOf(i9)\n  $r71[7] \u003d $r82\n  $r83 \u003d String.format($r73, \"%s%d.%d.%d %s%d.%d.%d\", $r71)\n  return\n}",
+      "B21 {\n  $z17 \u003d $r4.equals(\"\")\n  if ($z17 \u003d\u003d 0) goto B22 else B24\n}",
+      "B22 {\n  $z20 \u003d $r11.equals(\"\")\n  if ($z20 \u003d\u003d 0) goto B23 else B24\n}",
+      "B23 {\n  $r60 \u003d Locale ROOT\u003e\n  $r58 \u003d Object)[8]\n  $r59 \u003d Range$RangeOperator GT\u003e\n  $r61 \u003d $r59.asString()\n  $r58[0] \u003d $r61\n  $r62 \u003d Integer.valueOf($i0)\n  $r58[1] \u003d $r62\n  $r63 \u003d Integer.valueOf(i6)\n  $r58[2] \u003d $r63\n  $r64 \u003d Integer.valueOf(i7)\n  $r58[3] \u003d $r64\n  $r65 \u003d Range$RangeOperator LTE\u003e\n  $r66 \u003d $r65.asString()\n  $r58[4] \u003d $r66\n  $r67 \u003d Integer.valueOf($i3)\n  $r58[5] \u003d $r67\n  $r68 \u003d Integer.valueOf(i8)\n  $r58[6] \u003d $r68\n  $r69 \u003d Integer.valueOf(i9)\n  $r58[7] \u003d $r69\n  $r70 \u003d String.format($r60, \"%s%d.%d.%d %s%d.%d.%d\", $r58)\n  return\n}",
+      "B24 {\n  $z18 \u003d $r4.equals(\"\")\n  if ($z18 \u003d\u003d 0) goto B25 else B37\n}",
+      "B25 {\n  $z19 \u003d $r11.equals(\"\")\n  if ($z19 \u003d\u003d 0) goto B26 else B37\n}",
+      "B26 {\n  $r47 \u003d Locale ROOT\u003e\n  $r45 \u003d Object)[8]\n  $r46 \u003d Range$RangeOperator GT\u003e\n  $r48 \u003d $r46.asString()\n  $r45[0] \u003d $r48\n  $r49 \u003d Integer.valueOf($i0)\n  $r45[1] \u003d $r49\n  $r50 \u003d Integer.valueOf(i6)\n  $r45[2] \u003d $r50\n  $r51 \u003d Integer.valueOf(i7)\n  $r45[3] \u003d $r51\n  $r52 \u003d Range$RangeOperator LT\u003e\n  $r53 \u003d $r52.asString()\n  $r45[4] \u003d $r53\n  $r54 \u003d Integer.valueOf($i3)\n  $r45[5] \u003d $r54\n  $r55 \u003d Integer.valueOf(i8)\n  $r45[6] \u003d $r55\n  $r56 \u003d Integer.valueOf(i9)\n  $r45[7] \u003d $r56\n  $r57 \u003d String.format($r47, \"%s%d.%d.%d %s%d.%d.%d\", $r45)\n  return\n}",
+      "B27 {\n  $z9 \u003d $r11.equals(\")\")\n  if ($z9 \u003d\u003d 0) goto B28 else B32\n}",
+      "B28 {\n  $z13 \u003d $r4.equals(\"\")\n  if ($z13 \u003d\u003d 0) goto B29 else B30\n}",
+      "B29 {\n  $r39 \u003d Locale ROOT\u003e\n  $r37 \u003d Object)[4]\n  $r38 \u003d Range$RangeOperator GTE\u003e\n  $r40 \u003d $r38.asString()\n  $r37[0] \u003d $r40\n  $r41 \u003d Integer.valueOf($i0)\n  $r37[1] \u003d $r41\n  $r42 \u003d Integer.valueOf(i6)\n  $r37[2] \u003d $r42\n  $r43 \u003d Integer.valueOf(i7)\n  $r37[3] \u003d $r43\n  $r44 \u003d String.format($r39, \"%s%d.%d.%d\", $r37)\n  return\n}",
+      "B30 {\n  $z14 \u003d $r4.equals(\"\")\n  if ($z14 \u003d\u003d 0) goto B31 else B37\n}",
+      "B31 {\n  $r31 \u003d Locale ROOT\u003e\n  $r29 \u003d Object)[4]\n  $r30 \u003d Range$RangeOperator GT\u003e\n  $r32 \u003d $r30.asString()\n  $r29[0] \u003d $r32\n  $r33 \u003d Integer.valueOf($i0)\n  $r29[1] \u003d $r33\n  $r34 \u003d Integer.valueOf(i6)\n  $r29[2] \u003d $r34\n  $r35 \u003d Integer.valueOf(i7)\n  $r29[3] \u003d $r35\n  $r36 \u003d String.format($r31, \"%s%d.%d.%d\", $r29)\n  return\n}",
+      "B32 {\n  $z10 \u003d $r4.equals(\"(\")\n  if ($z10 \u003d\u003d 0) goto B33 else B37\n}",
+      "B33 {\n  $z11 \u003d $r11.equals(\"\")\n  if ($z11 \u003d\u003d 0) goto B34 else B35\n}",
+      "B34 {\n  $r23 \u003d Locale ROOT\u003e\n  $r21 \u003d Object)[4]\n  $r22 \u003d Range$RangeOperator LTE\u003e\n  $r24 \u003d $r22.asString()\n  $r21[0] \u003d $r24\n  $r25 \u003d Integer.valueOf($i3)\n  $r21[1] \u003d $r25\n  $r26 \u003d Integer.valueOf(i8)\n  $r21[2] \u003d $r26\n  $r27 \u003d Integer.valueOf(i9)\n  $r21[3] \u003d $r27\n  $r28 \u003d String.format($r23, \"%s%d.%d.%d\", $r21)\n  return\n}",
+      "B35 {\n  $z12 \u003d $r11.equals(\"\")\n  if ($z12 \u003d\u003d 0) goto B36 else B37\n}",
+      "B36 {\n  $r15 \u003d Locale ROOT\u003e\n  $r13 \u003d Object)[4]\n  $r14 \u003d Range$RangeOperator LT\u003e\n  $r16 \u003d $r14.asString()\n  $r13[0] \u003d $r16\n  $r17 \u003d Integer.valueOf($i3)\n  $r13[1] \u003d $r17\n  $r18 \u003d Integer.valueOf(i8)\n  $r13[2] \u003d $r18\n  $r19 \u003d Integer.valueOf(i9)\n  $r13[3] \u003d $r19\n  $r20 \u003d String.format($r15, \"%s%d.%d.%d\", $r13)\n  return\n}",
+      "B37 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e [EXIT]",
+      "B3 --\u003e B4",
+      "B3 --\u003e B5",
+      "B4 --\u003e [EXIT]",
+      "B5 --\u003e B6",
+      "B5 --\u003e B7",
+      "B6 --\u003e B7",
+      "B7 --\u003e B8",
+      "B7 --\u003e B9",
+      "B8 --\u003e B9",
+      "B9 --\u003e B10",
+      "B9 --\u003e B11",
+      "B10 --\u003e B11",
+      "B11 --\u003e B12",
+      "B11 --\u003e B13",
+      "B12 --\u003e B13",
+      "B13 --\u003e B14",
+      "B13 --\u003e B27",
+      "B14 --\u003e B15",
+      "B14 --\u003e B27",
+      "B15 --\u003e B16",
+      "B15 --\u003e B18",
+      "B16 --\u003e B17",
+      "B16 --\u003e B18",
+      "B17 --\u003e [EXIT]",
+      "B18 --\u003e B19",
+      "B18 --\u003e B21",
+      "B19 --\u003e B20",
+      "B19 --\u003e B21",
+      "B20 --\u003e [EXIT]",
+      "B21 --\u003e B22",
+      "B21 --\u003e B24",
+      "B22 --\u003e B23",
+      "B22 --\u003e B24",
+      "B23 --\u003e [EXIT]",
+      "B24 --\u003e B25",
+      "B24 --\u003e B37",
+      "B25 --\u003e B26",
+      "B25 --\u003e B37",
+      "B26 --\u003e [EXIT]",
+      "B27 --\u003e B28",
+      "B27 --\u003e B32",
+      "B28 --\u003e B29",
+      "B28 --\u003e B30",
+      "B29 --\u003e [EXIT]",
+      "B30 --\u003e B31",
+      "B30 --\u003e B37",
+      "B31 --\u003e [EXIT]",
+      "B32 --\u003e B33",
+      "B32 --\u003e B37",
+      "B33 --\u003e B34",
+      "B33 --\u003e B35",
+      "B34 --\u003e [EXIT]",
+      "B35 --\u003e B36",
+      "B35 --\u003e B37",
+      "B36 --\u003e [EXIT]",
+      "B37 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "IvyProcessor#isX(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "IvyProcessor#format(...10)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "IvyProcessor#parseIntWithXSupport(...1)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "IvyProcessor#isInclusiveRange(...1)",
+        "body": "{\n    return character.equals(\"[\") || character.equals(\"]\");\n}"
+      },
+      {
+        "name": "IvyProcessor#format(...6)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.internal.range.RangeProcessorPipeline",
+    "methodName": "process",
+    "signature": "java.lang.String process(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    for (Processor processor : processors) {\n        String processedRange \u003d processor.tryProcess(range);\n        if (processedRange !\u003d null) {\n            return processedRange;\n        }\n    }\n    return range;\n}",
+    "nodes": 6,
+    "edges": 6,
+    "cc": 2,
+    "flowSummary": [
+      "B1 : If($z0 \u003d\u003d 0) -\u003e B2 | else -\u003e B5",
+      "B2 : If($r6 \u003d\u003d null) -\u003e B3 | else -\u003e B4"
+    ],
+    "blockList": [
+      "B0 {\n  RangeProcessorPipeline\n  String\n  $r1 \u003d ArrayList processors\u003e\n  $r2 \u003d $r1.iterator()\n}",
+      "B1 {\n  $z0 \u003d $r2.hasNext()\n  if ($z0 \u003d\u003d 0) goto B2 else B5\n}",
+      "B2 {\n  $r4 \u003d $r2.next()\n  r5 \u003d Processor) $r4\n  $r6 \u003d r5.tryProcess(r3)\n  if ($r6 \u003d\u003d null) goto B3 else B4\n}",
+      "B3 {\n  return\n}",
+      "B4 {\n  goto B1\n}",
+      "B5 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B1 --\u003e B2",
+      "B1 --\u003e B5",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e [EXIT]",
+      "B4 --\u003e B1",
+      "B5 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "org.semver4j.RangesList",
+    "methodName": "add",
+    "signature": "org.semver4j.RangesList add(java.util.List)",
+    "visibility": "public",
+    "body": "{\n    if (!ranges.isEmpty()) {\n        rangesList.add(ranges);\n    }\n    return this;\n}",
+    "nodes": 3,
+    "edges": 3,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($z0 !\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  RangesList\n  List\n  $z0 \u003d r0.isEmpty()\n  if ($z0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $r2 \u003d List rangesList\u003e\n  $r2.add(r0)\n}",
+      "B2 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B2",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "org.semver4j.RangesList",
+    "methodName": "formatRanges",
+    "signature": "java.lang.String formatRanges(java.util.List)",
+    "visibility": "public",
+    "body": "{\n    String representation \u003d ranges.stream().map(Range::toString).collect(joining(AND_JOINER));\n    if (ranges.size() \u003c 2) {\n        return representation;\n    }\n    return format(Locale.ROOT, \"(%s)\", representation);\n}",
+    "nodes": 3,
+    "edges": 2,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If($i0 \u003e\u003d 2) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  List\n  $r1 \u003d r0.stream()\n  $r2 \u003d RangesList$toString__5.bootstrap$()\n  $r3 \u003d $r1.map($r2)\n  $r4 \u003d Collectors.joining(\" and \")\n  $r5 \u003d $r3.collect($r4)\n  r6 \u003d String) $r5\n  $i0 \u003d r0.size()\n  if ($i0 \u003e\u003d 2) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  $r8 \u003d Locale ROOT\u003e\n  $r7 \u003d Object)[1]\n  $r7[0] \u003d r6\n  $r9 \u003d String.format($r8, \"(%s)\", $r7)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "RangesList#format(...3)",
+        "body": "(source not found)"
+      },
+      {
+        "name": "RangesList#joining(...1)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "coerce",
+    "signature": "org.semver4j.Semver coerce(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    if (version \u003d\u003d null) {\n        return null;\n    }\n    Semver semver \u003d parse(version);\n    if (semver !\u003d null) {\n        return semver;\n    }\n    String coerce \u003d Coerce.coerce(version);\n    return parse(coerce);\n}",
+    "nodes": 5,
+    "edges": 4,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If(r0 !\u003d null) -\u003e B1 | else -\u003e B2",
+      "B2 : If($r1 \u003d\u003d null) -\u003e B3 | else -\u003e B4"
+    ],
+    "blockList": [
+      "B0 {\n  String\n  if (r0 !\u003d null) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  $r1 \u003d Semver.parse(r0)\n  if ($r1 \u003d\u003d null) goto B3 else B4\n}",
+      "B3 {\n  return\n}",
+      "B4 {\n  $r2 \u003d Coerce.coerce(r0)\n  $r3 \u003d Semver.parse($r2)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e [EXIT]",
+      "B4 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#parse(...1)",
+        "body": "{\n    if (version \u003d\u003d null) {\n        return null;\n    }\n    try {\n        return new Semver(version);\n    } catch (Exception e) {\n        return null;\n    }\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isValid",
+    "signature": "boolean isValid(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    return parse(version) !\u003d null;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($r1 \u003d\u003d null) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  String\n  $r1 \u003d Semver.parse(r0)\n  if ($r1 \u003d\u003d null) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#parse(...1)",
+        "body": "{\n    if (version \u003d\u003d null) {\n        return null;\n    }\n    try {\n        return new Semver(version);\n    } catch (Exception e) {\n        return null;\n    }\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isStable",
+    "signature": "boolean isStable()",
+    "visibility": "public",
+    "body": "{\n    return major \u003e 0 \u0026\u0026 preRelease.isEmpty();\n}",
+    "nodes": 5,
+    "edges": 6,
+    "cc": 3,
+    "flowSummary": [
+      "B0 : If($i0 \u003c\u003d 0) -\u003e B1 | else -\u003e B3",
+      "B1 : If($z0 \u003d\u003d 0) -\u003e B2 | else -\u003e B3"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  $i0 \u003d Semver: int major\u003e\n  if ($i0 \u003c\u003d 0) goto B1 else B3\n}",
+      "B1 {\n  $r1 \u003d List preRelease\u003e\n  $z0 \u003d $r1.isEmpty()\n  if ($z0 \u003d\u003d 0) goto B2 else B3\n}",
+      "B2 {\n  $z1 \u003d 1\n  goto B4\n}",
+      "B3 {\n  $z1 \u003d 0\n}",
+      "B4 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B3",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B4 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isApiCompatible",
+    "signature": "boolean isApiCompatible(java.lang.String)",
+    "visibility": "public",
+    "body": "{\n    return diff(version).ordinal() \u003c VersionDiff.MAJOR.ordinal();\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003e\u003d $i1) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  String\n  $r2 \u003d r0.diff(r1)\n  $i0 \u003d $r2.ordinal()\n  $r3 \u003d Semver$VersionDiff MAJOR\u003e\n  $i1 \u003d $r3.ordinal()\n  if ($i0 \u003e\u003d $i1) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#diff(...1)",
+        "body": "{\n    return diff(new Semver(version));\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isApiCompatible",
+    "signature": "boolean isApiCompatible(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return diff(version).ordinal() \u003c VersionDiff.MAJOR.ordinal();\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003e\u003d $i1) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $r2 \u003d r0.diff(r1)\n  $i0 \u003d $r2.ordinal()\n  $r3 \u003d Semver$VersionDiff MAJOR\u003e\n  $i1 \u003d $r3.ordinal()\n  if ($i0 \u003e\u003d $i1) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#diff(...1)",
+        "body": "{\n    return diff(new Semver(version));\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isGreaterThan",
+    "signature": "boolean isGreaterThan(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return compareTo(version) \u003e 0;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003c\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.compareTo(r1)\n  if ($i0 \u003c\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#compareTo(...1)",
+        "body": "{\n    return Comparator.compareTo(this, other);\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isGreaterThanOrEqualTo",
+    "signature": "boolean isGreaterThanOrEqualTo(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return compareTo(version) \u003e\u003d 0;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003c 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.compareTo(r1)\n  if ($i0 \u003c 0) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#compareTo(...1)",
+        "body": "{\n    return Comparator.compareTo(this, other);\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isLowerThan",
+    "signature": "boolean isLowerThan(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return compareTo(version) \u003c 0;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003e\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.compareTo(r1)\n  if ($i0 \u003e\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#compareTo(...1)",
+        "body": "{\n    return Comparator.compareTo(this, other);\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isLowerThanOrEqualTo",
+    "signature": "boolean isLowerThanOrEqualTo(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return compareTo(version) \u003c\u003d 0;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 \u003e 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.compareTo(r1)\n  if ($i0 \u003e 0) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#compareTo(...1)",
+        "body": "{\n    return Comparator.compareTo(this, other);\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "isEquivalentTo",
+    "signature": "boolean isEquivalentTo(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    return compareTo(version) \u003d\u003d 0;\n}",
+    "nodes": 4,
+    "edges": 4,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If($i0 !\u003d 0) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Semver\n  $i0 \u003d r0.compareTo(r1)\n  if ($i0 !\u003d 0) goto B1 else B2\n}",
+      "B1 {\n  $z0 \u003d 1\n  goto B3\n}",
+      "B2 {\n  $z0 \u003d 0\n}",
+      "B3 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B3",
+      "B3 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#compareTo(...1)",
+        "body": "{\n    return Comparator.compareTo(this, other);\n}"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Semver",
+    "methodName": "equals",
+    "signature": "boolean equals(java.lang.Object)",
+    "visibility": "public",
+    "body": "{\n    if (this \u003d\u003d o) {\n        return true;\n    }\n    if (o \u003d\u003d null || getClass() !\u003d o.getClass()) {\n        return false;\n    }\n    Semver semver \u003d (Semver) o;\n    return Objects.equals(originalVersion, semver.originalVersion);\n}",
+    "nodes": 6,
+    "edges": 6,
+    "cc": 2,
+    "flowSummary": [
+      "B0 : If(r0 !\u003d r1) -\u003e B1 | else -\u003e B2",
+      "B2 : If(r1 \u003d\u003d null) -\u003e B3 | else -\u003e B4",
+      "B3 : If($r2 \u003d\u003d $r3) -\u003e B4 | else -\u003e B5"
+    ],
+    "blockList": [
+      "B0 {\n  Semver\n  Object\n  if (r0 !\u003d r1) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  if (r1 \u003d\u003d null) goto B3 else B4\n}",
+      "B3 {\n  $r2 \u003d r0.getClass()\n  $r3 \u003d r1.getClass()\n  if ($r2 \u003d\u003d $r3) goto B4 else B5\n}",
+      "B4 {\n  return\n}",
+      "B5 {\n  r4 \u003d Semver) r1\n  $r6 \u003d String originalVersion\u003e\n  $r5 \u003d String originalVersion\u003e\n  $z0 \u003d Objects.equals($r6, $r5)\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B3 --\u003e B5",
+      "B4 --\u003e [EXIT]",
+      "B5 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Semver#getClass(...0)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Range",
+    "methodName": "isSatisfiedByAny",
+    "signature": "boolean isSatisfiedByAny()",
+    "visibility": "public",
+    "body": "{\n    return rangeVersion.isEqualTo(Semver.ZERO) \u0026\u0026 rangeOperator \u003d\u003d RangeOperator.GTE;\n}",
+    "nodes": 5,
+    "edges": 6,
+    "cc": 3,
+    "flowSummary": [
+      "B0 : If($z0 \u003d\u003d 0) -\u003e B1 | else -\u003e B3",
+      "B1 : If($r4 !\u003d $r3) -\u003e B2 | else -\u003e B3"
+    ],
+    "blockList": [
+      "B0 {\n  Range\n  $r2 \u003d Semver rangeVersion\u003e\n  $r1 \u003d Semver ZERO\u003e\n  $z0 \u003d $r2.isEqualTo($r1)\n  if ($z0 \u003d\u003d 0) goto B1 else B3\n}",
+      "B1 {\n  $r4 \u003d Range$RangeOperator rangeOperator\u003e\n  $r3 \u003d Range$RangeOperator GTE\u003e\n  if ($r4 !\u003d $r3) goto B2 else B3\n}",
+      "B2 {\n  $z1 \u003d 1\n  goto B4\n}",
+      "B3 {\n  $z1 \u003d 0\n}",
+      "B4 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B3",
+      "B1 --\u003e B2",
+      "B1 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B4 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": []
+  },
+  {
+    "clazz": "org.semver4j.Range",
+    "methodName": "isSatisfiedBy",
+    "signature": "boolean isSatisfiedBy(org.semver4j.Semver)",
+    "visibility": "public",
+    "body": "{\n    switch(rangeOperator) {\n        case EQ:\n            return version.isEquivalentTo(rangeVersion);\n        case LT:\n            return version.isLowerThan(rangeVersion);\n        case LTE:\n            return version.isLowerThanOrEqualTo(rangeVersion);\n        case GT:\n            return version.isGreaterThan(rangeVersion);\n        case GTE:\n            return version.isGreaterThanOrEqualTo(rangeVersion);\n    }\n    throw new RuntimeException(format(Locale.ROOT, \"Unknown RangeOperator: %s\", rangeOperator));\n}",
+    "nodes": 7,
+    "edges": 6,
+    "cc": 1,
+    "flowSummary": [
+      "B0 : If(switch-on $i1) -\u003e B1 | else -\u003e B2"
+    ],
+    "blockList": [
+      "B0 {\n  Range\n  Semver\n  $r2 \u003d Range$1: int[] $SwitchMap$org$semver4j$Range$RangeOperator\u003e\n  $r1 \u003d Range$RangeOperator rangeOperator\u003e\n  $i0 \u003d $r1.ordinal()\n  $i1 \u003d $r2[$i0]\n  RuntimeException; }\n}",
+      "B1 {\n  $r8 \u003d Semver rangeVersion\u003e\n  $z4 \u003d r3.isEquivalentTo($r8)\n  return\n}",
+      "B2 {\n  $r7 \u003d Semver rangeVersion\u003e\n  $z3 \u003d r3.isLowerThan($r7)\n  return\n}",
+      "B3 {\n  $r6 \u003d Semver rangeVersion\u003e\n  $z2 \u003d r3.isLowerThanOrEqualTo($r6)\n  return\n}",
+      "B4 {\n  $r5 \u003d Semver rangeVersion\u003e\n  $z1 \u003d r3.isGreaterThan($r5)\n  return\n}",
+      "B5 {\n  $r4 \u003d Semver rangeVersion\u003e\n  $z0 \u003d r3.isGreaterThanOrEqualTo($r4)\n  return\n}",
+      "B6 {\n  $r9 \u003d RuntimeException\n  $r12 \u003d Locale ROOT\u003e\n  $r10 \u003d Object)[1]\n  $r11 \u003d Range$RangeOperator rangeOperator\u003e\n  $r10[0] \u003d $r11\n  $r13 \u003d String.format($r12, \"Unknown RangeOperator: %s\", $r10)\n  new RuntimeException($r13)\n  throw $r9\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B0 --\u003e B3",
+      "B0 --\u003e B4",
+      "B0 --\u003e B5",
+      "B0 --\u003e B6",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e [EXIT]",
+      "B3 --\u003e [EXIT]",
+      "B4 --\u003e [EXIT]",
+      "B5 --\u003e [EXIT]",
+      "B6 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Range#format(...3)",
+        "body": "(source not found)"
+      }
+    ]
+  },
+  {
+    "clazz": "org.semver4j.Range",
+    "methodName": "equals",
+    "signature": "boolean equals(java.lang.Object)",
+    "visibility": "public",
+    "body": "{\n    if (this \u003d\u003d o) {\n        return true;\n    }\n    if (o \u003d\u003d null || getClass() !\u003d o.getClass()) {\n        return false;\n    }\n    Range range \u003d (Range) o;\n    return Objects.equals(rangeVersion, range.rangeVersion) \u0026\u0026 rangeOperator \u003d\u003d range.rangeOperator;\n}",
+    "nodes": 10,
+    "edges": 12,
+    "cc": 4,
+    "flowSummary": [
+      "B0 : If(r0 !\u003d r1) -\u003e B1 | else -\u003e B2",
+      "B2 : If(r1 \u003d\u003d null) -\u003e B3 | else -\u003e B4",
+      "B3 : If($r2 \u003d\u003d $r3) -\u003e B4 | else -\u003e B5",
+      "B5 : If($z0 \u003d\u003d 0) -\u003e B6 | else -\u003e B8",
+      "B6 : If($r8 !\u003d $r7) -\u003e B7 | else -\u003e B8"
+    ],
+    "blockList": [
+      "B0 {\n  Range\n  Object\n  if (r0 !\u003d r1) goto B1 else B2\n}",
+      "B1 {\n  return\n}",
+      "B2 {\n  if (r1 \u003d\u003d null) goto B3 else B4\n}",
+      "B3 {\n  $r2 \u003d r0.getClass()\n  $r3 \u003d r1.getClass()\n  if ($r2 \u003d\u003d $r3) goto B4 else B5\n}",
+      "B4 {\n  return\n}",
+      "B5 {\n  r4 \u003d Range) r1\n  $r6 \u003d Semver rangeVersion\u003e\n  $r5 \u003d Semver rangeVersion\u003e\n  $z0 \u003d Objects.equals($r6, $r5)\n  if ($z0 \u003d\u003d 0) goto B6 else B8\n}",
+      "B6 {\n  $r8 \u003d Range$RangeOperator rangeOperator\u003e\n  $r7 \u003d Range$RangeOperator rangeOperator\u003e\n  if ($r8 !\u003d $r7) goto B7 else B8\n}",
+      "B7 {\n  $z1 \u003d 1\n  goto B9\n}",
+      "B8 {\n  $z1 \u003d 0\n}",
+      "B9 {\n  return\n}"
+    ],
+    "blockEdges": [
+      "B0 --\u003e B1",
+      "B0 --\u003e B2",
+      "B1 --\u003e [EXIT]",
+      "B2 --\u003e B3",
+      "B2 --\u003e B4",
+      "B3 --\u003e B4",
+      "B3 --\u003e B5",
+      "B4 --\u003e [EXIT]",
+      "B5 --\u003e B6",
+      "B5 --\u003e B8",
+      "B6 --\u003e B7",
+      "B6 --\u003e B8",
+      "B7 --\u003e B9",
+      "B8 --\u003e B9",
+      "B9 --\u003e [EXIT]"
+    ],
+    "depClasses": [],
+    "depMethods": [
+      {
+        "name": "Range#getClass(...0)",
+        "body": "(source not found)"
+      }
+    ]
+  }
+]

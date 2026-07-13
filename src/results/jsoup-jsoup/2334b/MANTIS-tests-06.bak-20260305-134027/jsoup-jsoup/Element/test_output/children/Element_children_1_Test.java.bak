@@ -1,0 +1,93 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC06: children() builds and returns all element children when only element nodes present (build branch)")
+    void test_TC06() {
+        // GIVEN: an element with three child Elements
+        Element el = new Element("div");
+        el.appendChild(new Element("a")); // child 0
+        el.appendChild(new Element("b")); // child 1
+        el.appendChild(new Element("c")); // child 2
+        // WHEN: invoking children(), childNodeSize()>0 triggers build branch (shadowChildrenRef null)
+        Elements result = el.children();
+        // THEN: list should contain exactly the three appended elements in order
+        assertEquals(3, result.size(), "Expected 3 children elements built");
+        assertEquals("a", result.get(0).tagName(), "First child tag mismatch");
+        assertEquals("b", result.get(1).tagName(), "Second child tag mismatch");
+        assertEquals("c", result.get(2).tagName(), "Third child tag mismatch");
+    }
+
+    @Test
+    @DisplayName("TC07: children() reuses cached shadowChildrenRef list instance on second call (cache-hit branch)")
+    void test_TC07() throws Exception {
+        // GIVEN: an element with two <li> children
+        Element el = new Element("ul");
+        el.appendChild(new Element("li")); // child 0
+        el.appendChild(new Element("li")); // child 1
+        // WHEN: first call builds the list and caches it in shadowChildrenRef
+        Elements first = el.children();
+        // reflect shadowChildrenRef after first build
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref1 = (WeakReference<List<Element>>) shadowField.get(el);
+        List<Element> cachedList1 = ref1.get();
+        assertNotNull(cachedList1, "Cache should be populated after first children() call");
+        // WHEN: second call should hit cache and not rebuild
+        Elements second = el.children();
+        // reflect shadowChildrenRef again
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref2 = (WeakReference<List<Element>>) shadowField.get(el);
+        List<Element> cachedList2 = ref2.get();
+        // THEN: the shadowChildrenRef referent list instance should be the same (cache hit)
+        assertSame(cachedList1, cachedList2, "Expected same cached list instance on second call");
+        // size should remain 2
+        assertEquals(2, second.size(), "Expected 2 children elements");
+    }
+
+    @Test
+    @DisplayName("TC08: children() rebuilds list after manual nodelistChanged clears cache (cache-miss after clear)")
+    void test_TC08() throws Exception {
+        // GIVEN: an element with one <div> child
+        Element el = new Element("section");
+        el.appendChild(new Element("div"));
+        // initial children() call builds and caches list
+        Elements list1 = el.children();
+        // reflect original cached list
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref1 = (WeakReference<List<Element>>) shadowField.get(el);
+        List<Element> cached1 = ref1.get();
+        assertNotNull(cached1, "Initial cache should not be null");
+        // simulate structural change clearing cache by invoking nodelistChanged()
+        Method clearMethod = Element.class.getDeclaredMethod("nodelistChanged");
+        clearMethod.setAccessible(true);
+        clearMethod.invoke(el);
+        // now cache should be cleared (shadowChildrenRef reset to null)
+        Object afterClear = shadowField.get(el);
+        assertNull(afterClear, "Cache should be cleared after nodelistChanged()");
+        // THEN: append new child and call children() again to rebuild cache and list
+        el.appendChild(new Element("span"));
+        Elements list2 = el.children(); // rebuild branch
+        // reflect new cached list
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> ref2 = (WeakReference<List<Element>>) shadowField.get(el);
+        List<Element> cached2 = ref2.get();
+        // verify new cache is distinct and includes both children
+        assertNotSame(cached1, cached2, "Expected new cached list after clear and rebuild");
+        assertEquals(2, list2.size(), "Expected 2 children after rebuild");
+        assertEquals("span", list2.get(1).tagName(), "Second child should be newly appended span");
+    }
+}

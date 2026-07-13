@@ -1,0 +1,100 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "charset(html syntax, updateMetaCharsetElement false) sets outputSettings charset only without touching head",
+      "path": "B0→B1(no ensureMetaCharset)→B2",
+      "precondition": "none (updateMetaCharsetElement default false)",
+      "expectedResult": "outputSettings charset updated, no <meta charset> or removal of obsolete <meta[name=charset]>",
+      "tags": [
+        "positive",
+        "no-side-effect",
+        "html",
+        "updateMetaCharset=false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 charset with updateMetaCharsetElement false",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.ISO_8859_1);",
+        "  THEN",
+        "    assert doc.outputSettings().charset() == StandardCharsets.ISO_8859_1;",
+        "    assert doc.head().selectFirst(\"meta[charset]\") == null;",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "charset(xml syntax, existing XmlDeclaration with non-xml name) prepends a new xml declaration and leaves the old one intact",
+      "path": "B0→B1(ensureMetaCharset true)→B3(syntax xml)→B4(node instanceof XmlDeclaration && name != xml)→B5",
+      "precondition": "doc.outputSettings().syntax = xml; updateMetaCharsetElement(true); prependChild(XmlDeclaration(\"foo\",false))",
+      "expectedResult": "two XmlDeclaration nodes: new one first with encoding and version, old 'foo' remains second",
+      "tags": [
+        "positive",
+        "xml",
+        "non-xml-decl",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 xml syntax existing non-xml declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(true);",
+        "    XmlDeclaration oldDecl = new XmlDeclaration(\"foo\", false);",
+        "    oldDecl.attr(\"encoding\",\"OLD\");",
+        "    doc.prependChild(oldDecl);",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.UTF_8);",
+        "  THEN",
+        "    List<Node> nodes = doc.childNodes();",
+        "    assert nodes.get(0) instanceof XmlDeclaration;",
+        "    XmlDeclaration newDecl = (XmlDeclaration) nodes.get(0);",
+        "    assertEquals(\"UTF-8\", newDecl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", newDecl.attr(\"version\"));",
+        "    assertTrue(nodes.get(1) instanceof XmlDeclaration);",
+        "    assertEquals(\"foo\", ((XmlDeclaration)nodes.get(1)).name());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "charset(xml syntax, existing XmlDeclaration named 'xml' with version) updates only encoding and resets version to '1.0'",
+      "path": "B0→B1(ensureMetaCharset true)→B3(syntax xml)→B4(node instanceof XmlDeclaration && name == xml && has version)→B6",
+      "precondition": "doc.outputSettings().syntax = xml; updateMetaCharsetElement(true); prependChild(XmlDeclaration(\"xml\",false) with version=\"2.0\" and encoding=\"OLD\")",
+      "expectedResult": "existing XmlDeclaration updated: encoding set to new charset, version reset to '1.0'",
+      "tags": [
+        "positive",
+        "xml",
+        "existing-xml-decl",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 xml syntax existing xml declaration with version",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(true);",
+        "    XmlDeclaration existing = new XmlDeclaration(\"xml\", false);",
+        "    existing.attr(\"version\",\"2.0\");",
+        "    existing.attr(\"encoding\",\"OLD\");",
+        "    doc.prependChild(existing);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    XmlDeclaration decl = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assertEquals(\"US-ASCII\", decl.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", decl.attr(\"version\"));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Document.outputSettings(OutputSettings) method.
+ */
+public class Document_outputSettings_1_Test {
+
+    @Test
+    @DisplayName("TC03: Calling the setter outputSettings(OutputSettings) with a valid instance sets and returns the custom settings")
+    public void test_TC03() {
+        // GIVEN a new Document with default settings
+        Document doc = new Document("http://example.com");
+        // Create a custom OutputSettings: disable prettyPrint and set indent amount to 5
+        Document.OutputSettings custom = new Document.OutputSettings()
+            .prettyPrint(false)
+            .indentAmount(5);
+        // WHEN calling the setter with a non-null instance (normal path B1->B2->B4)
+        Document returnedDoc = doc.outputSettings(custom);
+        // THEN the returned Document should be the same instance (chaining) and the settings updated
+        assertSame(doc, returnedDoc, "Setter should return the same Document instance for chaining");
+        assertSame(custom, doc.outputSettings(), "Document.outputSettings() should return the exact custom instance set");
+    }
+
+    @Test
+    @DisplayName("TC04: Calling outputSettings(null) triggers a validation failure (IllegalArgumentException)")
+    public void test_TC04() {
+        // GIVEN a new Document with default settings
+        Document doc = new Document("http://example.com");
+        // WHEN calling the setter with a null argument (path B1->B3 triggers validation)
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            doc.outputSettings(null);
+        }, "Calling outputSettings(null) should throw IllegalArgumentException");
+        // No need to assert message content as Validate.notNull may compute dynamic messages
+    }
+}

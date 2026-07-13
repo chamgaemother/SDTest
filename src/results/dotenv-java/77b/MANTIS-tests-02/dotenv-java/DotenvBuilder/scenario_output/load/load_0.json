@@ -1,0 +1,116 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() returns DotenvImpl with entries when systemProperties=false (branch-false) and one entry in .env",
+      "path": "B0→B2",
+      "precondition": "create temp directory with .env file containing \"KEY=VALUE\"; use DotenvBuilder.directory(tempDir)",
+      "expectedResult": "returned Dotenv.entriesInFile contains one entry with key=\"KEY\", value=\"VALUE\"; System.getProperty(\"KEY\") remains null",
+      "tags": [
+        "branch-false",
+        "loop-ignored",
+        "priority-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load without systemProperties",
+        "  GIVEN",
+        "    // Arrange\n    Path dir = Files.createTempDirectory(\"env\");\n    Files.writeString(dir.resolve(\".env\"), \"KEY=VALUE\");\n    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    // Act\n    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert\n    assert dotenv.entries().contains(new DotenvEntry(\"KEY\",\"VALUE\"));\n    assert System.getProperty(\"KEY\") == null;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with systemProperties=true (branch-true) and empty .env yields empty entries and no properties set (loop-0)",
+      "path": "B0→B1→B2",
+      "precondition": "create temp dir with empty .env; use builder.directory(tempDir).systemProperties()",
+      "expectedResult": "returned Dotenv.entries() is empty; System properties unchanged for any key",
+      "tags": [
+        "branch-true",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load with systemProperties and empty file",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");\n    Files.createFile(dir.resolve(\".env\"));\n    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().isEmpty();\n    assert System.getProperties().stringPropertyNames().stream().noneMatch(k->k.equals(\"ANY\"));"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with systemProperties=true (branch-true) and one entry sets exactly one system property (loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "create temp dir with .env containing \"A=1\"; use builder.directory(tempDir).systemProperties()",
+      "expectedResult": "returned Dotenv.get(\"A\")==\"1\"; System.getProperty(\"A\")==\"1\"",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load sets one system property",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");\n    Files.writeString(dir.resolve(\".env\"), \"A=1\");\n    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"A\").equals(\"1\");\n    assert System.getProperty(\"A\").equals(\"1\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true (branch-true) and multiple entries sets all system properties (loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "create temp dir with .env containing \"X=10\\nY=20\"; use builder.directory(tempDir).systemProperties()",
+      "expectedResult": "returned Dotenv.get(\"X\")==\"10\" and .get(\"Y\")==\"20\"; System.getProperty(\"X\")==\"10\" and System.getProperty(\"Y\")==\"20\"",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load sets multiple system properties",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");\n    Files.writeString(dir.resolve(\".env\"), \"X=10\\nY=20\");\n    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"X\").equals(\"10\");\n    assert dotenv.get(\"Y\").equals(\"20\");\n    assert System.getProperty(\"X\").equals(\"10\");\n    assert System.getProperty(\"Y\").equals(\"20\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env is missing with default throwIfMissing=true",
+      "path": "B0",
+      "precondition": "create temp dir without .env; use builder.directory(tempDir)",
+      "expectedResult": "throws DotenvException; no system properties set",
+      "tags": [
+        "exception",
+        "throwIfMissing"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load missing file throws",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"env\");\n    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    }
+  ]
+}

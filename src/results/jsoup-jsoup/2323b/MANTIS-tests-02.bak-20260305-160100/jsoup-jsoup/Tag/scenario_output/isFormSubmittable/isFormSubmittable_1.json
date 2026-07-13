@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Known submittable tag 'input' in non-HTML namespace returns false after namespace mismatch branch",
+      "path": "B0→B1→B3(fail first namespace check)→B5(fail second namespace check)→B8→B10",
+      "precondition": "ParseSettings.preserveCase configured",
+      "expectedResult": "return false (new generic tag, formSubmit==false)",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 namespace-mismatch-form-submit",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String normalName = ParseSettings.normalName(tagName);",
+        "    String otherNamespace = \"http://custom\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, otherNamespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Null tagName passed to valueOf triggers IllegalArgumentException",
+      "path": "B0→B1→B2(Validate.notNull tagName)→BError",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException for null tagName",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 null-tagname-exception",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Blank tagName passed to valueOf triggers IllegalArgumentException",
+      "path": "B0→B1→B2→B3(tagName.trim empty)→BError",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException for empty tagName",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 blank-tagname-exception",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

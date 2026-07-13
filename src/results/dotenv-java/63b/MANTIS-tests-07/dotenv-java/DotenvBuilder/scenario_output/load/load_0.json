@@ -1,0 +1,159 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "When systemProperties is false and .env file is empty, no entries loop executed and returns empty Dotenv",
+      "path": "B0→B1→B2",
+      "precondition": "Create temporary directory with empty .env file; use real DotenvReader and DotenvParser",
+      "expectedResult": "returned Dotenv.entries() is empty; System.getProperty(...) unchanged for any key; no exception",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load empty-file no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "    // tempDir/.env exists and is empty",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().size() == 0;",
+        "    assert System.getProperty(\"ANY_KEY\") == null;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "When systemProperties is false and .env file has one entry, loop executes once and returns single entry",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env file in temp directory with single line 'KEY=VALUE'; use real parser",
+      "expectedResult": "returned Dotenv.entries() contains exactly one DotenvEntry(key=\"KEY\", value=\"VALUE\"); no System property set",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load single-entry no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "    // tempDir/.env contains 'KEY=VALUE'",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().contains(new DotenvEntry(\"KEY\",\"VALUE\"));",
+        "    assert System.getProperty(\"KEY\") == null;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "When systemProperties is false and .env file has multiple entries, loop executes multiple times and returns all entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env file with lines 'A=1','B=2','C=3'; use real parser",
+      "expectedResult": "returned entries have size 3 and contain A=1, B=2, C=3; no System properties set",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load multiple-entries no-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "    // tempDir/.env contains 'A=1','B=2','C=3'",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().size() == 3;",
+        "    assert result.entries().contains(new DotenvEntry(\"A\",\"1\"));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "When systemProperties is true and .env has one entry, branch-true path sets system property then returns entry",
+      "path": "B0→B2",
+      "precondition": "Create .env with 'X=Y'; use real parser; no manual mocking",
+      "expectedResult": "System.getProperty(\"X\") == \"Y\"; returned entries contain new DotenvEntry(\"X\",\"Y\");",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load single-entry with-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\").systemProperties();",
+        "    // tempDir/.env contains 'X=Y'",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"X\").equals(\"Y\");",
+        "    assert result.entries().contains(new DotenvEntry(\"X\",\"Y\"));"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "When systemProperties is true and .env is empty, branch-true path executes no loop and returns empty Dotenv",
+      "path": "B0→B2",
+      "precondition": "Create empty .env file; real parser; systemProperties enabled",
+      "expectedResult": "returned entries() is empty; no new System properties set",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load empty-file with-system-properties",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\").systemProperties();",
+        "    // tempDir/.env is empty",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().isEmpty();",
+        "    assert System.getProperty(\"ANY\") == null;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "When .env file is malformed, parser.parse throws DotenvException and load propagates it",
+      "path": "B0",
+      "precondition": "Create .env file with invalid syntax; use real parser",
+      "expectedResult": "throws DotenvException; no System properties set; no Dotenv returned",
+      "tags": [
+        "exception",
+        "throwIfMalformed-default",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 load malformed-file throws",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "    // tempDir/.env contains invalid line",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "reparent a node into a parent whose childNodes is already non-empty (ensureChildNodes branch false)",
+      "path": "B0→B1→B3→B4(false)→B5→B6",
+      "precondition": "newParent has one existing child node",
+      "expectedResult": "child is removed from oldParent and added to newParent at correct siblingIndex without creating a new list",
+      "tags": [
+        "reparent",
+        "ensureChildNodes-false",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild reparent to non-empty parent",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"section\");",
+        "    TextNode existing = new TextNode(\"existing\");",
+        "    newParent.appendChild(existing);",
+        "    TextNode child = new TextNode(\"moved\");",
+        "    oldParent.appendChild(child);",
+        "  WHEN",
+        "    Element result = newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 2;",
+        "    assert child.parent() == newParent;",
+        "    // sibling index should be 1 (second position)",
+        "    assert getSiblingIndex(child) == 1;",
+        "    assert result == newParent;",
+        "END"
+      ]
+    }
+  ]
+}

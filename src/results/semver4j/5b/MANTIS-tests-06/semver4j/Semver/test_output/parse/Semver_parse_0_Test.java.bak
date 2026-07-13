@@ -1,0 +1,50 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Semver_parse_Test {
+
+    @Test
+    @DisplayName("parse returns null when input version string is null (r0 == null)")
+    void test_TC01() {
+        // Branch B0→B1: input is null, should immediately return null
+        String version = null;
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing a null version string");
+    }
+
+    @Test
+    @DisplayName("parse returns Semver when input is valid without extra whitespace (new Semver path)")
+    void test_TC02() {
+        // Branch B0→B2→B3→B4→B5: valid version, no exception path
+        String version = "1.2.3";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for valid version");
+        // Check that trimming did not alter valid input
+        assertEquals("1.2.3", result.getVersion(), "Version string should match exactly");
+        // Verify numeric components parsed correctly
+        assertEquals(1, result.getMajor(), "Major version should be 1");
+        assertEquals(2, result.getMinor(), "Minor version should be 2");
+        assertEquals(3, result.getPatch(), "Patch version should be 3");
+    }
+
+    @Test
+    @DisplayName("parse returns Semver when input has leading/trailing whitespace and valid content (trim path)")
+    void test_TC03() {
+        // Branch B0→B2→B3→B4→B5: valid version after trimming whitespace
+        String version = " 2.0.0 ";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for version with surrounding whitespace");
+        // After trim, getVersion() should be "2.0.0"
+        assertEquals("2.0.0", result.getVersion(), "trim should remove spaces and parse core version");
+    }
+
+    @Test
+    @DisplayName("parse returns null when input is invalid semantic version (StrictParser throws)")
+    void test_TC04() {
+        // Branch B0→B2→B6: input non-null but invalid, StrictParser should throw and parse returns null
+        String version = "invalid.version";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing an invalid semver string");
+    }
+}

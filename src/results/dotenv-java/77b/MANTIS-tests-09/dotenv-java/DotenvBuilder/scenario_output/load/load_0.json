@@ -1,0 +1,105 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() returns Dotenv with only system and file vars when systemProperties=false and .env empty (branch-false, loop-0)",
+      "path": "B0→B2",
+      "precondition": "create temporary directory with an empty .env file; builder = DotenvBuilder.directory(tempDir); ensure no pre-existing environment variables named in file",
+      "expectedResult": "returns Dotenv instance whose entries() contains exactly System.getenv() entries and entries(tempFilter) returns empty set for file entries",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load with empty file and default systemProperties",
+        "  GIVEN",
+        "    Path tempDir = Files.createTempDirectory(\"env\");",
+        "    Files.createFile(tempDir.resolve(\".env\"));",
+        "    DotenvBuilder builder = DotenvBuilder.configure().directory(tempDir.toString());",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().containsAll(System.getenv().entrySet().stream().map(e->new DotenvEntry(e.getKey(),e.getValue())).collect(toSet()));"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() sets one system property when systemProperties=true and one entry in .env (branch-true, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "create temp dir with .env containing \"KEY=VALUE\"; builder = DotenvBuilder.directory(tempDir).systemProperties()",
+      "expectedResult": "System.getProperty(\"KEY\") == \"VALUE\" and dotenv.get(\"KEY\") == \"VALUE\"",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load with one entry and systemProperties enabled",
+        "  GIVEN",
+        "    Path d = Files.createTempDirectory(\"env\");",
+        "    Files.writeString(d.resolve(\".env\"),\"KEY=VALUE\");",
+        "    DotenvBuilder builder = DotenvBuilder.configure().directory(d.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"KEY\").equals(\"VALUE\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() sets multiple system properties when systemProperties=true and multiple entries in .env (branch-true, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "create temp dir with .env containing \"A=1\\nB=2\\nC=3\"; builder = DotenvBuilder.directory(tempDir).systemProperties()",
+      "expectedResult": "System.getProperty(\"A\")==\"1\", System.getProperty(\"B\")==\"2\", System.getProperty(\"C\")==\"3\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load with multiple entries and systemProperties enabled",
+        "  GIVEN",
+        "    Path p = Files.createTempDirectory(\"env\");",
+        "    Files.writeString(p.resolve(\".env\"),\"A=1\\nB=2\\nC=3\");",
+        "    DotenvBuilder builder = DotenvBuilder.configure().directory(p.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv d = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"A\").equals(\"1\") && System.getProperty(\"B\").equals(\"2\") && System.getProperty(\"C\").equals(\"3\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() throws DotenvException when .env malformed and default throwIfMalformed=true (exception)",
+      "path": "B0",
+      "precondition": "create temp dir with .env containing malformed line \"BADLINE\" (no '='); builder = DotenvBuilder.directory(tempDir)",
+      "expectedResult": "throws DotenvException; no system property set for key \"BADLINE\"",
+      "tags": [
+        "exception",
+        "throwIfMalformed",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load throws on malformed file",
+        "  GIVEN",
+        "    Path tmp = Files.createTempDirectory(\"env\");",
+        "    Files.writeString(tmp.resolve(\".env\"),\"BADLINE\");",
+        "    DotenvBuilder builder = DotenvBuilder.configure().directory(tmp.toString());",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    }
+  ]
+}

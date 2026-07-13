@@ -1,0 +1,115 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+
+import java.io.IOException;
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC01: parse(String html, String baseUri) with non-empty html and valid baseUri returns Document with resolved links")
+    void test_TC01() {
+        // non-empty html and valid baseUri to exercise branch baseUri-nonEmpty 
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertAll(
+            () -> assertEquals("http://example.com/", doc.baseUri(), "baseUri should be set to the provided URI"),
+            () -> assertTrue(doc.html().contains("<p>Test</p>"), "document HTML should contain the <p>Test</p> element")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02: parse(String html, String baseUri) with empty html returns empty Document body")
+    void test_TC02() {
+        // empty html to exercise empty-html boundary branch
+        String html = "";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("", doc.body().html(), "empty input HTML should produce empty body HTML");
+    }
+
+    @Test
+    @DisplayName("TC03: parse(String html, String baseUri) with null html throws NullPointerException")
+    void test_TC03() {
+        // null html should trigger NullPointerException before parsing
+        String baseUri = "http://example.com/";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse((String) null, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04: parse(String html) uses empty baseUri when omitted and returns Document")
+    void test_TC04() {
+        // overload without baseUri uses default empty string branch
+        String html = "<div>Hi</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri(), "default baseUri should be empty string");
+    }
+
+    @Test
+    @DisplayName("TC05: parse(String html, Parser parser) with custom Parser returns Document via parser")
+    void test_TC05() {
+        // custom parser to exercise overload(String, Parser)
+        String html = "<tag>1</tag>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        assertEquals("1", doc.select("tag").first().text(), "xmlParser should parse <tag> and extract text '1'");
+    }
+
+    @Test
+    @DisplayName("TC06: parse(String html, String baseUri, Parser parser) with valid args returns parser.parseInput result")
+    void test_TC06() {
+        // combine non-empty baseUri and custom parser to hit overload(String, String, Parser)
+        String html = "<x/>";
+        String baseUri = "base";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertAll(
+            () -> assertEquals("base", doc.baseUri(), "baseUri should be propagated through to Document"),
+            () -> assertNotNull(doc.select("x").first(), "xmlParser should produce an <x> element")
+        );
+    }
+
+    @Test
+    @DisplayName("TC07: parse(String html, Parser parser) with null html throws NullPointerException")
+    void test_TC07() {
+        // null html with parser overload should throw NPE
+        Parser parser = Parser.htmlParser();
+        assertThrows(NullPointerException.class, () -> Jsoup.parse((String) null, parser));
+    }
+
+    @Test
+    @DisplayName("TC08: parse(String html, String baseUri, Parser parser) with null parser throws NullPointerException")
+    void test_TC08() {
+        // null parser should throw NPE at entry of overloaded method
+        String html = "<a/>";
+        String baseUri = "b";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, (Parser) null));
+    }
+
+    @Test
+    @DisplayName("TC09: parse(String html) with empty html returns Document with empty body")
+    void test_TC09() {
+        // empty html on no-baseUri overload exercises empty-html boundary
+        String html = "";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.body().html(), "empty input without baseUri should yield empty body");
+    }
+
+    @Test
+    @DisplayName("TC10: parse(String html, String baseUri) with html containing <base> tag overrides provided baseUri")
+    void test_TC10() {
+        // html with <base> tag should override the provided baseUri
+        String html = "<html><head><base href=\"https://x/\"/></head><body></body></html>";
+        String baseUri = "http://ignored/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("https://x/", doc.baseUri(), "Document baseUri should be overridden by <base href> value");
+    }
+}

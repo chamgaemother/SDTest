@@ -1,0 +1,62 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() preserves a non-null Connection reference (B0→B1→B2)")
+    public void test_TC04() {
+        // GIVEN a Document with a custom Connection set
+        Document doc = Document.createShell("/base");
+        Connection conn = Jsoup.connect("http://example.com");
+        doc.connection(conn);
+        // WHEN clone is invoked
+        Document clone = doc.clone();
+        // THEN the clone should retain the same Connection instance (deep copy for other fields but connection reference preserved)
+        assertSame(conn, clone.connection(), "clone.connection() should return the original Connection instance");
+    }
+
+    @Test
+    @DisplayName("clone() produces independent QuirksMode so changing clone’s quirksMode doesn’t affect original")
+    public void test_TC05() {
+        // GIVEN a Document with default quirksMode = noQuirks
+        Document doc = Document.createShell("u");
+        assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode(),
+            "Initial document should have quirksMode noQuirks");
+        // WHEN clone is invoked and clone's quirksMode is modified
+        Document clone = doc.clone();
+        clone.quirksMode(Document.QuirksMode.quirks);
+        // THEN original remains unaffected and clone reflects new quirksMode (independent deep copy)
+        assertAll(
+            () -> assertEquals(Document.QuirksMode.noQuirks, doc.quirksMode(),
+                "Original document quirksMode should remain noQuirks after clone modification"),
+            () -> assertEquals(Document.QuirksMode.quirks, clone.quirksMode(),
+                "Clone document should have quirksMode quirks after setting")
+        );
+    }
+
+    @Test
+    @DisplayName("clone() produces independent attributes so adding attr to clone doesn’t affect original")
+    public void test_TC06() {
+        // GIVEN a Document with no custom attributes
+        Document doc = Document.createShell("u");
+        assertFalse(doc.hasAttr("key"),
+            "Original document should not have attribute 'key' initially");
+        // WHEN clone is invoked and an attribute is added to the clone
+        Document clone = doc.clone();
+        clone.attr("key", "value");
+        // THEN original remains without the attribute and clone has the new attribute (independent attribute map)
+        assertAll(
+            () -> assertFalse(doc.hasAttr("key"),
+                "Original document should not have attribute 'key' after clone modification"),
+            () -> assertTrue(clone.hasAttr("key"),
+                "Clone document should have attribute 'key' after setting")
+        );
+    }
+}

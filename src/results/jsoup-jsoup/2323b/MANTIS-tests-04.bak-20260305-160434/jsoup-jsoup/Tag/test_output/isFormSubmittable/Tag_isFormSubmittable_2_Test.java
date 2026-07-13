@@ -1,0 +1,58 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("Known form-submittable tag 'select' returns true")
+    public void test_TC06() {
+        // Arrange: 'select' is a predefined form-listed tag, so formSubmit should be true
+        Tag tag = Tag.valueOf("select");
+        // Act
+        boolean result = tag.isFormSubmittable();
+        // Assert
+        assertTrue(result, "Predefined 'select' tag must be submittable");
+    }
+
+    @Test
+    @DisplayName("Known form-submittable tag 'input' in wrong namespace returns false")
+    public void test_TC07() {
+        // Arrange: 'input' exists in HTML namespace as submittable, but using SVG namespace yields a generic tag
+        String svgNs = Parser.NamespaceSvg;
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf("input", svgNs, settings);
+        // Act: generic tags default formSubmit=false
+        boolean result = tag.isFormSubmittable();
+        // Assert
+        assertFalse(result, "Using SVG namespace should produce a generic tag that is not submittable");
+    }
+
+    @Test
+    @DisplayName("Unknown tag with whitespace trimmed returns false")
+    public void test_TC08() {
+        // Arrange: custom unknown tag with spaces, trim should yield "myCustom" and create generic Tag
+        Tag tag = Tag.valueOf("  myCustom  ", Parser.NamespaceHtml, ParseSettings.preserveCase);
+        // Act: unknown tags default formSubmit=false
+        boolean result = tag.isFormSubmittable();
+        // Assert
+        assertFalse(result, "Unknown tags should not be form submittable");
+    }
+
+    @Test
+    @DisplayName("Null tagName input throws IllegalArgumentException in construction")
+    public void test_TC09() {
+        // Arrange: null tagName should fail Validate.notNull
+        String tagName = null;
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class,
+            () -> Tag.valueOf(tagName, Parser.NamespaceHtml, ParseSettings.preserveCase),
+            "Null tagName must throw IllegalArgumentException"
+        );
+    }
+}

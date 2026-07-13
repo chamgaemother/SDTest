@@ -1,0 +1,73 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "PrematureEOFException thrown by handleAtRule is caught and parse loop exits normally",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "scan() returns iterator with a single ATKEYWORD token",
+      "expectedResult": "startDocument() and endDocument() are called; no exception propagates",
+      "tags": [
+        "exception",
+        "branch",
+        "ATKEYWORD",
+        "PrematureEOFException"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 handleAtRule premature EOF",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo\");",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "    // stub parser to throw in handleAtRule",
+        "    CssParser parser = new CssParser() {",
+        "      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {",
+        "        return new StubIterator(asList(atTk));",
+        "      }",
+        "    };",
+        "    doThrow(new PrematureEOFException()).when(parser).handleAtRule(atTk, parser.scan(null,null,null), doc, err);",
+        "  WHEN",
+        "    parser.parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    verify(doc).startDocument();",
+        "    verify(doc).endDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "PrematureEOFException thrown by handleRuleSet is caught when first token is non-ATKEYWORD",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "scan() returns iterator with a single IDENT token",
+      "expectedResult": "startDocument() and endDocument() are called; no exception propagates",
+      "tags": [
+        "exception",
+        "branch",
+        "IDENT",
+        "PrematureEOFException"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 handleRuleSet premature EOF at first iteration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"prop\");",
+        "    CssErrorHandler err = mock(CssErrorHandler.class);",
+        "    CssContentHandler doc = mock(CssContentHandler.class);",
+        "    CssParser parser = new CssParser() {",
+        "      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {",
+        "        return new StubIterator(asList(idTk));",
+        "      }",
+        "    };",
+        "    doThrow(new PrematureEOFException()).when(parser).handleRuleSet(idTk, parser.scan(null,null,null), doc, err);",
+        "  WHEN",
+        "    parser.parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    verify(doc).startDocument();",
+        "    verify(doc).endDocument();",
+        "END"
+      ]
+    }
+  ]
+}

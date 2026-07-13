@@ -1,0 +1,44 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 test class for org.jsoup.nodes.Attribute#sourceRange
+ */
+public class Attribute_sourceRange_0_Test {
+
+    @Test
+    @DisplayName("sourceRange returns UntrackedAttr when parent is null (branch parent==null)")
+    public void test_TC01() {
+        // GIVEN an Attribute with no parent, so parent == null to exercise the B0->B1 branch
+        Attribute attr = new Attribute("key", "value", null);
+        // WHEN calling sourceRange
+        Range.AttributeRange result = attr.sourceRange();
+        // THEN it should return the sentinel UntrackedAttr
+        assertSame(Range.AttributeRange.UntrackedAttr, result,
+                "Expected UntrackedAttr when parent is null");
+    }
+
+    @Test
+    @DisplayName("sourceRange calls parent.sourceRange when parent is non-null (branch parent!=null)")
+    public void test_TC02() {
+        // GIVEN a stub Attributes where sourceRange returns a known range to exercise the B0->B2 branch
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // Return a custom AttributeRange for verification
+                return new Range.AttributeRange(1, 4); // Fixed to return a valid Range object
+            }
+        };
+        Attribute attr = new Attribute("key", "value", stubParent);
+        // WHEN calling sourceRange
+        Range.AttributeRange result = attr.sourceRange();
+        // THEN it should return the stub's range with start=1 and end=4
+        assertAll(
+            () -> assertEquals(1, result.getStart(), "Expected start to match stub"), // Ensure getStart() is valid
+            () -> assertEquals(4, result.getEnd(), "Expected end to match stub") // Ensure getEnd() is valid
+        );
+    }
+}

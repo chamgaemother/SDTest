@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "clone() deep-copies child element nodes so modifying clone’s child does not affect original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell(\"/test\")",
+      "expectedResult": "modifying a child element in clone does not alter the original document’s child",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "child-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone deep-copy child elements",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/test\");",
+        "    Element extra = doc.appendElement(\"div\");",
+        "    extra.attr(\"id\",\"orig\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.selectFirst(\"div\").attr(\"id\",\"clone\");",
+        "  THEN",
+        "    assertEquals(\"orig\", doc.selectFirst(\"div\").attr(\"id\"));",
+        "    assertEquals(\"clone\", clone.selectFirst(\"div\").attr(\"id\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() deep-copies text nodes so setting text on clone does not clear original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell(\"/base\")",
+      "expectedResult": "calling text(...) on clone only affects clone’s body text",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "text-node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone deep-copy text",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "    doc.body().text(\"original\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.body().text(\"cloneText\");",
+        "  THEN",
+        "    assertEquals(\"original\", doc.body().text());",
+        "    assertEquals(\"cloneText\", clone.body().text());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "children() rebuilds cache after prependChild triggers nodelistChanged clearing shadowChildrenRef",
+      "path": "B0→B3→B6→B3→B6→B5",
+      "precondition": "parent has one existing child and cache populated",
+      "expectedResult": "children() returns fresh list with new and existing children, and shadowChildrenRef non-null",
+      "tags": [
+        "cache",
+        "invalidation",
+        "prependChild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 children cache invalidation on prependChild",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    parent.appendChild(a);",
+        "    Elements first = parent.children();  // primes cache",
+        "  WHEN",
+        "    Element b = new Element(\"b\");",
+        "    parent.prependChild(b);            // triggers nodelistChanged",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(2, result.size());",
+        "    assertSame(b, result.get(0));",
+        "    assertSame(a, result.get(1));",
+        "    // verify shadowChildrenRef is rebuilt",
+        "    Field f = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    f.setAccessible(true);",
+        "    assertNotNull(((WeakReference<?>)f.get(parent)).get());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "children() rebuilds cache after prependChildren(Collection) triggers nodelistChanged",
+      "path": "B0→B3→B6→B3→B6→B5",
+      "precondition": "parent with two children and cache populated",
+      "expectedResult": "children() returns updated list including prepended elements and cache rebuilt",
+      "tags": [
+        "cache",
+        "invalidation",
+        "prependChildren"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 children cache invalidation on prependChildren",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element a = new Element(\"li\");",
+        "    Element b = new Element(\"li\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    Elements first = parent.children();  // primes cache",
+        "  WHEN",
+        "    List<Node> newKids = Arrays.asList(new Element(\"x\"), new Element(\"y\"));",
+        "    parent.prependChildren(newKids);     // triggers nodelistChanged",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(4, result.size());",
+        "    assertTrue(result.get(0).tagName().equals(\"x\"));",
+        "    assertTrue(result.get(1).tagName().equals(\"y\"));",
+        "    // cache should now contain all four in order",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "children() rebuilds cache after insertChildren(varargs) triggers nodelistChanged and index roll-around",
+      "path": "B0→B3→B6→B3→B6→B5",
+      "precondition": "parent with one child and cache populated",
+      "expectedResult": "children() returns correct list with inserted children at end, and cache rebuilt",
+      "tags": [
+        "cache",
+        "invalidation",
+        "insertChildren",
+        "varargs",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 children cache invalidation on insertChildren varargs with negative index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"p\");",
+        "    parent.appendChild(a);",
+        "    Elements first = parent.children();  // primes cache",
+        "  WHEN",
+        "    Element c1 = new Element(\"span\");",
+        "    Element c2 = new Element(\"em\");",
+        "    parent.insertChildren(-1, c1, c2);    // roll-around to append at end, triggers nodelistChanged",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(3, result.size());",
+        "    assertSame(a, result.get(0));",
+        "    assertSame(c1, result.get(1));",
+        "    assertSame(c2, result.get(2));",
+        "    // verify cache rebuilt and non-null",
+        "    Field f = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    f.setAccessible(true);",
+        "    assertNotNull(((WeakReference<?>)f.get(parent)).get());",
+        "END"
+      ]
+    }
+  ]
+}

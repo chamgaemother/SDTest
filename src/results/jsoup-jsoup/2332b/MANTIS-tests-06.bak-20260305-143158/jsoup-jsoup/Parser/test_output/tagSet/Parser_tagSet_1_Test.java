@@ -1,0 +1,112 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.util.List;
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("TC01: setTrackErrors(0) disables error tracking, isTrackErrors() returns false")
+    public void test_TC01() {
+        // GIVEN a fresh HTML parser
+        Parser p = Parser.htmlParser();
+        // WHEN disabling error tracking (maxErrors=0) -> goes through B3->B5 branch to noTracking
+        p.setTrackErrors(0);
+        // THEN isTrackErrors should be false since getErrors().getMaxSize()==0
+        assertFalse(p.isTrackErrors(), "Error tracking should be disabled when maxErrors=0");
+    }
+
+    @Test
+    @DisplayName("TC02: setTrackErrors(5) enables tracking with max 5, getErrors() has maxSize 5")
+    public void test_TC02() {
+        // GIVEN a fresh XML parser
+        Parser p = Parser.xmlParser();
+        // WHEN enabling error tracking with maxErrors=5 -> goes through B3->B4 branch to tracking
+        p.setTrackErrors(5);
+        // THEN isTrackErrors true and getErrors().getMaxSize()==5
+        assertTrue(p.isTrackErrors(), "Error tracking should be enabled when maxErrors>0");
+        assertEquals(5, p.getErrors().getMaxSize(), "Error list should track up to 5 errors");
+    }
+
+    @Test
+    @DisplayName("TC03: setTrackPosition(true) toggles trackPosition, isTrackPosition returns true")
+    public void test_TC03() {
+        // GIVEN a new instance copied from htmlParser -> ensures trackPosition initially false
+        Parser base = Parser.htmlParser();
+        Parser p = base.newInstance();
+        // WHEN enabling position tracking -> B2->B6
+        p.setTrackPosition(true);
+        // THEN isTrackPosition returns true
+        assertTrue(p.isTrackPosition(), "Position tracking should be enabled after setTrackPosition(true)");
+    }
+
+    @Test
+    @DisplayName("TC04: settings(ParseSettings) updates and settings() returns new settings instance")
+    public void test_TC04() {
+        // GIVEN a new parser and a custom ParseSettings instance
+        Parser p = new Parser(new XmlTreeBuilder());
+        ParseSettings custom = new ParseSettings(false, false);
+        // WHEN applying the custom settings -> B1->B7
+        Parser returned = p.settings(custom);
+        // THEN the returned parser is same instance and settings() returns the exact object
+        assertSame(p, returned, "settings(...) should return the same parser instance");
+        assertSame(custom, p.settings(), "settings() should return the custom ParseSettings object");
+    }
+
+    @Test
+    @DisplayName("TC05: htmlParser().defaultNamespace delegates to HtmlTreeBuilder.defaultNamespace")
+    public void test_TC05() {
+        // GIVEN a htmlParser
+        Parser p = Parser.htmlParser();
+        // WHEN querying defaultNamespace -> B4->B9
+        String ns = p.defaultNamespace();
+        // THEN it should match the static NamespaceHtml
+        assertEquals(Parser.NamespaceHtml, ns, "defaultNamespace() should be the HTML namespace constant");
+    }
+
+    @Test
+    @DisplayName("TC06: unescapeEntities handles numeric and named entities in attribute mode and text mode")
+    public void test_TC06() {
+        // GIVEN a string with named and numeric entities
+        String input = "&amp; &#65; &lt;";
+        // WHEN unescaping in text mode and attribute mode -> B8->B10
+        String textMode = Parser.unescapeEntities(input, false);
+        String attrMode = Parser.unescapeEntities(input, true);
+        // THEN both modes should yield the same expected unescaped string
+        assertEquals("& A <", textMode, "Text mode should unescape &amp;, &#65;, &lt;");
+        assertEquals("& A <", attrMode, "Attribute mode should unescape &amp;, &#65;, &lt;");
+    }
+
+    @Test
+    @DisplayName("TC07: parseFragment overload with custom ParseErrorList injects errors into provided list")
+    public void test_TC07() {
+        // GIVEN malformed fragment and a tracking error list with maxSize=2
+        String badHtml = "<div><";
+        Element ctx = new Element("div");
+        ParseErrorList errors = ParseErrorList.tracking(2);
+        // WHEN parsing with custom errorList -> B5->B11
+        List<Node> nodes = Parser.parseFragment(badHtml, ctx, "base", errors);
+        // THEN we obtain a nodes list (possibly empty) and the provided errors list size <= 2
+        assertNotNull(nodes, "Returned node list should not be null even for malformed input");
+        assertTrue(errors.size() <= 2, "Provided ParseErrorList should contain at most 2 errors");
+    }
+
+    @Test
+    @DisplayName("TC08: parseBodyFragment re-parents nodes and leaves head empty")
+    public void test_TC08() {
+        // GIVEN a fragment with two paragraphs
+        String frag = "<p>one</p><p>two</p>";
+        String base = "http://example.com";
+        // WHEN parsing body fragment -> B6->B12->B13
+        Document doc = Parser.parseBodyFragment(frag, base);
+        // THEN head should be empty and body should have two <p> children in order
+        assertTrue(doc.head().children().isEmpty(), "Head should remain empty after parseBodyFragment");
+        assertEquals(2, doc.body().children().size(), "Body should contain two reparented <p> elements");
+        assertEquals("p", doc.body().child(0).tagName(), "First child tag should be <p>");
+        assertEquals("one", doc.body().child(0).text(), "First paragraph text should be 'one'");
+    }
+}

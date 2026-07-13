@@ -1,0 +1,58 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("TC07: children() on element with multiple Element children returns all in order (loop>1, branch match true multiple times)")
+    public void test_TC07() {
+        // GIVEN an element with three child Elements appended in order
+        Element el = new Element("ul"); // no children initially, triggers ensureChildNodes on first append
+        Element li1 = el.appendElement("li"); // adds first child -> shadowChildrenRef built
+        Element li2 = el.appendElement("li"); // adds second child -> cache invalidated and rebuilt on next children()
+        Element li3 = el.appendElement("li"); // adds third child
+
+        // WHEN children() is called, loops over childNodes, matching instance of Element three times
+        Elements result = el.children();
+
+        // THEN we get exactly three child elements in insertion order
+        assertAll("Check three children returned in order",
+            () -> assertEquals(3, result.size(), "Expected 3 children elements"),
+            () -> assertEquals("li", result.get(0).tagName(), "First child tag should be 'li'"),
+            () -> assertEquals("li", result.get(1).tagName(), "Second child tag should be 'li'"),
+            () -> assertEquals("li", result.get(2).tagName(), "Third child tag should be 'li'")
+        );
+    }
+
+    @Test
+    @DisplayName("TC08: children() after manual cache invalidation without adding new children rebuilds and returns same elements (shadowChildrenRef cleared branch)")
+    public void test_TC08() throws Exception {
+        // GIVEN an element with a single child Element
+        Element el = new Element("div");
+        Element child = el.appendElement("span");
+        // first children() call populates shadowChildrenRef
+        Elements first = el.children();
+        assertEquals(1, first.size(), "First children() should return one element");
+        assertSame(child, first.get(0), "First element should be the same instance appended");
+
+        // MANUALLY clear the internal child elements cache via package-private nodelistChanged()
+        Method clearCache = Element.class.getDeclaredMethod("nodelistChanged");
+        clearCache.setAccessible(true);
+        clearCache.invoke(el); // triggers shadowChildrenRef = null
+
+        // WHEN children() called again after invalidation
+        Elements second = el.children();
+
+        // THEN we get the same single element instance again, showing cache rebuild
+        assertAll("After invalidation, children() should rebuild and return same child",
+            () -> assertEquals(1, second.size(), "Second children() should return one element"),
+            () -> assertSame(child, second.get(0), "Second element should be the same instance appended")
+        );
+    }
+}

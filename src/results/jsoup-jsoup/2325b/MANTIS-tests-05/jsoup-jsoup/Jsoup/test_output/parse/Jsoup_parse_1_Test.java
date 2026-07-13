@@ -1,0 +1,142 @@
+package org.jsoup;
+
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+@ExtendWith(MockitoExtension.class)
+public class Jsoup_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(File) loads HTML and sets baseUri to file absolute path")
+    public void test_TC11() throws IOException {
+        // Create a temp file with HTML content to satisfy B0→B10→B11 path
+        File tmp = File.createTempFile("jsoup-test", ".html");
+        tmp.deleteOnExit();
+        try (FileWriter w = new FileWriter(tmp)) {
+            w.write("<p>Fpath</p>");
+        }
+        // When: parse without charset/baseUri overload
+        Document doc = Jsoup.parse(tmp);
+        // Then: baseUri should be the file absolute path, and content parsed as expected
+        assertEquals(tmp.getAbsolutePath(), doc.baseUri(), "Expected baseUri to match file absolute path");
+        assertEquals("Fpath", doc.select("p").text(), "Expected <p> text to be 'Fpath'");
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeout) throws HttpStatusException when HTTP error occurs")
+    public void test_TC12() throws Exception {
+        // Given: URL and timeout, and a mocked Connection whose get() throws HttpStatusException (path B0→B13→B15→B16)
+        URL url = new URL("http://example.com");
+        int timeout = 2000;
+        HttpConnection.Connection conMock = Mockito.mock(HttpConnection.Connection.class);
+        // Stub connect to return our mock, and timeout() to return same mock
+        try (MockedStatic<HttpConnection> httpConnStatic = Mockito.mockStatic(HttpConnection.class)) {
+            httpConnStatic.when(() -> HttpConnection.connect(eq(url))).thenReturn(conMock);
+            Mockito.when(conMock.timeout(timeout)).thenReturn(conMock);
+            // Simulate HTTP error status
+            Mockito.when(conMock.get()).thenThrow(new org.jsoup.HttpStatusException("error-status", 500, "http://example.com"));
+            // When/Then: expect HttpStatusException from Jsoup.parse
+            assertThrows(org.jsoup.HttpStatusException.class,
+                () -> Jsoup.parse(url, timeout),
+                "Expected HttpStatusException when HTTP status is error");
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeout) throws UnsupportedMimeTypeException on unsupported content-type")
+    public void test_TC13() throws Exception {
+        // Given: URL and timeout, and a mocked Connection whose get() throws UnsupportedMimeTypeException (B0→B13→B15→B16)
+        URL url = new URL("http://example.com/resource.bin");
+        int timeout = 1000;
+        HttpConnection.Connection conMock = Mockito.mock(HttpConnection.Connection.class);
+        try (MockedStatic<HttpConnection> httpConnStatic = Mockito.mockStatic(HttpConnection.class)) {
+            httpConnStatic.when(() -> HttpConnection.connect(eq(url))).thenReturn(conMock);
+            Mockito.when(conMock.timeout(timeout)).thenReturn(conMock);
+            Mockito.when(conMock.get()).thenThrow(new org.jsoup.UnsupportedMimeTypeException("binary", "application/octet-stream", url.toString()));
+            assertThrows(org.jsoup.UnsupportedMimeTypeException.class,
+                () -> Jsoup.parse(url, timeout),
+                "Expected UnsupportedMimeTypeException on unsupported mime type");
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeout) throws SocketTimeoutException when read times out")
+    public void test_TC14() throws Exception {
+        // Given: URL and tiny timeout, and a mocked Connection whose get() throws SocketTimeoutException (B0→B13→B15→B16)
+        URL url = new URL("http://slow.example.com");
+        int timeout = 1;
+        HttpConnection.Connection conMock = Mockito.mock(HttpConnection.Connection.class);
+        try (MockedStatic<HttpConnection> httpConnStatic = Mockito.mockStatic(HttpConnection.class)) {
+            httpConnStatic.when(() -> HttpConnection.connect(eq(url))).thenReturn(conMock);
+            Mockito.when(conMock.timeout(timeout)).thenReturn(conMock);
+            Mockito.when(conMock.get()).thenThrow(new SocketTimeoutException("Read timed out"));
+            assertThrows(SocketTimeoutException.class,
+                () -> Jsoup.parse(url, timeout),
+                "Expected SocketTimeoutException when connection times out");
+        }
+    }
+
+    @Test
+    @DisplayName("parse(Path) loads HTML and sets baseUri to path absolute path")
+    public void test_TC15() throws IOException {
+        // Create a temp HTML file via Path to satisfy B0→B20→B21 path
+        Path p = Files.createTempFile("jsoup-test-path", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<div>Pth</div>".getBytes());
+        // When: parse Path overload without charset/baseUri
+        Document doc = Jsoup.parse(p);
+        // Then: baseUri should be path.toAbsolutePath().toString(), and content parsed correctly
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri(), "Expected baseUri to match path absolute path");
+        assertEquals("Pth", doc.select("div").text(), "Expected <div> text to be 'Pth'");
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName) loads HTML using given charset and sets baseUri to absolute path")
+    public void test_TC16() throws IOException {
+        // Create a temp HTML file via Path with UTF-8 content (B0→B20→B22)
+        Path p = Files.createTempFile("jsoup-test-path-utf8", ".html");
+        p.toFile().deleteOnExit();
+        String html = "<span>Ch</span>";
+        Files.write(p, html.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        // When: parse Path with charset
+        Document doc = Jsoup.parse(p, charset);
+        // Then: baseUri matches absolute path, and span text correct
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri(), "Expected baseUri to match path absolute path");
+        assertEquals("Ch", doc.select("span").text(), "Expected <span> text to be 'Ch'");
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri) loads HTML and honors provided baseUri")
+    public void test_TC17() throws IOException {
+        // Create a temp HTML file via Path (B0→B20→B23)
+        Path p = Files.createTempFile("jsoup-test-path-base", ".html");
+        p.toFile().deleteOnExit();
+        Files.write(p, "<i>BI</i>".getBytes());
+        String charset = null;
+        String baseUri = "http://base.test/";
+        // When: parse Path with charset null and explicit baseUri
+        Document doc = Jsoup.parse(p, charset, baseUri);
+        // Then: baseUri should be the provided one, and <i> content as expected
+        assertEquals(baseUri, doc.baseUri(), "Expected baseUri to match provided baseUri");
+        assertEquals("BI", doc.select("i").text(), "Expected <i> text to be 'BI'");
+    }
+}

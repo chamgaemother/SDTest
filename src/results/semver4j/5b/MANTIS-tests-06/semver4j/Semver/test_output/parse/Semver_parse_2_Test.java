@@ -1,0 +1,51 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_2_Test {
+
+    @Test
+    @DisplayName("parse accepts version with only pre-release metadata (branch B0→B2→B3→B4→B5)")
+    void test_TC06() {
+        // This input has a valid core version and only pre-release metadata, covering branches B2 (non-null), B3 (try block), B4 (no build), B5 (pre-release present)
+        String version = "1.2.3-alpha";
+        Semver result = Semver.parse(version);
+        // Expect a non-null Semver pointing to the exact pre-release string
+        assertNotNull(result, "Expected parse to return a Semver instance, not null");
+        // The formatted version should include the pre-release but no build metadata
+        assertEquals("1.2.3-alpha", result.getVersion(), "Version string should preserve the pre-release segment");
+        List<String> expectedPre = Arrays.asList("alpha");
+        assertEquals(expectedPre, result.getPreRelease(), "Pre-release list should contain exactly [\"alpha\"]");
+        assertTrue(result.getBuild().isEmpty(), "Build metadata list should be empty when none provided");
+    }
+
+    @Test
+    @DisplayName("parse accepts version with only build metadata (branch B0→B2→B3→B4→B5)")
+    void test_TC07() {
+        // This input has a valid core version and only build metadata, covering branches B2 (non-null), B3 (try block), B4 (no pre-release), B5 (build present)
+        String version = "1.2.3+build.123";
+        Semver result = Semver.parse(version);
+        // Expect parse to succeed with build tokens split on '.'
+        assertNotNull(result, "Expected parse to return a Semver instance, not null");
+        assertEquals("1.2.3+build.123", result.getVersion(), "Version string should preserve the build metadata segment");
+        assertTrue(result.getPreRelease().isEmpty(), "Pre-release list should be empty when none provided");
+        List<String> expectedBuild = Arrays.asList("build", "123");
+        assertEquals(expectedBuild, result.getBuild(), "Build list should contain exactly [\"build\", \"123\"]");
+    }
+
+    @Test
+    @DisplayName("parse returns null for a string that is only whitespace trimmed to empty (branch B0→B2→B6)")
+    void test_TC08() {
+        // Input trimmed to empty triggers StrictParser exception and leads to null return, covering branch B6
+        String version = "   ";
+        Semver result = Semver.parse(version);
+        // parse should return null on blank input
+        assertNull(result, "Expected parse to return null for blank input after trimming");
+    }
+}

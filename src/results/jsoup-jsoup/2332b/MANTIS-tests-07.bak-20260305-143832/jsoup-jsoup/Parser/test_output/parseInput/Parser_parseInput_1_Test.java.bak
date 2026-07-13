@@ -1,0 +1,60 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC06: parseInput(reader, baseUri) throws NullPointerException when reader is null")
+    public void test_TC06() {
+        // GIVEN a new HTML parser and a null reader to trigger the null-check path
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        String baseUri = "http://example.com";
+
+        // WHEN/THEN calling parseInput should throw NullPointerException (reader is null)
+        assertThrows(NullPointerException.class, () -> {
+            parser.parseInput(reader, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("TC07: parseInput(reader, baseUri) throws IllegalArgumentException when baseUri is null")
+    public void test_TC07() {
+        // GIVEN a new HTML parser and valid reader but null baseUri to trigger argument validation
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("<p>x</p>");
+        String baseUri = null;
+
+        // WHEN/THEN calling parseInput should throw IllegalArgumentException (baseUri null)
+        assertThrows(IllegalArgumentException.class, () -> {
+            parser.parseInput(reader, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("TC08: parseInput(reader, baseUri) with real Reader and HTML parser returns parsed Document")
+    public void test_TC08() {
+        // GIVEN a new HTML parser, a StringReader with two list items, and a valid baseUri
+        Parser parser = Parser.htmlParser();
+        String html = "<ul><li>one</li><li>two</li></ul>";
+        Reader reader = new StringReader(html);
+        String baseUri = "http://site";
+
+        // WHEN parsing the input, should produce a Document with correct baseUri and two <li> elements
+        Document doc = parser.parseInput(reader, baseUri);
+
+        // THEN verify the baseUri and the parsed structure
+        assertAll(
+            () -> assertEquals(baseUri, doc.baseUri(), "Base URI should be set to the provided value"),
+            () -> assertEquals(2, doc.select("li").size(), "Should parse two <li> elements"),
+            () -> assertEquals("one", doc.select("li").first().text(), "First <li> text should be 'one'")
+        );
+    }
+}

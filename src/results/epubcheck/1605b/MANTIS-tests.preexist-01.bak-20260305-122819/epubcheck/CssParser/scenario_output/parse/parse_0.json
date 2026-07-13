@@ -1,0 +1,195 @@
+{"scenarios":{"parse":[  
+  {  
+    "id":"TC01",  
+    "description":"Empty input: iterator.hasNext(FILTER_S_CMNT_CDO_CDC)==false triggers zero-loop path",  
+    "path":"B0→B1→B8",  
+    "precondition":"Reader supplying no CSS tokens (stubbed JsonTokenIterator.hasNext to return false immediately)",  
+    "expectedResult":"CssContentHandler.startDocument() called once; then CssContentHandler.endDocument() called once; no further handler invocations",  
+    "tags":["loop-0","branch-false"],  
+    "priority":"P0",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC01 parse empty-input",  
+      "  GIVEN",  
+      "    Reader reader = emptyReader();",  
+      "    stub scan() to return iterator.hasNext(FILTER_S_CMNT_CDO_CDC)->false;",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    verify docHandler.startDocument() once; verify docHandler.endDocument() once;"  
+    ]  
+  },  
+  {  
+    "id":"TC02",  
+    "description":"Single ATKEYWORD token: take branch where type==ATKEYWORD and handleRuleSet invoked then loop ends",  
+    "path":"B0→B1→B2→B4→B5→B7→B1→B8",  
+    "precondition":"Stub scan() returns iterator with one CssToken of type ATKEYWORD, then hasNext returns false after; stub handleRuleSet to record invocation",  
+    "expectedResult":"CssContentHandler.startDocument() called; handleRuleSet invoked once; CssContentHandler.endDocument() called; no exception",  
+    "tags":["loop-1","branch-true","branch-false","overload:Reader,String"],  
+    "priority":"P1",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC02 parse single-ATKEYWORD",  
+      "  GIVEN",  
+      "    Reader reader = readerWithToken(ATKEYWORD);",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert handleRuleSet called once; docHandler.endDocument() called once"  
+    ]  
+  },  
+  {  
+    "id":"TC03",  
+    "description":"Single non-ATKEYWORD token: take branch where type!=ATKEYWORD and handleAtRule invoked then loop ends",  
+    "path":"B0→B1→B2→B3→B5→B7→B1→B8",  
+    "precondition":"Stub scan() returns iterator with one CssToken of type IDENT (non-ATKEYWORD); stub handleAtRule to record invocation",  
+    "expectedResult":"CssContentHandler.startDocument() called; handleAtRule invoked once; CssContentHandler.endDocument() called; no exception",  
+    "tags":["loop-1","branch-false","branch-true","overload:Reader,String"],  
+    "priority":"P1",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC03 parse single-nonATKEYWORD",  
+      "  GIVEN",  
+      "    Reader reader = readerWithToken(IDENT);",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert handleAtRule called once; docHandler.endDocument() called once"  
+    ]  
+  },  
+  {  
+    "id":"TC04",  
+    "description":"Multiple tokens >1 iterations: alternating types to cover two-loop iterations",  
+    "path":"B0→B1→B2→B4→B5→B7→B1→B2→B3→B5→B7→B1→B8",  
+    "precondition":"Stub scan() returns iterator with two tokens [ATKEYWORD, IDENT], then empty",  
+    "expectedResult":"handleRuleSet called once; handleAtRule called once; start and endDocument each once; no exception",  
+    "tags":["loop-N","branch-mixed"],  
+    "priority":"P1",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC04 parse multi-iteration",  
+      "  GIVEN",  
+      "    Reader reader = readerWithTokens([ATKEYWORD, IDENT]);",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert handleRuleSet and handleAtRule each called once; docHandler.endDocument() once"  
+    ]  
+  },  
+  {  
+    "id":"TC05",  
+    "description":"PrematureEOFException thrown inside handleAtRule causes loop break and normal endDocument",  
+    "path":"B0→B1→B2→B3→B6→B8",  
+    "precondition":"Stub scan() returns one non-ATKEYWORD token; stub handleAtRule to throw PrematureEOFException",  
+    "expectedResult":"handleAtRule throws PrematureEOFException; parser catches and breaks; docHandler.endDocument() called once; no rethrow",  
+    "tags":["loop-1","exception","branch-true"],  
+    "priority":"P0",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC05 parse prematureEOF in-handleAtRule",  
+      "  GIVEN",  
+      "    Reader reader = readerWithToken(IDENT);",  
+      "    stub handleAtRule to throw PrematureEOFException;",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert no exception escapes; docHandler.endDocument() once"  
+    ]  
+  },  
+  {  
+    "id":"TC06",  
+    "description":"IOException thrown by scan(reader,...) propagates out of parse",  
+    "path":"B0",  
+    "precondition":"Stub scan() to throw IOException(\"io error\")",  
+    "expectedResult":"IOException with message \"io error\" is thrown; no handler methods invoked",  
+    "tags":["exception","io"],  
+    "priority":"P0",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC06 parse scan-ioexception",  
+      "  GIVEN",  
+      "    Reader reader = any; stub scan() to throw IOException(\"io error\");",  
+      "  WHEN",  
+      "    call parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    throws IOException(\"io error\");"  
+    ]  
+  },  
+  {  
+    "id":"TC07",  
+    "description":"CssException thrown by scan(reader,...) propagates out of parse",  
+    "path":"B0",  
+    "precondition":"Stub scan() to throw CssException(new CssGrammarException(...))",  
+    "expectedResult":"CssException is thrown; no startDocument or endDocument calls",  
+    "tags":["exception","grammar"],  
+    "priority":"P0",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC07 parse scan-cssexception",  
+      "  GIVEN",  
+      "    Reader reader = any; stub scan() to throw CssException;",  
+      "  WHEN",  
+      "    call parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    throws CssException;"  
+    ]  
+  },  
+  {  
+    "id":"TC08",  
+    "description":"Single token then second iteration yields hasNext false: verify correct exit B7→B1→B8",  
+    "path":"B0→B1→B2→B4→B5→B7→B1→B8",  
+    "precondition":"Stub scan() returns one ATKEYWORD token; then hasNext returns false",  
+    "expectedResult":"handleRuleSet invoked and endDocument invoked; no extra calls",  
+    "tags":["loop-1","boundary"],  
+    "priority":"P2",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC08 parse one-then-exit",  
+      "  GIVEN",  
+      "    Reader reader = readerWithToken(ATKEYWORD);",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    verify handleRuleSet() once; verify endDocument() once"  
+    ]  
+  },  
+  {  
+    "id":"TC09",  
+    "description":"Mixed tokens >2 iterations to exercise deeper loop sequence",  
+    "path":"B0→B1→B2→B3→B5→B7→B1→B2→B4→B5→B7→B1→B8",  
+    "precondition":"Stub scan() returns [IDENT, ATKEYWORD], then empty",  
+    "expectedResult":"handleAtRule and handleRuleSet each called once; start/endDocument once",  
+    "tags":["loop-N","branch-mixed"],  
+    "priority":"P2",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC09 parse two-iteration-mixed",  
+      "  GIVEN",  
+      "    Reader reader = readerWithTokens([IDENT, ATKEYWORD]);",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert both handlers called; endDocument once"  
+    ]  
+  },  
+  {  
+    "id":"TC10",  
+    "description":"PrematureEOFException thrown in handleRuleSet is caught and break from loop",  
+    "path":"B0→B1→B2→B4→B6→B8",  
+    "precondition":"Stub scan() returns one ATKEYWORD token; stub handleRuleSet to throw PrematureEOFException",  
+    "expectedResult":"no exception escapes; docHandler.endDocument() called once after break",  
+    "tags":["loop-1","exception","branch-true"],  
+    "priority":"P0",  
+    "environment":"Java 8",  
+    "pseudocode":[  
+      "TEST TC10 parse prematureEOF in-handleRuleSet",  
+      "  GIVEN",  
+      "    Reader reader = readerWithToken(ATKEYWORD);",  
+      "    stub handleRuleSet to throw PrematureEOFException;",  
+      "  WHEN",  
+      "    parser.parse(reader, \"id\", errHandler, docHandler);",  
+      "  THEN",  
+      "    assert no exception escapes; docHandler.endDocument() once"  
+    ]  
+  }  
+]}}"}

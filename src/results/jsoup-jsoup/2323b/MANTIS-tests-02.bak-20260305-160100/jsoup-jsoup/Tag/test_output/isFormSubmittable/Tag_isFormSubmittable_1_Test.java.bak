@@ -1,0 +1,56 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("Known submittable tag 'input' in non-HTML namespace returns false after namespace mismatch branch")
+    public void test_TC04() {
+        // GIVEN: a known form-submittable tag name 'input' but with a custom namespace to force namespace mismatch
+        String tagName = "input";
+        String normalName = ParseSettings.normalName(tagName);
+        String otherNamespace = "http://custom";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN: obtaining a Tag for this name and namespace
+        Tag tag = Tag.valueOf(tagName, otherNamespace, settings);
+        // Then tag.namespace != HTML namespace and also no existing registered tag matches, so a new generic tag created with formSubmit == false
+        // This satisfies path: first lookup fails (namespace mismatch), second lookup fails, new tag.isBlock=false branch, and formSubmit default false
+        boolean result = tag.isFormSubmittable();
+        // THEN: the tag should not be submittable
+        assertFalse(result, "Expected isFormSubmittable() to be false for a generic 'input' tag in a non-HTML namespace");
+    }
+
+    @Test
+    @DisplayName("Null tagName passed to valueOf triggers IllegalArgumentException")
+    public void test_TC05() {
+        // GIVEN: a null tagName should trigger Validate.notNull inside valueOf
+        String tagName = null;
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN & THEN: calling with null tagName must throw IllegalArgumentException
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> Tag.valueOf(tagName, namespace, settings),
+            "Expected valueOf to throw IllegalArgumentException when tagName is null"
+        );
+        // no message stability asserted as per specification
+    }
+
+    @Test
+    @DisplayName("Blank tagName passed to valueOf triggers IllegalArgumentException")
+    public void test_TC06() {
+        // GIVEN: a tagName of only whitespace should be trimmed to empty and trigger Validate.notEmpty
+        String tagName = "   ";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN & THEN: calling with blank tagName must throw IllegalArgumentException
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> Tag.valueOf(tagName, namespace, settings),
+            "Expected valueOf to throw IllegalArgumentException when tagName is blank"
+        );
+        // no message stability asserted as per specification
+    }
+}

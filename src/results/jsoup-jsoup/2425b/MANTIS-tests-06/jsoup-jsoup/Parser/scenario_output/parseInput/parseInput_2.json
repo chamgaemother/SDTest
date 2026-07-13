@@ -1,0 +1,77 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseInput(Reader, String) accepts null baseUri and passes it through to TreeBuilder.parse",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Stub TreeBuilder records passed baseUri and returns dummy Document",
+      "expectedResult": "returned Document is stub’s and recorded baseUri is null",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput reader null-baseUri",
+        "  GIVEN",
+        "    AtomicReference<String> rec = new AtomicReference<>();",
+        "    Document DUMMY = new Document(\"stub://\");",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { rec.set(uri); return DUMMY; }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.html(); }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token tok) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<x/>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assertSame(DUMMY, result);",
+        "    assertNull(rec.get());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) propagates unexpected RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→exception",
+      "precondition": "Stub TreeBuilder.parse throws IllegalStateException",
+      "expectedResult": "IllegalStateException with message \"bad\" is thrown",
+      "tags": [
+        "exception",
+        "string-overload",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput string propagate-runtime-ex",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"bad\"); }",
+        "      @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.htmlDefault; }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.html(); }",
+        "      @Override public String defaultNamespace() { return \"\"; }",
+        "      @Override public void process(Token tok) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<tag/>\";",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"bad\";",
+        "END"
+      ]
+    }
+  ]
+}

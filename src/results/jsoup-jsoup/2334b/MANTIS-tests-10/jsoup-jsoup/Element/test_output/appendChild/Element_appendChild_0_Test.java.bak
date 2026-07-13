@@ -1,0 +1,180 @@
+import org.jsoup.nodes.CDataNode;
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild(null) throws NullPointerException at Validate.notNull(child) branch")
+    public void test_TC01() throws Exception {
+        Element parent = new Element("div");
+        // child is null -> Validate.notNull should throw NPE
+        assertThrows(NullPointerException.class, () -> parent.appendChild(null));
+        // after exception, no child added
+        assertEquals(0, parent.childNodeSize(), "No child should be added on exception");
+    }
+
+    @Test
+    @DisplayName("appendChild(firstChild) on orphan element creates new NodeList via ensureChildNodes()")
+    public void test_TC02() throws Exception {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("text");
+        // first appendChild: childNodes was EmptyNodes -> ensureChildNodes path taken
+        Element returned = parent.appendChild(child);
+        assertAll(
+            () -> assertEquals(1, parent.childNodeSize(), "childNodes.size == 1 after first append"),
+            () -> assertSame(parent, child.parent(), "child.parent == parent"),
+            () -> assertEquals(0, child.siblingIndex(), "child.siblingIndex == 0"),
+            () -> assertSame(parent, returned, "appendChild returns this element for chaining")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(secondChild) on element with existing children skips ensureChildNodes path")
+    public void test_TC03() throws Exception {
+        Element parent = new Element("div");
+        Element first = new Element("span");
+        parent.appendChild(first);
+        TextNode second = new TextNode("more");
+        // second appendChild: childNodes != EmptyNodes so no new ensureChildNodes call
+        parent.appendChild(second);
+        assertAll(
+            () -> assertEquals(2, parent.childNodeSize(), "childNodes.size == 2 after second append"),
+            () -> assertSame(parent, second.parent(), "second.parent == parent"),
+            () -> assertEquals(1, second.siblingIndex(), "second.siblingIndex == 1")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(reparentedChild) removes child from old parent and reassigns to new parent")
+    public void test_TC04() throws Exception {
+        Element oldParent = new Element("div");
+        Element child = new Element("p");
+        oldParent.appendChild(child);
+        Element newParent = new Element("section");
+        // reparent: child has oldParent -> oldParent loses child
+        newParent.appendChild(child);
+        assertAll(
+            () -> assertEquals(0, oldParent.childNodeSize(), "oldParent should no longer contain child"),
+            () -> assertEquals(1, newParent.childNodeSize(), "newParent should contain child after reparent"),
+            () -> assertSame(newParent, child.parent(), "child.parent == newParent")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(TextNode) ensures siblingIndex increments correctly for three inserts")
+    public void test_TC05() throws Exception {
+        Element parent = new Element("ul");
+        TextNode a = new TextNode("A");
+        TextNode b = new TextNode("B");
+        TextNode c = new TextNode("C");
+        // three sequential appends -> loop N path, siblingIndex increments
+        parent.appendChild(a);
+        parent.appendChild(b);
+        parent.appendChild(c);
+        assertAll(
+            () -> assertEquals(3, parent.childNodeSize(), "three children appended"),
+            () -> assertEquals(0, a.siblingIndex(), "first child's index 0"),
+            () -> assertEquals(1, b.siblingIndex(), "second child's index 1"),
+            () -> assertEquals(2, c.siblingIndex(), "third child's index 2")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(Element) retains chainable return of this element")
+    public void test_TC06() throws Exception {
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        Element grand = new Element("a");
+        // chainable calls: appendChild returns parent -> next appendChild on same parent
+        Element returned = parent.appendChild(child).appendChild(grand);
+        // reflect to inspect childNodes list
+        Field f = Element.class.getDeclaredField("childNodes");
+        f.setAccessible(true);
+        List<?> nodes = (List<?>) f.get(parent);
+        assertAll(
+            () -> assertSame(parent, returned, "return == parent for chaining"),
+            () -> assertEquals(2, parent.childNodeSize(), "parent has two children"),
+            () -> assertSame(grand, nodes.get(1), "second node is grandChild")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(DataNode) correctly appends non-Element Node subtype")
+    @SuppressWarnings("unchecked")
+    public void test_TC07() throws Exception {
+        Element parent = new Element("script");
+        DataNode data = new DataNode("console.log(1);");
+        // append DataNode subtype
+        parent.appendChild(data);
+        // inspect underlying list via reflection
+        Field f = Element.class.getDeclaredField("childNodes");
+        f.setAccessible(true);
+        List<Node> nodes = (List<Node>) f.get(parent);
+        assertAll(
+            () -> assertEquals(1, parent.childNodeSize(), "one child added"),
+            () -> assertTrue(nodes.get(0) instanceof DataNode, "child is instance of DataNode"),
+            () -> assertEquals(0, data.siblingIndex(), "data.siblingIndex == 0")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(CDataNode) correctly appends XML-compatible node")
+    @SuppressWarnings("unchecked")
+    public void test_TC08() throws Exception {
+        Element parent = new Element("div");
+        CDataNode cdata = new CDataNode("<tag>value</tag>");
+        // append CDataNode subtype
+        parent.appendChild(cdata);
+        // inspect underlying list via reflection
+        Field f = Element.class.getDeclaredField("childNodes");
+        f.setAccessible(true);
+        List<Node> nodes = (List<Node>) f.get(parent);
+        assertAll(
+            () -> assertEquals(1, parent.childNodeSize(), "one child added"),
+            () -> assertTrue(nodes.get(0) instanceof CDataNode, "child is instance of CDataNode"),
+            () -> assertEquals(0, cdata.siblingIndex(), "cdata.siblingIndex == 0")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(Node) twice ensures ensureChildNodes called only once on first call")
+    public void test_TC09() throws Exception {
+        Element parent = new Element("div");
+        TextNode a = new TextNode("A");
+        TextNode b = new TextNode("B");
+        // first call triggers ensureChildNodes, second should skip ensureChildNodes
+        parent.appendChild(a);
+        parent.appendChild(b);
+        assertAll(
+            () -> assertEquals(2, parent.childNodeSize(), "two children appended"),
+            () -> assertEquals(0, a.siblingIndex(), "first child's index 0"),
+            () -> assertEquals(1, b.siblingIndex(), "second child's index 1")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(Node) after clear children rebuilds NodeList via ensureChildNodes")
+    public void test_TC10() throws Exception {
+        Element parent = new Element("div");
+        TextNode first = new TextNode("old");
+        parent.appendChild(first);
+        parent.empty();  // clears childNodes list
+        TextNode second = new TextNode("new");
+        // after empty, childNodes == EmptyNodes -> ensureChildNodes on append
+        parent.appendChild(second);
+        assertAll(
+            () -> assertEquals(1, parent.childNodeSize(), "one child after empty and append"),
+            () -> assertEquals(0, second.siblingIndex(), "new child's index reset to 0")
+        );
+    }
+}

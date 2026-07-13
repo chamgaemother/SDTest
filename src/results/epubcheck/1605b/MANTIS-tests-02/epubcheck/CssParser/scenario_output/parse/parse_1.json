@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parse handles a rule‐set with a declaration (non‐ATKEYWORD → has declarations path)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "invokes doc.declaration once for 'color:red' and completes without error",
+      "tags": [
+        "positive",
+        "rule-set",
+        "declaration",
+        "iteration=1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse single rule-set with declaration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"p{color:red;}\"),",
+        "    CssErrorHandler err = new TestErrorHandler(),",
+        "    CssContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    assert err.errors.isEmpty();",
+        "    assert doc.selectorsCalled.get(0).get(0).equals(\"p\");",
+        "    assert doc.declarationsRecorded(0).get(0).toCssString().contains(\"color:red\");",
+        "    assert doc.endDocument() called once;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse handles an at‐rule with block containing declarations (ATKEYWORD→hasBlock true→declarationBlock path)",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "invokes doc.startAtRule and doc.endAtRule for 'page', and doc.declaration for 'margin:1px', no errors",
+      "tags": [
+        "positive",
+        "at-rule",
+        "block",
+        "declaration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse @page block with declaration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@page { margin:1px; }\"),",
+        "    CssErrorHandler err = new TestErrorHandler(),",
+        "    CssContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.errors.isEmpty();",
+        "    assert doc.startAtRules.get(0).equals(\"page\");",
+        "    assert doc.declarationsRecordedInAtRule(0).get(0).toCssString().contains(\"margin:1px\");",
+        "    assert doc.endAtRules.get(0).equals(\"page\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse handles an at‐rule with block containing nested rule‐set (ATKEYWORD→hasBlock true→hasRuleSet true path)",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "invokes nested doc.selectors for 'h1' inside @media and completes without error",
+      "tags": [
+        "positive",
+        "at-rule",
+        "block",
+        "nested-rule-set"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse @media block with nested rule-set",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media all { h1{} }\"),",
+        "    CssErrorHandler err = new TestErrorHandler(),",
+        "    CssContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"url\", err, doc);",
+        "  THEN",
+        "    assert err.errors.isEmpty();",
+        "    assert doc.startAtRules.get(0).equals(\"media\");",
+        "    assert doc.selectorsCalled.get(0).get(0).equals(\"h1\");",
+        "    assert doc.endAtRules.get(0).equals(\"media\");",
+        "END"
+      ]
+    }
+  ]
+}

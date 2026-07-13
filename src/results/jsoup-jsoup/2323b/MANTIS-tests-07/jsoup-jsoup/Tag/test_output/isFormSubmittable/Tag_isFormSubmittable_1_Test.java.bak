@@ -1,0 +1,50 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Tag;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 test class for Tag.isFormSubmittable method covering specified scenarios.
+ */
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("TC03: isFormSubmittable() returns true for known formSubmit tag via valueOf(tagName,settings) overload")
+    public void test_TC03() {
+        // GIVEN a ParseSettings that preserves case, and a known formSubmit tag "select"
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN obtaining the tag via the overload valueOf(String, ParseSettings)
+        Tag tag = Tag.valueOf("select", settings);
+        // THEN it should be recognized as submittable (select is in formSubmitTags static list)
+        assertEquals(true, tag.isFormSubmittable(), "Expected 'select' to be form submittable per static initialization");
+    }
+
+    @Test
+    @DisplayName("TC04: isFormSubmittable() returns false for unknown tag when preserveTagCase triggers clone path")
+    public void test_TC04() {
+        // GIVEN an unknown tagName and ParseSettings with preserveTagCase=true and preserveAttributeCase=true
+        String tagName = "Custom";
+        String normalName = ParseSettings.normalName(tagName);
+        String ns = "http://example.com";
+        ParseSettings settings = new ParseSettings(true, true);
+        // WHEN calling the full overload valueOf leading to the clone branch (unknown tag, preserveTagCase -> clone path)
+        Tag tag = Tag.valueOf(tagName, normalName, ns, settings);
+        // THEN as it's newly created, formSubmit should remain false by default
+        assertEquals(false, tag.isFormSubmittable(), "Expected cloned unknown tag to not be form submittable");
+    }
+
+    @Test
+    @DisplayName("TC05: isFormSubmittable() returns false on known but non-submittable tag (formatAsInlineTags list)")
+    public void test_TC05() {
+        // GIVEN the inline tag "span" which is not in the formSubmitTags static list
+        // WHEN fetching via the simple valueOf overload
+        Tag tag = Tag.valueOf("span");
+        // THEN tag.isFormSubmittable should be false
+        assertEquals(false, tag.isFormSubmittable(), "Expected 'span' to not be form submittable as it's not in formSubmitTags");
+    }
+}

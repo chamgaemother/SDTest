@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn adds null when input string is empty (\"\" triggers trimmed.isEmpty branch)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "DateSchemaColumn with default pattern",
+      "expectedResult": "stubDfColumn.lastAdded is null and addCount == 1",
+      "tags": [
+        "boundary",
+        "empty-string",
+        "null-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 empty-string returns null",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String aString = \"\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assertNull(stub.lastAdded);",
+        "    assertEquals(1, stub.addCount);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn throws DateTimeParseException for non-date text (invalid-format branch)",
+      "path": "B0→B1→B4→B7→exception",
+      "precondition": "DateSchemaColumn with default pattern",
+      "expectedResult": "DateTimeParseException thrown and stubDfColumn.addCount == 0",
+      "tags": [
+        "negative",
+        "exception",
+        "format-mismatch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 invalid-text throws exception",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String aString = \"not-a-date\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assertEquals(0, stub.addCount);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn throws DateTimeParseException for out-of-range numeric values (month=13 strict-resolver branch)",
+      "path": "B0→B1→B4→B7→exception",
+      "precondition": "DateSchemaColumn with default pattern",
+      "expectedResult": "DateTimeParseException thrown and stubDfColumn.addCount == 0",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary",
+        "strict-resolver"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 out-of-range-month throws exception",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String aString = \"2023-13-01\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assertEquals(0, stub.addCount);",
+        "END"
+      ]
+    }
+  ]
+}

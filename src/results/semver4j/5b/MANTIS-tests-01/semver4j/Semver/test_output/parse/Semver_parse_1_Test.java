@@ -1,0 +1,38 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.semver4j.Semver;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(\"1.2.3+exp.sha.5114f85\") returns Semver instance with build-only identifiers")
+    void test_TC11() {
+        // This input has no pre-release section but has a build section after '+', 
+        // so it should follow the path B0→B2→B3: valid parse then build-only branch.
+        String version = "1.2.3+exp.sha.5114f85";
+        Semver result = Semver.parse(version);
+        // result should not be null for a valid semver string
+        assertNotNull(result, "Expected non-null Semver instance for valid build-only version");
+        // pre-release identifiers list must be empty for build-only semver
+        assertEquals(Collections.emptyList(), result.getPreRelease(), "Expected no pre-release identifiers");
+        // build identifiers must match the dot-separated tokens after '+'
+        assertEquals(Arrays.asList("exp", "sha", "5114f85"), result.getBuild(), "Expected correct build identifiers");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3.\") catches parse error for trailing dot and returns null")
+    void test_TC12() {
+        // This input ends with an extra dot, which is an invalid semver format.
+        // It should follow the path B0→B2→B4: parsing error path resulting in null.
+        String version = "1.2.3.";
+        Semver result = Semver.parse(version);
+        // result should be null because the trailing dot makes the version invalid
+        assertNull(result, "Expected null for invalid version string with trailing dot");
+    }
+}

@@ -1,0 +1,181 @@
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.parser.ParseException;
+import com.ezylang.evalex.parser.Token;
+import com.ezylang.evalex.parser.Tokenizer;
+import com.ezylang.evalex.parser.Token.TokenType;
+
+public class Tokenizer_parse_Test {
+
+    /**
+     * TC01: Empty expression returns empty token list without exceptions
+     * Path covers B0→B1 (first getNextToken() returns null) → B7→B9→B11.
+     */
+    @Test
+    @DisplayName("Empty expression returns empty token list without exceptions")
+    public void test_TC01() throws ParseException {
+        ExpressionConfiguration config = new ExpressionConfiguration(); // default settings
+        Tokenizer tokenizer = new Tokenizer("", config);
+        List<Token> tokens = tokenizer.parse();
+        assertTrue(tokens.isEmpty(), "An empty expression should yield no tokens");
+    }
+
+    /**
+     * TC02: Single number literal parsed and returned
+     * Path covers B0→B1→B2 false (no implicit multiplication) → B6→B1→B7→B9→B11.
+     */
+    @Test
+    @DisplayName("Single number literal parsed and returned")
+    public void test_TC02() throws ParseException {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        // "123" is a single decimal literal
+        Tokenizer tokenizer = new Tokenizer("123", config);
+        List<Token> tokens = tokenizer.parse();
+        assertEquals(1, tokens.size(), "Should parse exactly one token");
+        Token t = tokens.get(0);
+        assertAll("Verify number literal token",
+            () -> assertEquals(TokenType.NUMBER_LITERAL, t.getType()),
+            () -> assertEquals("123", t.getValue())
+        );
+    }
+
+    /**
+     * TC03: Unmatched closing brace throws Unexpected closing brace exception
+     * Input ")" will cause parseBraceClose() → braceBalance-- → negative → exception.
+     */
+    @Test
+    @DisplayName("Unmatched closing brace throws Unexpected closing brace exception")
+    public void test_TC03() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer(")", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Unexpected closing brace"),
+            "Exception message should mention unexpected closing brace");
+    }
+
+    /**
+     * TC04: Unmatched opening brace throws Closing brace not found exception
+     * Input "(" leads to one BRACE_OPEN, then getNextToken null, then braceBalance >0 → exception.
+     */
+    @Test
+    @DisplayName("Unmatched opening brace throws Closing brace not found exception")
+    public void test_TC04() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer("(", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertEquals("Closing brace not found", ex.getMessage());
+    }
+
+    /**
+     * TC05: Implicit multiplication between number and variable with allowed enabled inserts '*'
+     * "2x" → after NUMBER_LITERAL then VARIABLE → implicitMultiplicationPossible true; config allows → insert "*"
+     */
+    @Test
+    @DisplayName("Implicit multiplication between number and variable with allowed enabled inserts '*'")
+    public void test_TC05() throws ParseException {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        config.setImplicitMultiplicationAllowed(true);
+        Tokenizer tokenizer = new Tokenizer("2x", config);
+        List<Token> tokens = tokenizer.parse();
+        assertEquals(3, tokens.size(), "Should be three tokens: 2, *, x");
+        assertAll("Check tokens",
+            () -> assertEquals(TokenType.NUMBER_LITERAL, tokens.get(0).getType()),
+            () -> assertEquals("2", tokens.get(0).getValue()),
+            () -> assertEquals(TokenType.INFIX_OPERATOR, tokens.get(1).getType()),
+            () -> assertEquals("*", tokens.get(1).getValue()),
+            () -> assertEquals(TokenType.VARIABLE_OR_CONSTANT, tokens.get(2).getType()),
+            () -> assertEquals("x", tokens.get(2).getValue())
+        );
+    }
+
+    /**
+     * TC06: Implicit multiplication disallowed throws Missing operator exception
+     * "2x" with implicitMultiplicationAllowed=false → implicitMultiplicationPossible true → config disallows → exception.
+     */
+    @Test
+    @DisplayName("Implicit multiplication disallowed throws Missing operator exception")
+    public void test_TC06() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        config.setImplicitMultiplicationAllowed(false);
+        Tokenizer tokenizer = new Tokenizer("2x", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Missing operator"), "Should mention Missing operator");
+    }
+
+    /**
+     * TC07: Misplaced structure separator at start throws Misplaced structure operator
+     * ".abc" with structuresAllowed=true → parseStructureSeparator() → no previousToken → exception.
+     */
+    @Test
+    @DisplayName("Misplaced structure separator at start throws Misplaced structure operator")
+    public void test_TC07() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        config.setStructuresAllowed(true);
+        Tokenizer tokenizer = new Tokenizer(".abc", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Misplaced structure operator"),
+            "Should mention Misplaced structure operator");
+    }
+
+    /**
+     * TC08: Unexpected token after infix operator throws exception
+     * "1+*2" → parse 1, then '+', then '*' is invalid after infix → exception.
+     */
+    @Test
+    @DisplayName("Unexpected token after infix operator throws exception")
+    public void test_TC08() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer("1+*2", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Unexpected token after infix operator"),
+            "Should mention unexpected token after infix operator");
+    }
+
+    /**
+     * TC09: Decimal number literal with single dot parsed correctly
+     * "1.23" → parsed as single NUMBER_LITERAL containing one dot.
+     */
+    @Test
+    @DisplayName("Decimal number literal with single dot parsed correctly")
+    public void test_TC09() throws ParseException {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer("1.23", config);
+        List<Token> tokens = tokenizer.parse();
+        assertEquals(1, tokens.size());
+        assertEquals("1.23", tokens.get(0).getValue(), "Decimal literal should be '1.23'");
+    }
+
+    /**
+     * TC10: Illegal scientific notation missing exponent throws exception
+     * "1e" → parseDecimalNumberLiteral sees 'e' then EOF or non-digit → illegal scientific format.
+     */
+    @Test
+    @DisplayName("Illegal scientific notation missing exponent throws exception")
+    public void test_TC10() {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer("1e", config);
+        ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+        assertTrue(ex.getMessage().contains("Illegal scientific format"),
+            "Should mention Illegal scientific format");
+    }
+
+    /**
+     * TC11: Hexadecimal number literal parsed correctly
+     * "0x1A" → parseHexNumberLiteral branch.
+     */
+    @Test
+    @DisplayName("Hexadecimal number literal parsed correctly")
+    public void test_TC11() throws ParseException {
+        ExpressionConfiguration config = new ExpressionConfiguration();
+        Tokenizer tokenizer = new Tokenizer("0x1A", config);
+        List<Token> tokens = tokenizer.parse();
+        assertEquals(1, tokens.size());
+        assertEquals("0x1A", tokens.get(0).getValue(), "Hex literal should be '0x1A'");
+    }
+}

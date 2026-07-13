@@ -1,0 +1,50 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for tag case sensitivity behavior in Parser.parseInput and Document.select.
+ */
+public class Parser_tagSet_2_Test {
+
+    @Test
+    @DisplayName("Default htmlParser settings are case-insensitive so uppercase tags are folded and not selectable")
+    public void test_TC03() {
+        // GIVEN: htmlParser uses default case-insensitive settings (path B0→B1→B3→B6→B8)
+        Parser parser = Parser.htmlParser();
+        
+        // WHEN: parse an element with uppercase tag
+        Document doc = parser.parseInput("<TAG>Text</TAG>", "");
+        
+        // THEN: uppercase selector should find zero, lowercase should find one
+        // inline comment: uppercase "TAG" folded to lower during parse, so select("TAG") returns nothing
+        Elements upperSelect = doc.select("TAG");
+        assertEquals(0, upperSelect.size(), "Expected no elements for uppercase selector under case-insensitive htmlParser");
+        // inline comment: lowercase "tag" matches the folded element
+        Elements lowerSelect = doc.select("tag");
+        assertEquals(1, lowerSelect.size(), "Expected one element for lowercase selector under case-insensitive htmlParser");
+    }
+
+    @Test
+    @DisplayName("Default xmlParser settings are case-sensitive so uppercase tags are preserved and selectable")
+    public void test_TC04() {
+        // GIVEN: xmlParser uses default case-sensitive settings (path B0→B1→B3→B6→B7)
+        Parser parser = Parser.xmlParser();
+        
+        // WHEN: parse an element with uppercase tag
+        Document doc = parser.parseInput("<TAG>Text</TAG>", "");
+        
+        // THEN: uppercase selector should find one, lowercase should find zero
+        // inline comment: xmlParser preserves case, so select("TAG") matches exactly one
+        Elements upperSelect = doc.select("TAG");
+        assertEquals(1, upperSelect.size(), "Expected one element for uppercase selector under case-sensitive xmlParser");
+        // inline comment: lowercase "tag" should not match uppercase element in case-sensitive mode
+        Elements lowerSelect = doc.select("tag");
+        assertEquals(0, lowerSelect.size(), "Expected no elements for lowercase selector under case-sensitive xmlParser");
+    }
+}

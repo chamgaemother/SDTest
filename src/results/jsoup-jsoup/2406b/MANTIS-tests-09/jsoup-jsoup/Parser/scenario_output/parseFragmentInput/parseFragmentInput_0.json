@@ -1,0 +1,238 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String-overload: non-empty fragment and non-null context invokes treeBuilder.parseFragment once and returns its result",
+      "path": "B1→B2→B3",
+      "precondition": "Use a stub TreeBuilder provided to Parser that on parseFragment(reader,context,baseUri,parser) returns List.of(new org.jsoup.nodes.TextNode(\"x\",\"\"))",
+      "expectedResult": "returns a List containing one TextNode with text 'x'",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-non-null",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput normal-string",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilder); Element ctx = new org.jsoup.nodes.Element(\"div\"); String frag=\"<p>x</p>\"; String uri=\"base\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert nodes.size() == 1; assert nodes.get(0) instanceof org.jsoup.nodes.TextNode; assert ((org.jsoup.nodes.TextNode)nodes.get(0)).text().equals(\"x\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String-overload: fragment is null, triggers NullPointerException before parsing",
+      "path": "B1→B2(ex)→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no unlock failure",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "null-fragment"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput null-fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element ctx = new org.jsoup.nodes.Element(\"div\"); String frag = null; String uri = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "String-overload: context is null, passes null context through to treeBuilder",
+      "path": "B1→B2→B3",
+      "precondition": "Use stub TreeBuilder returning empty list when context is null",
+      "expectedResult": "returns an empty list",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-null",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03_O1 parseFragmentInput null-context",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningEmpty); Element ctx = null; String frag=\"hi\"; String uri=\"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert nodes.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "String-overload: BaseUri is null, parseFragment accepts null baseUri and returns stub result",
+      "path": "B1→B2→B3",
+      "precondition": "Use stub TreeBuilder that records baseUri argument and returns List.of()",
+      "expectedResult": "returns an empty list and stub received null baseUri",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "baseUri-null"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04_O1 parseFragmentInput null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderRecordingArgs); Element ctx = new org.jsoup.nodes.Element(\"span\"); String frag=\"<b/>\"; String uri = null;",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    assert nodes.isEmpty(); assert stubTreeBuilderRecordingArgs.lastBaseUri == null;"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "String-overload: treeBuilder.parseFragment throws IOException on Reader.read, propagates as UncheckedIOException",
+      "path": "B1→B2(ex)→B3",
+      "precondition": "Use stub TreeBuilder whose parseFragment calls reader.read() throwing IOException to simulate I/O error",
+      "expectedResult": "throws java.io.UncheckedIOException with cause instance of IOException",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05_O1 parseFragmentInput io-exception",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderIOException); Element ctx = new org.jsoup.nodes.Element(\"p\"); String frag=\"err\"; String uri=\"b\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(frag, ctx, uri);",
+        "  THEN",
+        "    throws UncheckedIOException; assert exception.getCause() instanceof IOException;"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "Reader-overload: non-empty fragment and non-null context invokes treeBuilder.parseFragment once and returns its result",
+      "path": "B1→B2→B3",
+      "precondition": "Use stub TreeBuilder provided to Parser that on parseFragment(reader,context,baseUri,parser) returns List.of(new org.jsoup.nodes.Comment(\"c\",\"\"))",
+      "expectedResult": "returns a List containing one Comment node with data 'c'",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "context-non-null",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC06_O2 parseFragmentInput normal-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilder); Element ctx = new org.jsoup.nodes.Element(\"p\"); Reader r = new java.io.StringReader(\"<--c-->\"); String uri=\"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert nodes.size() == 1; assert nodes.get(0) instanceof org.jsoup.nodes.Comment; assert ((org.jsoup.nodes.Comment)nodes.get(0)).getData().equals(\"c\");"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "Reader-overload: fragment Reader is null, triggers NullPointerException before parsing",
+      "path": "B1→B2(ex)→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "null-reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07_O2 parseFragmentInput null-reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader r = null; Element ctx = new org.jsoup.nodes.Element(\"p\"); String uri=\"b\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "Reader-overload: context is null, passes null context and stub returns empty",
+      "path": "B1→B2→B3",
+      "precondition": "Use stub TreeBuilder returning empty list when context is null",
+      "expectedResult": "returns an empty list",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "context-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08_O2 parseFragmentInput null-context-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderReturningEmpty); Reader r = new java.io.StringReader(\"data\"); Element ctx = null; String uri=\"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert nodes.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "Reader-overload: baseUri is null, stub records null and returns list",
+      "path": "B1→B2→B3",
+      "precondition": "Use stub TreeBuilder that records baseUri argument and returns List.of()",
+      "expectedResult": "returns an empty list and stub recorded null baseUri",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "baseUri-null"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC09_O2 parseFragmentInput null-baseUri-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderRecordingArgs); Reader r = new java.io.StringReader(\"<i/>\"); Element ctx = new org.jsoup.nodes.Element(\"i\"); String uri = null;",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assert nodes.isEmpty(); assert stubTreeBuilderRecordingArgs.lastBaseUri == null;"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "Reader-overload: treeBuilder.parseFragment throws IOException on Reader.read, propagates as UncheckedIOException",
+      "path": "B1→B2(ex)→B3",
+      "precondition": "Use stub TreeBuilder whose parseFragment calls reader.read() throwing IOException",
+      "expectedResult": "throws java.io.UncheckedIOException with cause instance of IOException",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC10_O2 parseFragmentInput io-exception-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubTreeBuilderIOException); Reader r = new java.io.StringReader(\"ioerr\"); Element ctx = new org.jsoup.nodes.Element(\"span\"); String uri=\"b\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    throws UncheckedIOException; assert exception.getCause() instanceof IOException;"
+      ]
+    }
+  ]
+}

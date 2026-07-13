@@ -1,0 +1,116 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseAndAddToColumn(\"2021-2-3\", column) handles one-digit month and day with default pattern",
+      "path": "B0→B2(false)→B4→B5(false)→B6→B7",
+      "precondition": "DateSchemaColumn constructed with pattern 'uuuu-M-d'; concrete DfDateColumn",
+      "expectedResult": "column.addObject(LocalDate.of(2021,2,3)) called",
+      "tags": [
+        "positive",
+        "boundary",
+        "one-digit",
+        "default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse one-digit month/day with default pattern",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String input = \"2021-2-3\";",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(input, column);",
+        "  THEN",
+        "    assertEquals(LocalDate.of(2021,2,3), column.getObject(0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseAndAddToColumn(\"31-12-2021\", column) throws DateTimeParseException with custom pattern 'dd/MM/uuuu'",
+      "path": "B0→B2(false)→B4→B5(false)→B6(exception)",
+      "precondition": "DateSchemaColumn constructed with pattern 'dd/MM/uuuu'; mocked DfDateColumn",
+      "expectedResult": "DateTimeParseException is thrown and addObject is never called",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-pattern",
+        "invalid-format"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse invalid format for custom pattern",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"dd/MM/uuuu\");",
+        "    DfDateColumn column = Mockito.mock(DfDateColumn.class);",
+        "    String input = \"31-12-2021\";",
+        "  WHEN",
+        "    call dsc.parseAndAddToColumn(input, column);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    verify(column, never()).addObject(any());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseAndAddToColumn(null, column) with custom pattern adds null to column",
+      "path": "B0→B2(true)→B3→B7",
+      "precondition": "DateSchemaColumn constructed with pattern 'dd/MM/uuuu'; concrete DfDateColumn",
+      "expectedResult": "column.addObject(null) called",
+      "tags": [
+        "positive",
+        "null-input",
+        "custom-pattern"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 null input with custom pattern",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"dd/MM/uuuu\");",
+        "    ConcreteDfDateColumn column = new ConcreteDfDateColumn();",
+        "    String input = null;",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(input, column);",
+        "  THEN",
+        "    assertNull(column.getObject(0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseAndAddToColumn(\"2000-2-29\", column) parses valid leap day in leap year with default pattern",
+      "path": "B0→B2(false)→B4→B5(false)→B6→B7",
+      "precondition": "DateSchemaColumn constructed with pattern 'uuuu-M-d'; concrete DfDateColumn",
+      "expectedResult": "column.addObject(LocalDate.of(2000,2,29)) called",
+      "tags": [
+        "positive",
+        "leap-year",
+        "boundary",
+        "default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse valid leap day",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String input = \"2000-2-29\";",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(input, column);",
+        "  THEN",
+        "    assertEquals(LocalDate.of(2000,2,29), column.getObject(0));",
+        "END"
+      ]
+    }
+  ]
+}

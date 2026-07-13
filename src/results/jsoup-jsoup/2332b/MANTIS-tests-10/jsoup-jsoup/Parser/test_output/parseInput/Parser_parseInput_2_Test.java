@@ -1,0 +1,128 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_2_Test {
+
+    @Test
+    @DisplayName("Reader overload propagates IllegalArgumentException from treeBuilder.parse")
+    public void test_TC08() {
+        // Scenario TC08: B0→B3→B6, force parse() to throw IllegalArgumentException
+        TreeBuilder tb = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { 
+                return new org.jsoup.parser.HtmlTreeBuilder().defaultSettings(); 
+            }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new IllegalArgumentException("bad arg");
+            }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public void process(org.jsoup.parser.Token token) {} // Changed protected to public
+        };
+        Parser p = new Parser(tb);
+        Reader in = new StringReader("<div>x</div>");
+        String baseUri = "uri";
+
+        IllegalArgumentException thrown = assertThrows(
+            IllegalArgumentException.class,
+            () -> p.parseInput(in, baseUri),
+            "Expected parseInput to propagate IllegalArgumentException from TreeBuilder.parse"
+        );
+        assertEquals("bad arg", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("Reader overload returns null when treeBuilder.parse returns null Document")
+    public void test_TC09() {
+        // Scenario TC09: B0→B3→B5, force parse() to return null
+        TreeBuilder tb = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { 
+                return new org.jsoup.parser.HtmlTreeBuilder().defaultSettings(); 
+            }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public void process(org.jsoup.parser.Token token) {} // Changed protected to public
+        };
+        Parser p = new Parser(tb);
+        Reader in = new StringReader("<p>test</p>");
+        String baseUri = "http://ex";
+
+        Document result = p.parseInput(in, baseUri);
+        assertNull(result, "Expected parseInput to return null when TreeBuilder.parse returns null");
+    }
+
+    @Test
+    @DisplayName("String overload propagates IOException thrown when reading from Reader via reflection")
+    public void test_TC10() throws Exception {
+        // Scenario TC10: B0→B1→B3→B6, use reflection on Reader-overload to trigger IOException in parse
+        TreeBuilder tb = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { 
+                return new org.jsoup.parser.HtmlTreeBuilder().defaultSettings(); 
+            }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) {
+                try {
+                    // in.read() triggers our faulty Reader's IOException
+                    in.read();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                return new Document(baseUri);
+            }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override public void process(org.jsoup.parser.Token token) {} // Changed protected to public
+        };
+        Parser p = new Parser(tb);
+
+        // Obtain the Reader-based parseInput method via reflection
+        Method m = Parser.class.getMethod("parseInput", Reader.class, String.class);
+        m.setAccessible(true);
+
+        // Faulty Reader that throws IOException on any read
+        Reader faulty = new Reader() {
+            @Override public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("read failed");
+            }
+            @Override public void close() {}
+        };
+
+        RuntimeException thrown = assertThrows(
+            RuntimeException.class,
+            () -> {
+                try {
+                    m.invoke(p, faulty, "uri");
+                } catch (Exception e) {
+                    // unwrap to expose original
+                    throw e.getCause() != null ? (RuntimeException)e.getCause() : new RuntimeException(e);
+                }
+            },
+            "Expected parseInput to propagate IOException wrapped in RuntimeException from TreeBuilder.parse"
+        );
+        // The TreeBuilder.parse wraps IOException into RuntimeException, so we expect it here
+        Throwable cause = thrown.getCause();
+        assertNotNull(cause, "Expected cause to be the original IOException");
+        assertTrue(cause instanceof IOException, "Expected cause to be IOException");
+        assertEquals("read failed", cause.getMessage());
+    }
+}

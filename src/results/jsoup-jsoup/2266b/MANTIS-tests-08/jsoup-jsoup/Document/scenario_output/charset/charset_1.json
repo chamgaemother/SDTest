@@ -1,0 +1,69 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "charset(Charset.US_ASCII) in HTML mode updates existing <meta charset> and removes mixed obsolete <meta name=charset>",
+      "path": "B0→B1(html)→B2(meta[charset] exists)→B3(remove obsolete)",
+      "precondition": "Document.createShell with one meta[charset] and two meta[name=charset] under head",
+      "expectedResult": "existing meta[charset] updated to US_ASCII, all meta[name=charset] removed",
+      "tags": [
+        "html",
+        "mixed-obsolete",
+        "update",
+        "removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 html mixed existing charset and obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\", \"OLD\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(Charset.forName(\"US-ASCII\").displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "charset(Charset.UTF_16LE) in XML mode prepends new XmlDeclaration when first child is XmlDeclaration with non-xml name",
+      "path": "B0→B1(xml)→B4(node instanceof XmlDeclaration && name!=\"xml\")→B5(prepend new decl)",
+      "precondition": "Document.createShell, updateMetaCharset true, syntax xml, and prepend child XmlDeclaration named 'foo'",
+      "expectedResult": "a new XmlDeclaration named 'xml' with version=1.0 and encoding=UTF_16LE is prepended before the existing 'foo' declaration",
+      "tags": [
+        "xml",
+        "declaration",
+        "non-standard-name",
+        "prepend"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 xml existing non-xml declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration fooDecl = new XmlDeclaration(\"foo\", false);",
+        "    fooDecl.attr(\"version\", \"2.0\");",
+        "    fooDecl.attr(\"encoding\", \"OLD\");",
+        "    doc.prependChild(fooDecl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16LE\"));",
+        "  THEN",
+        "    Node first = doc.childNode(0);",
+        "    assert first instanceof XmlDeclaration;",
+        "    XmlDeclaration decl = (XmlDeclaration) first;",
+        "    assert decl.name().equals(\"xml\");",
+        "    assert decl.attr(\"version\").equals(\"1.0\");",
+        "    assert decl.attr(\"encoding\").equals(Charset.forName(\"UTF-16LE\").displayName());",
+        "END"
+      ]
+    }
+  ]
+}

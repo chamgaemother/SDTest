@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild(reparenting) removes a non-last child from an old parent with multiple children and shifts siblingIndex of remaining",
+      "path": "B0→B1→B2(reparent)→B3(existing childNodes)→B4(add)→B5(setSiblingIndex)→B6(return)",
+      "precondition": "oldParent has two children, childToMove is the first child",
+      "expectedResult": "oldParent.childNodeSize() decrements by 1, remaining child's siblingIndex updates, newParent.childNodeSize() is 1, moved child's siblingIndex is 0",
+      "tags": [
+        "positive",
+        "reparent",
+        "sibling-index",
+        "multiple-children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 appendChild reparent non-last-child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"first\");",
+        "    TextNode second = new TextNode(\"second\");",
+        "    oldParent.appendChild(first);",
+        "    oldParent.appendChild(second);",
+        "    Element newParent = new Element(\"section\");",
+        "  WHEN",
+        "    newParent.appendChild(first);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 1;",
+        "    assert second.siblingIndex() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert first.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "appendChild(Element) on a fresh parent allocates a new NodeList and sets siblingIndex on Element child",
+      "path": "B0→B1(validate not null)→B3(ensureChildNodes new)→B4(add)→B5(setSiblingIndex)→B6(return)",
+      "precondition": "parent has no children and child is an Element",
+      "expectedResult": "parent.childNodeSize() becomes 1, child.siblingIndex() is 0, and parent.appendChild returns parent",
+      "tags": [
+        "positive",
+        "element-child",
+        "first-child"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 appendChild with Element child",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = new Element(\"li\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.siblingIndex() == 0;",
+        "    assert result == parent;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.thealgorithms.others.MiniMaxAlgorithm;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class MiniMaxAlgorithm_setScores_2_Test {
+
+    @Test
+    @DisplayName("TC06: setScores accepts array of length 2 (power of two) and updates scores and height == 1")
+    void test_TC06() {
+        // GIVEN a new MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = {7, 8};
+
+        // The array length is 2, which is a power of two. (scores.length % 1 == 0 yields branch false)
+        // WHEN setting the scores
+        alg.setScores(newScores);
+
+        // THEN the internal scores should be updated to [7,8]
+        assertArrayEquals(new int[]{7, 8}, alg.getScores(),
+            "Expected scores to be updated to the provided array [7,8]");
+        // AND the height should be log2(2) == 1
+        assertEquals(1, alg.getHeight(),
+            "Expected height to be log2(2) == 1 for array length 2");
+    }
+
+    @Test
+    @DisplayName("TC07: setScores accepts array of length 4 (power of two) and updates scores and height == 2")
+    void test_TC07() {
+        // GIVEN a new MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = {1, 2, 3, 4};
+
+        // The array length is 4, which is a power of two. (scores.length % 1 == 0 yields branch false)
+        // WHEN setting the scores
+        alg.setScores(newScores);
+
+        // THEN the internal scores should be updated to [1,2,3,4]
+        assertArrayEquals(new int[]{1, 2, 3, 4}, alg.getScores(),
+            "Expected scores to be updated to the provided array [1,2,3,4]");
+        // AND the height should be log2(4) == 2
+        assertEquals(2, alg.getHeight(),
+            "Expected height to be log2(4) == 2 for array length 4");
+    }
+}

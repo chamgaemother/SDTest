@@ -1,0 +1,137 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("TC01_O1: throws IllegalArgumentException when visitor is null (Validate.notNull(visitor))")
+    public void test_TC01_O1() {
+        // visitor == null triggers Validate.notNull(visitor) branch-true
+        NodeVisitor visitor = null;
+        Node root = new Element("div");
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("TC02_O1: throws IllegalArgumentException when root is null (Validate.notNull(root))")
+    public void test_TC02_O1() {
+        // root == null triggers Validate.notNull(root) branch-true
+        NodeVisitor visitor = (n, d) -> { /* no-op */ };
+        Node root = null;
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("TC03_O1: single-node tree invokes head and tail once at depth 0 (no children)")
+    public void test_TC03_O1() {
+        // single node has no children so descends not taken, tail after head
+        Element root = new Element("div");
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { events.add("H:" + n.nodeName() + ":" + d); }
+            public void tail(Node n, int d) { events.add("T:" + n.nodeName() + ":" + d); }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(Arrays.asList("H:div:0", "T:div:0"), events);
+    }
+
+    @Test
+    @DisplayName("TC04_O1: two-level tree descends into child and ascends back producing correct head/tail order")
+    public void test_TC04_O1() {
+        // root has one child, triggers descend-case then ascend-case
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { events.add(n.nodeName() + ":" + d); }
+            public void tail(Node n, int d) { events.add(n.nodeName() + ":" + d + "_tail"); }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(Arrays.asList("div:0", "p:1", "p:1_tail", "div:0_tail"), events);
+    }
+
+    @Test
+    @DisplayName("TC05_O1: node removal in head causes skip of tail for removed node and continues siblings")
+    public void test_TC05_O1() {
+        // visitor.head removes 'a', so hasParent false triggers remove-case skip tail for 'a'
+        Element root = new Element("div");
+        Element a = new Element("a"), b = new Element("b");
+        root.appendChild(a);
+        root.appendChild(b);
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) {
+                events.add("H:" + n.nodeName());
+                if ("a".equals(n.nodeName())) n.remove();
+            }
+            public void tail(Node n, int d) {
+                events.add("T:" + n.nodeName());
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertTrue(events.contains("H:a"));
+        assertFalse(events.contains("T:a"));
+        assertTrue(events.contains("H:b"));
+        assertTrue(events.contains("T:b"));
+    }
+
+    @Test
+    @DisplayName("TC06_O1: multiple siblings with depth 0 iterates each sibling correctly")
+    public void test_TC06_O1() {
+        // root has three children, leaf-case repeats for each sibling
+        Element root = new Element("div");
+        for (String name : Arrays.asList("a", "b", "c")) root.appendChild(new Element(name));
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { events.add(n.nodeName()); }
+            public void tail(Node n, int d) { events.add(n.nodeName()); }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(Arrays.asList("a", "a", "b", "b", "c", "c"), events);
+    }
+
+    @Test
+    @DisplayName("TC07_O2: Elements overload with empty list does nothing")
+    public void test_TC07_O2() {
+        // empty Elements iterator hasNext==false, loop not entered
+        NodeVisitor visitor = (n, d) -> { throw new AssertionError("Should not be called"); };
+        Elements elements = new Elements();
+        assertDoesNotThrow(() -> NodeTraversor.traverse(visitor, elements));
+    }
+
+    @Test
+    @DisplayName("TC08_O2: Elements overload with multiple elements iterates each independently")
+    public void test_TC08_O2() {
+        // elements has two entries, each triggers traverse on element subtree
+        Element e1 = new Element("div");
+        Element e2 = new Element("p");
+        Elements elements = new Elements(e1, e2);
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node n, int d) { events.add("H:" + n.nodeName()); }
+            public void tail(Node n, int d) { events.add("T:" + n.nodeName()); }
+        };
+        NodeTraversor.traverse(visitor, elements);
+        // expect both div and p visited head and tail
+        assertTrue(events.contains("H:div"));
+        assertTrue(events.contains("T:div"));
+        assertTrue(events.contains("H:p"));
+        assertTrue(events.contains("T:p"));
+    }
+}

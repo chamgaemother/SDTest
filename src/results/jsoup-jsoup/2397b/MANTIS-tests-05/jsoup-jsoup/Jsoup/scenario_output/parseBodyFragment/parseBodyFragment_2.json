@@ -1,0 +1,75 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "one-arg overload with non-empty <base href> tag overrides empty baseUri and resolves links",
+      "path": "B0→B1→B2(baseTagOverride)→B3",
+      "precondition": "none",
+      "expectedResult": "link absUrl resolved against <base href> value",
+      "tags": [
+        "positive",
+        "override",
+        "one-arg",
+        "case:default-baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment one-arg override-baseTag",
+        "  GIVEN",
+        "    String bodyHtml = \"<base href='http://override.com/sub/'><a href='p.html'>x</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assertEquals(\"http://override.com/sub/p.html\", doc.body().selectFirst(\"a\").absUrl(\"href\"));"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "two-arg overload with <base> tag missing href attribute falls back to provided baseUri",
+      "path": "B0→B1→B2(emptyBaseTag)→B3",
+      "precondition": "none",
+      "expectedResult": "link absUrl resolved against provided baseUri",
+      "tags": [
+        "positive",
+        "fallback",
+        "missing-attribute"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment missing-base-href-attr",
+        "  GIVEN",
+        "    String bodyHtml = \"<base><a href='page.html'>link</a>\";",
+        "    String baseUri = \"https://example.com/root/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assertEquals(\"https://example.com/root/page.html\", doc.body().selectFirst(\"a\").absUrl(\"href\"));"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "one-arg overload with uppercase <BASE HREF> tag overrides empty baseUri case-insensitively",
+      "path": "B0→B1→B2(baseTagOverride)→B3",
+      "precondition": "none",
+      "expectedResult": "link absUrl resolved against uppercase BASE href value",
+      "tags": [
+        "positive",
+        "override",
+        "case-insensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseBodyFragment uppercase-BASE-override",
+        "  GIVEN",
+        "    String bodyHtml = \"<BASE HREF='http://X.com/'><a href='r'>f</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assertEquals(\"http://X.com/r\", doc.body().selectFirst(\"a\").absUrl(\"href\"));"
+      ]
+    }
+  ]
+}

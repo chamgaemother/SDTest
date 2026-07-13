@@ -1,0 +1,235 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseInput(String,baseUri) returns non-empty Document for simple HTML string",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document with body containing one <p> element whose text is 'Hello'",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseInput simple-HTML",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"p\").text().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseInput(String,baseUri) returns empty Document for empty HTML string",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document whose body has no child nodes",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseInput empty-HTML",
+        "  GIVEN",
+        "    String html = \"\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseInput(String,baseUri) throws NullPointerException when html string is null",
+      "path": "B0→B6",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no lock acquired",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseInput null-HTML",
+        "  GIVEN",
+        "    String html = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseInput(String,baseUri) accepts null baseUri and yields Document with null baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document whose baseUri is null",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseInput null-baseUri",
+        "  GIVEN",
+        "    String html = \"<div>Test</div>\"; String baseUri = null;",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri() == null;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader,baseUri) returns Document for StringReader input",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document with body containing <span> tag",
+      "tags": [
+        "overload:Reader,String",
+        "positive",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05 parseInput reader-typical",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<span>Foo</span>\"); String baseUri = \"http://test\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"span\").text().equals(\"Foo\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader,baseUri) returns empty Document for Reader with no content",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document whose body has zero children",
+      "tags": [
+        "overload:Reader,String",
+        "boundary",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC06 parseInput reader-empty",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\"); String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 0;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader,baseUri) throws UncheckedIOException when Reader.read throws IOException",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Reader stub throws IOException on read to simulate I/O error",
+      "expectedResult": "throws UncheckedIOException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07 parseInput reader-ioerror",
+        "  GIVEN",
+        "    Reader reader = new Reader(){ public int read(char[] cbuf,int off,int len)throws IOException{ throw new IOException(\"fail\"); }}; String baseUri = \"u\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String,baseUri) propagates RuntimeException thrown by TreeBuilder.parse",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Use fake TreeBuilder that throws IllegalStateException in parse()",
+      "expectedResult": "throws IllegalStateException; lock released",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 parseInput treebuilder-runtime-ex",
+        "  GIVEN",
+        "    TreeBuilder fake = new TreeBuilder(){ public Document parse(Reader in,String uri,Parser p){ throw new IllegalStateException(\"oops\"); } public ParseSettings defaultSettings(){return new ParseSettings();} public TreeBuilder newInstance(){return this;} };",
+        "  WHEN",
+        "    call new Parser(fake).parseInput(\"<a/>\",\"u\");",
+        "  THEN",
+        "    throws IllegalStateException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String,baseUri) on XmlTreeBuilder returns Document with XML namespace preserved",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document whose documentElement namespaceURI equals Parser.NamespaceXml",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC09 parseInput xmlParser-preserves-namespace",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser(); String xml = \"<root xmlns='http://ns'></root>\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assert doc.child(0).namespaceUri().equals(Parser.NamespaceXml);"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(Reader,baseUri) with long HTML containing multiple siblings returns all nodes",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return Document whose body has 3 child <li> elements in order 1,2,3",
+      "tags": [
+        "overload:Reader,String",
+        "positive",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC10 parseInput reader-multiple-nodes",
+        "  GIVEN",
+        "    String html = \"<ul><li>1</li><li>2</li><li>3</li></ul>\"; Reader reader = new StringReader(html); String baseUri=\"b\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    List<Element> items = doc.body().select(\"li\"); assert items.size() == 3 && items.get(0).text().equals(\"1\") && items.get(2).text().equals(\"3\");"
+      ]
+    }
+  ]
+}

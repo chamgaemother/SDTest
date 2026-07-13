@@ -1,0 +1,166 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parse(File, String, String, Parser) delegates to DataUtil.load with provided parser",
+      "path": "B0→B21→B22→B23→B24",
+      "precondition": "temp HTML file exists with content '<p>X</p>'",
+      "expectedResult": "stub parser.parseInput called with the file's HTML and baseUri, return stub Document",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "file"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse file with parser",
+        "  GIVEN",
+        "    File f = temp file containing '<p>X</p>';",
+        "    StubParser stub = new StubParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, \"UTF-8\", \"http://base/\", stub);",
+        "  THEN",
+        "    assert stub.lastHtml.contains(\"<p>X</p>\");",
+        "    assert stub.lastBaseUri.equals(\"http://base/\");",
+        "    assertSame(stub.returnDoc, doc);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path, String, String, Parser) delegates to DataUtil.load with provided parser",
+      "path": "B0→B31→B32→B33→B34",
+      "precondition": "temp Path file exists with content '<div>Z</div>'",
+      "expectedResult": "stub parser.parseInput called with the path's HTML and baseUri, return stub Document",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse path with parser",
+        "  GIVEN",
+        "    Path p = temp file path containing '<div>Z</div>';",
+        "    StubParser stub = new StubParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, \"UTF-8\", \"http://base2/\", stub);",
+        "  THEN",
+        "    assert stub.lastHtml.contains(\"<div>Z</div>\");",
+        "    assert stub.lastBaseUri.equals(\"http://base2/\");",
+        "    assertSame(stub.returnDoc, doc);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(InputStream, String, String, Parser) delegates to DataUtil.load with provided parser",
+      "path": "B0→B41→B42→B43→B44",
+      "precondition": "InputStream over '<span>Y</span>' available",
+      "expectedResult": "stub parser.parseInput called with the stream HTML and baseUri, return stub Document",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse stream with parser",
+        "  GIVEN",
+        "    InputStream in = ByteArrayInputStream over '<span>Y</span>';",
+        "    StubParser stub = new StubParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, \"UTF-8\", \"http://stream/\", stub);",
+        "  THEN",
+        "    assert stub.lastHtml.contains(\"<span>Y</span>\");",
+        "    assert stub.lastBaseUri.equals(\"http://stream/\");",
+        "    assertSame(stub.returnDoc, doc);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "clean(String, String, Safelist) with empty baseUri and preserveRelativeLinks=true uses DummyUri to preserve link",
+      "path": "B0→B70→B71→B72→B73",
+      "precondition": "none",
+      "expectedResult": "relative href '/r' remains in output because DummyUri substituted",
+      "tags": [
+        "positive",
+        "branch",
+        "clean",
+        "relative-link"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 clean preserves relative links when enabled",
+        "  GIVEN",
+        "    String html = \"<a href='/r'>r</a>\";",
+        "    Safelist sl = Safelist.basic().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, \"\", sl);",
+        "  THEN",
+        "    assertTrue(out.contains(\"href=\\\"/r\\\"\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(URL, timeout) throws HttpStatusException on non-OK HTTP status",
+      "path": "B0→B90→B91→B92→B93",
+      "precondition": "HTTP server returns 404 status for '/'",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "url",
+        "http-status"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse URL 404 status exception",
+        "  GIVEN",
+        "    HTTP server at random port that responds 404 to GET '/'",
+        "    URL url = new URL(\"http://localhost:port/\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws HttpStatusException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(URL, timeout) throws UnsupportedMimeTypeException on unsupported Content-Type",
+      "path": "B0→B90→B94→B95→B96",
+      "precondition": "HTTP server returns status 200 with Content-Type 'image/png'",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "url",
+        "mime-type"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 parse URL unsupported mime exception",
+        "  GIVEN",
+        "    HTTP server at random port that responds 200 to GET '/' with header 'Content-Type: image/png'",
+        "    URL url = new URL(\"http://localhost:port/\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "child(0) rebuilds cache after a prior childElementsList then element removal invalidates cache",
+      "path": "B0→B3(loop×2)→B4(cache store)→B3(loop×1 rebuild)→B4→get(0)",
+      "precondition": "Element parent with two element children a,b; first child() called to build cache",
+      "expectedResult": "after a.remove(), parent.child(0) returns b",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 child after removal invalidates cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"span\");",
+        "    Element b = new Element(\"span\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    Element first = parent.child(0); // builds cache",
+        "  WHEN",
+        "    a.remove(); // mutates childNodes & triggers nodelistChanged",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == b;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "child(1) on element with mixed nodes and two element children returns second element (loop×4)",
+      "path": "B0→B3(loop×4 build)→B4(cache store)→get(1)",
+      "precondition": "Element e with children: TextNode, span1, Comment, span2",
+      "expectedResult": "child(1) returns span2",
+      "tags": [
+        "positive",
+        "iteration",
+        "mixed-nodes"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 mixed nodes two elements",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "    e.appendChild(new TextNode(\"t\"));",
+        "    Element span1 = new Element(\"span\");",
+        "    e.appendChild(span1);",
+        "    e.appendChild(new Comment(\"c\"));",
+        "    Element span2 = new Element(\"span\");",
+        "    e.appendChild(span2);",
+        "  WHEN",
+        "    Element result = e.child(1);",
+        "  THEN",
+        "    assert result == span2;",
+        "END"
+      ]
+    }
+  ]
+}

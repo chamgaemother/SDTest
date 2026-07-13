@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild returns this for chaining when multiple children appended",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returned element is same as original for each appendChild call",
+      "tags": [
+        "positive",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild chaining returns self",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    TextNode a = new TextNode(\"a\");",
+        "    TextNode b = new TextNode(\"b\");",
+        "  WHEN",
+        "    Element r1 = el.appendChild(a);",
+        "    Element r2 = el.appendChild(b);",
+        "  THEN",
+        "    assert r1 == el;",
+        "    assert r2 == el;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild invalidates shadowChildrenRef cache when childElementsList had been called",
+      "path": "B0→B1→B2",
+      "precondition": "call children() to populate shadowChildrenRef before append",
+      "expectedResult": "shadowChildrenRef is reset so subsequent childElementsList recomputes list",
+      "tags": [
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild invalidates cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    // warm the shadow cache",
+        "    parent.children();",
+        "    TextNode n = new TextNode(\"item\");",
+        "  WHEN",
+        "    parent.appendChild(n);",
+        "    // call childElementsList to repopulate after invalidation",
+        "    List<Element> elems = parent.childElementsList();",
+        "  THEN",
+        "    assert elems.size() == 1;",
+        "    assert elems.get(0).instanceof(TextNode) == false;"
+      ]
+    }
+  ]
+}

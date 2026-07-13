@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "parseInput(String, String) propagates NullPointerException when html argument is null",
+      "path": "B0→B2→exception",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": ["negative","exception","null-input"],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseInput null-html",
+        "  GIVEN",
+        "    String html = null;",
+        "    String baseUri = \"http://example.com\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader, String) propagates custom RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B3→exception",
+      "precondition": "Parser constructed with stub TreeBuilder that throws RuntimeException",
+      "expectedResult": "RuntimeException is thrown with message 'boom'",
+      "tags": ["negative","exception","custom-stub"],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseInput stub-treeBuilder-exception",
+        "  GIVEN",
+        "    // stub TreeBuilder that throws on parse"
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      @Override public Document parse(Reader reader, String baseUri, Parser parser) {",
+        "        throw new RuntimeException(\"boom\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {",
+        "        return null;",
+        "      }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<p>fail</p>\");",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws RuntimeException with message \"boom\";",
+        "END"
+      ]
+    }
+  ],
+  "improvement": "Adds 2 scenarios; expected coverage ↑ from 0 % to 100 % (CC = 3)"
+}

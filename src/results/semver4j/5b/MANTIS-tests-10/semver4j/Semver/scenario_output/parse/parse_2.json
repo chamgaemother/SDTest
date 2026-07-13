@@ -1,0 +1,103 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parse(\"1.2.3-alpha\") returns Semver with pre-release only (branch version!=null, no exception, preRelease non-empty)",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getVersion()==\"1.2.3-alpha\" and getPreRelease()==[\"alpha\"] and getBuild().isEmpty()",
+      "tags": [
+        "positive",
+        "pre-release-only"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parse pre-release-only",
+        "  GIVEN",
+        "    String version = \"1.2.3-alpha\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals(\"1.2.3-alpha\", result.getVersion());",
+        "    assertEquals(Collections.singletonList(\"alpha\"), result.getPreRelease());",
+        "    assertTrue(result.getBuild().isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse(\"1.2.3+build.123\") returns Semver with build metadata only (branch version!=null, no exception, build non-empty)",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getVersion()==\"1.2.3+build.123\" and getBuild()==[\"build\",\"123\"] and getPreRelease().isEmpty()",
+      "tags": [
+        "positive",
+        "build-only"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parse build-only",
+        "  GIVEN",
+        "    String version = \"1.2.3+build.123\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNotNull(result);",
+        "    assertEquals(\"1.2.3+build.123\", result.getVersion());",
+        "    assertTrue(result.getPreRelease().isEmpty());",
+        "    assertEquals(Arrays.asList(\"build\",\"123\"), result.getBuild());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse(\"\") returns null for empty string after trim (branch version!=null, exception path)",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "null result",
+      "tags": [
+        "negative",
+        "empty-string"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parse empty-string",
+        "  GIVEN",
+        "    String version = \"\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNull(result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(\"  \") returns null for blank string after trim (branch version!=null, exception path)",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "null result",
+      "tags": [
+        "negative",
+        "blank-string",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parse blank-string",
+        "  GIVEN",
+        "    String version = \"  \";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assertNull(result);",
+        "END"
+      ]
+    }
+  ]
+}

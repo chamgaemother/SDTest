@@ -1,0 +1,68 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Tag;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Tag.valueOf and isFormSubmittable scenarios.
+ */
+public class Tag_isFormSubmittable_1_Test {
+
+    @Test
+    @DisplayName("valueOf with PreserveCase settings and mismatched case triggers clone branch and retains formSubmit flag")
+    public void test_TC03() {
+        // GIVEN: raw tag name in uppercase so differs from normalized lowercase, and preserveCase enabled
+        String raw = "INPUT";
+        String norm = ParseSettings.normalName(raw); // "input"
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN: obtaining a tag for HTML namespace
+        Tag tag = Tag.valueOf(raw, norm, Parser.NamespaceHtml, settings);
+        // THEN: name should remain "INPUT" (clone branch preserves case), and as <input> is submittable
+        assertEquals("INPUT", tag.getName());
+        assertTrue(tag.isFormSubmittable());
+    }
+
+    @Test
+    @DisplayName("valueOf with existing tag but different namespace returns new generic with formSubmit false")
+    public void test_TC04() {
+        // GIVEN: name "input" known in HTML but use MathML namespace so mismatch leads to default new tag
+        String name = "input";
+        String norm = "input";
+        String ns = Parser.NamespaceMathml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN: creating tag in MathML namespace
+        Tag tag = Tag.valueOf(name, norm, ns, settings);
+        // THEN: default generic tag should not be submittable (formSubmit defaults to false)
+        assertFalse(tag.isFormSubmittable());
+    }
+
+    @Test
+    @DisplayName("valueOf null tagName triggers Validate.notNull exception")
+    public void test_TC05() {
+        // GIVEN: null tagName should violate Validate.notNull
+        String name = null;
+        String norm = "anything";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN/THEN: expect IllegalArgumentException from Validate.notNull
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(name, norm, Parser.NamespaceHtml, settings);
+        });
+    }
+
+    @Test
+    @DisplayName("valueOf empty tagName triggers Validate.notEmpty exception")
+    public void test_TC06() {
+        // GIVEN: whitespace-only tagName trimmed to empty should violate Validate.notEmpty
+        String name = "   ";
+        String norm = "";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN/THEN: expect IllegalArgumentException due to empty name after trim
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(name, norm, Parser.NamespaceHtml, settings);
+        });
+    }
+}

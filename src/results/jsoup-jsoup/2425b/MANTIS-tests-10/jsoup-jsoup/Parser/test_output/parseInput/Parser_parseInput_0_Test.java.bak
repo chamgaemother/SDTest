@@ -1,0 +1,89 @@
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String html, String baseUri) returns a Document when given valid HTML string")
+    public void test_TC01_O1() {
+        // GIVEN a valid HTML string and baseUri, exercising parseInput(String, String) path B0→B1→B2→B3
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+        Parser parser = Parser.htmlParser();
+
+        // WHEN parsing input via the String overload
+        Document doc = parser.parseInput(html, baseUri);
+
+        // THEN the returned Document is non-null and contains a <p> element with text "Test"
+        assertAll("Verify parsed tree and baseUri",
+            () -> assertNotNull(doc, "Document should not be null"),
+            () -> {
+                Element p = doc.body().selectFirst("p");
+                assertNotNull(p, "Parsed document should contain <p> element");
+                assertEquals("Test", p.text(), "Text inside <p> should be 'Test'");
+            },
+            () -> assertEquals(baseUri, doc.baseUri(), "Document.baseUri should match the provided baseUri")
+        );
+    }
+
+    @Test
+    @DisplayName("TC02_O2: parseInput(Reader inputHtml, String baseUri) returns a Document when reader provides valid HTML")
+    public void test_TC02_O2() {
+        // GIVEN a Reader over valid HTML and a baseUri, covering parseInput(Reader, String) normal branch
+        Reader reader = new StringReader("<div>Hello</div>");
+        String baseUri = "base";
+        Parser parser = Parser.htmlParser();
+
+        // WHEN parsing input via the Reader overload
+        Document doc = parser.parseInput(reader, baseUri);
+
+        // THEN the returned Document is non-null and contains a <div> element with text "Hello"
+        assertAll("Verify parsed tree and baseUri from Reader input",
+            () -> assertNotNull(doc, "Document should not be null"),
+            () -> {
+                Element div = doc.body().selectFirst("div");
+                assertNotNull(div, "Parsed document should contain <div> element");
+                assertEquals("Hello", div.text(), "Text inside <div> should be 'Hello'");
+            },
+            () -> assertEquals(baseUri, doc.baseUri(), "Document.baseUri should match the provided baseUri")
+        );
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parseInput(Reader inputHtml, String baseUri) throws UncheckedIOException when underlying Reader throws IOException on first read")
+    public void test_TC03_O2() {
+        // GIVEN a Reader stub that throws IOException on read(), to trigger the exception path in parseInput
+        Reader faultyReader = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("io");
+            }
+            @Override
+            public void close() throws IOException {
+                // no-op
+            }
+        };
+        String baseUri = "u";
+        Parser parser = Parser.htmlParser();
+
+        // WHEN calling parseInput on the faulty reader, THEN an UncheckedIOException is thrown
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> {
+            parser.parseInput(faultyReader, baseUri);
+        }, "Expected UncheckedIOException when Reader throws IOException");
+        // Optionally, verify that the cause is the original IOException
+        assertTrue(ex.getCause() instanceof IOException, "Cause should be the underlying IOException");
+        assertEquals("io", ex.getCause().getMessage(), "IOException message should be propagated");
+    }
+}

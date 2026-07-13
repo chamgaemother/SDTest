@@ -1,0 +1,255 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document with identical empty content and baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document is not the same instance as original; returned.outerHtml() equals original.outerHtml(); returned.baseUri() equals original.baseUri()",
+      "tags": [
+        "deep-copy",
+        "no-children",
+        "return-instance",
+        "priority-high"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone empty document",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy != orig;",
+        "    assert copy.outerHtml().equals(orig.outerHtml());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() deep clones a document with a single child element and preserves mutation isolation",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "original and clone have identical outerHtml initially; adding child to clone does not affect original.outerHtml()",
+      "tags": [
+        "deep-copy",
+        "one-child",
+        "mutation-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone single-child document",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://example.com\");",
+        "    orig.appendElement(\"div\").text(\"text\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.body().appendElement(\"span\");",
+        "  THEN",
+        "    assert copy.outerHtml().contains(\"span\");",
+        "    assert !orig.outerHtml().contains(\"span\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() deep clones a document with multiple nested children and preserves nested structure",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "clone.outerHtml() equals original.outerHtml() for deep nested structure; modifying nested child in clone does not affect original",
+      "tags": [
+        "deep-copy",
+        "multiple-children",
+        "nested-structure"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 clone nested document",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://example.com\");",
+        "    Element div = orig.body().appendElement(\"div\");",
+        "    div.appendElement(\"p\").text(\"para\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.selectFirst(\"p\").text(\"changed\");",
+        "  THEN",
+        "    assert copy.selectFirst(\"p\").text().equals(\"changed\");",
+        "    assert orig.selectFirst(\"p\").text().equals(\"para\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() copies outputSettings object by value so modifying original.outputSettings after clone does not affect clone",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after changing original.outputSettings.indentAmount, clone.outputSettings.indentAmount remains prior value",
+      "tags": [
+        "deep-copy",
+        "outputSettings",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone with custom outputSettings",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.outputSettings().indentAmount(5);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.outputSettings().indentAmount(2);",
+        "  THEN",
+        "    assert copy.outputSettings().indentAmount() == 5;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() copies parser object by value so modifying original.parser after clone does not affect clone.parser",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after setting original.parser to XML parser, clone.parser remains HTML parser",
+      "tags": [
+        "deep-copy",
+        "parser",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone with modified parser",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.parser(Parser.xmlParser());",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.parser(Parser.htmlParser());",
+        "  THEN",
+        "    assert copy.parser().getName().equals(\"xml\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() preserves title element text in cloned document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "clone.title() equals original.title() after setting title",
+      "tags": [
+        "deep-copy",
+        "title",
+        "content-preservation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone with title",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.title(\"My Title\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.title().equals(\"My Title\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() preserves form elements and form-specific data in cloned document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "clone.forms().size() equals original.forms().size() after adding a FormElement",
+      "tags": [
+        "deep-copy",
+        "forms",
+        "content-preservation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone with form element",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    FormElement form = new FormElement(Tag.valueOf(\"form\"), \"http://x\");",
+        "    orig.body().appendChild(form);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.forms().size() == 1;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() preserves quirksMode in the cloned document",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "clone.quirksMode() equals original.quirksMode() after setting quirksMode to limitedQuirks",
+      "tags": [
+        "deep-copy",
+        "quirksMode",
+        "state-preservation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone with quirksMode",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    orig.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.quirksMode() == Document.QuirksMode.limitedQuirks;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() preserves connection field so that default Jsoup.newSession() is not invoked on clone without prior connection",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "copy.connection() returns a session equal in newRequest settings to default session",
+      "tags": [
+        "deep-copy",
+        "connection",
+        "default-session"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone without set connection",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.connection().newRequest().timeoutMillis() == Jsoup.newSession().newRequest().timeoutMillis();"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() preserves explicitly set connection field and isolates subsequent changes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after orig.connection(conn).clone(), copy.connection() == conn and changing orig.connection does not affect copy",
+      "tags": [
+        "deep-copy",
+        "connection",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 clone with custom connection",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    Connection conn = Jsoup.newSession();",
+        "    orig.connection(conn);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    orig.connection(Jsoup.connect(\"http://other\"));",
+        "  THEN",
+        "    assert copy.connection() == conn;"
+      ]
+    }
+  ]
+}

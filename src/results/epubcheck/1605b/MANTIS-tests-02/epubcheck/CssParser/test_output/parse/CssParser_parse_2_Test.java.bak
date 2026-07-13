@@ -1,0 +1,158 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssToken.Type;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  // A simple error handler that collects CssGrammarExceptions
+  static class TestErrorHandler implements CssErrorHandler {
+    final List<CssGrammarException> errors = new ArrayList<>();
+    @Override
+    public void error(CssException exception) {
+      if (exception instanceof CssGrammarException) {
+        errors.add((CssGrammarException) exception);
+      }
+    }
+  }
+
+  // A simple content handler that records callbacks
+  static class TestContentHandler implements CssContentHandler {
+    final List<List<String>> selectorsCalled = new ArrayList<>();
+    final List<String> startAtRules = new ArrayList<>();
+    final List<String> endAtRules = new ArrayList<>();
+    int startDocCount = 0;
+    int endDocCount = 0;
+
+    @Override
+    public void startDocument() {
+      startDocCount++;
+    }
+
+    @Override
+    public void endDocument() {
+      endDocCount++;
+    }
+
+    @Override
+    public void selectors(List<CssSelector> selectors) {
+      List<String> names = new ArrayList<>();
+      for (CssSelector sel : selectors) {
+        names.add(sel.toString());
+      }
+      selectorsCalled.add(names);
+    }
+
+    @Override
+    public void endSelectors(List<CssSelector> selectors) {
+      // no-op for this test
+    }
+
+    @Override
+    public void startAtRule(org.idpf.epubcheck.util.css.CssGrammar.CssAtRule rule) {
+      startAtRules.add(rule.getName().get());
+    }
+
+    @Override
+    public void endAtRule(String name) {
+      endAtRules.add(name);
+    }
+
+    @Override
+    public void declaration(org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration decl) {
+      // no-op for these tests
+    }
+
+    @Override
+    public void startDeclarationBlock() {
+      // no-op
+    }
+
+    @Override
+    public void endDeclarationBlock() {
+      // no-op
+    }
+  }
+
+  @Test
+  @DisplayName("TC09: Invalid at-rule parameter triggers unexpected-token error and skips to semicolon")
+  public void test_TC09() throws IOException, CssException {
+    // The input begins with @foo, next token is '?', causing handleAtRuleParam to return null and error
+    Reader reader = new StringReader("@foo ? ; body{};");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+    CssParser parser = new CssParser();
+
+    parser.parse(reader, "id", err, doc);
+
+    // One UNEXPECTED_TOKEN error recorded
+    assertEquals(1, err.errors.size(), "Expected exactly one syntax error");
+    assertTrue(err.errors.get(0).getMessage().contains("UNEXPECTED_TOKEN"),
+        "Error message should mention UNEXPECTED_TOKEN");
+    // No at-rule callbacks should have occurred
+    assertTrue(doc.startAtRules.isEmpty(), "No at-rule should have started");
+    // After skipping the invalid at-rule, the body{} rule-set should be parsed once
+    assertEquals(1, doc.selectorsCalled.size(), "One selectors() call expected for 'body' rule-set");
+    assertEquals("body", doc.selectorsCalled.get(0).get(0), "Selector name should be 'body'");
+    // Document end should be called once
+    assertEquals(1, doc.endDocCount, "endDocument should be called once");
+  }
+
+  @Test
+  @DisplayName("TC10: Premature EOF in at-rule param loop triggers PREMATURE_EOF exception path")
+  public void test_TC10() {
+    // The input starts '@media all {' and ends, causing NoSuchElementException inside handleAtRule
+    Reader reader = new StringReader("@media all {");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+    CssParser parser = new CssParser();
+
+    PrematureEOFException thrown = assertThrows(PrematureEOFException.class, () -> {
+      parser.parse(reader, "sys", err, doc);
+    }, "Expected PrematureEOFException to be thrown on incomplete at-rule");
+
+    // startAtRule should have been called with 'media'
+    assertEquals(1, doc.startAtRules.size(), "startAtRule should be called once");
+    assertEquals("media", doc.startAtRules.get(0), "At-rule name should be 'media'");
+    // An error for PREMATURE_EOF should have been recorded
+    assertEquals(1, err.errors.size(), "One PREMATURE_EOF error expected");
+    assertTrue(err.errors.get(0).getMessage().contains("PREMATURE_EOF"),
+        "Error message should mention PREMATURE_EOF");
+    // endAtRule should have been called for 'media'
+    assertEquals(1, doc.endAtRules.size(), "endAtRule should be called once");
+    assertEquals("media", doc.endAtRules.get(0), "At-rule end name should be 'media'");
+  }
+
+  @Test
+  @DisplayName("TC11: Rule-set with unexpected ')' after selector triggers UNEXPECTED_TOKEN in handleRuleSet")
+  public void test_TC11() throws IOException, CssException {
+    // The input 'a(){}' has an unexpected ')' in selector part, then 'b{}' parsed normally
+    Reader reader = new StringReader("a(){} b{};");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+    CssParser parser = new CssParser();
+
+    parser.parse(reader, "id", err, doc);
+
+    // One UNEXPECTED_TOKEN error from the first rule-set
+    assertEquals(1, err.errors.size(), "One syntax error expected for unexpected ')'");
+    assertTrue(err.errors.get(0).getMessage().contains("UNEXPECTED_TOKEN"),
+        "Error message should mention UNEXPECTED_TOKEN");
+    // The invalid first rule-set produces no selectors(), but the second 'b' does
+    assertEquals(1, doc.selectorsCalled.size(), "Only the second valid rule-set should be recorded");
+    assertEquals("b", doc.selectorsCalled.get(0).get(0), "Selector name should be 'b'");
+    // Document end should be called once
+    assertEquals(1, doc.endDocCount, "endDocument should be called once");
+  }
+}

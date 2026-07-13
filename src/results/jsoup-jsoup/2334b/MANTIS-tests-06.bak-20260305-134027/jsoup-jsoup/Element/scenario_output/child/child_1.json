@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "child(1) on element with mixed nodes returns second element child (filters non-Element nodes, valid upper-bound index)",
+      "path": "B0→B1(childNodeSize>0)→B2(build list loop×3)→B3(get index==1)→B4(return element)",
+      "precondition": "parent element has text, element, text, element children in that order",
+      "expectedResult": "returns the second appended Element instance",
+      "tags": [
+        "positive",
+        "iteration",
+        "mixed-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 child on mixed nodes returns correct element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"t1\");",
+        "    Element first = parent.appendElement(\"span\");",
+        "    parent.appendText(\"t2\");",
+        "    Element second = parent.appendElement(\"em\");",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(second, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "child(0) on element with only text nodes throws IndexOutOfBoundsException (filtered list empty)",
+      "path": "B0→B1(childNodeSize>0)→B2(build list loop×2 yields empty)→B3(get index=0 out-of-bounds)→B5(exception)",
+      "precondition": "parent element has two TextNode children and no Element children",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "mixed-nodes",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child on text-only throws exception",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    parent.appendText(\"one\");",
+        "    parent.appendText(\"two\");",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    }
+  ]
+}

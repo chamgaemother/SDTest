@@ -1,0 +1,51 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Semver.parse method.
+ * Each test is self-contained and does not rely on shared fixtures.
+ */
+public class Semver_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01: parse(null) returns null covering the branch where input is null")
+    void test_TC01() {
+        // GIVEN: a null version string
+        String version = null;
+        // WHEN: parse is called with null
+        Semver result = Semver.parse(version);
+        // THEN: result should be null (branch B1(true))
+        assertNull(result, "Expected parse(null) to return null when input is null");
+    }
+
+    @Test
+    @DisplayName("TC02: parse(\"1.2.3\") returns a Semver instance for a valid semver string")
+    void test_TC02() {
+        // GIVEN: a valid semver string "1.2.3" (branch B1(false), then B3→B4)
+        String version = "1.2.3";
+        // WHEN: parse is called with a valid version
+        Semver result = Semver.parse(version);
+        // THEN: result must not be null and must have the correct components
+        assertAll("Verify Semver instance for valid input",
+            () -> assertNotNull(result, "Expected non-null Semver instance for valid input"),
+            () -> assertEquals("1.2.3", result.getVersion(), "Version string should match input"),
+            () -> assertEquals(1, result.getMajor(), "Major version should be 1"),
+            () -> assertEquals(2, result.getMinor(), "Minor version should be 2"),
+            () -> assertEquals(3, result.getPatch(), "Patch version should be 3")
+        );
+    }
+
+    @Test
+    @DisplayName("TC03: parse(\"foo\") returns null covering the exception path for invalid version")
+    void test_TC03() {
+        // GIVEN: an invalid semver string "foo" (branch B1(false) then parsing exception B5)
+        String version = "foo";
+        // WHEN: parse is called with invalid input
+        Semver result = Semver.parse(version);
+        // THEN: result should be null due to exception in parsing
+        assertNull(result, "Expected parse(\"foo\") to return null when input is invalid");
+    }
+}

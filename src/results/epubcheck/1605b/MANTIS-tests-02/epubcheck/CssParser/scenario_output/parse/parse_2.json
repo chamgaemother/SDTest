@@ -1,0 +1,92 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "Invalid at-rule parameter triggers unexpected-token error and skips to semicolon (ATKEYWORD → parameter null branch)",
+      "path": "B0→B1→B2(type==ATKEYWORD)→handleAtRule→param-null-loop→return→B1→B8",
+      "precondition": "none",
+      "expectedResult": "errorHandler.error called with GRAMMAR_UNEXPECTED_TOKEN, no nested at-rule callbacks, loop continues to endDocument without exception",
+      "tags": [
+        "negative",
+        "ATKEYWORD",
+        "error-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 invalid-at-rule-param",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo ? ; body{};\");",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.errors.size() == 1;",
+        "    assert err.errors.get(0).getMessage().contains(\"UNEXPECTED_TOKEN\");",
+        "    assert doc.startAtRules.isEmpty();",
+        "    assert doc.selectorsCalled.size() == 1 && doc.selectorsCalled.get(0).get(0).equals(\"body\");",
+        "    assert doc.endDocument() called once;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Premature EOF in at-rule param loop triggers PREMATURE_EOF exception path (ATKEYWORD → NoSuchElementException in handleAtRule)",
+      "path": "B0→B1→B2(type==ATKEYWORD)→handleAtRule→NoSuchElementException→doc.startAtRule→error→doc.endAtRule→exception",
+      "precondition": "none",
+      "expectedResult": "CssParser throws PrematureEOFException after errorHandler.error with GRAMMAR_PREMATURE_EOF, doc.startAtRule and doc.endAtRule both called",
+      "tags": [
+        "negative",
+        "exception",
+        "ATKEYWORD"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 premature-eof-inside-at-rule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media all {\");",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    call parser.parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    throws PrematureEOFException;",
+        "    assert doc.startAtRules.get(0).equals(\"media\");",
+        "    assert err.errors.get(0).getMessage().contains(\"PREMATURE_EOF\");",
+        "    assert doc.endAtRules.get(0).equals(\"media\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Rule-set with unexpected ')' after selector triggers UNEXPECTED_TOKEN in handleRuleSet (MATCH_CLOSEPAREN branch)",
+      "path": "B0→B1→B2(type!=ATKEYWORD)→handleRuleSet→MATCH_CLOSEPAREN true→error→skip to '}'→return→B1→B8",
+      "precondition": "none",
+      "expectedResult": "errorHandler.error called with GRAMMAR_UNEXPECTED_TOKEN, no doc.selectors or declaration callbacks, endDocument called normally",
+      "tags": [
+        "negative",
+        "rule-set",
+        "error-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 rule-set-unexpected-closeparen",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a(){} b{};\");",
+        "    TestErrorHandler err = new TestErrorHandler();",
+        "    TestContentHandler doc = new TestContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert err.errors.size() == 1;",
+        "    assert err.errors.get(0).getMessage().contains(\"UNEXPECTED_TOKEN\");",
+        "    assert doc.selectorsCalled.size() == 1 && doc.selectorsCalled.get(0).get(0).equals(\"b\");",
+        "    assert doc.endDocument() called once;",
+        "END"
+      ]
+    }
+  ]
+}

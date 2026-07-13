@@ -1,0 +1,173 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssErrorCode;
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * JUnit tests for CssParser.parse(Reader, String, CssErrorHandler, CssContentHandler)
+ */
+public class CssParser_parse_0_Test {
+
+  // A simple content handler that records method calls for verification
+  static class RecordingContentHandler implements CssContentHandler {
+    int startDocumentCount = 0;
+    int endDocumentCount = 0;
+    final List<String> sequence = new ArrayList<>();
+
+    @Override
+    public void startDocument() {
+      startDocumentCount++;
+      sequence.add("startDocument");
+    }
+
+    @Override
+    public void endDocument() {
+      endDocumentCount++;
+      sequence.add("endDocument");
+    }
+
+    @Override
+    public void startAtRule(CssGrammar.CssAtRule rule) {
+      sequence.add("startAtRule:" + rule.getName().get());
+    }
+
+    @Override
+    public void endAtRule(String name) {
+      sequence.add("endAtRule:" + name);
+    }
+
+    @Override
+    public void selectors(List<CssGrammar.CssSelector> selectors) {
+      for (CssGrammar.CssSelector sel : selectors) {
+        sequence.add("selectors:" + sel.toString());
+      }
+    }
+
+    @Override
+    public void endSelectors(List<CssGrammar.CssSelector> selectors) {
+      sequence.add("endSelectors");
+    }
+
+    @Override
+    public void declaration(CssGrammar.CssDeclaration decl) {
+      sequence.add("declaration:" + decl.name + "=" + decl.components.get(0).toCssString());
+    }
+  }
+
+  // A simple error handler that records error codes
+  static class RecordingErrorHandler implements CssErrorHandler {
+    final List<CssErrorCode> errors = new ArrayList<>();
+
+    @Override
+    public void error(CssException exception) {
+      errors.add(exception.getErrorCode());
+    }
+  }
+
+  @Test
+  @DisplayName("Empty input yields no rulesets or at-rules (loop-0)")
+  public void test_TC01() throws Exception {
+    // Empty input: iterator.hasNext is false immediately → B1→B8
+    CssParser parser = new CssParser();
+    StringReader reader = new StringReader("");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    parser.parse(reader, "id", err, doc);
+
+    // Only startDocument and endDocument should be called once each
+    assertEquals(1, doc.startDocumentCount, "startDocument should be called once");
+    assertEquals(1, doc.endDocumentCount, "endDocument should be called once");
+    // No other content handler methods invoked
+    assertEquals(2, doc.sequence.size(), "Only startDocument and endDocument in sequence");
+    assertTrue(err.errors.isEmpty(), "No errors expected");
+  }
+
+  @Test
+  @DisplayName("Single at-rule processed then endDocument (one iteration, branch-true)")
+  public void test_TC02() throws Exception {
+    // Input starting with @charset ends with ';', triggers handleAtRule path B2→B4
+    CssParser parser = new CssParser();
+    StringReader reader = new StringReader("@charset \"UTF-8\";");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    parser.parse(reader, "id", err, doc);
+
+    // Expect sequence: startDocument, startAtRule:charset, endAtRule:charset, endDocument
+    List<String> seq = doc.sequence;
+    assertEquals(List.of("startDocument", "startAtRule:charset", "endAtRule:charset", "endDocument"), seq);
+    assertTrue(err.errors.isEmpty(), "No errors expected");
+  }
+
+  @Test
+  @DisplayName("Single ruleset processed then endDocument (one iteration, branch-false)")
+  public void test_TC03() throws Exception {
+    // Input "h1 { color: red; }" → first token is IDENT h1, branch-false path B2→B3
+    CssParser parser = new CssParser();
+    StringReader reader = new StringReader("h1 { color: red; }");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    parser.parse(reader, "id", err, doc);
+
+    // Verify that selectors and declarations are recorded
+    List<String> seq = doc.sequence;
+    assertTrue(seq.contains("startDocument"), "Should start document");
+    assertTrue(seq.stream().anyMatch(s -> s.startsWith("selectors:h1")), "Should record selectors:h1");
+    assertTrue(seq.stream().anyMatch(s -> s.startsWith("declaration:color=red")), "Should record declaration color=red");
+    assertTrue(seq.contains("endSelectors"), "Should record endSelectors");
+    assertTrue(seq.contains("endDocument"), "Should end document");
+    assertTrue(err.errors.isEmpty(), "No errors expected");
+  }
+
+  @Test
+  @DisplayName("Premature EOF inside ruleset triggers break and endDocument (exception path)")
+  public void test_TC04() throws Exception {
+    // Input missing closing '}' causes PrematureEOFException inside handleRuleSet
+    CssParser parser = new CssParser();
+    StringReader reader = new StringReader("h1 { color: blue;");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    // No exception should leak; error handler should record GRAMMAR_PREMATURE_EOF
+    parser.parse(reader, "id", err, doc);
+
+    assertTrue(err.errors.contains(CssErrorCode.GRAMMAR_PREMATURE_EOF),
+               "Error handler should record GRAMMAR_PREMATURE_EOF");
+    assertEquals(1, doc.endDocumentCount, "endDocument should still be called once");
+  }
+
+  @Test
+  @DisplayName("IOException from scan is thrown")
+  public void test_TC05() {
+    // A Reader stub that always throws IOException on read → scan throws IOException at B0
+    Reader reader = new Reader() {
+      @Override
+      public int read(char[] cbuf, int off, int len) throws IOException {
+        throw new IOException("fail");
+      }
+      @Override
+      public void close() throws IOException {}
+    };
+    CssParser parser = new CssParser();
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    assertThrows(IOException.class, () -> parser.parse(reader, "id", err, doc),
+                 "IOException should be thrown on scan failure");
+    // No calls on content handler
+    assertEquals(0, doc.startDocumentCount, "startDocument should not be called");
+    assertEquals(0, doc.endDocumentCount, "endDocument should not be called");
+  }
+}

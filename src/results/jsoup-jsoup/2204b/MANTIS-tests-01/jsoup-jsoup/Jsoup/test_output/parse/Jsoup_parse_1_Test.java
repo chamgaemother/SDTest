@@ -1,0 +1,166 @@
+package org.jsoup;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import com.sun.net.httpserver.HttpServer;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_1_Test {
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri) reads HTML file with explicit charset and sets baseUri")
+    public void test_TC11() throws IOException {
+        // We choose a UTF-8 encoded file to satisfy explicit charset branch (B2->B3)
+        String html = "<p>FileTest</p>";
+        File file = File.createTempFile("jsoup", ".html");
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(html.getBytes(StandardCharsets.UTF_8));
+        }
+        String charset = "UTF-8";
+        String baseUri = "http://file.example/";
+        Document doc = Jsoup.parse(file, charset, baseUri);
+        // explicit charset path B3: content must be correctly parsed and baseUri applied
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File) uses null charset and file absolute path as baseUri")
+    public void test_TC12() throws IOException {
+        // Default charset branch B4: charset null leads to BOM/meta or UTF-8 fallback
+        String html = "<div>Auto</div>";
+        File file = File.createTempFile("jsoup", ".html");
+        Files.write(file.toPath(), html.getBytes(StandardCharsets.UTF_8));
+        Document doc = Jsoup.parse(file);
+        // file-based default charset: baseUri should be file absolute path
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(file.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, Parser) applies custom parser on file input")
+    public void test_TC13() throws IOException {
+        // Parser branch B5: using xmlParser should preserve <item> as element
+        String xml = "<item>42</item>";
+        File file = File.createTempFile("jsoup", ".xml");
+        Files.write(file.toPath(), xml.getBytes(StandardCharsets.UTF_8));
+        Parser parser = Parser.xmlParser();
+        String baseUri = "file://xml/";
+        Document doc = Jsoup.parse(file, null, baseUri, parser);
+        assertEquals("42", doc.select("item").first().text());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri) reads HTML from Path and sets baseUri accordingly")
+    public void test_TC14() throws IOException {
+        // Path charset branch B7: explicit charset path
+        String html = "<span>PathTest</span>";
+        Path path = Files.createTempFile("jsoup", ".html");
+        Files.write(path, html.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String baseUri = "http://path.example/";
+        Document doc = Jsoup.parse(path, charset, baseUri);
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path) uses BOM or meta fallback and path.toAbsolutePath as baseUri")
+    public void test_TC15() throws IOException {
+        // Path default charset branch B8: charset null fallback
+        String html = "<h1>BOM</h1>";
+        Path path = Files.createTempFile("jsoup", ".html");
+        Files.write(path, html.getBytes(StandardCharsets.UTF_8));
+        Document doc = Jsoup.parse(path);
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri, Parser) with xmlParser on Path input")
+    public void test_TC16() throws IOException {
+        // Path parser branch B9: xmlParser
+        String xml = "<node>OK</node>";
+        Path path = Files.createTempFile("jsoup", ".xml");
+        Files.write(path, xml.getBytes(StandardCharsets.UTF_8));
+        Parser parser = Parser.xmlParser();
+        String baseUri = "path://xml/";
+        Document doc = Jsoup.parse(path, null, baseUri, parser);
+        assertEquals("OK", doc.select("node").first().text());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri) reads from stream and applies charset")
+    public void test_TC17() throws IOException {
+        // Stream charset branch B11: explicit charset
+        String html = "<i>Stream</i>";
+        InputStream in = new ByteArrayInputStream(html.getBytes(StandardCharsets.UTF_8));
+        String charset = "UTF-8";
+        String baseUri = "http://stream.example/";
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri, Parser) applies xmlParser on stream input")
+    public void test_TC18() throws IOException {
+        // Stream parser branch B12: xmlParser on InputStream
+        String xml = "<data>X</data>";
+        InputStream in = new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8));
+        Parser parser = Parser.xmlParser();
+        String baseUri = "stream://xml/";
+        Document doc = Jsoup.parse(in, null, baseUri, parser);
+        assertEquals("X", doc.select("data").first().text());
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) fetches HTTP URL and returns Document")
+    public void test_TC19() throws Exception {
+        // URL HTTP branch B15: valid http get
+        // Setup local HTTP server to serve simple HTML
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", exchange -> {
+            String response = "<title>URL</title>";
+            exchange.sendResponseHeaders(200, response.length());
+            exchange.getResponseBody().write(response.getBytes(StandardCharsets.UTF_8));
+            exchange.close();
+        });
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            URL url = new URL("http://127.0.0.1:" + port + "/");
+            int timeout = 5000;
+            Document doc = Jsoup.parse(url, timeout);
+            assertEquals("URL", doc.title());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) with non-http URL throws MalformedURLException")
+    public void test_TC20() {
+        // URL protocol branch exception B16: non-http leads to MalformedURLException
+        assertThrows(MalformedURLException.class, () -> {
+            URL url = new URL("ftp://example.com");
+            Jsoup.parse(url, 1000);
+        });
+    }
+}

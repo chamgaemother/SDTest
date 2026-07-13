@@ -1,0 +1,97 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("parse(String html, String baseUri) with simple HTML returns Document with body child element")
+    public void test_TC01() {
+        // Given simple HTML and explicit base URI to exercise the main parse branch
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com";
+        // When
+        Document doc = Jsoup.parse(html, baseUri);
+        // Then: body should contain the <p> element and baseUri preserved
+        assertEquals("<p>Hello</p>", doc.body().html());
+        assertEquals("http://example.com", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(String html) with empty body returns Document with empty body and default baseUri")
+    public void test_TC02() {
+        // Empty input exercises default baseUri and empty body path
+        String html = "";
+        // When
+        Document doc = Jsoup.parse(html);
+        // Then: no elements in body, baseUri empty string
+        assertTrue(doc.body().html().isEmpty());
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(String html, Parser parser) using custom parser stub is invoked correctly")
+    public void test_TC03() {
+        // Custom parser stub to verify parseInput invocation path B4->B5
+        final String html = "<x/>";
+        final AtomicReference<String> argHtml = new AtomicReference<>();
+        final AtomicReference<String> argBase = new AtomicReference<>();
+        final Document dummyDoc = new Document("stub");
+        Parser stub = new Parser(null) {
+            @Override
+            public Document parseInput(String inHtml, String baseUri) {
+                // record arguments
+                argHtml.set(inHtml);
+                argBase.set(baseUri);
+                return dummyDoc;
+            }
+        };
+        // When
+        Document result = Jsoup.parse(html, stub);
+        // Then: parseInput called once with html and empty baseUri
+        assertEquals(html, argHtml.get());
+        assertEquals("", argBase.get());
+        assertSame(dummyDoc, result);
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri, Parser parser) with null html throws NullPointerException")
+    public void test_TC04() {
+        // Null html exercises error path for null check B4->B6
+        String html = null;
+        String baseUri = "base";
+        Parser parser = Parser.htmlParser();
+        // When & Then: expect NullPointerException
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri) with relative link in html and no <base> uses provided baseUri for resolution")
+    public void test_TC05() {
+        // HTML with relative link exercises resolution of URLs in output
+        String html = "<a href=\"/path\">link</a>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Then: absUrl should resolve against provided baseUri
+        assertEquals("http://example.com/path", doc.select("a").first().absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("parse(String html, String baseUri) with malformed HTML still produces balanced Document")
+    public void test_TC06() {
+        // Malformed HTML without closing tags should still build a tree
+        String html = "<div><p>Test";
+        String baseUri = "";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Then: the parser should auto-close tags, so body has at least one child
+        assertTrue(doc.body().children().size() >= 1);
+    }
+}

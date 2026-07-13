@@ -1,0 +1,29 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class Tag_isFormSubmittable_0_Test {
+
+    @Test
+    @DisplayName("Known form-submittable tag 'input' returns true (formSubmit==true)")
+    public void test_TC01() {
+        // Given a standard HTML 'input' tag, which should be submittable in forms (formSubmit flag true)
+        Tag tag = Tag.valueOf("input");
+        // When checking if the tag is form submittable
+        boolean result = tag.isFormSubmittable();
+        // Then the result must be true, reflecting intended behavior of input elements
+        assertEquals(true, result, "Expected 'input' to be form submittable");
+    }
+
+    @Test
+    @DisplayName("Known non-submittable tag 'div' returns false (formSubmit==false)")
+    public void test_TC02() {
+        // Given a standard HTML 'div' tag, which should not be submittable in forms (formSubmit flag false)
+        Tag tag = Tag.valueOf("div");
+        // When checking if the tag is form submittable
+        boolean result = tag.isFormSubmittable();
+        // Then the result must be false, reflecting that div elements are not submitted
+        assertEquals(false, result, "Expected 'div' to not be form submittable");
+    }
+}

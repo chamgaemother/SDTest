@@ -1,0 +1,124 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with default settings and empty .env yields empty Dotenv without setting any system properties (branch systemProperties=false, loop-0)",
+      "path": "B0→B1→B2",
+      "precondition": "Create an empty .env file in a temporary directory; DotenvBuilder uses that directory; no mocking",
+      "expectedResult": "returned Dotenv.entriesInFile() is empty; no new System.getProperty() entries for dotenv keys",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load default empty-file",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(tempDir).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with default settings and one entry sets that single entry as system property and returns it (branch systemProperties=false, loop-1)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a .env file containing KEY=VALUE; no mocking",
+      "expectedResult": "returned Dotenv.get(\"KEY\") equals \"VALUE\"; System.getProperty(\"KEY\") equals \"VALUE\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load default one-entry",
+        "  GIVEN",
+        "    writeFile(tempDir + \"/.env\", \"KEY=VALUE\");",
+        "  WHEN",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir).load();",
+        "  THEN",
+        "    assert dotenv.get(\"KEY\").equals(\"VALUE\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with default settings and multiple entries sets all entries as system properties and returns full set (branch systemProperties=false, loop-N)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a .env file with three distinct key-value lines; no mocking",
+      "expectedResult": "returned entries contain exactly those three keys with their values; each System.getProperty(key) equals its value",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load default multi-entry",
+        "  GIVEN",
+        "    writeFile(tempDir + \"/.env\", \"A=1\nB=2\nC=3\");",
+        "  WHEN",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir).load();",
+        "  THEN",
+        "    assertSetEquals(dotenv.entries(), Set.of(new DotenvEntry(\"A\",\"1\"), new DotenvEntry(\"B\",\"2\"), new DotenvEntry(\"C\",\"3\")));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties enabled skips setting any system properties but returns all entries (branch systemProperties=true, loop-0)",
+      "path": "B0→B2",
+      "precondition": "Create a .env file containing X=Y; no mocking",
+      "expectedResult": "returned Dotenv.get(\"X\") equals \"Y\"; System.getProperty(\"X\") remains null",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load with systemProperties skips applying",
+        "  GIVEN",
+        "    writeFile(tempDir + \"/.env\", \"X=Y\");",
+        "  WHEN",
+        "    Dotenv dotenv = Dotenv.configure().directory(tempDir).systemProperties().load();",
+        "  THEN",
+        "    assert dotenv.get(\"X\").equals(\"Y\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when parser.parse() fails (exception path)",
+      "path": "B0",
+      "precondition": "Use Mockito to mock DotenvParser.parse() to throw DotenvException because constructor injection can't be replaced (mocking necessary)",
+      "expectedResult": "throws DotenvException; no System properties changed",
+      "tags": [
+        "exception",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load parse-failure throws",
+        "  GIVEN",
+        "    DotenvBuilder builder = spy(Dotenv.configure());",
+        "  WHEN",
+        "    whenNew(DotenvParser.class).withAnyArguments().thenReturn(mockParser);",
+        "  THEN",
+        "    call builder.load() throws DotenvException;",
+        "END"
+      ]
+    }
+  ]
+}

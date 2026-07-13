@@ -1,0 +1,174 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Test class for Parser.parseInput overloads
+public class Parser_parseInput_0_Test {
+
+    // Stub TreeBuilder minimal implementation for testing
+    private static abstract class StubTreeBuilder extends TreeBuilder {
+        @Override public ParseSettings defaultSettings() { return new ParseSettings(false, false); }
+        @Override public TreeBuilder newInstance() { return this; }
+        @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException("Not used in these tests");
+        }
+        @Override public void process(Token token) {} // Implemented to satisfy abstract method
+    }
+
+    @Test
+    @DisplayName("TC01: parseInput(String, String) delegates to treeBuilder.parse and returns the Document when html and baseUri are non-null")
+    void test_TC01() {
+        // Using stub builder that returns dummyDoc to verify delegation branch B1→B2
+        Document dummyDoc = Document.createShell("stub");
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                return dummyDoc;
+            }
+        };
+        Parser parser = new Parser(stub);
+        String html = "<p>ok</p>";
+        String baseUri = "http://example.com";
+        Document result = parser.parseInput(html, baseUri);
+        assertSame(dummyDoc, result);
+    }
+
+    @Test
+    @DisplayName("TC02: parseInput(Reader, String) delegates to treeBuilder.parse and returns the Document when reader and baseUri are non-null")
+    void test_TC02() {
+        // Testing Reader overload delegation branch B1→B2
+        Document dummyDoc = Document.createShell("stubR");
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                return dummyDoc;
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader input = new StringReader("<div/>"); // Fixed the unclosed string literal
+        String baseUri = "base";
+        Document result = parser.parseInput(input, baseUri);
+        assertSame(dummyDoc, result);
+    }
+
+    @Test
+    @DisplayName("TC03: parseInput(String, String) with null html should throw NullPointerException at StringReader construction")
+    void test_TC03() {
+        // Null html triggers NPE before delegation (branch B1 false)
+        Parser parser = Parser.htmlParser();
+        assertThrows(NullPointerException.class, () -> parser.parseInput((String) null, "u"));
+    }
+
+    @Test
+    @DisplayName("TC04: parseInput(String, String) with null baseUri should cause treeBuilder.parse to throw IllegalArgumentException")
+    void test_TC04() {
+        // Stub builder throws IAE when baseUri is null to hit branch B4
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                if (baseUri == null) throw new IllegalArgumentException("baseUri null");
+                return Document.createShell("ok");
+            }
+        };
+        Parser parser = new Parser(stub);
+        String html = "<a/>";
+        String baseUri = null;
+        assertThrows(IllegalArgumentException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05: parseInput(Reader, String) with null Reader should throw NullPointerException from treeBuilder.parse stub")
+    void test_TC05() {
+        // Null Reader passed to stub causing NPE inside parse (branch B4)
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                if (input == null) throw new NullPointerException("reader null");
+                return Document.createShell("okR");
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader input = null;
+        String baseUri = "u";
+        assertThrows(NullPointerException.class, () -> parser.parseInput(input, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC06: parseInput(Reader, String) when treeBuilder.parse throws custom RuntimeException propagates the exception")
+    void test_TC06() {
+        // Stub unconditionally throws IllegalStateException to test propagation branch B4
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                throw new IllegalStateException("err");
+            }
+        };
+        Parser parser = new Parser(stub);
+        Reader input = new StringReader("x");
+        String baseUri = "b";
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(input, baseUri));
+        assertEquals("err", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC07: parseInput(String, String) with empty html string returns a Document (empty-parsed) from stub")
+    void test_TC07() {
+        // Empty html should still call parse and return emptyDoc, covering boundary branch B2
+        Document emptyDoc = Document.createShell("empty");
+        StubTreeBuilder stub = new StubTreeBuilder() {
+            @Override public Document parse(Reader input, String baseUri, Parser parser) {
+                // check that reader produces empty string
+                return emptyDoc;
+            }
+        };
+        Parser parser = new Parser(stub);
+        String html = "";
+        String baseUri = "u";
+        Document result = parser.parseInput(html, baseUri);
+        assertSame(emptyDoc, result);
+    }
+
+    @Test
+    @DisplayName("TC08: parseInput(String, String) with large html string is passed through to treeBuilder.parse once")
+    void test_TC08() {
+        // Real HtmlTreeBuilder should parse repeated <p> correctly, branch loops executed
+        Parser parser = Parser.htmlParser();
+        String html = "<p>1</p>".repeat(10);
+        String baseUri = "u";
+        Document doc = parser.parseInput(html, baseUri);
+        // expects 10 top-level <p> elements in body
+        assertEquals(10, doc.body().childNodeSize());
+    }
+
+    @Test
+    @DisplayName("TC09: parseInput(String, String) with html containing script tag ensures treeBuilder.parse recognizes script content")
+    void test_TC09() {
+        // Script content should be treated as data node, branch for script data
+        Parser parser = Parser.htmlParser();
+        String html = "<script>alert(1)</script>";
+        String baseUri = "u";
+        Document doc = parser.parseInput(html, baseUri);
+        // verify script tag's data() method returns the inner text
+        Element script = doc.select("script").first();
+        assertNotNull(script);
+        assertEquals("alert(1)", script.data());
+    }
+
+    @Test
+    @DisplayName("TC10: parseInput(String, String) with position tracking enabled does not affect returned Document structure")
+    void test_TC10() {
+        // Enabling trackPosition should not change parse structure, branch trackPosition true
+        Parser parser = Parser.htmlParser().setTrackPosition(true);
+        String html = "<div id=1></div>";
+        String baseUri = "u";
+        Document doc = parser.parseInput(html, baseUri);
+        // structure unaffected: one child in body
+        assertEquals(1, doc.body().childNodeSize());
+    }
+}

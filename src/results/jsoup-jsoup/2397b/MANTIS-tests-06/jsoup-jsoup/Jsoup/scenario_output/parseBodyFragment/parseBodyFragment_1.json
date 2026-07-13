@@ -1,0 +1,105 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseBodyFragment preserves absolute URLs unchanged when resolving href",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "absolute URL in href remains unchanged in output fragment",
+      "tags": [
+        "positive",
+        "absolute-url",
+        "resolution"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseBodyFragment absolute-url",
+        "  GIVEN",
+        "    String html = \"<a href='https://example.com/page.html'>link</a>\";",
+        "    String baseUri = \"http://ignored.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<a href=\\\"https://example.com/page.html\\\">link</a>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseBodyFragment leaves protocol-relative URLs unchanged regardless of baseUri",
+      "path": "B0→B1→B2→B5",
+      "precondition": "none",
+      "expectedResult": "protocol-relative URL in href remains as ‘//cdn.com/foo’",
+      "tags": [
+        "positive",
+        "protocol-relative",
+        "resolution"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment protocol-relative-url",
+        "  GIVEN",
+        "    String html = \"<img src='//cdn.com/img.png'>\";",
+        "    String baseUri = \"https://example.org/base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<img src=\\\"//cdn.com/img.png\\\">\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseBodyFragment uses <base href> tag to resolve relative URLs when baseUri empty",
+      "path": "B0→B1→B4→B6→B8",
+      "precondition": "none",
+      "expectedResult": "relative href resolved against base tag URL",
+      "tags": [
+        "positive",
+        "base-tag",
+        "resolution"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseBodyFragment base-tag-override",
+        "  GIVEN",
+        "    String html = \"<base href='http://override.com/sub/'><a href='item.html'>name</a>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<base href=\\\"http://override.com/sub/\\\"><a href=\\\"http://override.com/sub/item.html\\\">name</a>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseBodyFragment resolves ‘..’ segments against baseUri for nested relative paths",
+      "path": "B0→B1→B2(loop×1)→B5",
+      "precondition": "none",
+      "expectedResult": "href '../a/b.html' resolved to 'http://ex.com/a/b.html'",
+      "tags": [
+        "positive",
+        "relative-path",
+        "resolution",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseBodyFragment relative-parent-path",
+        "  GIVEN",
+        "    String html = \"<a href='../a/b.html'>back</a>\";",
+        "    String baseUri = \"http://ex.com/x/y/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<a href=\\\"http://ex.com/x/a/b.html\\\">back</a>\");",
+        "END"
+      ]
+    }
+  ]
+}

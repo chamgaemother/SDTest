@@ -1,0 +1,59 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild(Comment) on non-empty element skips ensureChildNodes and sets correct siblingIndex")
+    public void test_TC07() throws Exception {
+        // GIVEN: a parent element with one existing TextNode child
+        Element parent = new Element("div");
+        TextNode tn = new TextNode("foo");
+        parent.appendChild(tn);
+        // Precondition satisfied: childNodes already non-empty so ensureChildNodes is skipped on next append
+
+        // WHEN: appending a Comment to the same parent
+        Comment cm = new Comment("bar");
+        parent.appendChild(cm);
+
+        // THEN: parent should now have two children, and the new comment linked correctly
+        assertEquals(2, parent.childNodeSize(), "Expected two child nodes after appendChild on non-empty element");
+        assertEquals(parent, cm.parent(), "Comment's parent should be the element it was appended to");
+
+        // Use reflection to read the protected 'siblingIndex' field from Node
+        Field siblingField = Node.class.getDeclaredField("siblingIndex");
+        siblingField.setAccessible(true);
+        int cmIndex = siblingField.getInt(cm);
+        assertEquals(1, cmIndex, "Sibling index of the second child (Comment) should be 1");
+    }
+
+    @Test
+    @DisplayName("appendChild(DataNode) moves DataNode from old parent to new parent and resets siblingIndex")
+    public void test_TC08() throws Exception {
+        // GIVEN: a DataNode attached to an oldParent (script element)
+        Element oldParent = new Element("script");
+        DataNode dn = new DataNode("x=1;");
+        oldParent.appendChild(dn);
+        // Confirm initial attach: oldParent has one child, dn.parent is oldParent, siblingIndex 0
+        assertEquals(1, oldParent.childNodeSize());
+        // WHEN: move the same DataNode to a newParent
+        Element newParent = new Element("div");
+        newParent.appendChild(dn);
+        // THEN: oldParent should have no children, dn now child of newParent with index reset to 0
+        assertEquals(0, oldParent.childNodeSize(), "Old parent should have no children after moving the DataNode");
+        assertEquals(1, newParent.childNodeSize(), "New parent should have exactly one child after appendChild");
+        assertEquals(newParent, dn.parent(), "DataNode's parent should be updated to the new parent element");
+
+        // Reflectively inspect siblingIndex to ensure it's reset to 0
+        Field siblingField = Node.class.getDeclaredField("siblingIndex");
+        siblingField.setAccessible(true);
+        int dnIndex = siblingField.getInt(dn);
+        assertEquals(0, dnIndex, "Sibling index of the moved DataNode should be reset to 0 in the new parent");
+    }
+}

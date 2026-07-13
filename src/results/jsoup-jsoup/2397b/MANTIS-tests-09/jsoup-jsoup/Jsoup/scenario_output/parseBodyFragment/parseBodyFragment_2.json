@@ -1,0 +1,52 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "parseBodyFragment retains comment nodes in the body fragment",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() includes the comment",
+      "tags": [
+        "positive",
+        "comment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 comment-preservation",
+        "  GIVEN",
+        "    String fragment = \"<!-- note --><p>Text</p>\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<!-- note -->\");",
+        "    assertEquals(\"<p>Text</p>\", doc.body().select(\"p\").outerHtml());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment preserves whitespace-only fragment as text node",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals the whitespace",
+      "tags": [
+        "boundary",
+        "whitespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 whitespace-only",
+        "  GIVEN",
+        "    String fragment = \"   \\n  \";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment,\"\");",
+        "  THEN",
+        "    assertEquals(\"   \\n  \", doc.body().html());",
+        "END"
+      ]
+    }
+  ]
+}

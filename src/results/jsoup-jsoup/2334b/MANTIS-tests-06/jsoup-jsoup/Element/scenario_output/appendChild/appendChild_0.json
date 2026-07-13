@@ -1,0 +1,83 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws NullPointerException for null input",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no childNodes modified",
+      "tags": [
+        "exception",
+        "branch-true",
+        "precondition-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-input",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call el.appendChild(child);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild adds first child when childNodes is empty (ensureChildNodes path)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "childNodes.size()==1 and childNodes.get(0)==child and child.getSiblingIndex()==0",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "first-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert parent.childNodes.get(0) == child;",
+        "    assert child.getSiblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild adds second child when childNodes already contains one child",
+      "path": "B0→B1→B3→B3→B4",
+      "precondition": "parent has one existing child to test ensureChildNodes skip",
+      "expectedResult": "childNodes.size()==2 and childNodes[1]==newChild and newChild.getSiblingIndex()==1",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "subsequent-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert parent.childNodes.get(1) == second;",
+        "    assert second.getSiblingIndex() == 1;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(html) with non-empty HTML returns Document containing parsed nodes",
+      "path": "B0→B1(nullCheck)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document.body().html() equals \"<p>Test</p>\"",
+      "tags": [
+        "overload:String",
+        "branch-false null-html",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse(html) typical",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Test</p>\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(html) with empty string returns Document with empty body",
+      "path": "B0→B1(nullCheck)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document.body().html() equals \"\"",
+      "tags": [
+        "overload:String",
+        "branch-false null-html",
+        "boundary",
+        "empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse(html) empty",
+        "  GIVEN",
+        "    String html = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parse(html) with null HTML throws NullPointerException",
+      "path": "B0→B1(nullCheck)→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String",
+        "branch-true null-html",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse(html) null-input",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parse(html, baseUri) sets Document.baseUri to given URI",
+      "path": "B0→B1(nullCheck html)→B2(nullCheck baseUri)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned Document.baseUri() equals \"http://base/\"",
+      "tags": [
+        "overload:String,String",
+        "branch-false null-html",
+        "branch-false null-baseUri",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse(html,baseUri) typical",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"http://base/\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parse(html, baseUri) with null baseUri throws NullPointerException",
+      "path": "B0→B1(nullCheck html)→B2(nullCheck baseUri)→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String",
+        "branch-false null-html",
+        "branch-true null-baseUri",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parse(html,baseUri) null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p/>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC06_O3",
+      "description": "parse(html, parser) uses provided parser stub to create Document",
+      "path": "B0→B1(nullCheck html)→B3(nullCheck parser)→B4→B5",
+      "precondition": "Use hand-written Parser stub that returns a Document with title \"stub\"; why mocking: isolate parser behavior",
+      "expectedResult": "returned Document.title() equals \"stub\"",
+      "tags": [
+        "overload:String,Parser",
+        "branch-false null-html",
+        "branch-false null-parser",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parse(html,parser) stub-parser",
+        "  GIVEN",
+        "    String html = \"<h1>Hi</h1>\";",
+        "    Parser parser = new StubParserReturningTitle(\"stub\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.title().equals(\"stub\");"
+      ]
+    },
+    {
+      "id": "TC07_O3",
+      "description": "parse(html, parser) with null parser throws NullPointerException",
+      "path": "B0→B1(nullCheck html)→B3(nullCheck parser)→B4?→B6",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,Parser",
+        "branch-false null-html",
+        "branch-true null-parser",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parse(html,parser) null-parser",
+        "  GIVEN",
+        "    String html = \"<p/>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC08_O4",
+      "description": "parse(html, baseUri, parser) delegates to parser with correct arguments",
+      "path": "B0→B1(nullCheck html)→B2(nullCheck baseUri)→B3(nullCheck parser)→B4→B5",
+      "precondition": "Use hand-written Parser stub recording inputs; why mocking: capture html and baseUri",
+      "expectedResult": "stub recorded html=\"<x/>\" and baseUri=\"u\" and returns Document",
+      "tags": [
+        "overload:String,String,Parser",
+        "branch-false null-html",
+        "branch-false null-baseUri",
+        "branch-false null-parser",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parse(html,baseUri,parser) stub-parser",
+        "  GIVEN",
+        "    String html = \"<x/>\";",
+        "    String baseUri = \"u\";",
+        "    Parser parser = new RecordingParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert parser.lastHtml.equals(\"<x/>\") && parser.lastBaseUri.equals(\"u\");"
+      ]
+    },
+    {
+      "id": "TC09_OURL",
+      "description": "parse(URL, timeout) with invalid protocol throws MalformedURLException",
+      "path": "B0→B7(connect)→B8(timeout)→B9",
+      "precondition": "none",
+      "expectedResult": "throws java.net.MalformedURLException",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "invalid-protocol"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parse(URL,int) invalid-protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://file\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.MalformedURLException;"
+      ]
+    },
+    {
+      "id": "TC10_OURL",
+      "description": "parse(URL, timeout) uses stub Connection to return Document",
+      "path": "B0→B7(connect)→B8(timeout)→B10(get)→B11",
+      "precondition": "Stub HttpConnection.connect(URL) returns stub Connection that returns Document with title \"ok\"; why mocking: no network",
+      "expectedResult": "returned Document.title() equals \"ok\"",
+      "tags": [
+        "overload:URL,int",
+        "branch-false exception",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parse(URL,int) stub-connection",
+        "  GIVEN",
+        "    URL url = new URL(\"http://valid\");",
+        "    int timeout = 0;",
+        "    HttpConnection stubConn = new StubConnectionReturningTitle(\"ok\");",
+        "    override HttpConnection.connect(url) to return stubConn;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.title().equals(\"ok\");"
+      ]
+    }
+  ]
+}

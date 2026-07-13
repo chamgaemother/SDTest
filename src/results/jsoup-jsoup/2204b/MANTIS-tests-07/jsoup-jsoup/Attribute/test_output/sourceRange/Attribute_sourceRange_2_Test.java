@@ -1,0 +1,34 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+public class Attribute_sourceRange_2_Test {
+
+    @Test
+    @DisplayName("TC02: sourceRange delegates to parent.sourceRange(key) when parent is non-null (branch parent!=null)")
+    void test_TC02() {
+        // Arrange: create a sentinel range and a stub parent whose sourceRange returns the sentinel
+        Range.AttributeRange sentinel = new Range.AttributeRange(5, 10);
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String key) {
+                // Always return our sentinel, regardless of key
+                return sentinel; // Return the sentinel directly instead of creating a new instance
+            }
+        };
+        // The attribute is constructed with a non-null parent, satisfying the condition parent != null
+        Attribute attr = new Attribute("customKey", "val", stubParent);
+
+        // Act: call sourceRange which should delegate to stubParent.sourceRange
+        Range.AttributeRange result = attr.sourceRange();
+
+        // Assert: ensure the returned object is exactly the sentinel instance
+        assertSame(sentinel, result, 
+            "Expected sourceRange() to return the exact sentinel instance provided by stubParent");
+    }
+}

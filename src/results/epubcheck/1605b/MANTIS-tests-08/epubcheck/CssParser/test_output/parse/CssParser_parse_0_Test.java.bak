@@ -1,0 +1,285 @@
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Arrays;
+import java.util.List;
+
+import org.idpf.epubcheck.util.css.CssException;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssToken;
+import org.idpf.epubcheck.util.css.CssToken.Type;
+import org.idpf.epubcheck.util.css.CssTokenList.CssTokenIterator;
+import org.idpf.epubcheck.util.css.CssErrorHandler;
+import org.idpf.epubcheck.util.css.CssContentHandler;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssException.PrematureEOFException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  // A stub iterator for providing controlled sequences of CssToken
+  static class StubIterator implements CssTokenIterator {
+    private final List<CssToken> tokens;
+    private int idx = 0;
+    public CssToken last;
+    public StubIterator(List<CssToken> tokens) { this.tokens = tokens; }
+    @Override public boolean hasNext() { return idx < tokens.size(); }
+    @Override public boolean hasNext(java.util.function.Predicate<CssToken> f) { return hasNext(); }
+    @Override public CssToken next() {
+      last = tokens.get(idx++);
+      return last;
+    }
+    @Override public CssToken next(java.util.function.Predicate<CssToken> f) { return next(); }
+    @Override public CssToken next(java.util.function.Predicate<CssToken> f, int skip) { return next(); }
+    @Override public CssToken peek() { return idx < tokens.size() ? tokens.get(idx) : null; }
+    @Override public int index() { return idx - 1; }
+    @Override public List<CssToken> getList() { return tokens; }
+    @Override public Object filter() { return null; }
+    @Override public Object get() { return null; }
+    @Override public void remove() { throw new UnsupportedOperationException(); }
+  }
+
+  // Helpers to create mock tokens of given type
+  private CssToken mockToken(Type type, char ch, String chars) {
+    CssToken tk = mock(CssToken.class);
+    when(tk.type).thenReturn(type);
+    when(tk.getChar()).thenReturn(ch);
+    when(tk.getChars()).thenReturn(chars);
+    when(tk.toString()).thenReturn(chars);
+    return tk;
+  }
+
+  /**
+   * TC01: No tokens => hasNext(FILTER_S_CMNT_CDO_CDC)=false immediately.
+   */
+  @Test
+  @DisplayName("No tokens from scan results in immediate endDocument (loop-0, branch:false)")
+  void test_TC01() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    // Stub parser to return empty iterator: loop-0
+    CssParser parser = new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        // no tokens causes hasNext(filter)=false
+        return new StubIterator(Arrays.asList());
+      }
+    };
+    parser.parse(rdr, "sys", err, doc);
+    // expect startDocument and endDocument exactly once
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC02: Single ATKEYWORD token triggers handleAtRule then endDocument.
+   */
+  @Test
+  @DisplayName("Single ATKEYWORD token triggers handleAtRule then endDocument (loop-1, branch:ATKEYWORD)")
+  void test_TC02() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken atTk = mockToken(Type.ATKEYWORD, '@', "@at");
+    // Iterator yields ATKEYWORD then ends
+    StubIterator iter = new StubIterator(Arrays.asList(atTk));
+    // Spy parser to count handleAtRule calls
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doNothing().when(parser).handleAtRule(any(), any(), eq(doc), eq(err));
+    parser.parse(rdr, "id", err, doc);
+    verify(parser, times(1)).handleAtRule(atTk, iter, doc, err);
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC03: Single non-ATKEYWORD token triggers handleRuleSet then endDocument.
+   */
+  @Test
+  @DisplayName("Single non-ATKEYWORD token triggers handleRuleSet then endDocument (loop-1, branch:non-ATKEYWORD)")
+  void test_TC03() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken idTk = mockToken(Type.IDENT, 'a', "prop");
+    StubIterator iter = new StubIterator(Arrays.asList(idTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doNothing().when(parser).handleRuleSet(any(), any(), eq(doc), eq(err));
+    parser.parse(rdr, "id", err, doc);
+    verify(parser, times(1)).handleRuleSet(idTk, iter, doc, err);
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC04: Two tokens (ATKEYWORD then IDENT) mixed sequence.
+   */
+  @Test
+  @DisplayName("Two tokens (first ATKEYWORD, then non-ATKEYWORD) cover loop-2 mixed sequence")
+  void test_TC04() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken atTk = mockToken(Type.ATKEYWORD, '@', "@at");
+    CssToken idTk = mockToken(Type.IDENT, 'a', "prop");
+    StubIterator iter = new StubIterator(Arrays.asList(atTk, idTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doNothing().when(parser).handleAtRule(atTk, iter, doc, err);
+    doNothing().when(parser).handleRuleSet(idTk, iter, doc, err);
+    parser.parse(rdr, "id", err, doc);
+    verify(parser, times(1)).handleAtRule(atTk, iter, doc, err);
+    verify(parser, times(1)).handleRuleSet(idTk, iter, doc, err);
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC05: Three tokens (ATKEYWORD, ATKEYWORD, IDENT).
+   */
+  @Test
+  @DisplayName("Three tokens (ATKEYWORD, ATKEYWORD, IDENT) cover loop-3 to exceed 2 iterations")
+  void test_TC05() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken at1 = mockToken(Type.ATKEYWORD, '@', "@one");
+    CssToken at2 = mockToken(Type.ATKEYWORD, '@', "@two");
+    CssToken idTk = mockToken(Type.IDENT, 'a', "prop");
+    StubIterator iter = new StubIterator(Arrays.asList(at1, at2, idTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doNothing().when(parser).handleAtRule(at1, iter, doc, err);
+    doNothing().when(parser).handleAtRule(at2, iter, doc, err);
+    doNothing().when(parser).handleRuleSet(idTk, iter, doc, err);
+    parser.parse(rdr, "id", err, doc);
+    verify(parser, times(1)).handleAtRule(at1, iter, doc, err);
+    verify(parser, times(1)).handleAtRule(at2, iter, doc, err);
+    verify(parser, times(1)).handleRuleSet(idTk, iter, doc, err);
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC06: IOException from scan() is propagated.
+   */
+  @Test
+  @DisplayName("IOException from scan() is propagated (exception path)")
+  void test_TC06() {
+    CssParser parser = new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) throws IOException {
+        throw new IOException("fail-scan");
+      }
+    };
+    assertThrows(IOException.class, () ->
+      parser.parse(new StringReader(""), "id", mock(CssErrorHandler.class), mock(CssContentHandler.class))
+    );
+  }
+
+  /**
+   * TC07: CssException from scan() is propagated.
+   */
+  @Test
+  @DisplayName("CssException from scan() is propagated (exception path)")
+  void test_TC07() {
+    CssParser parser = new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) throws CssException {
+        throw new CssGrammarException(null, null, null, "err");
+      }
+    };
+    assertThrows(CssGrammarException.class, () ->
+      parser.parse(new StringReader(""), "id", mock(CssErrorHandler.class), mock(CssContentHandler.class))
+    );
+  }
+
+  /**
+   * TC08: PrematureEOFException in handleRuleSet breaks loop and ends document.
+   */
+  @Test
+  @DisplayName("PrematureEOFException in handleRuleSet breaks loop and ends document (exception branch)")
+  void test_TC08() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken idTk = mockToken(Type.IDENT, 'a', "prop");
+    StubIterator iter = new StubIterator(Arrays.asList(idTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doThrow(new PrematureEOFException()).when(parser).handleRuleSet(idTk, iter, doc, err);
+    // Should swallow PrematureEOFException inside parse and endDocument
+    parser.parse(rdr, "id", err, doc);
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+  }
+
+  /**
+   * TC09: CssException from handleAtRule propagates.
+   */
+  @Test
+  @DisplayName("CssException from handleAtRule propagates (exception path)")
+  void test_TC09() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken atTk = mockToken(Type.ATKEYWORD, '@', "@at");
+    StubIterator iter = new StubIterator(Arrays.asList(atTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doThrow(new CssGrammarException(null, null, null, "bad")).when(parser).handleAtRule(atTk, iter, doc, err);
+    // startDocument is called, then exception propagates; endDocument not called
+    assertThrows(CssGrammarException.class, () ->
+      parser.parse(rdr, "id", err, doc)
+    );
+    verify(doc, times(1)).startDocument();
+    verify(doc, never()).endDocument();
+  }
+
+  /**
+   * TC10: CssException from handleRuleSet propagates.
+   */
+  @Test
+  @DisplayName("CssException from handleRuleSet propagates (exception path)")
+  void test_TC10() throws Exception {
+    Reader rdr = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    CssToken idTk = mockToken(Type.IDENT, 'a', "prop");
+    StubIterator iter = new StubIterator(Arrays.asList(idTk));
+    CssParser parser = spy(new CssParser() {
+      @Override protected CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {
+        return iter;
+      }
+    });
+    doThrow(new CssGrammarException(null, null, null, "bad")).when(parser).handleRuleSet(idTk, iter, doc, err);
+    assertThrows(CssGrammarException.class, () ->
+      parser.parse(rdr, "id", err, doc)
+    );
+    verify(doc, times(1)).startDocument();
+    verify(doc, never()).endDocument();
+  }
+
+}

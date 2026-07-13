@@ -1,0 +1,35 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.child(int) method, focusing on shadowChildrenRef caching behavior.
+ */
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(int) on second invocation returns from cached shadowChildrenRef branch")
+    public void test_TC08() {
+        // GIVEN an Element with two Element children and no prior shadowChildrenRef cache
+        Element parent = new Element("div");
+        Element first = new Element("span");
+        Element second = new Element("a");
+        parent.appendChild(first);
+        parent.appendChild(second);
+        
+        // WHEN first invocation: builds the shadowChildrenRef cache via childElementsList initial build
+        Element result1 = parent.child(1);
+        // WHEN second invocation: should retrieve from the existing shadowChildrenRef cache
+        Element result2 = parent.child(1);
+        
+        // THEN both invocations return the same child instance at index 1
+        assertAll(
+            // verify first call returned the expected element
+            () -> assertSame(second, result1, "First invocation should build cache and return the second child Element."),
+            // verify second call returned the same instance, indicating cache hit
+            () -> assertSame(second, result2, "Second invocation should return from cached shadowChildrenRef and yield the same Element instance.")
+        );
+    }
+}

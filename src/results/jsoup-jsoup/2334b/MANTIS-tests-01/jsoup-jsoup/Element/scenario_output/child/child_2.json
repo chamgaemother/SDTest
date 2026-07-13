@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "child(1) after explicit cache invalidation via nodelistChanged() rebuilds shadowChildrenRef when referent is null",
+      "path": "B0→B2→B3→cacheExists(true)→cacheReferentNull→rebuild→B5",
+      "precondition": "Element with two Element children and populated shadowChildrenRef",
+      "expectedResult": "second element returned after rebuild of cache",
+      "tags": [
+        "cache",
+        "shadowChildrenRef",
+        "mutation",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 explicit-cache-invalidation triggers rebuild",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"a\");",
+        "    Element second = new Element(\"b\");",
+        "    parent.appendChild(first);",
+        "    parent.appendChild(second);",
+        "    // populate cache",
+        "    Element c0 = parent.child(1);",
+        "    // explicitly clear cache without structural change",
+        "    parent.nodelistChanged();",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(second, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "child(0) skips non-Element DataNode and returns first real Element child",
+      "path": "B0→B2→B3(loop twice filtering DataNode then collecting Element)→B5",
+      "precondition": "Element with one DataNode child and one Element child",
+      "expectedResult": "only Element child is returned for index 0",
+      "tags": [
+        "filtering",
+        "DataNode",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 skip-non-element-dataNode",
+        "  GIVEN",
+        "    Element parent = new Element(\"section\");",
+        "    DataNode data = new DataNode(\"xyz\");",
+        "    parent.appendChild(data);",
+        "    Element childEl = new Element(\"p\");",
+        "    parent.appendChild(childEl);",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assertSame(childEl, result);",
+        "END"
+      ]
+    }
+  ]
+}

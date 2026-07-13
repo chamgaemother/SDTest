@@ -1,0 +1,97 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("TC09: dataset() normalizes multi-hyphen data keys to lower camel-case and preserves insertion order")
+    public void test_TC09() {
+        // GIVEN an element with two data-* attributes and one non-data attribute
+        Element el = new Element("div");
+        el.attr("data-hello-world", "hw"); // sets first data-* attribute
+        el.attr("id", "X");               // non-data attribute must be ignored by dataset()
+        el.attr("data-test-value", "tv"); // sets second data-* attribute
+
+        // WHEN retrieving the live dataset view (filters and normalizes keys B0→B1→B2)
+        Map<String, String> ds = el.dataset();
+
+        // THEN the dataset map has exactly two entries in insertion order with normalized keys
+        assertEquals(2, ds.size(), "Dataset size should match number of data-* attributes");
+        List<String> keys = new ArrayList<>(ds.keySet());
+        assertEquals(Arrays.asList("helloWorld", "testValue"), keys,
+            "Keys should be camelCase and preserve insertion order");
+        assertEquals("hw", ds.get("helloWorld"), "Value for 'helloWorld' should match attribute");
+        assertEquals("tv", ds.get("testValue"), "Value for 'testValue' should match attribute");
+    }
+
+    @Test
+    @DisplayName("TC10: dataset() live view put overrides existing data-* attribute value")
+    public void test_TC10() {
+        // GIVEN an element with an initial data-* attribute
+        Element el = new Element("span");
+        el.attr("data-foo", "old"); // initial data-* entry
+
+        // WHEN putting a new value into the dataset live view (B0→B1→B3→B5)
+        Map<String, String> ds = el.dataset();
+        ds.put("foo", "new"); // overrides existing entry, should update underlying attr
+
+        // THEN the element's attribute and the dataset reflect the new value
+        assertEquals("new", el.attr("data-foo"), "Underlying attribute should be updated by dataset.put");
+        assertEquals("new", ds.get("foo"), "Dataset view should return the updated value");
+    }
+
+    @Test
+    @DisplayName("TC11: dataset().put(null,…) throws NullPointerException for null key")
+    public void test_TC11() {
+        // GIVEN an element and its dataset
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset(); // empty dataset initialized (B0→B1→B3→B5)
+
+        // WHEN putting a null key into the dataset
+        // THEN a NullPointerException is thrown, as Map does not allow null keys in this view
+        assertThrows(NullPointerException.class, () -> ds.put(null, "value"),
+            "Putting a null key into dataset should throw NullPointerException");
+    }
+
+    @Test
+    @DisplayName("TC12: dataset().remove(nonexistent) is a no-op and map remains unchanged")
+    public void test_TC12() {
+        // GIVEN an element with one data-* attribute
+        Element el = new Element("p");
+        el.attr("data-x", "1"); // single data-* entry
+
+        // WHEN removing a key that does not exist in the dataset (B0→B1→B3→B5)
+        Map<String, String> ds = el.dataset();
+        String removed = ds.remove("y"); // should be no-op
+
+        // THEN remove returns null and dataset remains unchanged
+        assertNull(removed, "Removing a nonexistent key should return null");
+        assertEquals(1, ds.size(), "Dataset size should remain 1 after removing nonexistent key");
+        assertTrue(ds.containsKey("x"), "Existing key 'x' should still be present");
+    }
+
+    @Test
+    @DisplayName("TC13: dataset().clear() on empty dataset is a no-op and does not affect non-data attributes")
+    public void test_TC13() {
+        // GIVEN an element with no data-* attributes but a normal attribute
+        Element el = new Element("div");
+        el.attr("title", "T"); // non-data attribute
+
+        // WHEN clearing the dataset (B0→B1→B3→B6)
+        Map<String, String> ds = el.dataset(); // dataset is empty
+        ds.clear(); // should not affect non-data attrs
+
+        // THEN dataset remains empty and other attributes unaffected
+        assertTrue(ds.isEmpty(), "Dataset should remain empty after clear");
+        assertTrue(el.hasAttr("title"), "Non-data attribute 'title' should remain after clearing dataset");
+    }
+}

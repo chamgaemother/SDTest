@@ -1,0 +1,38 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for org.jsoup.nodes.Element#appendChild
+ */
+public class Element_appendChild_1_Test {
+
+    @Test
+    @DisplayName("appendChild reassigns parent when child already has a different parent")
+    public void test_TC04() {
+        // GIVEN: a child already appended to an old parent triggers the reparent branch
+        Element oldParent = new Element("div");
+        Element newParent = new Element("section");
+        Element child = new Element("span");
+        oldParent.appendChild(child); // child.parent == oldParent, oldParent.childNodeSize == 1
+
+        // WHEN: appending the same child to a new parent should remove from old and add to new
+        Element result = newParent.appendChild(child);
+
+        // THEN: method returns the new parent
+        assertEquals(newParent, result, "appendChild should return the new parent instance");
+        // old parent should have removed the child
+        assertEquals(0, oldParent.childNodeSize(), "Old parent should have no children after reparenting");
+        // new parent should have exactly one child
+        assertEquals(1, newParent.childNodeSize(), "New parent should have one child after appendChild");
+        // the child in new parent's childNodes list should be the same instance
+        assertSame(child, newParent.childNodes().get(0), "The child in new parent's list should be the same instance");
+        // child's parent reference should point to new parent
+        assertSame(newParent, child.parent(), "Child's parent should be updated to the new parent");
+        // siblingIndex of child should be updated to its index in new parent's children (0)
+        assertEquals(0, child.siblingIndex(), "Child's sibling index should be 0 in the new parent");
+    }
+}

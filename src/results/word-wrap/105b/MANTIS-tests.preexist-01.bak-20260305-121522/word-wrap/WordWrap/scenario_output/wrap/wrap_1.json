@@ -1,0 +1,167 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "wrap() ignores carriage returns ('\\r') and preserves other characters correctly",
+      "path": "B0→B3(loop×n skip CR)→B9→B17→B19",
+      "precondition": "none",
+      "expectedResult": "return value equals \"a\\nb\" when input contains CRLF",
+      "tags": [
+        "positive",
+        "iteration",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 carriage-return ignored",
+        "  GIVEN",
+        "    WordWrap.Builder builder = WordWrap.from(\"a\\r\\nb\");",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap() rethrows IORuntimeException when closing reader throws IOException",
+      "path": "B0→B3(loop once)→finally→close(reader) throws→exception",
+      "precondition": "Reader.close() throws IOException",
+      "expectedResult": "IORuntimeException is thrown with cause IOException",
+      "tags": [
+        "exception",
+        "cleanup"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 close reader throws",
+        "  GIVEN",
+        "    Reader r = new Reader() {",
+        "      public int read(char[] c, int off, int len) { return -1; }",
+        "      public void close() throws IOException { throw new IOException(\"fail\"); }",
+        "    };",
+        "    WordWrap.Builder builder = WordWrap.from(r, true);",
+        "  WHEN",
+        "    call builder.wrap(new StringWriter());",
+        "  THEN",
+        "    throws IORuntimeException with cause instanceOf IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap(File,Charset) writes wrapped lines to file and read back matches wrap() output",
+      "path": "B0→B1→wrap(File,Charset)→try-with-resources normal→read back",
+      "precondition": "temp file is writable",
+      "expectedResult": "file content equals builder.wrap()",
+      "tags": [
+        "positive",
+        "file-io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 wrap to file UTF-16",
+        "  GIVEN",
+        "    String text = \"one two three\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(5);",
+        "    File f = createTempFile();",
+        "  WHEN",
+        "    builder.wrap(f, StandardCharsets.UTF_16);",
+        "    String fileContent = readFile(f, StandardCharsets.UTF_16);",
+        "  THEN",
+        "    assert fileContent.equals(builder.wrap());",
+        "    deleteFile(f);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap(LineConsumer) splits punctuation into separate word when punctuation in extraWordChars",
+      "path": "B0→B3(loop char by char treat punctuation as word)→B16→B22",
+      "precondition": "comma included as extra word char",
+      "expectedResult": "no line break at comma, comma remains attached",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "punctuation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 includeExtraWordChars for punctuation",
+        "  GIVEN",
+        "    String text = \"a,b\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(2)",
+        "      .includeExtraWordChars(\",\");",
+        "    List<String> collected = new ArrayList<>();",
+        "  WHEN",
+        "    builder.wrap(new LineConsumer() {",
+        "      StringBuilder sb = new StringBuilder();",
+        "      public void write(char[] c, int off, int len) { sb.append(c, off, len); }",
+        "      public void writeNewLine() { collected.add(sb.toString()); sb.setLength(0); }",
+        "    });",
+        "  THEN",
+        "    assert collected.size()==1 && collected.get(0).equals(\"a,b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "writeBrokenWord() uses no hyphens branch when insertHyphens=false and word longer than maxWidth",
+      "path": "B0→B3(loop→tooLong→writeBrokenWord→else branch)→B19",
+      "precondition": "breakWords=true, insertHyphens=false",
+      "expectedResult": "line break without hyphen, remaining suffix length=1",
+      "tags": [
+        "positive",
+        "breakWords",
+        "insertHyphens"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 broken word without hyphens",
+        "  GIVEN",
+        "    String text = \"xyzabc\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(3)",
+        "      .insertHyphens(false);",
+        "    List<String> lines = builder.wrapToList();",
+        "  WHEN",
+        "    // execution in wrapToList",
+        "  THEN",
+        "    assert lines.get(0).equals(\"xyza\");",
+        "    assert lines.get(1).equals(\"bc\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "wrap() returns only trailing word when line buffer is empty at EOF with broken=true",
+      "path": "B0→B3(loop build broken word→EOF→else broken path)→B19",
+      "precondition": "breakWords=false causes broken=true for long word",
+      "expectedResult": "result equals remaining word without leading whitespace",
+      "tags": [
+        "boundary",
+        "broken-word",
+        "EOF"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 EOF with broken word and breakWords=false",
+        "  GIVEN",
+        "    String text = \"ABCDEFGHI\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(3)",
+        "      .breakWords(false);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"GHI\");",
+        "END"
+      ]
+    }
+  ]
+}

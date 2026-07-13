@@ -1,0 +1,134 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException when child is null",
+      "path": "B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no state mutated on parent element",
+      "tags": [
+        "branch-null",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-input",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild on empty children list creates new childNodes and appends child",
+      "path": "B1→B2→B3→B4(true)→B5→B6→B7",
+      "precondition": "none",
+      "expectedResult": "parent.childNodeSize() == 1; parent.child(0) == child; child.parent() == parent; return value == parent",
+      "tags": [
+        "branch-ensureChildNodes-true",
+        "normal",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert parent.child(0) == child;",
+        "    assert child.parent() == parent;",
+        "    assert result == parent;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild on non-empty children list reuses existing childNodes",
+      "path": "B1→B2→B3→B4(false)→B5→B6→B7",
+      "precondition": "parent.appendChild(first) executed to create existing childNodes",
+      "expectedResult": "parent.childNodeSize() == 2; parent.child(1) == second; second.parent() == parent",
+      "tags": [
+        "branch-ensureChildNodes-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert parent.child(1) == second;",
+        "    assert second.parent() == parent;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild reparents node from old parent to new parent",
+      "path": "B1→B2→B3→B4(true)→B5→B6→B7",
+      "precondition": "Node child initially appended to oldParent",
+      "expectedResult": "oldParent.childrenSize() == 0; newParent.childrenSize() == 1; child.parent() == newParent",
+      "tags": [
+        "reparent",
+        "branch-ensureChildNodes-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent-existing-child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"span\");",
+        "    TextNode child = new TextNode(\"txt\");",
+        "    oldParent.appendChild(child);",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childrenSize() == 0;",
+        "    assert newParent.childrenSize() == 1;",
+        "    assert child.parent() == newParent;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "appendChild returns same element for chaining usage",
+      "path": "B1→B2→B3→B4(true)→B5→B6→B7",
+      "precondition": "none",
+      "expectedResult": "result.appendChild(child1).appendChild(child2) yields same result reference; result.childNodeSize() == 2",
+      "tags": [
+        "chaining",
+        "branch-ensureChildNodes-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild chaining",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    TextNode a = new TextNode(\"A\");",
+        "    TextNode b = new TextNode(\"B\");",
+        "  WHEN",
+        "    Element returned = el.appendChild(a).appendChild(b);",
+        "  THEN",
+        "    assert returned == el;",
+        "    assert el.childNodeSize() == 2;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "wrap() ignores carriage return characters (ch=='\\r' branch) and still processes subsequent newline",
+      "path": "B0→B1(loop×1:r)→B1(loop×1:\\n)→B6→B9",
+      "precondition": "none",
+      "expectedResult": "return value is \"a\nb\"",
+      "tags": [
+        "positive",
+        "newline",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 carriage-return-ignored",
+        "  GIVEN",
+        "    CharSequence text = \"a\\r\\nb\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "wrap() splits on punctuation since comma is not in extraWordChars (punctuation branch) when width exceeded",
+      "path": "B0→B1(loop×6)→B3(else punctuation)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value is \"hello,\\nworld\" for maxWidth=6",
+      "tags": [
+        "positive",
+        "punctuation",
+        "split"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 split-on-punctuation",
+        "  GIVEN",
+        "    String text = \"hello,world\";",
+        "    Builder b = WordWrap.from(text).maxWidth(6);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello,\\nworld\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "wrap() treats comma as word character when includeExtraWordChars is used, so no split on comma",
+      "path": "B0→B1(loop×6)→B2(isWordCharacter)→B4",
+      "precondition": "none",
+      "expectedResult": "return value is \"hello,world\" even if maxWidth=6",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "punctuation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 include-punctuation-in-words",
+        "  GIVEN",
+        "    String text = \"hello,world\";",
+        "    Builder b = WordWrap.from(text).maxWidth(6).includeExtraWordChars(\",\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello,world\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "wrapToList() collects wrapped lines into a List<String>",
+      "path": "B0→B1(loop×4:'a','b','c','\\n')→B6→B9→exit",
+      "precondition": "none",
+      "expectedResult": "return value is list [\"abc\",\"def\"] for input \"abc\\ndef\"",
+      "tags": [
+        "positive",
+        "wrapToList",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 wrapToList returns lines list",
+        "  GIVEN",
+        "    String text = \"abc\\ndef\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).wrapToList();",
+        "  THEN",
+        "    assert lines.size() == 2;",
+        "    assert lines.get(0).equals(\"abc\");",
+        "    assert lines.get(1).equals(\"def\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "from(File,charset) throws IORuntimeException when file not found (FileNotFoundException path)",
+      "path": "B0→B1(from File)→exception→exit",
+      "precondition": "no file at path \"nonexistent.txt\"",
+      "expectedResult": "throws IORuntimeException wrapping FileNotFoundException",
+      "tags": [
+        "negative",
+        "exception",
+        "from-file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 fromFile-not-found",
+        "  GIVEN",
+        "    File missing = new File(\"nonexistent.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(missing, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap() with custom stringWidth changes wrap points (tooLong uses custom Function)",
+      "path": "B0→B1(loop×1:'x')→B2→tooLong(true)→B4→exit",
+      "precondition": "none",
+      "expectedResult": "return value is \"xx\\nxxx\" for width measured at half-length",
+      "tags": [
+        "positive",
+        "custom-stringWidth",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 custom-stringWidth",
+        "  GIVEN",
+        "    String text = \"xxxxx\";",
+        "    Function<CharSequence,Number> halfWidth = s -> s.length()/2;",
+        "    Builder b = WordWrap.from(text).maxWidth(2).stringWidth(halfWidth);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    // halfWidth: \"xx\"=1, \"xxx\"=1; wrap at two characters",
+        "    assert result.equals(\"xx\\nxxx\");",
+        "END"
+      ]
+    }
+  ]
+}

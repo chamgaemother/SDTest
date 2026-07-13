@@ -1,0 +1,54 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "when parent is null (branch parent==null) returns UntrackedAttr constant",
+      "path": "B0→B1",
+      "precondition": "Attribute constructed with parent=null",
+      "expectedResult": "return value is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-true",
+        "PARENT_NULL"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 sourceRange parent-null",
+        "  GIVEN",
+        "    Attribute attr = new Attribute(\"key\",\"val\",null);",
+        "  WHEN",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == Range.AttributeRange.UntrackedAttr;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "when parent is non-null (branch parent!=null) delegates to parent.sourceRange(key)",
+      "path": "B0→B2",
+      "precondition": "Attribute constructed with a stubbed Attributes parent that overrides sourceRange to return DUMMY_RANGE; stub ensures behavior without mocking framework",
+      "expectedResult": "return value is the stubbed parent's DUMMY_RANGE instance",
+      "tags": [
+        "branch-false",
+        "DELEGATE",
+        "stubbed-parent"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange delegate-to-parent",
+        "  GIVEN",
+        "    Range.AttributeRange DUMMY_RANGE = new Range.AttributeRange(1,2,3,4);",
+        "    Attributes stubParent = new Attributes(){ @Override public Range.AttributeRange sourceRange(String key){ return DUMMY_RANGE; } };",
+        "  WHEN",
+        "    Attribute attr = new Attribute(\"key\",\"val\",stubParent);",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    assert result == DUMMY_RANGE;",
+        "END"
+      ]
+    }
+  ]
+}

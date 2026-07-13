@@ -1,0 +1,75 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(String, String) propagates UncheckedIOException when TreeBuilder.parse throws during String overload")
+    public void test_TC05() throws Exception {
+        // GIVEN: a stub HtmlTreeBuilder that throws UncheckedIOException in parse
+        HtmlTreeBuilder stubBuilder = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(java.io.Reader in, String baseUri, Parser p) {
+                // simulate I/O failure during parse
+                throw new UncheckedIOException(new IOException("fail"));
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "<tag/>";
+        String baseUri = "http://x";
+
+        // WHEN & THEN: expect UncheckedIOException, and lock released afterward
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> {
+            // this call should throw before unlocking in finally
+            parser.parseInput(html, baseUri);
+        });
+        assertEquals("fail", ex.getCause().getMessage());
+
+        // verify via reflection that the private lock is not held after exception
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(parser);
+        assertFalse(lock.isLocked(), "Lock should be released after UncheckedIOException");
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) propagates RuntimeException when TreeBuilder.parse throws an unchecked error")
+    public void test_TC06() throws Exception {
+        // GIVEN: a stub HtmlTreeBuilder that throws RuntimeException in parse
+        HtmlTreeBuilder stubBuilder = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(java.io.Reader in, String baseUri, Parser p) {
+                // simulate unchecked error during parse
+                throw new RuntimeException("boom");
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        StringReader input = new StringReader("<x/>");
+        String baseUri = "any";
+
+        // WHEN & THEN: expect RuntimeException, and lock released afterward
+        RuntimeException rex = assertThrows(RuntimeException.class, () -> {
+            parser.parseInput(input, baseUri);
+        });
+        assertEquals("boom", rex.getMessage());
+
+        // ensure lock is released even on unchecked exception
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(parser);
+        assertFalse(lock.isLocked(), "Lock should be released after RuntimeException");
+    }
+}

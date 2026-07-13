@@ -1,0 +1,23 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * Test class for org.jsoup.nodes.Document#outputSettings(org.jsoup.nodes.Document.OutputSettings)
+ */
+public class Document_outputSettings_1_Test {
+
+    @Test
+    @DisplayName("TC03: outputSettings(null) throws IllegalArgumentException when passed a null OutputSettings")
+    public void test_TC03() {
+        // GIVEN: a new Document instance and a null OutputSettings to trigger the null-check branch
+        Document doc = new Document("http://example.com");
+        Document.OutputSettings settings = null;
+        // WHEN & THEN: calling outputSettings with null should traverse the null-check and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            doc.outputSettings(settings);
+        });
+    }
+}

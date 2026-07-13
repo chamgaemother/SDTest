@@ -1,0 +1,67 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import com.thealgorithms.others.MiniMaxAlgorithm;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+public class MiniMaxAlgorithm_setScores_0_Test {
+
+    @Test
+    @DisplayName("TC01: setScores with length 1 (power of 2) sets scores and height correctly (branch-false)")
+    public void test_TC01() {
+        // GIVEN: a new MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        // Branch-false: length % 1 == 0 (1 % 1 == 0), so the power-of-two check passes
+        int[] newScores = {42}; // length 1, which is 2^0
+        // WHEN
+        alg.setScores(newScores);
+        // THEN: score array replaced and height computed as log2(1) == 0
+        assertArrayEquals(new int[]{42}, alg.getScores(), "Scores should be set to the single-element array");
+        assertEquals(0, alg.getHeight(), "Height should be log2(1) == 0");
+    }
+
+    @Test
+    @DisplayName("TC02: setScores with length 8 (power of 2) sets scores and height correctly (branch-false)")
+    public void test_TC02() {
+        // GIVEN: a new MiniMaxAlgorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        // Branch-false: length % 1 == 0 (8 % 1 == 0), power-of-two check passes
+        int[] newScores = {1,2,3,4,5,6,7,8}; // length 8, which is 2^3
+        // WHEN
+        alg.setScores(newScores);
+        // THEN: score array replaced and height computed as log2(8) == 3
+        assertArrayEquals(new int[]{1,2,3,4,5,6,7,8}, alg.getScores(), "Scores should match the eight-element array");
+        assertEquals(3, alg.getHeight(), "Height should be log2(8) == 3");
+    }
+
+    @Test
+    @DisplayName("TC03: setScores with length 3 (not power of 2) does not change state and prints error (branch-true)")
+    public void test_TC03() {
+        // GIVEN: a new MiniMaxAlgorithm instance with known initial state
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] initialScores = alg.getScores().clone();
+        int initialHeight = alg.getHeight();
+        // Branch-true: length % 1 != 0 (3 % 1 == 0 actually, but intended check should be power-of-two; invalid count triggers error path)
+        int[] invalidScores = {5,6,7};
+        // Capture System.out
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(baos));
+        try {
+            // WHEN
+            alg.setScores(invalidScores);
+        } finally {
+            // Restore original System.out for safety
+            System.setOut(originalOut);
+        }
+        // THEN: scores and height unchanged, and error message printed
+        assertArrayEquals(initialScores, alg.getScores(), "Scores should remain unchanged on invalid input");
+        assertEquals(initialHeight, alg.getHeight(), "Height should remain unchanged on invalid input");
+        String outContent = baos.toString();
+        assertTrue(outContent.contains("The number of scores must be a power of 2."),
+                   "Error message should be printed when scores length is not a power of 2");
+    }
+}

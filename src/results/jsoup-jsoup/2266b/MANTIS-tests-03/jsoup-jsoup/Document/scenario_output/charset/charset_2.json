@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "charset(html syntax) removes all obsolete meta[name=charset] when multiple present and appends or updates only one meta[charset]",
+      "path": "B0→B3(html)→B4(metaCharset==null?)→B5(append)→B6(remove obsolete)",
+      "precondition": "doc.updateMetaCharsetElement(true), default syntax (html), head contains two meta[name=charset] elements",
+      "expectedResult": "Exactly one meta[charset] present with correct charset, no meta[name=charset] elements remain",
+      "tags": [
+        "html",
+        "obsolete-removal",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 html multiple obsolete removal",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    // add two obsolete charset definitions",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    // only one new meta[charset]",
+        "    assertEquals(1, doc.head().select(\"meta[charset]\").size());",
+        "    assertTrue(doc.head().select(\"meta[name=charset]\").isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "charset(xml syntax) updates existing XmlDeclaration missing encoding but having version attr to insert encoding and preserve version",
+      "path": "B0→B3(xml)→B7(node instanceof XmlDeclaration && name=='xml')→B8(set encoding)→B9(if has version skip version attr)",
+      "precondition": "doc.updateMetaCharsetElement(true), syntax=xml, childNodes stubbed with XmlDeclaration(\"xml\") having only version=\"2.0\"",
+      "expectedResult": "XmlDeclaration retains version=\"2.0\" and has encoding attribute set to target charset",
+      "tags": [
+        "xml",
+        "declaration-update",
+        "attribute"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 xml existing version-only declaration",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    // stub first child as XmlDeclaration with version only",
+        "    reflect set doc.childNodes to list containing XmlDeclaration(\"xml\", false).attr(\"version\",\"2.0\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    XmlDeclaration decl = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assertEquals(\"2.0\", decl.attr(\"version\"));",
+        "    assertEquals(Charset.forName(\"US-ASCII\").displayName(), decl.attr(\"encoding\"));",
+        "END"
+      ]
+    }
+  ]
+}

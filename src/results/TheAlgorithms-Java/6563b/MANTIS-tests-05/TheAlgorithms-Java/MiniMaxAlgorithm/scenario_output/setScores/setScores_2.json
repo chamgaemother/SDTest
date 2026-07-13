@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Reflectively invoke private log2 on n=2 to cover the recursive branch (n!=1)",
+      "path": "B0→B1→B2",
+      "precondition": "MiniMaxAlgorithm class loaded",
+      "expectedResult": "returns 1 (since log2(2) = log2(1) + 1)",
+      "tags": [
+        "private",
+        "reflection",
+        "positive",
+        "recursion"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 reflect-log2 recursive-case",
+        "  GIVEN",
+        "    // Obtain private method log2 via reflection",
+        "    Method m = MiniMaxAlgorithm.class.getDeclaredMethod(\"log2\", int.class);",
+        "    m.setAccessible(true);",
+        "    int n = 2;",
+        "  WHEN",
+        "    int result = (int) m.invoke(new MiniMaxAlgorithm(), n);",
+        "  THEN",
+        "    assert result == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Reflectively invoke private log2 on n=16 to cover deeper recursive path",
+      "path": "B0→B1→B2(loop×4)→B3",
+      "precondition": "MiniMaxAlgorithm class loaded",
+      "expectedResult": "returns 4 (since log2(16) = 4)",
+      "tags": [
+        "private",
+        "reflection",
+        "positive",
+        "deep-recursion"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 reflect-log2 deep-recursion-case",
+        "  GIVEN",
+        "    Method m = MiniMaxAlgorithm.class.getDeclaredMethod(\"log2\", int.class);",
+        "    m.setAccessible(true);",
+        "    int n = 16;",
+        "  WHEN",
+        "    int result = (int) m.invoke(new MiniMaxAlgorithm(), n);",
+        "  THEN",
+        "    assert result == 4;",
+        "END"
+      ]
+    }
+  ]
+}

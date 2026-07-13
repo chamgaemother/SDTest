@@ -1,0 +1,143 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "clone() deep-copies OutputSettings.escapeMode so modifying clone’s escapeMode does not affect original",
+      "path": "B0→B1(super.clone)→B2(outputSettings.clone)→B3(parser.clone)→B4(return)",
+      "precondition": "Document.createShell and set escapeMode to extended",
+      "expectedResult": "clone.outputSettings().escapeMode() == extended, original remains base",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "outputSettings",
+        "escapeMode"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone preserves escapeMode deep copy",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://example.com\");",
+        "    orig.outputSettings().escapeMode(Entities.EscapeMode.extended);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.outputSettings().escapeMode(Entities.EscapeMode.base);",
+        "  THEN",
+        "    assert orig.outputSettings().escapeMode() == Entities.EscapeMode.extended;",
+        "    assert copy.outputSettings().escapeMode() == Entities.EscapeMode.base;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() deep-copies indentAmount so modifying clone’s indent does not affect original",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell and set indentAmount to 5",
+      "expectedResult": "clone.outputSettings().indentAmount() == 5, original remains 5 after clone change",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "outputSettings",
+        "indentAmount"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone preserves indentAmount deep copy",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://example.org\");",
+        "    orig.outputSettings().indentAmount(5);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.outputSettings().indentAmount(2);",
+        "  THEN",
+        "    assert orig.outputSettings().indentAmount() == 5;",
+        "    assert copy.outputSettings().indentAmount() == 2;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() preserves element attributes and cloning is independent",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell and add attribute on <html>",
+      "expectedResult": "clone retains html attribute, modifying clone’s html attribute does not change original",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "dom",
+        "attributes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 clone independent element attributes",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://test.com\");",
+        "    Element html = orig.html();",
+        "    html.attr(\"data-test\", \"origVal\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.html().attr(\"data-test\", \"copyVal\");",
+        "  THEN",
+        "    assert orig.html().attr(\"data-test\").equals(\"origVal\");",
+        "    assert copy.html().attr(\"data-test\").equals(\"copyVal\");"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "clone() preserves DocumentType child and clones it independently",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell and prepend a DocumentType node",
+      "expectedResult": "clone.documentType() != null and is distinct instance from original’s",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "documentType"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 clone preserves and clones DocumentType",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://site\");",
+        "    DocumentType dt = new DocumentType(\"html\", \"-//W3C//DTD HTML 4.01//EN\", \"\");",
+        "    orig.prependChild(dt);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    DocumentType origDt = orig.documentType();",
+        "    DocumentType copyDt = copy.documentType();",
+        "    assertNotNull(origDt);",
+        "    assertNotNull(copyDt);",
+        "    assertNotSame(origDt, copyDt);",
+        "    assertEquals(origDt.name(), copyDt.name());"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "clone() on Document with XML parser settings ensures parser is deep-cloned and independent",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell and set custom parser with trackErrors capacity",
+      "expectedResult": "clone.parser().getTrackErrors() independent size change does not affect original",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 clone independent parser trackErrors",
+        "  GIVEN",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "    Document orig = Document.createShell(\"http://xml\").parser(xmlParser);",
+        "    int origSize = orig.parser().getTrackErrors().size();",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.parser().setTrackErrors(2);",
+        "  THEN",
+        "    assert orig.parser().getTrackErrors().size() == origSize;",
+        "    assert copy.parser().getTrackErrors().size() == 2;"
+      ]
+    }
+  ]
+}

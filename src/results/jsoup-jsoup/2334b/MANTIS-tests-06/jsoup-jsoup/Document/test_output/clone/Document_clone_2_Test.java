@@ -1,0 +1,28 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_2_Test {
+
+    @Test
+    @DisplayName("clone() propagates RuntimeException when parser.clone() throws")
+    public void test_TC02() {
+        // Arrange: create a Document and inject a Parser stub whose clone() throws RuntimeException.
+        Document doc = new Document("ns", "http://base");
+        Parser failingParser = new Parser() {
+            @Override
+            public Parser clone() {
+                // This override triggers the exception path in Document.clone()
+                throw new RuntimeException("fail");
+            }
+        };
+        doc.parser(failingParser);
+        // Act & Assert: Expect that Document.clone() propagates the RuntimeException from parser.clone()
+        RuntimeException ex = assertThrows(RuntimeException.class, doc::clone);
+        assertEquals("fail", ex.getMessage(), "Expected the exception message to be propagated from parser.clone()");
+    }
+}

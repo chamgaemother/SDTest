@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseBodyFragment one-arg overload with empty bodyHtml returns empty body without error",
+      "path": "B0→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() is empty string",
+      "tags": [
+        "boundary",
+        "one-arg",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseBodyFragment empty-one-arg",
+        "  GIVEN",
+        "    String bodyHtml = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseBodyFragment two-arg overload with empty baseUri preserves relative href attribute",
+      "path": "B0→B2→B5",
+      "precondition": "none",
+      "expectedResult": "anchor href remains as '/a'",
+      "tags": [
+        "positive",
+        "relative-url",
+        "two-arg",
+        "empty-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment relative-href-no-base",
+        "  GIVEN",
+        "    String bodyHtml = \"<a href=\\\"/a\\\">link</a>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "    Element a = doc.selectFirst(\"a\");",
+        "  THEN",
+        "    assert a.attr(\"href\").equals(\"/a\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseBodyFragment two-arg overload resolves relative href to absolute URL when baseUri provided",
+      "path": "B0→B2→B5",
+      "precondition": "none",
+      "expectedResult": "anchor absUrl('href') is 'https://ex.com/a'",
+      "tags": [
+        "positive",
+        "relative-url-resolution",
+        "two-arg"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment resolve-href-with-base",
+        "  GIVEN",
+        "    String bodyHtml = \"<a href=\\\"/a\\\">x</a>\";",
+        "    String baseUri = \"https://ex.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "    Element a = doc.selectFirst(\"a\");",
+        "    String resolved = a.absUrl(\"href\");",
+        "  THEN",
+        "    assert resolved.equals(\"https://ex.com/a\");",
+        "END"
+      ]
+    }
+  ]
+}

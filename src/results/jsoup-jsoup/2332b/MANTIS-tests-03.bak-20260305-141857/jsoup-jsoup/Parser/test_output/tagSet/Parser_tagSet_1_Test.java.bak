@@ -1,0 +1,69 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    /**
+     * Helper to reset the internal cache field for tagSet() before tests.
+     */
+    private void resetTagSetCache() throws Exception {
+        Field cache = Parser.class.getDeclaredField("tagSet"); // the private static cache field
+        cache.setAccessible(true);
+        cache.set(null, null);
+    }
+
+    @Test
+    @DisplayName("TC01: First invocation when internal cache is null initializes and returns non-empty unmodifiable tag set")
+    public void test_TC01() throws Exception {
+        // Clear any prior cached value so that cacheNull path is taken (B1).
+        resetTagSetCache();
+
+        // WHEN: call tagSet first time
+        Set<String> tags = Parser.tagSet(); 
+
+        // THEN: non-null, contains a known HTML tag
+        assertNotNull(tags, "Expected non-null set on first invocation");
+        assertTrue(tags.contains("div"), "Expected tagSet to contain 'div' after initialization");
+        // and unmodifiable: add() should throw UnsupportedOperationException
+        assertThrows(UnsupportedOperationException.class, () -> {
+            tags.add("newTag");
+        }, "Expected unmodifiable set: add should throw");
+    }
+
+    @Test
+    @DisplayName("TC02: Second invocation when cache is populated returns same contents without reinitializing")
+    public void test_TC02() throws Exception {
+        // Ensure a first call sets up the cache (B2)
+        resetTagSetCache();
+        Set<String> first = Parser.tagSet();
+
+        // WHEN: second call should hit cacheNotNull path (B3)
+        Set<String> second = Parser.tagSet();
+
+        // THEN: content equality and unmodifiable
+        assertEquals(first, second, "Expected second invocation to return same contents as first");
+        assertThrows(UnsupportedOperationException.class, () -> {
+            second.remove("html");
+        }, "Expected unmodifiable set: remove should throw");
+    }
+
+    @Test
+    @DisplayName("TC03: Attempt to remove from returned tagSet throws UnsupportedOperationException")
+    public void test_TC03() throws Exception {
+        // Ensure cache is populated so removeException path is hit after return (B4)
+        resetTagSetCache();
+        Set<String> tags = Parser.tagSet();
+
+        // WHEN/THEN: remove() should throw UOE
+        assertThrows(UnsupportedOperationException.class, () -> {
+            tags.remove("div");
+        }, "Expected unmodifiable set: remove should throw");
+    }
+}

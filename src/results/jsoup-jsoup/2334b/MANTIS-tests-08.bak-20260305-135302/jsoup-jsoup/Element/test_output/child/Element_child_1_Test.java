@@ -1,0 +1,70 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Comment;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(1) returns second Element from mixed node list with two Elements after filtering non-Elements")
+    void test_TC11() {
+        // GIVEN a parent with mixed children: a TextNode, span1, Comment, span2
+        Element parent = new Element("div");
+        TextNode t = new TextNode("a");
+        Element span1 = new Element("span");
+        Comment c = new Comment("c");
+        Element span2 = new Element("span");
+        parent.appendChild(t);
+        parent.appendChild(span1);
+        parent.appendChild(c);
+        parent.appendChild(span2);
+        // The childElementsList will iterate childNodes, skip non-Elements (TextNode and Comment), collect span1 and span2
+        // WHEN retrieving the element at index 1 (second element in filtered list)
+        Element result = parent.child(1);
+        // THEN we expect exactly span2 (the second Element)
+        assertSame(span2, result, "Expected span2 as the second element after filtering non-Elements");
+    }
+
+    @Test
+    @DisplayName("child(0) second call uses cached shadowChildrenRef without rebuilding list")
+    void test_TC12() {
+        // GIVEN a parent with two Element children li1 and li2
+        Element parent = new Element("ul");
+        Element li1 = new Element("li");
+        Element li2 = new Element("li");
+        parent.appendChild(li1);
+        parent.appendChild(li2);
+        // First call to child(0) builds the internal shadowChildrenRef cache with [li1, li2]
+        Element first = parent.child(0);
+        assertSame(li1, first, "First call should return li1 and build the cache");
+        // WHEN calling child(0) again, the code path should detect non-null cache and use it directly (no rebuild)
+        Element secondCall = parent.child(0);
+        // THEN we still get li1 from the cached list
+        assertSame(li1, secondCall, "Second call should return li1 from cached shadowChildrenRef without rebuilding");
+    }
+
+    @Test
+    @DisplayName("child(0) with pre-set empty cache does not rebuild and throws IndexOutOfBoundsException")
+    void test_TC13() throws Exception {
+        // GIVEN a parent with a single TextNode child (no real Elements)
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("x"));
+        // Manually inject a stale empty cache into the private shadowChildrenRef field
+        Field f = Element.class.getDeclaredField("shadowChildrenRef");
+        f.setAccessible(true);
+        // Put an empty list so childElementsList will see cache != null and skip rebuilding
+        WeakReference<java.util.List<Element>> emptyRef = new WeakReference<>(Collections.emptyList());
+        f.set(parent, emptyRef);
+        // WHEN calling child(0), the cached list is empty and index 0 is out of bounds -> throws
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0),
+            "Expected IndexOutOfBoundsException when cached shadowChildrenRef is empty and index out of range");
+    }
+}

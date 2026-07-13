@@ -1,0 +1,134 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "dataset().put(existingKey, newValue) updates underlying data- attribute value",
+      "path": "B0→B1→loop(1)→B2.put→B3",
+      "precondition": "Element with one data-x attribute",
+      "expectedResult": "el.attr(\"data-x\") equals \"new\"",
+      "tags": [
+        "positive",
+        "mutation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 update-existing",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-x\",\"old\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"x\",\"new\");",
+        "  THEN",
+        "    assertEquals(\"new\", el.attr(\"data-x\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset().clear() removes only data-* attributes and preserves non-data attributes",
+      "path": "B0→B1→loop(2)→B2.clear→removeLoop(2)→B4",
+      "precondition": "Element with data-a and foo attributes",
+      "expectedResult": "data-a removed; foo remains",
+      "tags": [
+        "positive",
+        "removal",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 clear-data",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"1\");",
+        "    el.attr(\"foo\",\"bar\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-a\"));",
+        "    assertEquals(\"bar\", el.attr(\"foo\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset() converts multi-hyphen keys to camelCase (data-my-long-field)",
+      "path": "B0→B1→loop(1)→camelCase→B3",
+      "precondition": "Element with data-my-long-field attribute",
+      "expectedResult": "dataset contains key \"myLongField\" mapping to original value",
+      "tags": [
+        "positive",
+        "camelcase",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 multi-hyphen-camelcase",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-my-long-field\",\"val\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"myLongField\"));",
+        "    assertEquals(\"val\", ds.get(\"myLongField\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset() includes attribute with empty key suffix (data- only) as empty-string key",
+      "path": "B0→B1→loop(1)→substring(5)==\"\"→B3",
+      "precondition": "Element with attribute key \"data-\"",
+      "expectedResult": "dataset contains key \"\" mapping to the attribute value",
+      "tags": [
+        "boundary",
+        "edge-case",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 empty-key",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-\",\"empty\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"\"));",
+        "    assertEquals(\"empty\", ds.get(\"\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "dataset().put(key, null) throws NullPointerException for null value",
+      "path": "B0→B1→loop(0)→B2.put→exception",
+      "precondition": "Fresh element with no data- attrs",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 null-value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(\"key\", null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

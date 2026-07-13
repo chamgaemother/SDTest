@@ -1,0 +1,292 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Structure separator between two variables produces VARIABLE_OR_CONSTANT, STRUCTURE_SEPARATOR, VARIABLE_OR_CONSTANT tokens",
+      "path": "B0→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "configuration.isStructuresAllowed() == true",
+      "expectedResult": "tokens: VAR('a'), '.', VAR('b')",
+      "tags": [
+        "positive",
+        "structure-separator"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 structure-separator success",
+        "  GIVEN",
+        "    String expr = \"a.b\";",
+        "    ExpressionConfiguration cfg = config(false,false,true,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == VARIABLE_OR_CONSTANT;",
+        "    assert tokens.get(1).getType() == STRUCTURE_SEPARATOR;",
+        "    assert tokens.get(2).getType() == VARIABLE_OR_CONSTANT;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Array close at start throws 'Array close not allowed here'",
+      "path": "B0→B6→B1→B2→B3→B4→[EXIT]",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "ParseException with message 'Array close not allowed here'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 array-close-at-start error",
+        "  GIVEN",
+        "    String expr = \"]\";",
+        "    ExpressionConfiguration cfg = config(false,true,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Array close not allowed here';"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Unexpected closing brace at start throws 'Unexpected closing brace'",
+      "path": "B0→B6→B1→B2→B6→B1→B6→B1→...→B7→B9→B11?→parseBraceClose→exception",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Unexpected closing brace'",
+      "tags": [
+        "negative",
+        "brace",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 unexpected-closing-brace",
+        "  GIVEN",
+        "    String expr = \")\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected closing brace';"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Decimal number with two dots throws 'Number contains more than one decimal point'",
+      "path": "B0→B6→B1→B2→B6→B1→getNextToken→parseNumberLiteral→parseDecimalNumberLiteral→exception",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Number contains more than one decimal point'",
+      "tags": [
+        "negative",
+        "number",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 multiple-decimal-points",
+        "  GIVEN",
+        "    String expr = \"1.2.3\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Number contains more than one decimal point';"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Illegal scientific format '1e+' throws 'Illegal scientific format'",
+      "path": "B0→B6→B1→getNextToken→parseDecimalNumberLiteral→exception",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Illegal scientific format'",
+      "tags": [
+        "negative",
+        "number",
+        "scientific",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 illegal-scientific-format",
+        "  GIVEN",
+        "    String expr = \"1e+\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Illegal scientific format';"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Hexadecimal number literal '0x1F' produces NUMBER_LITERAL token",
+      "path": "B0→B6→B1→getNextToken→parseHexNumberLiteral→B6→...→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "one NUMBER_LITERAL token with value '0x1F'",
+      "tags": [
+        "positive",
+        "number",
+        "hex"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 hex-number-literal",
+        "  GIVEN",
+        "    String expr = \"0x1F\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getTokenValue().equals(\"0x1F\");"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Unterminated string literal throws 'Closing quote not found'",
+      "path": "B0→getNextToken→parseStringLiteral→exception",
+      "precondition": "configuration.isSingleQuoteStringLiteralsAllowed() == true",
+      "expectedResult": "ParseException with message 'Closing quote not found'",
+      "tags": [
+        "negative",
+        "string",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 unterminated-string-literal",
+        "  GIVEN",
+        "    String expr = \"'abc\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,true);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Closing quote not found';"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Unknown escape in string literal throws 'Unknown escape character'",
+      "path": "B0→getNextToken→parseStringLiteral→escapeCharacter→exception",
+      "precondition": "configuration.isSingleQuoteStringLiteralsAllowed() == true",
+      "expectedResult": "ParseException with message containing 'Unknown escape character'",
+      "tags": [
+        "negative",
+        "string",
+        "escape",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 unknown-escape-character",
+        "  GIVEN",
+        "    String expr = \"'a\\\\q'\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,true);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message containing 'Unknown escape character';"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "Undefined function call throws \"Undefined function 'foo'\"",
+      "path": "B0→getNextToken→parseIdentifier→exception",
+      "precondition": "functionDictionary.hasFunction('foo') == false",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": [
+        "negative",
+        "function",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 undefined-function",
+        "  GIVEN",
+        "    String expr = \"foo()\";",
+        "    ExpressionConfiguration cfg = config(false,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined function 'foo'\";"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Implicit multiplication inserted between two grouped expressions when allowed (BRACE_CLOSE→BRACE_OPEN)",
+      "path": "B0→getNextToken(BRACE_OPEN)→B6→getNextToken(NUMBER_LITERAL)→B6→getNextToken(BRACE_CLOSE)→B6→getNextToken(BRACE_OPEN implicit)→B4→B6→...→B7→B9→B11",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() == true",
+      "expectedResult": "tokens include BRACE_OPEN,'1',BRACE_CLOSE,'*',BRACE_OPEN,'2',BRACE_CLOSE",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 implicit-multiplication-brace",
+        "  GIVEN",
+        "    String expr = \"(1)(2)\";",
+        "    ExpressionConfiguration cfg = config(true,false,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 7;",
+        "    assert tokens.get(0).getType() == BRACE_OPEN;",
+        "    assert tokens.get(1).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(2).getType() == BRACE_CLOSE;",
+        "    assert tokens.get(3).getType() == INFIX_OPERATOR && tokens.get(3).getTokenValue().equals(\"*\");",
+        "    assert tokens.get(4).getType() == BRACE_OPEN;",
+        "    assert tokens.get(5).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(6).getType() == BRACE_CLOSE;"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "Unmatched open array throws 'Closing array not found'",
+      "path": "B0→getNextToken→parseArrayOpen→B6→getNextToken(null)→B1→B7→B9→B10→[EXIT]",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "ParseException with message 'Closing array not found'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 unmatched-open-array",
+        "  GIVEN",
+        "    String expr = \"[\";",
+        "    ExpressionConfiguration cfg = config(false,true,false,false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tz.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Closing array not found';"
+      ]
+    }
+  ]
+}

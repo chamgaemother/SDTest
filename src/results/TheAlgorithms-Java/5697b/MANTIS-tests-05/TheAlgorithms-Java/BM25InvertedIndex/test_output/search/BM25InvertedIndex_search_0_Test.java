@@ -1,0 +1,109 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static java.lang.Math.log;
+import static org.junit.jupiter.api.Assertions.*;
+public class BM25InvertedIndex_search_0_Test {
+
+    @Test
+    @DisplayName("search(term not in index) returns empty list (branch B0 false)")
+    void test_TC01() {
+        // GIVEN an empty BM25InvertedIndex (no movies, no index entries)
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        // WHEN calling search("missing") -> term.lowerCase() not in index triggers branch B0 false
+        List<SearchResult> results = idx.search("missing");
+        // THEN the result list is empty
+        assertTrue(results.isEmpty(), "Expected empty result when term not present in index");
+    }
+
+    @Test
+    @DisplayName("search(term with empty posting list) returns empty list (branch B0 true, loop-0)")
+    void test_TC02() throws Exception {
+        // GIVEN a BM25InvertedIndex with index["foo"] = empty map (injected via reflection)
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        indexMap.put("foo", new HashMap<>()); // empty posting list
+        // WHEN calling search("foo") -> B0 true, but termDocs.size()==0 so loop 0
+        List<SearchResult> results = idx.search("foo");
+        // THEN the result list is empty
+        assertTrue(results.isEmpty(), "Expected empty result for term with empty posting list");
+    }
+
+    @Test
+    @DisplayName("search(term with posting entry but missing movie) skips entry (B3 false)")
+    void test_TC03() throws Exception {
+        // GIVEN a BM25InvertedIndex with index["bar"]={1=2} and no movies added
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        Field indexField = BM25InvertedIndex.class.getDeclaredField("index");
+        indexField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        Map<String, Map<Integer, Integer>> indexMap = (Map<String, Map<Integer, Integer>>) indexField.get(idx);
+        Map<Integer, Integer> post = new HashMap<>();
+        post.put(1, 2);
+        indexMap.put("bar", post);
+        // movies map remains empty so movie == null triggers B3 false -> skip
+        // WHEN calling search("bar")
+        List<SearchResult> results = idx.search("bar");
+        // THEN the result list is empty
+        assertTrue(results.isEmpty(), "Expected empty result when posting exists but no corresponding movie");
+    }
+
+    @Test
+    @DisplayName("search(single-term) returns single SearchResult (B3 true, loop-1)")
+    void test_TC04() {
+        // GIVEN a BM25InvertedIndex with one movie containing term "alpha" twice (name contributes 1 word)
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "Name", 0.0, 0, "alpha alpha");
+        // WHEN calling search("alpha") -> B0 true, one entry, movie != null triggers B3 true
+        List<SearchResult> results = idx.search("alpha");
+        // THEN result list size is 1 and docId==1 and score matches manual BM25 formula
+        assertEquals(1, results.size(), "Expected exactly one search result");
+        SearchResult res = results.get(0);
+        assertEquals(1, res.getDocId(), "Expected document ID 1");
+        // Compute expected idf and score: idf=log((1-1+0.5)/(1+0.5))
+        double expectedIdf = log((1 - 1 + 0.5) / (1 + 0.5));
+        // termFrequency=2, docLength=3 (Name + alpha + alpha), avgDocumentLength also 3
+        double numerator = 2 * (1.5 + 1); // K+1 = 2.5
+        double denominator = 2 + 1.5 * (1 - 0.75 + 0.75 * (3.0 / 3.0));
+        double expectedScore = expectedIdf * (numerator / denominator);
+        assertEquals(expectedScore, res.getRelevanceScore(), 1e-9, "BM25 score mismatch");
+    }
+
+    @Test
+    @DisplayName("search(term in two movies) returns two SearchResults sorted by descending score (loop-N)")
+    void test_TC05() {
+        // GIVEN a BM25InvertedIndex with two movies: doc1 has term thrice, doc2 twice
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "A", 0.0, 0, "x x x");
+        idx.addMovie(2, "B", 0.0, 0, "x x");
+        // WHEN calling search("x")
+        List<SearchResult> results = idx.search("x");
+        // THEN two results sorted by descending score: doc1 before doc2
+        assertEquals(2, results.size(), "Expected two search results");
+        assertEquals(1, results.get(0).getDocId(), "Expected doc1 to appear first with higher term frequency");
+        assertEquals(2, results.get(1).getDocId(), "Expected doc2 to appear second");
+    }
+
+    @Test
+    @DisplayName("search(term case-insensitivity) matches uppercase input (B0 true, normalization)")
+    void test_TC06() {
+        // GIVEN a BM25InvertedIndex with movie containing term "bone" in lowercase
+        BM25InvertedIndex idx = new BM25InvertedIndex();
+        idx.addMovie(1, "T", 0.0, 0, "Bone");
+        // WHEN calling search("BONE") -> toLowerCase normalizes input to "bone"
+        List<SearchResult> results = idx.search("BONE");
+        // THEN result list size is 1 and docId==1
+        assertEquals(1, results.size(), "Expected one result for uppercase search term");
+        assertEquals(1, results.get(0).getDocId(), "Expected document ID 1 for case-insensitive match");
+    }
+}

@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild invalidates cached shadowChildrenRef via nodelistChanged and updates children list",
+      "path": "B0→B3→B5",
+      "precondition": "parent has existing children cache populated",
+      "expectedResult": "children() returns updated list including newly appended element",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "shadowChildrenRef"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild invalidates childElementsList cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    parent.appendChild(a).appendChild(b);",
+        "    // populate shadowChildrenRef cache",
+        "    int before = parent.children().size();",
+        "  WHEN",
+        "    Element c = new Element(\"c\");",
+        "    parent.appendChild(c);",
+        "    int after = parent.children().size();",
+        "  THEN",
+        "    assert before == 2;",
+        "    assert after == 3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild on deeply nested child preserves correct parent and siblingIndex for reparented subtree",
+      "path": "B0→B3→B5",
+      "precondition": "child is root of a subtree with its own children",
+      "expectedResult": "child subtree reparented intact with correct parent and siblingIndex",
+      "tags": [
+        "positive",
+        "reparenting",
+        "subtree"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 appendChild reparent subtree",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    Element sub = new Element(\"sub\");",
+        "    Element leaf = new Element(\"leaf\");",
+        "    sub.appendChild(leaf);",
+        "    root.appendChild(sub);",
+        "  WHEN",
+        "    Element newParent = new Element(\"parent\");",
+        "    newParent.appendChild(sub);",
+        "  THEN",
+        "    // sub moved from root to newParent",
+        "    assert root.childrenSize() == 0;",
+        "    assert newParent.childrenSize() == 1;",
+        "    // leaf remains child of sub",
+        "    assertSame(sub, leaf.parent().parent());",
+        "    // siblingIndex of sub under newParent is 0",
+        "    assertEquals(0, sub.siblingIndex());",
+        "END"
+      ]
+    }
+  ]
+}

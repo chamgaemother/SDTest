@@ -1,0 +1,35 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class MiniMaxAlgorithm_setScores_2_Test {
+
+    @Test
+    @DisplayName("setScores(0-length array) causes infinite recursion in log2 and throws StackOverflowError")
+    void test_TC05() {
+        // GIVEN a new MiniMaxAlgorithm and a zero-length array
+        com.thealgorithms.others.MiniMaxAlgorithm algo = new com.thealgorithms.others.MiniMaxAlgorithm();
+        int[] newScores = new int[0];
+        // WHEN & THEN: setting scores with length 0 triggers log2(0) recursion -> StackOverflowError
+        assertThrows(StackOverflowError.class, () -> {
+            algo.setScores(newScores);
+        });
+    }
+
+    @Test
+    @DisplayName("setScores accepts power-of-2 array of length 2 and updates height to 1")
+    void test_TC06() {
+        // GIVEN a new MiniMaxAlgorithm and a valid power-of-two array of length 2
+        com.thealgorithms.others.MiniMaxAlgorithm algo = new com.thealgorithms.others.MiniMaxAlgorithm();
+        int[] newScores = new int[]{10, 20};
+        // WHEN: setScores is called with a length-2 array -> path B0->B1 (scores%1 == 0) -> B3
+        algo.setScores(newScores);
+        // THEN: internal scores reference must update and height must equal log2(2)=1
+        assertSame(newScores, algo.getScores(), "scores reference should be updated to the provided array");
+        assertEquals(1, algo.getHeight(), "height should be updated to 1 for array length 2");
+    }
+}

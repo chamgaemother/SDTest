@@ -1,0 +1,123 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "wrap(Writer) ignores carriage return characters (CR) in input",
+      "path": "B0→B3(loop→CR-branch→continue)→B26(end-of-stream)→B29(final-write)",
+      "precondition": "none",
+      "expectedResult": "return value is \"ab\" for input \"a\\rb\"",
+      "tags": [
+        "carriage-return",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore carriage return",
+        "  GIVEN",
+        "    Reader r = new java.io.StringReader(\"a\\rb\");",
+        "    Writer w = new java.io.StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(r, true).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"ab\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap(Writer) with breakWords=false does not hyphen-break a long word and outputs it whole",
+      "path": "B0→B3(loop→word-append→tooLong→breakWords=false→broken=true)×n→B26→B29",
+      "precondition": "none",
+      "expectedResult": "return value is \"abcdef\" when maxWidth=2 and breakWords=false",
+      "tags": [
+        "negative-break-words",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 breakWords false no hyphen",
+        "  GIVEN",
+        "    String input = \"abcdef\";",
+        "    Writer w = new java.io.StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(input).maxWidth(2).breakWords(false).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"abcdef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap(Writer) treats punctuation not in extraWordChars as separator and resets previousWasPunctuation flag",
+      "path": "B0→B3(loop→ch='*'→else-punctuation→appendWord→tooLong? no)→ch='a'→isWordCharacter & previousWasPunctuation→else→appendWord→...→B29",
+      "precondition": "none",
+      "expectedResult": "return value is \"*a b\" splitting punctuation as separate token",
+      "tags": [
+        "punctuation",
+        "word-boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 punctuation splits word",
+        "  GIVEN",
+        "    String text = \"*a b\";",
+        "    Writer w = new java.io.StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(text).maxWidth(10).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"*a b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "from(File,Charset) throws IORuntimeException when input file does not exist",
+      "path": "B0→B1(FileNotFoundException)→throw IORuntimeException",
+      "precondition": "file path refers to a non-existent file",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "exception",
+        "file-not-found"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 missing input file",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent12345.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, java.nio.charset.StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap(Writer) outputs custom newLine string CRLF when newLine is set to \"\\r\\n\"",
+      "path": "B0→B3(loop→word-append until tooLong→writeLine→writeNewLine uses CRLF)→B29",
+      "precondition": "none",
+      "expectedResult": "return value is \"x\\r\\ny\" for input \"x y\" and maxWidth=1",
+      "tags": [
+        "custom-newline",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 custom CRLF newline",
+        "  GIVEN",
+        "    String text = \"x y\";",
+        "    Writer w = new java.io.StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(text).maxWidth(1).newLine(\"\\r\\n\").wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"x\\r\\ny\");",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "f < -5e9 throws IllegalArgumentException for too small input (branch f < -Constants.FIVE_BILLION)",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message starting 'Value must be between'",
+      "tags": [
+        "branch-true",
+        "exception",
+        "lower-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate lower-bound-exception",
+        "  GIVEN",
+        "    double f = -5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "f > 5e9 throws IllegalArgumentException for too large input (branch f > Constants.FIVE_BILLION)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message starting 'Value must be between'",
+      "tags": [
+        "branch-false",
+        "branch-true",
+        "exception",
+        "upper-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate upper-bound-exception",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "f == -5e9 returns all-zero hex string (boundary at lower limit)",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is \"00000000000000\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "boundary",
+        "lower-bound",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate lower-bound-return",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00000000000000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "f == 5e9 returns hex string for 1e10*1e6 (boundary at upper limit)",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is \"2386F26FC10000\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "boundary",
+        "upper-bound",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate upper-bound-return",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"2386F26FC10000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "f == 0 returns midpoint hex string for 5e9*1e6",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is \"11456BDCC80000\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "normal",
+        "midpoint"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate zero-input",
+        "  GIVEN",
+        "    double f = 0.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"11456BDCC80000\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "f == 0.5 returns hex string after fractional adjustment (branch through conversion)",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is \"1456BDCCF7A120\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "normal",
+        "fractional"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 generate positive-fraction",
+        "  GIVEN",
+        "    double f = 0.5;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"1456BDCCF7A120\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "f == -123.456 returns hex string for negative fractional input",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is \"11456BDC83E6E0\"",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "normal",
+        "negative-fractional"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 generate negative-fraction",
+        "  GIVEN",
+        "    double f = -123.456;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"11456BDC83E6E0\");",
+        "END"
+      ]
+    }
+  ]
+}

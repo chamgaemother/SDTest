@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) with null Reader throws NullPointerException",
+      "path": "B0→B1→B2",
+      "precondition": "Parser initialized with HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput null-reader",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    Reader rdr = null;",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, String) with null baseUri throws IllegalArgumentException",
+      "path": "B0→B1→B3",
+      "precondition": "Parser initialized with HtmlTreeBuilder",
+      "expectedResult": "IllegalArgumentException mentioning 'baseUri' is thrown",
+      "tags": [
+        "negative",
+        "null-baseUri",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput reader-null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    Reader rdr = new StringReader(\"<div/>\");",
+        "    String base = null;",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    catches IllegalArgumentException ex;",
+        "    assert ex.getMessage().contains(\"baseUri\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) wraps IOException from TreeBuilder.parse into RuntimeException",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser initialized with custom TreeBuilder that throws IOException in parse",
+      "expectedResult": "RuntimeException is thrown with cause instanceof IOException",
+      "tags": [
+        "negative",
+        "io-exception",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput io-exception-wrap",
+        "  GIVEN",
+        "    TreeBuilder throwingBuilder = new TreeBuilder() {",
+        "      @Override public Document parse(Reader reader, String baseUri, Parser parser) throws IOException {",
+        "        throw new IOException(\"fail\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) { return null; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      @Override public void process(Token token) { }",
+        "    };",
+        "    Parser parser = new Parser(throwingBuilder);",
+        "    Reader rdr = new StringReader(\"x\");",
+        "    String base = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    RuntimeException rex = catch RuntimeException;",
+        "    assert rex.getCause() instanceof IOException;",
+        "END"
+      ]
+    }
+  ]
+}

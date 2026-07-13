@@ -1,0 +1,246 @@
+{
+  "method": "convexHullRecursive",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "null input throws NullPointerException at entry",
+      "path": "B0",
+      "precondition": "points = null",
+      "expectedResult": "throws NullPointerException; no modifications",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 null-input",
+        "  GIVEN",
+        "    List<Point> points = null;",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "empty list throws IndexOutOfBoundsException when accessing first element",
+      "path": "B0",
+      "precondition": "points = new ArrayList<>() // size 0",
+      "expectedResult": "throws IndexOutOfBoundsException",
+      "tags": [
+        "exception",
+        "empty-input",
+        "branch-failure"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 empty-list",
+        "  GIVEN",
+        "    List<Point> points = new ArrayList<>();",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "single-point list returns that point (loop-0 interior)",
+      "path": "B0→B7→B6",
+      "precondition": "points = [P0]",
+      "expectedResult": "return List<[P0]>",
+      "tags": [
+        "boundary",
+        "loop-0",
+        "single-element"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 single-point",
+        "  GIVEN",
+        "    List<Point> points = List.of(P0);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(P0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "two-point list returns both sorted (loop-0 interior)",
+      "path": "B0→B7→B6",
+      "precondition": "points = [P1, P0] with P0 < P1",
+      "expectedResult": "return List<[P0, P1]>",
+      "tags": [
+        "boundary",
+        "loop-0",
+        "two-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 two-points",
+        "  GIVEN",
+        "    List<Point> points = List.of(P1, P0);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(P0, P1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "three collinear points returns only endpoints (det == 0 branches)",
+      "path": "B0→B7→B1→B3→B5→B7→B6",
+      "precondition": "points = [P0, P1, P2] collinear with P0 < P1 < P2",
+      "expectedResult": "return List<[P0, P2]>",
+      "tags": [
+        "branch-true",
+        "det==0",
+        "collinear",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 collinear-points",
+        "  GIVEN",
+        "    List<Point> points = List.of(P0, P1, P2);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(P0, P2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "three points forming triangle returns all three (one upper, one lower)",
+      "path": "B0→B7→B1→B2→B5→B7→B6",
+      "precondition": "points = [A(0,0), B(1,1), C(2,0)]",
+      "expectedResult": "return List<[A, B, C]> sorted",
+      "tags": [
+        "branch-false",
+        "det>0",
+        "det<0",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 triangle",
+        "  GIVEN",
+        "    List<Point> points = List.of(A, B, C);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(A, B, C));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "convex hull of concave pentagon excludes interior concave point",
+      "path": "B0→B7→B1→B2→B5(loop×3)→B7→B6",
+      "precondition": "points = [P0,P1,P2,P3,P4] concave shape",
+      "expectedResult": "return sorted hull vertices [P0,P1,P3,P4]",
+      "tags": [
+        "loop-N",
+        "det>0",
+        "det<0",
+        "concave"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 concave-pentagon",
+        "  GIVEN",
+        "    List<Point> points = List.of(P0,P1,P2,P3,P4);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(P0,P1,P3,P4));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "duplicate points input returns unique hull vertices",
+      "path": "B0→B7→B1→B2→B5(loop×1)→B7→B6",
+      "precondition": "points = [A, B, A, C] with A,B,C noncollinear",
+      "expectedResult": "return List<[A, B, C]> sorted without duplicates",
+      "tags": [
+        "duplicates",
+        "set-behavior",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 duplicate-points",
+        "  GIVEN",
+        "    List<Point> points = List.of(A, B, A, C);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(A, B, C));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "unsorted input returns sorted hull vertices",
+      "path": "B0→B7→B1→B2→B5(loop×2)→B7→B6",
+      "precondition": "points = [C, A, B, D] random order",
+      "expectedResult": "return List<[A,B,C,D]> sorted",
+      "tags": [
+        "sorting",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 unsorted-input",
+        "  GIVEN",
+        "    List<Point> points = List.of(C, A, B, D);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(A, B, C, D));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "collinear with interior duplicates yields only two endpoints unique",
+      "path": "B0→B7→B1→B3→B5→B7→B6",
+      "precondition": "points = [P0, P2, P1, P1] collinear P0<P1<P2",
+      "expectedResult": "return List<[P0, P2]>",
+      "tags": [
+        "collinear",
+        "duplicates",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 collinear-duplicates",
+        "  GIVEN",
+        "    List<Point> points = List.of(P0, P2, P1, P1);",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.equals(List.of(P0, P2));",
+        "END"
+      ]
+    }
+  ]
+}

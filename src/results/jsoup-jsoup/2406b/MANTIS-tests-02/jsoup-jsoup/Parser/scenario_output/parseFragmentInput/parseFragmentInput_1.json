@@ -1,0 +1,80 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "String overload propagates runtime exception thrown by TreeBuilder.parseFragment",
+      "path": "B0→B1→B2→B3→B4→(exception)",
+      "precondition": "StubTreeBuilder.parseFragment throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseFragmentInput string-propagates-runtime-exception",
+        "  GIVEN",
+        "    // Arrange stub builder to throw at parseFragment",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(false,true); }",
+        "      public TagSet defaultTagSet() { return new TagSet(TagSet.Html()); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"forced\");",
+        "      }",
+        "      protected void initialiseParse(Reader r, String baseUri, Parser parser) {}",
+        "      public void process(org.jsoup.parser.Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String frag = \"<div>x</div>\";",
+        "    Element ctx = new Element(Tag.valueOf(\"div\"), \"base\", new org.jsoup.nodes.Attributes());",
+        "  WHEN",
+        "    call parser.parseFragmentInput(frag, ctx, \"base\");",
+        "  THEN",
+        "    throws IllegalStateException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Reader overload propagates runtime exception thrown by TreeBuilder.parseFragment",
+      "path": "B0→B1→B2→B3→B4→(exception)",
+      "precondition": "StubTreeBuilder.parseFragment throws UnsupportedOperationException",
+      "expectedResult": "UnsupportedOperationException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseFragmentInput reader-propagates-runtime-exception",
+        "  GIVEN",
+        "    // Arrange stub builder to throw at parseFragment",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(false,true); }",
+        "      public TagSet defaultTagSet() { return new TagSet(TagSet.Html()); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {",
+        "        throw new UnsupportedOperationException(\"stub\");",
+        "      }",
+        "      protected void initialiseParse(Reader r, String baseUri, Parser parser) {}",
+        "      public void process(org.jsoup.parser.Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<i>i</i>\");",
+        "    Element ctx = new Element(Tag.valueOf(\"i\"), \"base\", new org.jsoup.nodes.Attributes());",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, ctx, \"base\");",
+        "  THEN",
+        "    throws UnsupportedOperationException;",
+        "END"
+      ]
+    }
+  ]
+}

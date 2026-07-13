@@ -1,0 +1,39 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("TC04: appendChild reparents a node from an existing parent to a new parent (reparentChild true branch)")
+    public void test_TC04() throws Exception {
+        // GIVEN: parent1 has one child, parent2 is fresh; child already has a parent1 so reparentChild=true
+        Element parent1 = new Element("div");
+        Element parent2 = new Element("section");
+        Element child = new Element("span");
+        parent1.appendChild(child);
+        assertEquals(1, parent1.childrenSize(), "Precondition: parent1 should have one child before reparenting");
+
+        // WHEN: reparent child from parent1 to parent2
+        Element result = parent2.appendChild(child);
+        
+        // THEN: child is removed from parent1
+        assertEquals(0, parent1.childrenSize(), "Child should be removed from original parent");
+        // and added to parent2
+        assertEquals(1, parent2.childrenSize(), "Child should be added to new parent");
+        // and child's parent reference is updated to parent2
+        assertSame(parent2, child.parent(), "Child.parent should reference the new parent");
+        // and siblingIndex is updated to 0
+        Field siblingIndexField = Node.class.getDeclaredField("siblingIndex");
+        siblingIndexField.setAccessible(true);
+        int idx = siblingIndexField.getInt(child);
+        assertEquals(0, idx, "Child's siblingIndex should be updated to 0 in the new parent");
+        // and the method returns the new parent
+        assertSame(parent2, result, "appendChild should return the new parent instance");
+    }
+}

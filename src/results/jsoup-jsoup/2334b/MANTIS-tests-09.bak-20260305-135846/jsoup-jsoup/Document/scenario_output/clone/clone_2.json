@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "clone() deep copies a DocumentType node and preserves independent instances",
+      "path": "B0→B1→B2(childNodes clone)→B5",
+      "precondition": "Document created and a DocumentType child prepended",
+      "expectedResult": "Cloned document.documentType() returns a DocumentType distinct from original",
+      "tags": [
+        "positive",
+        "documentType",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone preserves DocumentType",
+        "  GIVEN",
+        "    Document doc = new Document(\"ns\", \"base\");",
+        "    DocumentType dt = new DocumentType(\"html\", \"pub\", \"sys\");",
+        "    doc.prependChild(dt);",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc.documentType(), copy.documentType());",
+        "    assertEquals(doc.documentType().name(), copy.documentType().name());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() on a Document with no explicit Connection yields independent new sessions for both original and clone",
+      "path": "B0→B1→B3(connection null branch)→B6",
+      "precondition": "none",
+      "expectedResult": "Both doc.connection() and clone.connection() return non-null distinct sessions",
+      "tags": [
+        "positive",
+        "connection",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 default connection independence",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://no-conn\");",
+        "  WHEN",
+        "    Connection origConn = doc.connection();",
+        "    Document copy = doc.clone();",
+        "    Connection copyConn = copy.connection();",
+        "  THEN",
+        "    assertNotNull(origConn);",
+        "    assertNotNull(copyConn);",
+        "    assertNotSame(origConn, copyConn);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() deep copies a custom parser instance so changes to clone.parser() configuration do not affect original",
+      "path": "B0→B1→B2(parser clone branch)→B7",
+      "precondition": "Parser configured with non-default settings",
+      "expectedResult": "Clone.parser() is a distinct Parser and modifying its settings does not change original.parser()",
+      "tags": [
+        "positive",
+        "parser",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 custom parser isolation after clone",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser().setTrackErrors(5);",
+        "    Document doc = new Document(\"http://x\").parser(p);",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "    copy.parser().setTrackErrors(0);",
+        "  THEN",
+        "    assertNotSame(doc.parser(), copy.parser());",
+        "    assertEquals(5, doc.parser().getErrors().size());",
+        "END"
+      ]
+    }
+  ]
+}

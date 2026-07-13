@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "dataset() handles attribute key with only 'data-' prefix (empty data key branch)",
+      "path": "B0→B1(attributes()==null)→B2→B3(dataset iteration)→B4(accept)→B5(return)",
+      "precondition": "Element el = new Element(\"div\"); el.attributes().put(\"data-\", \"empty\");",
+      "expectedResult": "dataset map contains one entry with key \"\" mapping to \"empty\"",
+      "tags": [
+        "edge-case",
+        "data-prefix-only"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 dataset empty-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes().put(\"data-\", \"empty\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"\");",
+        "    assert ds.get(\"\").equals(\"empty\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset() converts hyphenated names to camelCase (data-user-name → userName branch)",
+      "path": "B0→B1(attributes()!=null)→B3(dataset iteration)→B6(hyphen-to-camel conversion)→B5(return)",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"data-user-name\",\"john\");",
+      "expectedResult": "dataset map contains key \"userName\" with value \"john\"",
+      "tags": [
+        "conversion",
+        "camelCase",
+        "hyphen"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 dataset camelCase conversion",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-user-name\", \"john\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"userName\");",
+        "    assert ds.get(\"userName\").equals(\"john\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Mutating dataset.clear() removes all underlying data- attributes (live view clear branch)",
+      "path": "B0→B1(attributes()!=null)→B3(dataset iteration)→B5(return live map)→B7(clear operation)→B8(removeAll attrs)",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\");",
+      "expectedResult": "after ds.clear(), el.hasAttr(\"data-a\")==false and el.hasAttr(\"data-b\")==false",
+      "tags": [
+        "live-view",
+        "mutation",
+        "clear"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 dataset clear removes attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"1\");",
+        "    el.attr(\"data-b\", \"2\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-a\"));",
+        "    assertFalse(el.hasAttr(\"data-b\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "dataset().put(null,…) throws NullPointerException (null-key exception branch)",
+      "path": "B0→B1(attributes()!=null)→B3(dataset iteration)→B5(return live map)→B9(put null → exception)",
+      "precondition": "Element el = new Element(\"div\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "NullPointerException is thrown on ds.put(null, \"v\")",
+      "tags": [
+        "exception",
+        "negative",
+        "null-key"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 dataset null-key put throws",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(null, \"v\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

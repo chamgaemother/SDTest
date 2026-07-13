@@ -1,0 +1,156 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "wrap(Writer) ignores carriage returns '\\r' without producing extra output",
+      "path": "B0→B3(loop start)→B10(ch=='\\r')→B3(loop end)→B18(end-of-input)→B21",
+      "precondition": "none",
+      "expectedResult": "returns only 'x' for input \"\\r\\nx\"",
+      "tags": [
+        "positive",
+        "branch",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    CharSequence text = \"\\r\\nx\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"\\nx\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap(Writer) breaks long word without hyphens when insertHyphens=false",
+      "path": "B0→B3(loop word append)→B6(tooLong && breakWords)→B7(breakWords path)→writeBrokenWord→else-branch(no hyphens)→new lines→B21",
+      "precondition": "none",
+      "expectedResult": "breaks \"abcdefg\" at width 3 into lines [\"ab\",\"cd\",\"ef\",\"g\"] without hyphens",
+      "tags": [
+        "positive",
+        "branch",
+        "hyphen-disabled"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 break-word-without-hyphen",
+        "  GIVEN",
+        "    CharSequence text = \"abcdefg\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).maxWidth(3).breakWords(true).insertHyphens(false).wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"ab\",\"cd\",\"ef\",\"g\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap(Writer) uses custom stringWidth function to force every character to count as width 2 and wrap accordingly",
+      "path": "B0→B3(loop start)→B5(process wordCharacter)→tooLong on lineAndWord→B6→line.length()==0→B7→breakWords default→writeBrokenWord→B21",
+      "precondition": "none",
+      "expectedResult": "with width*2, input \"abcd\" maxWidth=3 produces two lines [\"ab-\",\"cd\"]",
+      "tags": [
+        "positive",
+        "branch",
+        "custom-function"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 custom-stringWidth-wrapping",
+        "  GIVEN",
+        "    CharSequence text = \"abcd\";",
+        "    Function<CharSequence,Number> f = s -> s.length() * 2;",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).maxWidth(3).stringWidth(f).wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"ab-\",\"cd\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap(LineConsumer) closes reader and wraps IOException from close into IORuntimeException",
+      "path": "B0→B3(loop start)→B18(end-of-input)→finally(closeReader)→close(reader)→IOException→catch→throw IORuntimeException",
+      "precondition": "Reader.close() throws IOException",
+      "expectedResult": "throw IORuntimeException with cause IOException when closing reader",
+      "tags": [
+        "exception",
+        "close",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 close-throws-io",
+        "  GIVEN",
+        "    Reader r = new Reader() {",
+        "      public int read(char[] c, int off, int len) { return -1; }",
+        "      public void close() throws IOException { throw new IOException(\"close fail\"); }",
+        "    };",
+        "    Builder b = WordWrap.from(r, true);",
+        "  WHEN",
+        "    call b.wrap(new StringWriter());",
+        "  THEN",
+        "    assertThrows(IORuntimeException.class);",
+        "    assert exception.getCause() instanceof IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "fromClasspath throws NullPointerException for missing resource input stream",
+      "path": "B0→Builder.fromClasspath(resource)→new InputStreamReader(null)→NPE",
+      "precondition": "no resource exists at given name",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "classpath"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 missing-classpath-resource",
+        "  GIVEN",
+        "    String res = \"/nonexistent.txt\";",
+        "  WHEN",
+        "    call WordWrap.fromClasspathUtf8(res).wrap();",
+        "  THEN",
+        "    assertThrows(NullPointerException.class);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "excludeExtraWordChars causes punctuation to break words rather than be treated as word character",
+      "path": "B0→B3(loop wordCharacter detection false for excluded)→else branch→appendWordToLine→B21",
+      "precondition": "none",
+      "expectedResult": "input \"a.b\" with '.' excluded yields [\"a\",\".\",\"b\"] on separate writes",
+      "tags": [
+        "positive",
+        "branch",
+        "excludeExtraWordChars",
+        "punctuation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 exclude-punctuation-splitting",
+        "  GIVEN",
+        "    CharSequence text = \"a.b\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).maxWidth(10).excludeExtraWordChars(\".\").wrapToList();",
+        "  THEN",
+        "    // 'a' then '.' then 'b' each written when tooLong on combined line",
+        "    assert lines.contains(\"a.b\");",
+        "END"
+      ]
+    }
+  ]
+}

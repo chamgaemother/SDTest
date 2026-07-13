@@ -1,0 +1,165 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "childElementsList() returns and caches a new list of element children on first invocation (shadowChildrenRef==null branch)",
+      "path": "B0→B1(size>0)→B2(cache null)→B3(build loop)→B4(set WeakReference)→B5(return list)",
+      "precondition": "Element el with two Element children appended",
+      "expectedResult": "first invocation returns a new list containing both child elements and caches it",
+      "tags": [
+        "positive",
+        "cache",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 build-and-cache-child-list",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\"); el.appendChild(c1);",
+        "    Element c2 = new Element(\"span\"); el.appendChild(c2);",
+        "    // prepare reflection access",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    List<Element> list = (List<Element>) m.invoke(el);",
+        "  THEN",
+        "    assert list.size() == 2;",
+        "    assert list.get(0) == c1 && list.get(1) == c2;",
+        "    // weak reference stored",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<?> ref = (WeakReference<?>) refField.get(el);",
+        "    assert ref.get() == list;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "childElementsList() rebuilds list after structural mutation clears cache via nodelistChanged()",
+      "path": "B0→B1(size>0)→B2(cache non-null but referent valid)→B6(nodelistChanged)→B2(cache referent null)→B3(build loop)",
+      "precondition": "Element el with one Element child, cache built, then prependChild invoked",
+      "expectedResult": "second invocation returns a fresh list with updated two elements",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 rebuild-cache-after-mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\"); el.appendChild(c1);",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "    List<Element> first = (List<Element>) m.invoke(el);",
+        "  WHEN",
+        "    el.prependChild(new Element(\"span\"));",
+        "    List<Element> second = (List<Element>) m.invoke(el);",
+        "  THEN",
+        "    assertNotSame(first, second);",
+        "    assertEquals(2, second.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "childElementsList() returns same cached list after a non-structural attribute change does not clear cache",
+      "path": "B0→B1(size>0)→B2(cache null)→B3(build)→B5(return); B1→B2(cache valid)→B5(return)",
+      "precondition": "Element parent with two Element children, children() called once to build cache",
+      "expectedResult": "after attr(), second call returns identical list instance",
+      "tags": [
+        "positive",
+        "cache",
+        "attributes",
+        "reflection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 preserve-cache-on-attribute-mutation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"a\"); parent.appendChild(c1);",
+        "    Element c2 = new Element(\"b\"); parent.appendChild(c2);",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "    List<Element> first = (List<Element>) m.invoke(parent);",
+        "  WHEN",
+        "    parent.attr(\"class\", \"x\");",
+        "    List<Element> second = (List<Element>) m.invoke(parent);",
+        "  THEN",
+        "    assertSame(first, second);",
+        "    assertEquals(2, second.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "childElementsList() rebuilds cache when weak referent is cleared (simulated GC)",
+      "path": "B0→B1(size>0)→B2(cache null)→B3(build)→B5(return); B1→B2(cache non-null but referent null)→B3(build)",
+      "precondition": "Element parent with three Element children and existing shadowChildrenRef, then referent set to null",
+      "expectedResult": "invoke returns a new list of three children",
+      "tags": [
+        "positive",
+        "cache",
+        "weakref",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 rebuild-on-weakref-clear",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"a\"); parent.appendChild(a);",
+        "    Element b = new Element(\"b\"); parent.appendChild(b);",
+        "    Element c = new Element(\"c\"); parent.appendChild(c);",
+        "    // build initial cache",
+        "    Method m = Element.class.getDeclaredMethod(\"childElementsList\");",
+        "    m.setAccessible(true);",
+        "    List<Element> first = (List<Element>) m.invoke(parent);",
+        "    // clear referent",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    refField.set(parent, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    List<Element> second = (List<Element>) m.invoke(parent);",
+        "  THEN",
+        "    assertNotSame(first, second);",
+        "    assertEquals(3, second.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() returns an empty Elements even if only non-Element DataNode children present",
+      "path": "B0→B1(childNodeSize>0)→B2(filter loop sees DataNode only)→B5(return empty)",
+      "precondition": "Element el with one DataNode child appended via append(\"<script>raw</script>\")",
+      "expectedResult": "children() returns empty Elements list",
+      "tags": [
+        "positive",
+        "filter",
+        "non-element"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 filter-out-datanodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    // add a data node child by parsing script fragment",
+        "    el.append(\"<script>raw</script>\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assertTrue(result.isEmpty());",
+        "END"
+      ]
+    }
+  ]
+}

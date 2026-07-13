@@ -1,0 +1,74 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.dataset() method scenarios.
+ */
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC08: dataset.putAll inserts multiple data- entries into element attributes")
+    public void test_TC08() {
+        // GIVEN an element with no existing data- attributes (triggers creation of backing Attributes)
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset(); // B0->B1
+        // WHEN putting multiple entries via putAll (should insert into element attributes)
+        Map<String, String> toAdd = new HashMap<>();
+        toAdd.put("k1", "v1");
+        toAdd.put("k2", "v2");
+        ds.putAll(toAdd); // B3->B4: live-view putAll path
+        // THEN each data-k should appear on the element and in the dataset
+        assertEquals("v1", el.attr("data-k1"), "data-k1 attribute should be set to v1");
+        assertEquals("v2", el.attr("data-k2"), "data-k2 attribute should be set to v2");
+        assertTrue(ds.containsKey("k1") && ds.containsKey("k2"), "dataset keys should include k1 and k2");
+    }
+
+    @Test
+    @DisplayName("TC09: dataset.clear removes all data- attributes from the element")
+    public void test_TC09() {
+        // GIVEN an element with existing data-a and data-b attributes
+        Element el = new Element("span");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        Map<String, String> ds = el.dataset(); // B0->B1
+        // WHEN clearing the dataset (should remove all data- entries from the element)
+        ds.clear(); // B3->B5: clear path
+        // THEN dataset must be empty and attributes should no longer exist on the element
+        assertTrue(ds.isEmpty(), "dataset map should be empty after clear");
+        assertEquals("", el.attr("data-a"), "data-a attribute should be removed or empty");
+        assertEquals("", el.attr("data-b"), "data-b attribute should be removed or empty");
+    }
+
+    @Test
+    @DisplayName("TC10: dataset with multi-hyphen key normalizes to camelCase chain")
+    public void test_TC10() {
+        // GIVEN an element with a hyphenated data attribute key
+        Element el = new Element("p");
+        el.attr("data-user-id-test", "X"); // sets raw attribute data-user-id-test
+        // WHEN retrieving dataset view (should normalize hyphens to camelCase)
+        Map<String, String> ds = el.dataset(); // B0->B1->B3->B6 path for hyphen normalization
+        // THEN dataset contains camelCase key and retains the original value
+        assertTrue(ds.containsKey("userIdTest"), "dataset should contain normalized key 'userIdTest'");
+        assertEquals("X", ds.get("userIdTest"), "dataset.get should return value X for key userIdTest");
+    }
+
+    @Test
+    @DisplayName("TC11: dataset.put overrides existing data- attribute value")
+    public void test_TC11() {
+        // GIVEN an element with an existing data-x attribute
+        Element el = new Element("div");
+        el.attr("data-x", "old"); // precondition old value
+        Map<String, String> ds = el.dataset(); // B0->B1
+        // WHEN putting a new value for key 'x' (should override both dataset and element attribute)
+        ds.put("x", "new"); // B3->B7 override path
+        // THEN the element attribute and dataset view reflect the new value
+        assertEquals("new", el.attr("data-x"), "element attribute data-x should be updated to new");
+        assertEquals("new", ds.get("x"), "dataset.get should return overridden value new");
+    }
+}

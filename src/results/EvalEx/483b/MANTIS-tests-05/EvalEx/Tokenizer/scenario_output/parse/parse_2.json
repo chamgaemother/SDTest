@@ -1,0 +1,175 @@
+{
+  "scenarios": [
+    {
+      "id": "TC22",
+      "description": "Hexadecimal literal '0x1F' is parsed as NUMBER_LITERAL",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default config disallowing arrays and structures, real OperatorDictionary allowing only '*'",
+      "expectedResult": "single NUMBER_LITERAL token with value '0x1F'",
+      "tags": [
+        "positive",
+        "number",
+        "hexadecimal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 hexadecimal-literal",
+        "  GIVEN",
+        "    String expr = \"0x1F\";",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, false);",
+        "    Tokenizer tz = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getTokenValue().equals(\"0x1F\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "Prefix operator '-' at start is parsed then NUMBER_LITERAL",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "config with custom prefix '-' operator in real OperatorDictionary",
+      "expectedResult": "two tokens: PREFIX_OPERATOR '-' then NUMBER_LITERAL '5'",
+      "tags": [
+        "positive",
+        "operator",
+        "prefix"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 prefix-operator",
+        "  GIVEN",
+        "    OperatorDictionaryIfc opDict = new OperatorDictionary(); opDict.addPrefixOperator(\"-\", mock(OperatorIfc.class));",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(opDict, EMPTY_FN_DICT, false, false, false);",
+        "    Tokenizer tz = new Tokenizer(\"-5\", cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 2;",
+        "    assert tokens.get(0).getType() == PREFIX_OPERATOR;",
+        "    assert tokens.get(0).getTokenValue().equals(\"-\");",
+        "    assert tokens.get(1).getTokenValue().equals(\"5\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "Postfix operator '!' after number is parsed as POSTFIX_OPERATOR",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "config with custom postfix '!' operator in real OperatorDictionary",
+      "expectedResult": "two tokens: NUMBER_LITERAL '5' then POSTFIX_OPERATOR '!'",
+      "tags": [
+        "positive",
+        "operator",
+        "postfix"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 postfix-operator",
+        "  GIVEN",
+        "    OperatorDictionaryIfc opDict = new OperatorDictionary(); opDict.addPostfixOperator(\"!\", mock(OperatorIfc.class));",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(opDict, EMPTY_FN_DICT, false, false, false);",
+        "    Tokenizer tz = new Tokenizer(\"5!\", cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 2;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(1).getType() == POSTFIX_OPERATOR;",
+        "    assert tokens.get(1).getTokenValue().equals(\"!\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "Decimal literal with leading dot '.5' parsed as NUMBER_LITERAL",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default config disallowing structures",
+      "expectedResult": "single NUMBER_LITERAL token with value '.5'",
+      "tags": [
+        "positive",
+        "number",
+        "decimal",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 leading-dot-decimal",
+        "  GIVEN",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, false);",
+        "    Tokenizer tz = new Tokenizer(\".5\", cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getTokenValue().equals(\".5\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "Valid structure separator between variables produces VARIABLE, STRUCTURE_SEPARATOR, VARIABLE",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "config allowing structures, disabling arrays and implicit multiplication",
+      "expectedResult": "three tokens: VARIABLE_OR_CONSTANT 'a', STRUCTURE_SEPARATOR '.', VARIABLE_OR_CONSTANT 'b'",
+      "tags": [
+        "positive",
+        "structure",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 valid-structure-separator",
+        "  GIVEN",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(EMPTY_OP_DICT, EMPTY_FN_DICT, false, false, true);",
+        "    Tokenizer tz = new Tokenizer(\"a.b\", cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == VARIABLE_OR_CONSTANT;",
+        "    assert tokens.get(1).getType() == STRUCTURE_SEPARATOR;",
+        "    assert tokens.get(2).getTokenValue().equals(\"b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "Implicit multiplication between two grouped expressions (BRACE_CLOSE→BRACE_OPEN) when allowed",
+      "path": "B0→B1→B2→B6(loop)→B3→B4→B6→B2→B6(loop)→B1→B7→B9→B11",
+      "precondition": "config allowing implicit multiplication, real OperatorDictionary for '*'",
+      "expectedResult": "seven tokens: '(',NUMBER,')','*','(',NUMBER,')'",
+      "tags": [
+        "positive",
+        "implicit",
+        "iteration",
+        "group"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 grouped-implicit-mult",
+        "  GIVEN",
+        "    OperatorDictionaryIfc opDict = new OperatorDictionary(); opDict.addInfixOperator(\"*\", mock(OperatorIfc.class));",
+        "    ExpressionConfiguration cfg = new ExpressionConfiguration(opDict, EMPTY_FN_DICT, true, false, false);",
+        "    Tokenizer tz = new Tokenizer(\"(1)(2)\", cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tz.parse();",
+        "  THEN",
+        "    assert tokens.size() == 7;",
+        "    assert tokens.get(3).getType() == INFIX_OPERATOR;",
+        "    assert tokens.get(3).getTokenValue().equals(\"*\");",
+        "END"
+      ]
+    }
+  ]
+}

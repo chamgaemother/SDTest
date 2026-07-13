@@ -1,0 +1,170 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    // Stub TreeBuilder that always returns a fixed dummy Document
+    static class StubTreeBuilderReturningDoc extends TreeBuilder {
+        static final Document DUMMY_DOC = new Document("stub://");
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            // simply return the dummy Document
+            return DUMMY_DOC;
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            return this;
+        }
+        @Override
+        public ParseSettings defaultSettings() {
+            return ParseSettings.htmlDefault;
+        }
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.html();
+        }
+        @Override
+        public String defaultNamespace() {
+            return "http://dummy";
+        }
+    }
+
+    // Stub TreeBuilder that throws an UncheckedIOException
+    static class StubTreeBuilderThrowingUncheckedIO extends TreeBuilder {
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            throw new UncheckedIOException(new IOException("io error"));
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            return this;
+        }
+        @Override
+        public ParseSettings defaultSettings() {
+            return ParseSettings.htmlDefault;
+        }
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.html();
+        }
+        @Override
+        public String defaultNamespace() {
+            return "http://dummy";
+        }
+    }
+
+    // Stub TreeBuilder that records the baseUri passed and returns a fixed dummy Document
+    static class StubTreeBuilderRecordingUri extends TreeBuilder {
+        static final Document DUMMY_DOC = new Document("stub://");
+        static final AtomicReference<String> lastUri = new AtomicReference<>();
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            lastUri.set(baseUri);
+            return DUMMY_DOC;
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            return this;
+        }
+        @Override
+        public ParseSettings defaultSettings() {
+            return ParseSettings.htmlDefault;
+        }
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.html();
+        }
+        @Override
+        public String defaultNamespace() {
+            return "http://dummy";
+        }
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) delegates to Reader overload and returns Document on successful parse")
+    public void test_TC01_O1() {
+        // arrange: stub builder returns a known document; html and baseUri non-null
+        Parser parser = new Parser(new StubTreeBuilderReturningDoc());
+        String html = "<p></p>";
+        String baseUri = "http://example.com";
+        // act: call string overload which delegates to Reader overload
+        Document doc = parser.parseInput(html, baseUri);
+        // assert: returned document instance is exactly stub's dummy (path: B0→B1→B2→B3→B4)
+        assertSame(StubTreeBuilderReturningDoc.DUMMY_DOC, doc);
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) returns Document when TreeBuilder.parse succeeds")
+    public void test_TC02_O2() {
+        // arrange: stub builder returns a known document; reader non-null
+        Reader reader = new StringReader("<div/>");
+        Parser parser = new Parser(new StubTreeBuilderReturningDoc());
+        String baseUri = "base";
+        // act: call reader overload directly (path: B0→B1→B2→B3→B4)
+        Document result = parser.parseInput(reader, baseUri);
+        // assert: result is same as stub's dummy
+        assertSame(StubTreeBuilderReturningDoc.DUMMY_DOC, result);
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) throws UncheckedIOException when TreeBuilder.parse throws one")
+    public void test_TC03_O2() {
+        // arrange: stub builder throws UncheckedIOException; reader non-null
+        Parser parser = new Parser(new StubTreeBuilderThrowingUncheckedIO());
+        Reader reader = new StringReader("x");
+        // act & assert: expect UncheckedIOException and ensure lock is released after exception (implicit)
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class, () -> parser.parseInput(reader, "uri"));
+        assertEquals("io error", ex.getCause().getMessage());
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) throws NullPointerException when inputHtml is null")
+    public void test_TC04_O2() {
+        // arrange: html parser; reader null to trigger NPE (path: B0→B1→B5)
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        // act & assert: NPE expected
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, "u"));
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) accepts null baseUri and returns Document")
+    public void test_TC05_O1() {
+        // arrange: stub builder records baseUri; html non-null, baseUri null
+        StubTreeBuilderRecordingUri.lastUri.set("initial");
+        Parser parser = new Parser(new StubTreeBuilderRecordingUri());
+        String html = "<a/>";
+        String baseUri = null;
+        // act: call string overload with null baseUri (path: B0→B1→B2→B3→B4)
+        Document doc = parser.parseInput(html, baseUri);
+        // assert: returned stub's dummy and recorded baseUri is null
+        assertSame(StubTreeBuilderRecordingUri.DUMMY_DOC, doc);
+        assertNull(StubTreeBuilderRecordingUri.lastUri.get());
+    }
+}

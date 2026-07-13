@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "charset(htmlSyntax, updateMetaCharset=false) does not add or remove any meta elements but updates outputSettings",
+      "path": "B0→B1(updateMetaCharsetElement)→B2(false)→B12(return)",
+      "precondition": "Document.createShell(\"http://x\"); updateMetaCharsetElement(false)",
+      "expectedResult": "outputSettings.charset updated; head contains no meta[charset] and no meta[name=charset] removed or added",
+      "tags": [
+        "html",
+        "no-update",
+        "negative-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 charset no-meta-no-update",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://x\");",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    assert doc.outputSettings().charset() == StandardCharsets.US_ASCII;",
+        "    assert doc.head().select(\"meta[charset]\").isEmpty();",
+        "    assert doc.head().select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "charset(xmlSyntax, updateMetaCharset=false) does not prepend or update XmlDeclaration but updates outputSettings",
+      "path": "B0→B1(updateMetaCharsetElement)→B2(false)→B12(return)",
+      "precondition": "Document.createShell(\"u\"); outputSettings.syntax=xml; updateMetaCharsetElement(false)",
+      "expectedResult": "outputSettings.charset updated; no XmlDeclaration inserted or modified at root",
+      "tags": [
+        "xml",
+        "no-update",
+        "negative-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 charset xml-no-update",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"u\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(false);",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.UTF_16);",
+        "  THEN",
+        "    assert doc.outputSettings().charset() == StandardCharsets.UTF_16;",
+        "    assert !(doc.childNodes().get(0) instanceof XmlDeclaration);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "charset(xmlSyntax, existing XmlDeclaration name=\"xml\" with version) updates both encoding and version attributes",
+      "path": "B0→B1(updateMetaCharsetElement)→B3(updateMetaCharset true)→B4(syntax xml)→B5(selectFirst meta? skip)→B6(xml-decl exists)→B7(decl.name==xml)→B8(hasAttr(\"version\"))→B9(set version)",
+      "precondition": "Document.createShell(\"b\"); outputSettings.syntax=xml; prepend XmlDeclaration(\"xml\", false) with version=\"0.9\"",
+      "expectedResult": "existing XmlDeclaration encoding set to new charset and version overwritten to \"1.0\"",
+      "tags": [
+        "xml",
+        "update",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 charset xml-existing-with-version",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"b\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    decl.attr(\"version\", \"0.9\");",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"ISO-8859-2\"));",
+        "  THEN",
+        "    XmlDeclaration first = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assertEquals(\"ISO-8859-2\", first.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", first.attr(\"version\"));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild(sameChild) re-parents a node into its own parent when called twice (reparentChild oldParent == this, ensureChildNodes branch false)",
+      "path": "B0→B1→B2(reparent)→B3(ensure false)→B4→B5",
+      "precondition": "Element parent has one child already attached (child.parent()==parent)",
+      "expectedResult": "No exception, parent.childNodeSize() remains 1, child.parent()==parent, siblingIndex reset to 0, and returned element is parent",
+      "tags": [
+        "reparenting",
+        "iteration",
+        "negative-case"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild same child twice",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"txt\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.parent() == parent;",
+        "    // siblingIndex field should be reset to 0",
+        "    int idx = getSiblingIndexViaReflection(child);",
+        "    assert idx == 0;",
+        "END"
+      ]
+    }
+  ]
+}

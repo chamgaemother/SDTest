@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) wraps IOException from TreeBuilder.parse into RuntimeException (tests exception branch)",
+      "path": "B0→B4→B5",
+      "precondition": "Parser constructed with custom TreeBuilder whose parse(Reader,…) throws IOException",
+      "expectedResult": "RuntimeException is thrown with cause of type IOException",
+      "tags": [
+        "exception",
+        "reader-overload",
+        "error-handling"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput reader-IOException-wrap",
+        "  GIVEN",
+        "    TreeBuilder throwingBuilder = new TreeBuilder() {",
+        "      @Override public Document parse(Reader input, String baseUri, Parser parser) throws IOException {",
+        "        throw new IOException(\"fail\");",
+        "      }",
+        "      // implement other abstract methods with no-op/stubs",
+        "    };",
+        "    Parser parser = new Parser(throwingBuilder);",
+        "    Reader rdr = new StringReader(\"x\");",
+        "    String base = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws RuntimeException with cause instanceof IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) wraps IOException from TreeBuilder.parse into RuntimeException (propagates through String overload)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser constructed with custom TreeBuilder whose parse(Reader,…) throws IOException",
+      "expectedResult": "RuntimeException is thrown with cause of type IOException",
+      "tags": [
+        "exception",
+        "string-overload",
+        "error-handling"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput string-IOException-wrap",
+        "  GIVEN",
+        "    TreeBuilder throwingBuilder = new TreeBuilder() {",
+        "      @Override public Document parse(Reader input, String baseUri, Parser parser) throws IOException {",
+        "        throw new IOException(\"fail\");",
+        "      }",
+        "      // implement other abstract methods with no-op/stubs",
+        "    };",
+        "    Parser parser = new Parser(throwingBuilder);",
+        "    String html = \"<p>x</p>\";",
+        "    String base = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws RuntimeException with cause instanceof IOException;",
+        "END"
+      ]
+    }
+  ]
+}

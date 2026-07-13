@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "Removal branch when current node is the last child triggers ascend via origSize!=childSize and nextSibling==null",
+      "path": "B0→B1→B2→B5→B6→B11→B12→B23→B1→B5→B6→B7→B9→B1",
+      "precondition": "Element root with single child c; visitor.head removes c when depth==1",
+      "expectedResult": "Traversal returns to root after removal without calling tail on removed node; root has no children",
+      "tags": [
+        "negative",
+        "iteration",
+        "removal",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 removal-of-last-child-ascend",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c = new Element(\"p\");",
+        "    root.appendChild(c);",
+        "    TrackVisitor visitor = new TrackVisitor() {",
+        "      @Override head(Node node,int depth){ super.head(node,depth); if(node==c) node.remove(); }",
+        "    };  ",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor,root);",
+        "  THEN",
+        "    assert root.childNodeSize()==0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Deep three-level tree triggers multiple ascends in inner loop (nextSibling==null&&depth>0)",
+      "path": "B0→B1→B2→B5→B11→B12(loop)→B23→B1→B5→B11→B12→B23→...→B1→B5→B11→B13→B16→B20→B21",
+      "precondition": "Element root->child->grandchild linear chain, no siblings",
+      "expectedResult": "Visitor records head/tail at depths 0,1,2 and ascends twice before final tail at root",
+      "tags": [
+        "positive",
+        "iteration",
+        "depth"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC10 deep-three-level-ascend-loops",
+        "  GIVEN",
+        "    Element root=new Element(\"a\");",
+        "    Element c1=new Element(\"b\");",
+        "    Element c2=new Element(\"c\");",
+        "    root.appendChild(c1); c1.appendChild(c2);",
+        "    TrackVisitor visitor=new TrackVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor,root);",
+        "  THEN",
+        "    assert visitor.sequence.contains(\"head:c@2\");",
+        "    assert visitor.sequence.indexOf(\"tail:c@2\") > visitor.sequence.indexOf(\"head:c@2\");",
+        "    assert visitor.tailCount==3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Sibling branch when node has nextSibling and depth>0 exercises B16→B17→B18→B20→B22 path",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B5→B11→B13→B16→B17→B18→B20→B22→B23→B1",
+      "precondition": "root with two-level tree where second-level has two siblings",
+      "expectedResult": "Visitor visits both siblings at depth 1 in head/tail order",
+      "tags": [
+        "positive",
+        "iteration",
+        "sibling"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 sibling-traversal-depth1",
+        "  GIVEN",
+        "    Element root=new Element(\"div\");",
+        "    Element c1=new Element(\"x\");",
+        "    Element c2=new Element(\"y\");",
+        "    root.appendChild(c1); root.appendChild(c2);",
+        "    TrackVisitor visitor=new TrackVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor,root);",
+        "  THEN",
+        "    assert visitor.sequence.indexOf(\"head:y@1\") > visitor.sequence.indexOf(\"tail:x@1\");",
+        "    assert visitor.tailCount>=4;",
+        "END"
+      ]
+    }
+  ]
+}

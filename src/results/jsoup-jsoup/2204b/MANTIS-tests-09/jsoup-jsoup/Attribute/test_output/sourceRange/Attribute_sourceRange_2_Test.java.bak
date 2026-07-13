@@ -1,0 +1,36 @@
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("sourceRange delegates to parent.sourceRange when parent is non-null (branch B0→B2)")
+    void test_TC02() {
+        // Arrange: create a stub Attributes where sourceRange(String) returns a known AttributeRange
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // Return a fixed range to simulate delegation
+                return new Range.AttributeRange(5, 6, 7, 8);
+            }
+        };
+        // parent is non-null to satisfy the branch condition for delegation
+        Attribute attr = new Attribute("attrKey", "val", stubParent);
+
+        // Act: call sourceRange, expecting delegation to stubParent.sourceRange
+        Range.AttributeRange result = attr.sourceRange();
+
+        // Assert: verify that the returned range matches the stub's values
+        assertAll(
+            () -> assertEquals(5, result.startTagStart(), "Expected startTagStart to be 5"),
+            () -> assertEquals(6, result.startTagEnd(),   "Expected startTagEnd to be 6"),
+            () -> assertEquals(7, result.endTagStart(),   "Expected endTagStart to be 7"),
+            () -> assertEquals(8, result.endTagEnd(),     "Expected endTagEnd to be 8")
+        );
+    }
+}

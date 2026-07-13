@@ -1,0 +1,47 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("TC06: valueOf(String, String, settings) with uppercase tag and lower-case settings returns static tag (no clone) and isFormSubmittable stays true")
+    void test_TC06() {
+        // GIVEN an uppercase form-submittable tag "INPUT" and settings that do not preserve case,
+        String original = "INPUT";
+        String normal = ParseSettings.normalName(original); // lower-case "input"
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.valueOf("LOWER_CASE"); // updated to match valid enum
+
+        // WHEN obtaining two tags via valueOf, one with uppercase input, one with literal lower-case
+        Tag tag1 = Tag.valueOf(original, normal, namespace, settings);
+        Tag tag2 = Tag.valueOf("input", normal, namespace, settings);
+        // Explanation: B3→B7→B8→B9→B10→B12 path ensures retrieving known tag without clone when case is not preserved.
+
+        // THEN both references should be identical (no clone), and formSubmittable flag remains true
+        assertSame(tag2, tag1, "Expected no clone: same static instance for known form-submittable tag");
+        assertTrue(tag1.isFormSubmittable(), "Expected isFormSubmittable() == true for 'input'");
+    }
+
+    @Test
+    @DisplayName("TC07: valueOf(String, ParseSettings) overload for known form-submittable tag 'option' returns correct instance with isFormSubmittable true")
+    void test_TC07() {
+        // GIVEN a known form-submittable tag "option" and default preserveCase settings
+        String tagName = "option";
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // WHEN using the valueOf overload that supplies the HTML namespace by default
+        Tag tag = Tag.valueOf(tagName, settings);
+        // Explanation: path B0→B3→B6→B8→B9 ensures hitting overload and known static tag entry.
+
+        // THEN the tag name remains "option" and isFormSubmittable flag is true
+        assertEquals("option", tag.getName(), "Expected tag name to match input 'option'");
+        assertTrue(tag.isFormSubmittable(), "Expected isFormSubmittable() == true for 'option'");
+    }
+}

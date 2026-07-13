@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() returns empty list via childNodeSize()==0 shortcut after cache rebuild and node removal",
+      "path": "B0→B3→B5",
+      "precondition": "Element has had children then emptied (cache invalidated)",
+      "expectedResult": "returns empty Elements list",
+      "tags": [
+        "cache",
+        "empty",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children empty after removal",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    el.children();                       // populate cache",
+        "    el.empty();                         // clear childNodes and invalidate cache",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;           // childNodeSize()==0 branch"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds list when shadowChildrenRef exists but referent has been cleared",
+      "path": "B0→B3(cache miss)→B3(rebuild)→B5",
+      "precondition": "Element with one child element and manual nullification of shadowChildrenRef referent",
+      "expectedResult": "returns new list containing the child element",
+      "tags": [
+        "cache",
+        "weakref",
+        "rebuild"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children rebuild on GC-cleared shadowChildrenRef",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = el.appendElement(\"p\");",
+        "    el.children();                       // populate shadowChildrenRef",
+        "    // Simulate referent cleared by GC:",
+        "    ReflectionUtil.setField(el, \"shadowChildrenRef\", new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assertSame(child, result.get(0));               // rebuild path taken"
+      ]
+    }
+  ]
+}

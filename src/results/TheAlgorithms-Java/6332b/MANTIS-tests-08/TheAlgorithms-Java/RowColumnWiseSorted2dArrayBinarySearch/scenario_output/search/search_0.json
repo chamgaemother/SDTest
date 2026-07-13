@@ -1,0 +1,262 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty matrix returns {-1,-1} covering initial rowPointer>=length branch",
+      "path": "B0→B9→B8",
+      "precondition": "matrix is new Comparable[0][0], target irrelevant",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "boundary",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-matrix",
+        "  GIVEN",
+        "    Comparable[][] matrix = new Integer[0][0];",
+        "    Integer target = 1;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single-element matrix where target equals element returns [0,0] covering comp==0 branch",
+      "path": "B0→B9→B1→B2→B3",
+      "precondition": "matrix is {{5}}",
+      "expectedResult": "return value is [0, 0]",
+      "tags": [
+        "branch-false",
+        "comp==0",
+        "loop-1",
+        "boundary",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 single-equal",
+        "  GIVEN",
+        "    Integer[][] matrix = {{5}};",
+        "    Integer target = 5;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{0, 0}, result);"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single-element matrix where target greater than element returns {-1,-1} covering comp>0 branch then exit",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "matrix is {{2}}",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false",
+        "comp>0",
+        "loop-1",
+        "boundary",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 single-greater",
+        "  GIVEN",
+        "    Integer[][] matrix = {{2}};",
+        "    Integer target = 3;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Single-element matrix where target less than element returns {-1,-1} covering comp<0 branch then colPointer<0",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B8",
+      "precondition": "matrix is {{2}}",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false",
+        "comp<0",
+        "loop-N",
+        "boundary",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 single-less",
+        "  GIVEN",
+        "    Integer[][] matrix = {{2}};",
+        "    Integer target = 1;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "2×2 matrix target at [1,1] reached via comp>0 then comp==0 branches",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "matrix is {{1,2},{3,4}}",
+      "expectedResult": "return value is [1, 1]",
+      "tags": [
+        "branch-false",
+        "comp>0",
+        "comp==0",
+        "loop-N",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 multi-found-greater-then-equal",
+        "  GIVEN",
+        "    Integer[][] matrix = {{1,2},{3,4}};",
+        "    Integer target = 4;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{1, 1}, result);"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "2×2 matrix target at [0,0] reached via comp<0 then comp==0 branches",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B3",
+      "precondition": "matrix is {{1,2},{3,4}}",
+      "expectedResult": "return value is [0, 0]",
+      "tags": [
+        "branch-false",
+        "comp<0",
+        "comp==0",
+        "loop-N",
+        "positive",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 multi-found-less-then-equal",
+        "  GIVEN",
+        "    Integer[][] matrix = {{1,2},{3,4}};",
+        "    Integer target = 1;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{0, 0}, result);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "2×2 matrix not containing target returns {-1,-1} after multiple comp>0 iterations",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "matrix is {{1,2},{3,4}}",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false",
+        "comp>0",
+        "loop-N",
+        "negative",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 multi-not-found",
+        "  GIVEN",
+        "    Integer[][] matrix = {{1,2},{3,4}};",
+        "    Integer target = 5;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{-1, -1}, result);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "4×4 matrix target at middle [2,2] after mixed comp>0 and comp<0 iterations",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "matrix is {{10,20,30,40},{15,25,35,45},{18,28,38,48},{21,31,41,51}}",
+      "expectedResult": "return value is [2, 2]",
+      "tags": [
+        "branch-false",
+        "mixed-comp",
+        "loop-N",
+        "positive",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 large-matrix-mixed-iterations",
+        "  GIVEN",
+        "    Integer[][] matrix = {{10,20,30,40},{15,25,35,45},{18,28,38,48},{21,31,41,51}};",
+        "    Integer target = 38;",
+        "  WHEN",
+        "    int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{2, 2}, result);"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Null matrix input throws NullPointerException at length access",
+      "path": "B0",
+      "precondition": "matrix is null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-matrix",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 null-matrix",
+        "  GIVEN",
+        "    Comparable[][] matrix = null;",
+        "    Integer target = 1;",
+        "  WHEN",
+        "    call RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Null key input throws NullPointerException at compareTo call",
+      "path": "B0→B9→B1→B2",
+      "precondition": "matrix is {{1}}, target is null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-key",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 null-key",
+        "  GIVEN",
+        "    Integer[][] matrix = {{1}};",
+        "    Integer target = null;",
+        "  WHEN",
+        "    call RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

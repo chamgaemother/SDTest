@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "three-level chain with no siblings exercises ascend-loop skip-inner-tail branch (B16→B17→B18→B20→B21)",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B5→B11→B12→B23→B1→B5→B11→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "root->mid->leaf (no siblings)",
+      "expectedResult": "head: [div:0,b:1,i:2], tail: [i:2,b:1,div:0]",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-loop"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 three-level ascend-loop skip-inner-tail",
+        "  GIVEN",
+        "    Element leaf = new Element(\"i\");",
+        "    Element mid = new Element(\"b\").appendChild(leaf);",
+        "    Element root = new Element(\"div\").appendChild(mid);",
+        "    List<String> head = new ArrayList<>();",
+        "    List<String> tail = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(n,d) { head.add(n.nodeName()+\":\"+d); }",
+        "      tail(n,d) { tail.add(n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert head.equals(List.of(\"div:0\",\"b:1\",\"i:2\"));",
+        "    assert tail.equals(List.of(\"i:2\",\"b:1\",\"div:0\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "two siblings under parent exercises removal-then-ascend branch (B6→B7→B9→B10)",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B10→B1→B24",
+      "precondition": "root with two child nodes; visitor.head removes first child",
+      "expectedResult": "only second child present; no tail call for removed node",
+      "tags": [
+        "positive",
+        "removal",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 removal-with-sibling then ascend",
+        "  GIVEN",
+        "    Element c1 = new Element(\"a\");",
+        "    Element c2 = new Element(\"b\");",
+        "    Element root = new Element(\"div\").appendChild(c1).appendChild(c2);",
+        "    List<String> tail = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(n,d) { if(n==c1) c1.remove(); }",
+        "      tail(n,d) { tail.add(n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert root.childNodeSize() == 1;",
+        "    assert tail.contains(\"b:1\");",
+        "    assert !tail.contains(\"a:1\");",
+        "END"
+      ]
+    }
+  ]
+}

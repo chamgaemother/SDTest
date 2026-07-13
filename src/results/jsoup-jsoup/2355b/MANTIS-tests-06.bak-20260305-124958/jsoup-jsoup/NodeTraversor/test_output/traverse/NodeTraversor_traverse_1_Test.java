@@ -1,0 +1,87 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class NodeTraversor_traverse_1_Test {
+
+    @Test
+    @DisplayName("visitor.head replaces a child node to trigger the 'replaced' branch (origSize == parent.childNodeSize)")
+    public void test_TC09_O1() {
+        // GIVEN: root with two children; we will replace the first child in head to satisfy replaced branch (origSize == parent.childNodeSize)
+        Element root = new Element("div");
+        Element a = new Element("a");
+        Element b = new Element("b");
+        root.appendChild(a);
+        root.appendChild(b);
+        // Visitor replaces node named "a" with a new node "x"
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                // When visiting "a", replace it (parent size unchanged -> replaced path)
+                if ("a".equals(n.nodeName())) {
+                    n.replaceWith(new Element("x"));
+                }
+            }
+
+            @Override
+            public void tail(Node n, int depth) {
+                // no-op
+            }
+        };
+
+        // WHEN: traverse
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: the replaced node "x" should be visited instead of "a" and "b" remains
+        // Check that first child is now "x" and second child is still "b"
+        assertEquals("x", root.childNode(0).nodeName());
+        assertEquals("b", root.childNode(1).nodeName());
+    }
+
+    @Test
+    @DisplayName("three-level single-child tree to trigger the ascension loop twice when no siblings (B16→B17→B19)")
+    public void test_TC10_O1() {
+        // GIVEN: root->mid->leaf chain of depth 2, no siblings to force ascension loop twice
+        Element root = new Element("d1");
+        Element mid = new Element("d2");
+        Element leaf = new Element("d3");
+        root.appendChild(mid);
+        mid.appendChild(leaf);
+        List<String> events = new ArrayList<>();
+        // Visitor captures head/tail events
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                events.add("H:" + n.nodeName() + ":" + depth);
+            }
+
+            @Override
+            public void tail(Node n, int depth) {
+                events.add("T:" + n.nodeName() + ":" + depth);
+            }
+        };
+
+        // WHEN: traverse
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: events should reflect depth-first traversal with proper ascension tail calls
+        List<String> expected = Arrays.asList(
+            "H:d1:0",  // head root at depth 0
+            "H:d2:1",  // head mid at depth 1
+            "H:d3:2",  // head leaf at depth 2
+            "T:d3:2",  // tail leaf at depth 2
+            "T:d2:1",  // tail mid at depth 1
+            "T:d1:0"   // tail root at depth 0
+        );
+        assertEquals(expected, events);
+    }
+}

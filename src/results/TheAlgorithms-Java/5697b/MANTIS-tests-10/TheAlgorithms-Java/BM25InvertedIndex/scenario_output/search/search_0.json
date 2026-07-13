@@ -1,0 +1,131 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search(nonexistent) returns empty list when index contains no entry for term (branch-false at B0)",
+      "path": "B0→B1",
+      "precondition": "BM25InvertedIndex with no added movies",
+      "expectedResult": "return empty List<SearchResult>",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search term-not-found",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"ghost\");",
+        "  THEN",
+        "    assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search(term) returns single result for one document (branch-true at B0, one loop iteration)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with one movie containing term 'hero'",
+      "expectedResult": "return List with one SearchResult(docId=1, relevanceScore > 0)",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search single-document",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Hero Movie\", 8.0, 2020, \"A hero story\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"hero\");",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 1;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search(term) orders multiple documents by descending score (branch-true at B0, multiple loop iterations)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with two movies containing term 'love' with different frequencies",
+      "expectedResult": "first result docId=2 has score > second result docId=1",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search multiple-documents-order",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Love Story\", 7.5, 1990, \"love love\");",
+        "    idx.addMovie(2, \"Romantic Love\", 8.5, 2000, \"love love love\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"love\");",
+        "  THEN",
+        "    assert results.size() == 2;",
+        "    assert results.get(0).getDocId() == 2;",
+        "    assert results.get(0).getRelevanceScore() > results.get(1).getRelevanceScore();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search(term) skips entries when movie record is null (branch-true at B0 and branch-false at B3)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "BM25InvertedIndex with stubbed index term->docId but movies.remove(docId) to simulate missing movie",
+      "expectedResult": "return empty List<SearchResult> after skipping null movie",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-1",
+        "exception-skip"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search skip-null-movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Ghost\", 5.0, 2010, \"spooky\");",
+        "    idx.movies.remove(1);  // simulate missing movie record",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"ghost\");",
+        "  THEN",
+        "    assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search(term) yields negative IDF when term appears in all documents (boundary at computeIDF)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with two movies both containing term 'all'",
+      "expectedResult": "return two results with negative relevanceScore values, ordered by frequency",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "boundary",
+        "idf-negative"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search negative-idf-boundary",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"All In\", 6.0, 2015, \"all all\");",
+        "    idx.addMovie(2, \"All Out\", 7.0, 2018, \"all all all\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"all\");",
+        "  THEN",
+        "    assert results.size() == 2;",
+        "    assert results.get(0).getRelevanceScore() < 0;",
+        "    assert results.get(1).getRelevanceScore() < 0;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,96 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_1_Test {
+
+    @Test
+    @DisplayName("TC06: parseFragmentInput on HTML parser with text-only fragment returns a TextNode (no element branch)")
+    public void test_TC06() {
+        // Using HTML parser, no context element -> triggers text node branch in HtmlTreeBuilder
+        Parser parser = Parser.htmlParser();
+        String fragment = "just text";
+        Element context = null;
+        String baseUri = "http://example.com";
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+        // Expect single text node as no tags present
+        assertEquals(1, nodes.size(), "Expected exactly one node for text-only fragment");
+        assertEquals("#text", nodes.get(0).nodeName(), "Node should be a TextNode with nodeName '#text'");
+    }
+
+    @Test
+    @DisplayName("TC07: parseFragmentInput on XML parser returns multiple element nodes via XmlTreeBuilder")
+    public void test_TC07() {
+        // Using XML parser, simple self-closing elements -> XmlTreeBuilder branch for elements
+        Parser parser = Parser.xmlParser();
+        String fragment = "<a/><b/>";
+        Element context = null;
+        String baseUri = "http://xml.example";
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+        // Expect two element nodes named 'a' and 'b'
+        assertEquals(2, nodes.size(), "Expected two nodes for '<a/><b/>' fragment");
+        assertEquals("a", nodes.get(0).nodeName(), "First node should be element 'a'");
+        assertEquals("b", nodes.get(1).nodeName(), "Second node should be element 'b'");
+    }
+
+    @Test
+    @DisplayName("TC08: parseFragmentInput propagates unchecked RuntimeException from TreeBuilder.parseFragment")
+    public void test_TC08() {
+        // Create stub TreeBuilder whose parseFragment throws IllegalStateException -> tests exception path
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public <N extends Node> List<N> parse(Reader in, String baseUri, Parser parser) {
+                return null; // not used
+            }
+
+            @Override
+            public <N extends Node> List<N> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                throw new IllegalStateException("stub error");
+            }
+
+            @Override
+            public ParseSettings defaultSettings() {
+                return new ParseSettings(ParseSettings.preserveCase); // Corrected constructor usage
+            }
+
+            @Override
+            public TagSet defaultTagSet() {
+                return TagSet.Html();
+            }
+
+            @Override
+            public TreeBuilder newInstance() {
+                return this;
+            }
+
+            @Override
+            public String defaultNamespace() {
+                return Parser.NamespaceHtml;
+            }
+
+            @Override
+            public void process(Token token) {
+                // Implementing the missing abstract method
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Reader fragmentReader = new StringReader("<p/>"); // Fixed unclosed string literal
+        Element context = null;
+        String baseUri = "http://example.com";
+        // Expect IllegalStateException to be thrown and propagated
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
+            parser.parseFragmentInput(fragmentReader, context, baseUri);
+        });
+        assertEquals("stub error", ex.getMessage(), "Exception message should propagate from stub");
+    }
+}

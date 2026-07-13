@@ -1,0 +1,187 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String overload with valid html and baseUri invokes Reader overload and returns Document",
+      "path": "B0_S→B1_S→B2_S→B0_R→B4_R→B5_R",
+      "precondition": "Parser with stub TreeBuilder that returns new Document(\"ok\"); no mocks beyond stub needed",
+      "expectedResult": "Document returned has title \"ok\" (stub value)",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput(String) normal-case",
+        "  GIVEN",
+        "    Parser p = new Parser(new FakeTreeBuilderReturningDoc(\"ok\"));",
+        "    String html = \"<p>test</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result.title().equals(\"ok\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String overload with empty html returns Document from Reader overload",
+      "path": "B0_S→B1_S→B2_S→B0_R→B4_R→B5_R",
+      "precondition": "Parser with stub TreeBuilder that returns new Document(\"empty\");",
+      "expectedResult": "Document returned has title \"empty\"",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-empty-input",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput(String) empty-html",
+        "  GIVEN",
+        "    Parser p = new Parser(new FakeTreeBuilderReturningDoc(\"empty\"));",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result.title().equals(\"empty\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "String overload with null html throws NullPointerException at StringReader ctor",
+      "path": "B0_S→B1_S",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput(String) null-html",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call p.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "Reader overload with valid Reader and baseUri returns Document",
+      "path": "B0_R→B4_R→B5_R",
+      "precondition": "Parser with stub TreeBuilder that returns new Document(\"fromReader\");",
+      "expectedResult": "Document returned has title \"fromReader\"",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput(Reader) normal-case",
+        "  GIVEN",
+        "    FakeReader in = new StringReader(\"<div>ok</div>\");",
+        "    Parser p = new Parser(new FakeTreeBuilderReturningDoc(\"fromReader\"));",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    Document result = p.parseInput(in, baseUri);",
+        "  THEN",
+        "    assert result.title().equals(\"fromReader\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "Reader overload with null Reader throws NullPointerException from treeBuilder.parse",
+      "path": "B0_R→B4_R",
+      "precondition": "Parser with stub TreeBuilder that throws NullPointerException when reader is null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 parseInput(Reader) null-reader",
+        "  GIVEN",
+        "    Parser p = new Parser(new FakeTreeBuilderThrowingNPE());",
+        "    Reader in = null;",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call p.parseInput(in, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "Reader overload with null baseUri returns Document if TreeBuilder handles null baseUri",
+      "path": "B0_R→B4_R→B5_R",
+      "precondition": "Parser with stub TreeBuilder that returns new Document(\"nullBase\");",
+      "expectedResult": "Document returned has title \"nullBase\"",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-null-baseUri",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseInput(Reader) null-baseUri",
+        "  GIVEN",
+        "    Parser p = new Parser(new FakeTreeBuilderReturningDoc(\"nullBase\"));",
+        "    Reader in = new StringReader(\"<i>x</i>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Document result = p.parseInput(in, baseUri);",
+        "  THEN",
+        "    assert result.title().equals(\"nullBase\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "Reader overload when TreeBuilder.parse throws custom ParseException propagates exception",
+      "path": "B0_R→B4_R",
+      "precondition": "Parser with stub TreeBuilder that always throws IllegalStateException(\"parse error\");",
+      "expectedResult": "throws IllegalStateException with message \"parse error\"",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-builder-exception",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 parseInput(Reader) builder-throws",
+        "  GIVEN",
+        "    Parser p = new Parser(new FakeTreeBuilderThrowing(new IllegalStateException(\"parse error\")));",
+        "    Reader in = new StringReader(\"<b>bad</b>\");",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call p.parseInput(in, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"parse error\";",
+        "END"
+      ]
+    }
+  ]
+}

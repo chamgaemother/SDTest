@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() recomputes list when shadowChildrenRef exists but referent has been cleared (shadowChildrenRef.get()==null branch)",
+      "path": "B0→B1(false childNodeSize==0)→B2(true shadowChildrenRef!=null)→B3(false get()!=non-null)→computeLoop→B4→B5",
+      "precondition": "Element has two Element children and a manual shadowChildrenRef to a cleared WeakReference",
+      "expectedResult": "returns a newly built Elements list containing both children",
+      "tags": [
+        "cache",
+        "weakref",
+        "recompute",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children recompute on cleared weakref",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "    // simulate cleared cache",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    refField.set(el, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).tagName().equals(\"a\");",
+        "    assert result.get(1).tagName().equals(\"b\");",
+        "END"
+      ]
+    }
+  ]
+}

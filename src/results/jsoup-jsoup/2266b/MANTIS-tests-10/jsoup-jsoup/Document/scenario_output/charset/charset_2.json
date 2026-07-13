@@ -1,0 +1,55 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "charset(null) throws NullPointerException for null charset argument",
+      "path": "B0→B2→B3",
+      "precondition": "Document.createShell(\"http://example.com\"), updateMetaCharsetElement(false)",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 charset null-throws-NPE",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    call doc.charset(null);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "charset(xml syntax, updateMetaCharsetElement false) updates settings only without adding XmlDeclaration",
+      "path": "B0→B1(updateMeta==false)→return",
+      "precondition": "Document.createShell(\"http://example.com\"), doc.outputSettings().syntax(XML), updateMetaCharsetElement(false)",
+      "expectedResult": "outputSettings.charset updates to ISO-8859-1, no XmlDeclaration prepended",
+      "tags": [
+        "positive",
+        "xml",
+        "updateMeta=false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 xml-syntax-no-updateMeta no-xml-decl",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    // updateMetaCharsetElement is false by default",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"ISO-8859-1\"));",
+        "  THEN",
+        "    assertEquals(Charset.forName(\"ISO-8859-1\"), doc.outputSettings().charset());",
+        "    assertFalse(doc.childNodes().get(0) instanceof XmlDeclaration);",
+        "END"
+      ]
+    }
+  ]
+}

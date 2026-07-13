@@ -1,0 +1,100 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("attr(String,String) with new key and non-null value sets attribute and returns same element")
+    public void test_TC01() {
+        // Given an element with no attributes, new key -> branch: key non-null, value non-null -> B3
+        Element el = new Element("div");
+        String key = "data-test";
+        String val = "value";
+        // When
+        Element result = el.attr(key, val);
+        // Then: returns same element and attribute is set to value
+        assertSame(el, result, "attr should return the same Element instance");
+        assertEquals("value", el.attributes().get(key), "New attribute should be set to 'value'");
+    }
+
+    @Test
+    @DisplayName("attr(String,String) with existing key updates its value")
+    public void test_TC02() {
+        // Given an element with existing attribute id=old -> branch: update path through B3
+        Element el = new Element("span");
+        el.attr("id", "old");
+        // When updating id
+        el.attr("id", "new");
+        // Then: attribute 'id' should equal "new"
+        assertEquals("new", el.attributes().get("id"), "Existing attribute should be updated to 'new'");
+    }
+
+    @Test
+    @DisplayName("attr(String,String) with key null throws IllegalArgumentException")
+    public void test_TC03() {
+        // Given null key -> branch-true keyNull -> B2
+        Element el = new Element("p");
+        String key = null;
+        String val = "v";
+        // When / Then: IllegalArgumentException is thrown and no attribute added
+        assertThrows(IllegalArgumentException.class, () -> el.attr(key, val),
+            "Calling attr with null key should throw IllegalArgumentException");
+        assertFalse(el.attributes().hasKey(""), "No empty key should be present after exception");
+    }
+
+    @Test
+    @DisplayName("attr(String,String) with value null throws IllegalArgumentException")
+    public void test_TC04() {
+        // Given non-null key and null value -> branch-true valueNull -> B2
+        Element el = new Element("p");
+        String key = "attr";
+        String val = null;
+        // When / Then: IllegalArgumentException is thrown and no attribute added
+        assertThrows(IllegalArgumentException.class, () -> el.attr(key, val),
+            "Calling attr with null value should throw IllegalArgumentException");
+        assertFalse(el.attributes().hasKey(key), "Attribute 'attr' should not exist after exception");
+    }
+
+    @Test
+    @DisplayName("attr(String,boolean) true sets boolean attribute with empty string value")
+    public void test_TC05() {
+        // Given new boolean attribute hidden, true -> branch: key non-null -> B3
+        Element el = new Element("div");
+        String key = "hidden";
+        // When
+        Element result = el.attr(key, true);
+        // Then: returns same element and attribute present with empty string
+        assertSame(el, result, "attr(boolean) should return the same Element instance");
+        assertTrue(el.attributes().hasKey(key), "Boolean attribute key should be present");
+        assertEquals("", el.attributes().get(key), "Boolean attribute value should be empty string");
+    }
+
+    @Test
+    @DisplayName("attr(String,boolean) false removes existing attribute")
+    public void test_TC06() {
+        // Given existing boolean attribute checked -> branch: removal path through B3
+        Element el = new Element("div");
+        el.attr("checked", true);
+        assertTrue(el.attributes().hasKey("checked"), "Precondition: attribute 'checked' must exist");
+        // When
+        el.attr("checked", false);
+        // Then: attribute 'checked' should be removed
+        assertFalse(el.attributes().hasKey("checked"), "Attribute 'checked' should be removed when false is passed");
+    }
+
+    @Test
+    @DisplayName("attr(String,boolean) with key null throws IllegalArgumentException")
+    public void test_TC07() {
+        // Given null key and boolean value -> branch-true keyNull -> B2
+        Element el = new Element("div");
+        String key = null;
+        // When / Then: IllegalArgumentException is thrown and no attribute added
+        assertThrows(IllegalArgumentException.class, () -> el.attr(key, true),
+            "Calling attr(boolean) with null key should throw IllegalArgumentException");
+    }
+}

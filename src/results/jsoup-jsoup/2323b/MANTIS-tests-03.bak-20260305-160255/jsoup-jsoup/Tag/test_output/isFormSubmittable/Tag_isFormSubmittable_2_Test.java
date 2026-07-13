@@ -1,0 +1,62 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("TC07: valueOf(String) overload with non-submittable known tag 'textarea' returns false")
+    void test_TC07() {
+        // 'textarea' is a known form-listed tag but not submittable, so isFormSubmittable should be false
+        String tagName = "textarea";
+        Tag tag = Tag.valueOf(tagName);
+        assertFalse(tag.isFormSubmittable(), "Expected <textarea> to not be submittable");
+    }
+
+    @Test
+    @DisplayName("TC08: valueOf(String) overload with submittable known tag 'option' returns true")
+    void test_TC08() {
+        // 'option' is a known form-listed and form-submit tag, so isFormSubmittable should be true
+        String tagName = "option";
+        Tag tag = Tag.valueOf(tagName);
+        assertTrue(tag.isFormSubmittable(), "Expected <option> to be submittable");
+    }
+
+    @Test
+    @DisplayName("TC09: valueOf(String,ParseSettings) with uppercase 'SELECT' and preserveCase triggers clone and retains submittable flag")
+    void test_TC09() {
+        // Using uppercase raw 'SELECT' with preserveCase will differ from normalized 'select', enter clone branch
+        String raw = "SELECT";
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(raw, settings);
+        // Name preserved as raw case
+        assertEquals("SELECT", tag.getName(), "Expected cloned tag to use raw name 'SELECT'");
+        // 'select' is a known form-submit tag
+        assertTrue(tag.isFormSubmittable(), "Expected <SELECT> clone to retain submittable flag");
+        // Ensure it's not the same static instance as the normalized one
+        Tag normalized = Tag.valueOf("select");
+        assertNotSame(normalized, tag, "Expected a cloned instance, not the static one");
+    }
+
+    @Test
+    @DisplayName("TC10: valueOf(String,namespace,ParseSettings) with uppercase 'Br' clone-branch produces non-submittable empty tag")
+    void test_TC10() {
+        // Raw 'Br' differs from normalized 'br', with preserveCase triggers clone; 'br' is empty but not submittable
+        String raw = "Br";
+        String normal = ParseSettings.normalName(raw);
+        String ns = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(raw, normal, ns, settings);
+        // Name preserved as raw case
+        assertEquals("Br", tag.getName(), "Expected cloned tag to use raw name 'Br'");
+        // 'br' is defined in emptyTags, so should be empty
+        assertTrue(tag.isEmpty(), "Expected <Br> to be recognized as empty");
+        // Empty tags are not form submittable
+        assertFalse(tag.isFormSubmittable(), "Expected <Br> not to be submittable");
+    }
+}

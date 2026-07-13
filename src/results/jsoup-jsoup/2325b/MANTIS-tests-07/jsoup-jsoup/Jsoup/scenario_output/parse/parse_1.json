@@ -1,0 +1,128 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parse(html, baseUri) with valid inputs uses default HTML parser and sets baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input fragment and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "default-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parse default overload",
+        "  GIVEN",
+        "    String html = \"<span>OK</span>\";",
+        "    String baseUri = \"http://test.example\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>OK</span>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parse(html, baseUri) with null html throws NullPointerException",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse null-html",
+        "  GIVEN",
+        "    String baseUri = \"http://any\";",
+        "  WHEN",
+        "    call Jsoup.parse(null, baseUri);",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(html, baseUri) with null baseUri throws NullPointerException",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse null-baseUri",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, null);",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseBodyFragment(bodyHtml, baseUri) with empty baseUri uses \"\" and returns fragment in body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "body().html() equals fragment and baseUri = \"\"",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseBodyFragment default-base",
+        "  GIVEN",
+        "    String fragment = \"<p>frag</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>frag</p>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(URL, timeoutMillis) with unsupported protocol throws MalformedURLException",
+      "path": "B0→B1→B7",
+      "precondition": "none",
+      "expectedResult": "java.net.MalformedURLException thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parse URL unsupported-protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException",
+        "END"
+      ]
+    }
+  ]
+}

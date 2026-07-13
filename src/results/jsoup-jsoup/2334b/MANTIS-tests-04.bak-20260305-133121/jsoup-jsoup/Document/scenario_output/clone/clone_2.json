@@ -1,0 +1,55 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "clone() deep-copies element attributes so further mutations of original attributes do not affect the clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document original has one attribute set on root element",
+      "expectedResult": "clone has same attribute value initially; changing original attribute after clone does not change clone",
+      "tags": [
+        "positive",
+        "attribute-copy",
+        "isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone attribute deep-copy",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://attr\");",
+        "    original.attr(\"data-test\", \"value1\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    original.attr(\"data-test\", \"value2\");",
+        "  THEN",
+        "    assert copy.attr(\"data-test\").equals(\"value1\");",
+        "    assert original.attr(\"data-test\").equals(\"value2\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() copies quirksMode by value so modifying original's quirksMode post-clone does not affect clone",
+      "path": "B0→B1→B2→B5",
+      "precondition": "none",
+      "expectedResult": "clone inherits original quirksMode; changing original quirksMode does not affect clone",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "state-copy"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone quirksMode isolation",
+        "  GIVEN",
+        "    Document original = new Document(\"http://q\").quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    original.quirksMode(Document.QuirksMode.quirks);",
+        "  THEN",
+        "    assert copy.quirksMode() == Document.QuirksMode.limitedQuirks;",
+        "    assert original.quirksMode() == Document.QuirksMode.quirks;"
+      ]
+    }
+  ]
+}

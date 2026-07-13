@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Reader overload with null context and non-empty fragment returns nodes list (context == null branch)",
+      "path": "B0→B1→B3→B5→B6",
+      "precondition": "Parser with FakeTreeBuilder that returns two nodes for parseFragment",
+      "expectedResult": "returns list of two nodes in order",
+      "tags": [
+        "positive",
+        "overload",
+        "null-context"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseFragmentInput Reader null-context returns nodes",
+        "  GIVEN",
+        "    FakeTreeBuilder fb = new FakeTreeBuilder((rdr, ctx, uri, parser) -> Arrays.asList(nodeA, nodeB));",
+        "    Parser parser = new Parser(fb);",
+        "    Reader fragmentReader = new StringReader(\"<p>X</p><div>Y</div>\");",
+        "    Element ctx = null;",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragmentReader, ctx, \"baseUri\");",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assertSame(nodeA, result.get(0));",
+        "    assertSame(nodeB, result.get(1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "String overload propagates UncheckedIOException thrown by TreeBuilder (exception path)",
+      "path": "B0→B1→B2→B3→B4→exception",
+      "precondition": "Parser with FakeTreeBuilder that throws UncheckedIOException in parseFragment",
+      "expectedResult": "UncheckedIOException is thrown with original message",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseFragmentInput String overload propagates UncheckedIOException",
+        "  GIVEN",
+        "    FakeTreeBuilder fb = new FakeTreeBuilder((rdr, ctx, uri, parser) -> { throw new UncheckedIOException(new IOException(\"tree failure\")); });",
+        "    Parser parser = new Parser(fb);",
+        "    Element ctx = Element.createShell(\"base\");",
+        "  WHEN",
+        "    call parser.parseFragmentInput(\"<a/>\", ctx, \"base\");",
+        "  THEN",
+        "    throws UncheckedIOException with cause message \"tree failure\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Reader overload propagates RuntimeException thrown by TreeBuilder (exception path)",
+      "path": "B0→B1→B3→exception",
+      "precondition": "Parser with FakeTreeBuilder that throws RuntimeException in parseFragment",
+      "expectedResult": "RuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput Reader overload propagates RuntimeException",
+        "  GIVEN",
+        "    FakeTreeBuilder fb = new FakeTreeBuilder((rdr, ctx, uri, parser) -> { throw new RuntimeException(\"fatal\"); });",
+        "    Parser parser = new Parser(fb);",
+        "    Reader fragmentReader = new StringReader(\"<span/>\");",
+        "    Element ctx = Element.createShell(\"uri\");",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragmentReader, ctx, \"uri\");",
+        "  THEN",
+        "    throws RuntimeException with message \"fatal\";",
+        "END"
+      ]
+    }
+  ]
+}

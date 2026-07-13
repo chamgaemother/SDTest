@@ -1,0 +1,116 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "clone() preserves explicit connection field so connection() returns the same instance branch",
+      "path": "B0→B1→B3",
+      "precondition": "original.connection set to a mock or real Connection instance",
+      "expectedResult": "cloned.connection() returns exactly the same Connection instance",
+      "tags": [
+        "positive",
+        "connection",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone preserves non-null connection",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://x\");",
+        "    Connection conn = Jsoup.newSession();",
+        "    original.connection(conn);",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    assertSame(conn, cloned.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "connection() on clone with null connection returns new session branch",
+      "path": "B0→B1→B2",
+      "precondition": "no connection set on original",
+      "expectedResult": "clone.connection() returns a new non-null Connection different from default newSession",
+      "tags": [
+        "positive",
+        "connection",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone inherits null connection",
+        "  GIVEN",
+        "    Document original = new Document(\"http://u\");",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    Connection c1 = cloned.connection();",
+        "    Connection c2 = cloned.connection();",
+        "    assertNotNull(c1);",
+        "    assertNotSame(c1, c2);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() copies quirksMode field value branch",
+      "path": "B0→B1→B4",
+      "precondition": "original.quirksMode set to QuirksMode.quirks",
+      "expectedResult": "cloned.quirksMode() equals QuirksMode.quirks",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone preserves quirksMode",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"u\");",
+        "    original.quirksMode(Document.QuirksMode.quirks);",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.quirks, cloned.quirksMode());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() deep-copies comment and text child nodes that are not Element subclass branch",
+      "path": "B0→B1→B5",
+      "precondition": "original with custom Comment and TextNode children",
+      "expectedResult": "modifying a cloned comment/text does not affect original nodes",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "nodes",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone deep-copies non-Element child nodes",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"u\");",
+        "    org.jsoup.nodes.Comment comment = new org.jsoup.nodes.Comment(\"cmt\", \"\");",
+        "    original.appendChild(comment);",
+        "    original.body().text(\"text\");",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "    // modify clone nodes",
+        "    org.jsoup.nodes.Node clonedComment = cloned.childNodes().stream().filter(n->n instanceof org.jsoup.nodes.Comment).findFirst().get();",
+        "    ((org.jsoup.nodes.Comment)clonedComment).setData(\"changed\");",
+        "    cloned.body().text(\"changedText\");",
+        "  THEN",
+        "    // original nodes unchanged",
+        "    assertEquals(\"cmt\", ((org.jsoup.nodes.Comment)comment).getData());",
+        "    assertEquals(\"text\", original.body().text());",
+        "END"
+      ]
+    }
+  ]
+}

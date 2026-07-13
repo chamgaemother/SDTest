@@ -1,0 +1,31 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for the {@link Element#attr(String, String)} method,
+ * specifically verifying that setting "baseUri" uses the doSetBaseUri override
+ * to populate the internal baseUri attribute key.
+ */
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("TC07: attr with BaseUriKey uses doSetBaseUri override branch to set internal baseUri attribute")
+    public void test_TC07() {
+        // GIVEN an Element with no initial baseUri
+        Element el = new Element("div"); 
+        // WHEN we call attr("baseUri", "<uri>")
+        String uri = "http://example.com";
+        el.attr("baseUri", uri);
+        // THEN baseUri() returns the new URI
+        assertEquals(uri, el.baseUri(),
+            "Calling attr with the key \"baseUri\" should route through doSetBaseUri and update baseUri()");
+        // AND the internal attribute stored under Attributes.internalKey(\"baseUri\") equals the URI
+        String internalKey = Attributes.internalKey("baseUri");
+        assertEquals(uri, el.attributes().get(internalKey),
+            "The internal baseUri attribute (under key=" + internalKey + ") must equal the value set via attr");
+    }
+}

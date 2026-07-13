@@ -1,0 +1,197 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Elements; // Added import for Elements
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+
+// Importing NodeVisitor to resolve compilation errors
+import org.jsoup.select.NodeVisitor;
+
+public class NodeTraversor_traverse_0_Test {
+
+    // Scenario TC01_O1: visitor is null triggers IllegalArgumentException at Validate.notNull(visitor)
+    @Test
+    @DisplayName("visitor is null triggers IllegalArgumentException at Validate.notNull(visitor)")
+    public void test_TC01_O1() {
+        NodeVisitor visitor = null;
+        Node root = new Element("div");
+        // visitor null should trigger Validate.notNull -> IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    // Scenario TC02_O1: root is null triggers IllegalArgumentException at Validate.notNull(root)
+    @Test
+    @DisplayName("root is null triggers IllegalArgumentException at Validate.notNull(root)")
+    public void test_TC02_O1() {
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {}
+            public void tail(Node node, int depth) {}
+        };
+        Node root = null;
+        // root null should trigger Validate.notNull -> IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    // Scenario TC03_O1: single root node with no children calls head then tail once
+    @Test
+    @DisplayName("single root node with no children calls head then tail once")
+    public void test_TC03_O1() {
+        Element root = new Element("div");
+        // RecordingVisitor captures head/tail invocations
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("head:" + node.nodeName() + ":" + depth); }
+            public void tail(Node node, int depth) { calls.add("tail:" + node.nodeName() + ":" + depth); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // root has no children, so head then tail at depth 0
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of("head:div:0", "tail:div:0"), visitor.calls);
+    }
+
+    // Scenario TC04_O1: root with one child descends and ascends (depth change)
+    @Test
+    @DisplayName("root with one child descends and ascends (depth change)")
+    public void test_TC04_O1() {
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("head:" + node.nodeName() + ":" + depth); }
+            public void tail(Node node, int depth) { calls.add("tail:" + node.nodeName() + ":" + depth); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // path has one child, depth goes to 1 then back
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of(
+                "head:div:0",
+                "head:p:1",
+                "tail:p:1",
+                "tail:div:0"), visitor.calls);
+    }
+
+    // Scenario TC05_O1: root with two children visits siblings correctly
+    @Test
+    @DisplayName("root with two children visits siblings correctly")
+    public void test_TC05_O1() {
+        Element root = new Element("div");
+        Element childA = new Element("p");
+        Element childB = new Element("span");
+        root.appendChild(childA);
+        root.appendChild(childB);
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("head:" + node.nodeName() + ":" + depth); }
+            public void tail(Node node, int depth) { calls.add("tail:" + node.nodeName() + ":" + depth); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // two children: visit childA then childB at depth 1
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of(
+                "head:div:0",
+                "head:p:1",
+                "tail:p:1",
+                "head:span:1",
+                "tail:span:1",
+                "tail:div:0"), visitor.calls);
+    }
+
+    // Scenario TC06_O1: visitor.head removes node triggers removal branch
+    @Test
+    @DisplayName("visitor.head removes node triggers removal branch")
+    public void test_TC06_O1() {
+        Element parent = new Element("div");
+        Element child = new Element("p");
+        parent.appendChild(child);
+        NodeVisitor removingVisitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                // remove any child encountered to simulate removal in head
+                if (node instanceof Element && ((Element) node).parent() != null) {
+                    node.remove();
+                }
+            }
+            public void tail(Node node, int depth) {}
+        };
+        // child is removed in head, parent should have no children afterward
+        NodeTraversor.traverse(removingVisitor, parent);
+        assertEquals(0, parent.childNodeSize());
+    }
+
+    // Scenario TC07_O1: visitor.head replaces node triggers replacement branch
+    @Test
+    @DisplayName("visitor.head replaces node triggers replacement branch")
+    public void test_TC07_O1() {
+        Element parent = new Element("div");
+        Element child = new Element("p");
+        parent.appendChild(child);
+        NodeVisitor replacingVisitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                // replace child node with a new element
+                if (node == child) {
+                    Element replacement = new Element("span");
+                    node.replaceWith(replacement);
+                }
+            }
+            public void tail(Node node, int depth) {}
+        };
+        // after traversal, the first child should be a span replacement
+        NodeTraversor.traverse(replacingVisitor, parent);
+        Node first = parent.childNode(0);
+        assertTrue(first instanceof Element && "span".equals(first.nodeName()));
+    }
+
+    // Scenario TC09_O2: empty Elements list yields no traversal calls
+    @Test
+    @DisplayName("empty Elements list yields no traversal calls")
+    public void test_TC09_O2() {
+        Elements elements = new Elements();
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("h"); }
+            public void tail(Node node, int depth) { calls.add("t"); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // empty list -> no delegate calls
+        NodeTraversor.traverse(visitor, elements);
+        assertTrue(visitor.calls.isEmpty());
+    }
+
+    // Scenario TC10_O2: Elements list with one element delegates to Node overload once
+    @Test
+    @DisplayName("Elements list with one element delegates to Node overload once")
+    public void test_TC10_O2() {
+        Elements elements = new Elements(new Element("div"));
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("h"); }
+            public void tail(Node node, int depth) { calls.add("t"); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // one element -> head and tail invoked once
+        NodeTraversor.traverse(visitor, elements);
+        assertEquals(2, visitor.calls.size());
+    }
+
+    // Scenario TC11_O2: Elements list with multiple elements delegates traversal per element
+    @Test
+    @DisplayName("Elements list with multiple elements delegates traversal per element")
+    public void test_TC11_O2() {
+        Elements elements = new Elements(new Element("div"), new Element("span"));
+        class RecordingVisitor implements NodeVisitor {
+            List<String> calls = new ArrayList<>();
+            public void head(Node node, int depth) { calls.add("h"); }
+            public void tail(Node node, int depth) { calls.add("t"); }
+        }
+        RecordingVisitor visitor = new RecordingVisitor();
+        // two elements -> each produces head and tail, total 4
+        NodeTraversor.traverse(visitor, elements);
+        assertEquals(4, visitor.calls.size());
+    }
+}

@@ -1,0 +1,178 @@
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TagSet;
+import org.jsoup.parser.TreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_0_Test {
+
+    // A fake TreeBuilder stub to control parseFragment behavior in tests
+    static class FakeTreeBuilder extends TreeBuilder {
+        private final FragmentHandler handler;
+        public interface FragmentHandler {
+            List<Node> handle(Reader reader, Element context, String baseUri, Parser parser) throws UncheckedIOException;
+        }
+        FakeTreeBuilder(FragmentHandler handler) {
+            this.handler = handler;
+        }
+        @Override
+        public Document parse(Reader reader, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException("Not used in fragment tests");
+        }
+        @Override
+        public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            // delegate to handler
+            return handler.handle(reader, context, baseUri, parser);
+        }
+        @Override
+        public ParseSettings defaultSettings() {
+            // minimal valid settings
+            return new ParseSettings(true, true);
+        }
+        @Override
+        public TagSet defaultTagSet() {
+            return TagSet.html();
+        }
+        @Override
+        public String defaultNamespace() {
+            return Parser.NamespaceHtml;
+        }
+        @Override
+        public void process(org.jsoup.parser.Token token) {
+            // Implementing the abstract method from TreeBuilder
+            // No operation as this is a fake builder for testing
+        }
+    }
+
+    @Test
+    @DisplayName("TC01_O1: String overload with non-null context and non-empty fragment returns nodes list")
+    void test_TC01_O1() {
+        // GIVEN: a parser with fakeTreeBuilder that returns two nodes; non-null context triggers branch context!=null
+        Node nodeA = new Element("p", "http://x");
+        Node nodeB = new Element("div", "http://x");
+        FakeTreeBuilder fb = new FakeTreeBuilder((reader, ctx, uri, parser) -> {
+            // ensure the context passed is the same non-null element
+            assertNotNull(ctx);
+            assertEquals("http://x", uri);
+            return Arrays.asList(nodeA, nodeB);
+        });
+        Parser parser = new Parser(fb); // Ensure fb is a valid TreeBuilder instance.
+        Element ctx = Element.createShell("http://x");
+        String fragment = "<p>A</p><div>B</div>";
+        // WHEN
+        List<Node> result = parser.parseFragmentInput(fragment, ctx, "http://x");
+        // THEN: result has exactly two nodes in order
+        assertEquals(2, result.size());
+        assertSame(nodeA, result.get(0));
+        assertSame(nodeB, result.get(1));
+    }
+
+    @Test
+    @DisplayName("TC02_O1: String overload with null context and empty fragment returns empty list")
+    void test_TC02_O1() {
+        // GIVEN: fakeTreeBuilder returns empty list; context==null triggers branch context==null
+        FakeTreeBuilder fb = new FakeTreeBuilder((reader, ctx, uri, parser) -> {
+            assertNull(ctx);
+            return Collections.emptyList();
+        });
+        Parser parser = new Parser(fb); // Ensure fb is a valid TreeBuilder instance.
+        String fragment = "";
+        // WHEN
+        List<Node> result = parser.parseFragmentInput(fragment, null, "http://x");
+        // THEN: result is empty
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    @DisplayName("TC03_O2: Reader overload throws UncheckedIOException when Reader.read() IO error occurs")
+    void test_TC03_O2() {
+        // GIVEN: a parser with default treeBuilder; Reader that throws IOException on any read
+        Parser parser = Parser.htmlParser();
+        Reader faulty = new Reader() {
+            @Override public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("read failure");
+            }
+            @Override public void close() throws IOException { }
+        };
+        // WHEN & THEN: expect UncheckedIOException wrapping the IOException
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class,
+            () -> parser.parseFragmentInput(faulty, null, "http://x"));
+        assertTrue(ex.getCause() instanceof IOException);
+        assertEquals("read failure", ex.getCause().getMessage());
+    }
+
+    @Test
+    @DisplayName("TC04_O2: Reader overload with non-null context returns single node list")
+    void test_TC04_O2() {
+        // GIVEN: fakeTreeBuilder that returns single node; context!=null branch, loop-1
+        Node nodeSingle = new Element("span", "u");
+        FakeTreeBuilder fb = new FakeTreeBuilder((reader, ctx, uri, parser) -> {
+            assertNotNull(ctx);
+            return Collections.singletonList(nodeSingle);
+        });
+        Parser parser = new Parser(fb); // Ensure fb is a valid TreeBuilder instance.
+        Element ctx = Element.createShell("u");
+        Reader fragmentReader = new StringReader("<span>X</span>");
+        // WHEN
+        List<Node> result = parser.parseFragmentInput(fragmentReader, ctx, "u");
+        // THEN
+        assertEquals(1, result.size());
+        assertSame(nodeSingle, result.get(0));
+    }
+
+    @Test
+    @DisplayName("TC05_O1: String overload propagates UncheckedIOException from Reader overload")
+    void test_TC05_O1() {
+        // GIVEN: default parser; override Reader creation to throw IO in underlying read
+        Parser parser = Parser.htmlParser();
+        // To simulate String overload propagation, wrap StringReader but override read via proxy
+        Reader faulty = new Reader() {
+            @Override public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fault in StringReader");
+            }
+            @Override public void close() throws IOException { }
+        };
+        // We need to bypass the String overload's StringReader, so call Reader overload directly
+        assertThrows(UncheckedIOException.class, () -> parser.parseFragmentInput(faulty, null, "u"));
+    }
+
+    @Test
+    @DisplayName("TC06_O2: Reader overload with different baseUri and non-null context, returning multiple nodes")
+    void test_TC06_O2() {
+        // GIVEN: fakeTreeBuilder checks baseUri=="http://y" and returns three nodes; context!=null branch, loop-N
+        Node node1 = new Element("a", "http://y");
+        Node node2 = new Element("b", "http://y");
+        Node node3 = new Element("c", "http://y");
+        FakeTreeBuilder fb = new FakeTreeBuilder((reader, ctx, uri, parser) -> {
+            assertNotNull(ctx);
+            assertEquals("http://y", uri);
+            return Arrays.asList(node1, node2, node3);
+        });
+        Parser parser = new Parser(fb); // Ensure fb is a valid TreeBuilder instance.
+        Element ctx = Element.createShell("http://y");
+        Reader fragmentReader = new StringReader("<a/> <b/> <c/>");
+        // WHEN
+        List<Node> result = parser.parseFragmentInput(fragmentReader, ctx, "http://y");
+        // THEN
+        assertEquals(3, result.size());
+        assertIterableEquals(Arrays.asList(node1, node2, node3), result);
+    }
+}

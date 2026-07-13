@@ -1,0 +1,184 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "parse(String html, String baseUri, Parser parser) resolves relative URLs with htmlParser",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document with <img> src attribute resolved to absolute URL",
+      "tags": [
+        "positive",
+        "overload",
+        "resolution"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse html with baseUri and parser",
+        "  GIVEN",
+        "    String html = \"<img src='pic.png'>\";",
+        "    String base = \"http://example.com/sub/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, base, parser);",
+        "  THEN",
+        "    assertEquals(\"http://example.com/sub/pic.png\", doc.select(\"img\").first().absUrl(\"src\"));"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(String html, Parser parser) with empty html returns empty body for xmlParser",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "Document body html is empty string",
+      "tags": [
+        "boundary",
+        "overload",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse empty html with xmlParser",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assertEquals(\"\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(String html, String baseUri, Parser parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse overload with null parser",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "    String base = \"\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, base, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(File file, String charsetName, String baseUri, Parser parser) uses xmlParser to parse file",
+      "path": "B0→B5→B6",
+      "precondition": "temp file exists with <div>X</div> content",
+      "expectedResult": "Document with <div> text 'X'",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse file with charset, baseUri and xmlParser",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"t\", \".html\");",
+        "    Files.write(path, \"<div>X</div>\".getBytes(StandardCharsets.UTF_8));",
+        "    File file = path.toFile();",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"http://b/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, base, parser);",
+        "  THEN",
+        "    assertEquals(\"X\", doc.select(\"div\").first().text());"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path path, String charsetName) with nonexistent path throws IOException",
+      "path": "B0→B7→B8",
+      "precondition": "Path points to non-existing file",
+      "expectedResult": "IOException thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload",
+        "path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse nonexistent Path overload",
+        "  GIVEN",
+        "    Path path = Paths.get(\"no-such-file.html\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    call Jsoup.parse(path, charset);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream in, String charsetName, String baseUri, Parser parser) with xmlParser reads stream",
+      "path": "B0→B9→B10",
+      "precondition": "InputStream contains <span>Z</span>",
+      "expectedResult": "Document with span text 'Z'",
+      "tags": [
+        "positive",
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parse InputStream with parser overload",
+        "  GIVEN",
+        "    byte[] data = \"<span>Z</span>\".getBytes(StandardCharsets.UTF_8);",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, base, parser);",
+        "  THEN",
+        "    assertEquals(\"Z\", doc.select(\"span\").first().text());"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) resolves relative links in fragment",
+      "path": "B0→B11→B12",
+      "precondition": "none",
+      "expectedResult": "body fragment with <a> href absolute to baseUri",
+      "tags": [
+        "positive",
+        "fragment",
+        "resolution"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment with baseUri resolution",
+        "  GIVEN",
+        "    String body = \"<a href='p'>here</a>\";",
+        "    String base = \"https://x/y/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(body, base);",
+        "  THEN",
+        "    assertEquals(\"https://x/y/p\", doc.select(\"a\").first().absUrl(\"href\"));"
+      ]
+    }
+  ]
+}

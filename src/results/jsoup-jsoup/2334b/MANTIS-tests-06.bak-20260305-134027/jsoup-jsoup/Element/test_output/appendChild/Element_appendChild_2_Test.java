@@ -1,0 +1,45 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Element.appendChild(Node) covering scenario TC06.
+ */
+public class Element_appendChild_2_Test {
+
+    @Test
+    @DisplayName("Reparenting a child into a non-empty new parent skips list creation and appends at correct index")
+    void test_TC06() throws Exception {
+        // GIVEN: oldParent with one child
+        Element oldParent = new Element("ul");
+        Element child = new Element("li");
+        oldParent.appendChild(child); // ensures oldParent.childNodes != EmptyNodes and child.siblingIndex == 0
+        assertEquals(1, oldParent.childNodeSize(), "precondition: oldParent should have one child");
+
+        // GIVEN: newParent with one existing child to force non-empty childNodes and skip ensureChildNodes path
+        Element newParent = new Element("ol");
+        newParent.appendChild(new Element("li")); // now newParent.childNodes != EmptyNodes
+        assertEquals(1, newParent.childNodeSize(), "precondition: newParent should have one child already");
+
+        // WHEN: reparent child from oldParent to newParent
+        Element result = newParent.appendChild(child);
+
+        // THEN: the returned element is the new parent
+        assertSame(newParent, result, "appendChild should return the receiver (newParent)");
+        // oldParent should have no children after reparenting
+        assertEquals(0, oldParent.childNodeSize(), "oldParent should have lost its child");
+        // newParent should now have two children
+        assertEquals(2, newParent.childNodeSize(), "newParent should have two children after append");
+        // the child's parent reference should point to newParent
+        assertSame(newParent, child.parent(), "child.parent should be updated to newParent");
+
+        // reflectively check that siblingIndex was set to the appended index (1)
+        Field sibField = Node.class.getDeclaredField("siblingIndex");
+        sibField.setAccessible(true);
+        int siblingIndex = sibField.getInt(child);
+        assertEquals(1, siblingIndex, "siblingIndex of reparented child should be 1");
+    }
+}

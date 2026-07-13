@@ -1,0 +1,109 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(String, String, Parser) with XML parser returns elements preserved and retains provided baseUri",
+      "path": "B0→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "Document contains <tag> element; baseUri equals provided URI",
+      "tags": [
+        "overload",
+        "positive",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse(html, baseUri, xmlParser)",
+        "  GIVEN",
+        "    String html = \"<root><child>OK</child></root>\";",
+        "    String baseUri = \"http://example.org/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"child\").first().text().equals(\"OK\");",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(String, Parser) with HTML parser returns normalized HTML and default empty baseUri",
+      "path": "B0→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document body contains normalized <div></div>; baseUri is empty",
+      "tags": [
+        "overload",
+        "positive",
+        "html-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse(html, htmlParser)",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div></div>\");",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(InputStream, String charsetName, String baseUri) with valid charset reads stream and sets baseUri",
+      "path": "B0→B7→B8→B9",
+      "precondition": "none",
+      "expectedResult": "Document contains paragraph text 'ok'; baseUri equals provided URI",
+      "tags": [
+        "overload",
+        "positive",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse(stream, valid-charset, baseUri)",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<p>ok</p>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"p\").first().text().equals(\"ok\");",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(InputStream, String charsetName, String baseUri, Parser) with HTML parser reads and normalizes fragment",
+      "path": "B0→B7→B8→B10",
+      "precondition": "none",
+      "expectedResult": "Document body contains normalized <span></span>; baseUri equals provided URI",
+      "tags": [
+        "overload",
+        "positive",
+        "stream",
+        "html-parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse(stream, charset, baseUri, htmlParser)",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<span/>\".getBytes(\"UTF-8\"));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream2.example/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span></span>\");",
+        "    assert doc.baseUri().equals(baseUri);"
+      ]
+    }
+  ]
+}

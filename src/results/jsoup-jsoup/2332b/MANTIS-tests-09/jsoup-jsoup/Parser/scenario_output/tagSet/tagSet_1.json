@@ -1,0 +1,127 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setTrackErrors with maxErrors>0 enables tracking and isTrackErrors returns true",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser created via htmlParser()",
+      "expectedResult": "isTrackErrors() == true and getErrors().getMaxSize() == 5",
+      "tags": [
+        "positive",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 enable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assert parser.isTrackErrors();",
+        "    assert parser.getErrors().getMaxSize() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors with maxErrors=0 disables tracking and isTrackErrors returns false",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser created via xmlParser()",
+      "expectedResult": "isTrackErrors() == false and getErrors().getMaxSize() == 0",
+      "tags": [
+        "boundary",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 disable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assert !parser.isTrackErrors();",
+        "    assert parser.getErrors().getMaxSize() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackPosition(true) sets trackPosition and isTrackPosition returns true",
+      "path": "B0→B1→B3",
+      "precondition": "Parser created via new Parser(new HtmlTreeBuilder())",
+      "expectedResult": "isTrackPosition() == true",
+      "tags": [
+        "positive",
+        "branch",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 enable-position-tracking",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert parser.isTrackPosition();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "settings(ParseSettings) updates parser settings and settings() returns the new object",
+      "path": "B0→B1→B2",
+      "precondition": "Parser created via htmlParser()",
+      "expectedResult": "settings() == the passed ParseSettings instance",
+      "tags": [
+        "positive",
+        "branch",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 update-parse-settings",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings custom = new ParseSettings(true,true);",
+        "  WHEN",
+        "    parser.settings(custom);",
+        "  THEN",
+        "    assert parser.settings() == custom;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "defaultNamespace on xmlParser returns XML namespace",
+      "path": "B0→B1→B4",
+      "precondition": "Parser created via xmlParser()",
+      "expectedResult": "defaultNamespace() == Parser.NamespaceHtml? Actually html? Wait xmlParser uses XmlTreeBuilder which defaultNamespace = NamespaceXml",
+      "tags": [
+        "positive",
+        "branch",
+        "namespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 xml-default-namespace",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceXml);",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "children() reuses cached empty list for element with only non-element nodes (shadowChildrenRef non-null empty branch)",
+      "path": "B0→B1(false)→B2→B3(loop×1)→B4→B6(shadowChildrenRef.get()!=null)→B7",
+      "precondition": "Element has one TextNode child and children() was called once to populate empty cache",
+      "expectedResult": "second children() returns same Elements instance (empty) without rebuilding",
+      "tags": [
+        "positive",
+        "cache",
+        "empty",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 children() empty-non-element reuse",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"t\"));",
+        "    el.children(); // first call builds empty cached list",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertSame(first, second);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "children() rebuilds when cached shadowChildrenRef referent has been cleared (weakref-null branch)",
+      "path": "B0→B1(false)→B2→B3(loop×1)→B4→B5(shadowChildrenRef non-null but get()==null)→B2→B4",
+      "precondition": "Element has one Element child and shadowChildrenRef is manually set to a WeakReference with null referent",
+      "expectedResult": "children() rebuilds and returns a new list with one Element child",
+      "tags": [
+        "positive",
+        "reflection",
+        "weakref",
+        "cacheInvalidation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 children() rebuild on null weakref referent",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    el.children(); // populate cache shadowChildrenRef",
+        "    // manually clear the referent via reflection",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<?> emptyRef = new WeakReference<>(null);",
+        "    refField.set(el, emptyRef);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assertEquals(1, result.size());",
+        "    assertEquals(\"span\", result.get(0).tagName());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("Known form-submit tag 'input' returns true (branch: Tags.containsKey && formSubmit==true)")
+    public void test_TC01() {
+        // 'input' is a pre-registered tag in HTML namespace and marked as form-submit capable
+        Tag tag = Tag.valueOf("input");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(true, result, "Expected 'input' to be recognized as form-submittable");
+    }
+
+    @Test
+    @DisplayName("Known non-submit tag 'div' returns false (branch: Tags.containsKey && formSubmit==false)")
+    public void test_TC02() {
+        // 'div' is a known HTML tag but not form-submittable
+        Tag tag = Tag.valueOf("div");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Expected 'div' to not be form-submittable");
+    }
+
+    @Test
+    @DisplayName("Unknown tag 'foo' returns false (branch: no entry in Tags → default new Tag formSubmit==false)")
+    public void test_TC03() {
+        // 'foo' is not pre-registered, so a new Tag is created with default formSubmit=false
+        Tag tag = Tag.valueOf("foo");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Expected unknown tag 'foo' to not be form-submittable by default");
+    }
+
+    @Test
+    @DisplayName("Known submit tag 'button' in non-HTML namespace returns false (branch: namespace mismatch → new default Tag formSubmit==false)")
+    public void test_TC04() {
+        // 'button' exists and is form-submit in HTML namespace, but using a custom namespace forces creation of a default Tag
+        String customNs = "http://www.example.com/custom";
+        Tag tag = Tag.valueOf("button", customNs, ParseSettings.preserveCase);
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Expected 'button' in custom namespace to not be form-submittable");
+    }
+}

@@ -1,0 +1,141 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) returns a Document with body fragment and correct baseUri",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input fragment, baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "body-fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<p>Frag</p>\";",
+        "    String baseUri = \"http://frag.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Frag</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parseBodyFragment(String bodyHtml) uses empty baseUri and returns Document with fragment",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input fragment, baseUri is empty",
+      "tags": [
+        "positive",
+        "overload",
+        "body-fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parseBodyFragment default baseUri",
+        "  GIVEN",
+        "    String fragment = \"<div>X</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>X</div>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path path, String charsetName, String baseUri) loads HTML from Path with explicit charset",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "temp file exists with HTML content",
+      "expectedResult": "Document.select(\"h1\").text() equals file content, baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "file-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse Path with charset and baseUri",
+        "  GIVEN",
+        "    Path p = create temp file with \"<h1>Head</h1>\" in UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://path/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"h1\").text().equals(\"Head\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser parser) uses custom parser on Path",
+      "path": "B0→B1→B2→B4→B7",
+      "precondition": "temp file exists with XML content",
+      "expectedResult": "Document.select(\"item\").text() equals element value, baseUri equals provided",
+      "tags": [
+        "positive",
+        "overload",
+        "file-path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse Path with parser",
+        "  GIVEN",
+        "    Path p = create temp file with \"<item>9</item>\" UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://xml/\";",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri, xmlParser);",
+        "  THEN",
+        "    assert doc.select(\"item\").text().equals(\"9\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL url, int timeoutMillis) returns Document for successful HTTP GET",
+      "path": "B0→B1→B2→B8→B9",
+      "precondition": "mock HttpConnection.connect to return Connection that returns known Document",
+      "expectedResult": "Document.body().html() equals mocked content",
+      "tags": [
+        "positive",
+        "overload",
+        "network",
+        "mock"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse URL success",
+        "  GIVEN",
+        "    URL url = new URL(\"http://ok.com\");",
+        "    MockedStatic<HttpConnection> stub = mock static HttpConnection.connect(url) to return conn;",
+        "    Connection conn = mock(Connection.class);",
+        "    when(conn.timeout(500)).thenReturn(conn);",
+        "    when(conn.get()).thenReturn(Parser.parse(\"<span>Y</span>\", \"\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, 500);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>Y</span>\");",
+        "    restore static stub;",
+        "END"
+      ]
+    }
+  ]
+}

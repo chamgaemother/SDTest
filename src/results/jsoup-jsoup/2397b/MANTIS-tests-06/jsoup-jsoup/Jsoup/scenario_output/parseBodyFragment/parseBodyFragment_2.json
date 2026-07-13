@@ -1,0 +1,76 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment(html,baseUri) ignores <base> tag for resolution when baseUri is non-empty",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "relative href resolved against provided baseUri, <base> tag retained but not used",
+      "tags": [
+        "positive",
+        "base-tag",
+        "resolution"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 override-base-tag-with-baseUri",
+        "  GIVEN",
+        "    String html = \"<base href='http://ignore.com/sub/'><a href='rel.html'>link</a>\";",
+        "    String baseUri = \"http://use.me/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<base href=\\\"http://ignore.com/sub/\\\">\");",
+        "    assert doc.body().html().contains(\"<a href=\\\"http://use.me/rel.html\\\">link</a>\");"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseBodyFragment(html,baseUri) resolves multiple '..' segments with iteration count >1",
+      "path": "B0→B1→B2(loop×2)→B5",
+      "precondition": "none",
+      "expectedResult": "href '../x/y.html' resolves up two directories correctly",
+      "tags": [
+        "positive",
+        "iteration",
+        "relative-path"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 resolve-multi-up-segments",
+        "  GIVEN",
+        "    String html = \"<a href='../../dir/page.html'>back</a>\";",
+        "    String baseUri = \"http://ex.com/a/b/c/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assertEquals(\"<a href=\\\"http://ex.com/a/dir/page.html\\\">back</a>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseBodyFragment(html) single-arg overload disallows resolution and leaves relative src unchanged when baseUri is empty",
+      "path": "B0→B1→B4→B8",
+      "precondition": "none",
+      "expectedResult": "protocol-relative and relative src attributes remain unchanged for empty baseUri overload",
+      "tags": [
+        "positive",
+        "single-arg",
+        "attribute"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 single-arg-relative-src",
+        "  GIVEN",
+        "    String html = \"<img src='img.png'><video src='//cdn/video.mp4'></video>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assertEquals(\"<img src=\\\"img.png\\\"><video src=\\\"//cdn/video.mp4\\\"></video>\", doc.body().html());"
+      ]
+    }
+  ]
+}

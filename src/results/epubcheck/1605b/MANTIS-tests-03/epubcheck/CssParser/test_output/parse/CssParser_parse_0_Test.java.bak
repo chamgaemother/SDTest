@@ -1,0 +1,181 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssErrorCode;
+import org.idpf.epubcheck.util.css.CssParser.ContextRestrictions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  // Helper stub to record errors
+  static class RecordingErrorHandler implements CssErrorHandler {
+    List<CssGrammarException> errors = new ArrayList<>();
+    @Override
+    public void error(CssGrammarException exception) {
+      errors.add(exception);
+    }
+    boolean hasErrorCode(CssErrorCode code) {
+      return errors.stream().anyMatch(e -> e.getCode() == code);
+    }
+  }
+
+  // Helper stub to record content handling events
+  static class RecordingContentHandler implements CssContentHandler {
+    int startDocCount = 0;
+    int endDocCount = 0;
+    int selectorsCount = 0;
+    int endSelectorsCount = 0;
+    List<String> startAtRuleNames = new ArrayList<>();
+    List<String> endAtRuleNames = new ArrayList<>();
+    int declarationCount = 0;
+    @Override public void startDocument() { startDocCount++; }
+    @Override public void endDocument() { endDocCount++; }
+    @Override public void selectors(List<CssSelector> selectors) { selectorsCount++; }
+    @Override public void endSelectors(List<CssSelector> selectors) { endSelectorsCount++; }
+    @Override public void startAtRule(CssAtRule atRule) { startAtRuleNames.add(atRule.getName().get()); }
+    @Override public void endAtRule(String name) { endAtRuleNames.add(name); }
+    @Override public void declaration(CssDeclaration declaration) { declarationCount++; }
+  }
+
+  @Test
+  @DisplayName("Empty input leads to startDocument and endDocument with zero iterations (hasNext false)")
+  public void test_TC01() throws Exception {
+    Reader reader = new StringReader("");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    // No tokens so loop skipped (branch false at hasNext)
+    assertEquals(1, doc.startDocCount);
+    assertEquals(1, doc.endDocCount);
+    assertEquals(0, doc.selectorsCount);
+    assertEquals(0, doc.startAtRuleNames.size());
+  }
+
+  @Test
+  @DisplayName("Single simple rule-set triggers handleRuleSet (branch false) and one iteration")
+  public void test_TC02() throws Exception {
+    // "h1{}" yields one ruleset without at-rule
+    Reader reader = new StringReader("h1{}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    assertEquals(1, doc.selectorsCount);
+    assertEquals(1, doc.endSelectorsCount);
+    assertEquals(1, doc.startDocCount);
+    assertEquals(1, doc.endDocCount);
+  }
+
+  @Test
+  @DisplayName("Single at-rule without block triggers handleAtRule path (branch true, hasBlock false)")
+  public void test_TC03() throws Exception {
+    // "@import url('a.css');" yields at-rule import without block
+    Reader reader = new StringReader("@import url('a.css');");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    assertTrue(doc.startAtRuleNames.contains("import"));
+    assertTrue(doc.endAtRuleNames.contains("import"));
+    assertEquals(0, doc.selectorsCount);
+  }
+
+  @Test
+  @DisplayName("Incomplete rule-set (missing '}') throws PrematureEOFException inside handleRuleSet then breaks loop")
+  public void test_TC04() throws Exception {
+    Reader reader = new StringReader("h1{");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    // Missing closing brace triggers premature EOF in handleRuleSet
+    assertThrows(org.idpf.epubcheck.util.css.CssTokenList.PrematureEOFException.class, () -> {
+      new CssParser().parse(reader, "id", err, doc);
+    });
+    assertTrue(err.hasErrorCode(CssErrorCode.GRAMMAR_PREMATURE_EOF));
+  }
+
+  @Test
+  @DisplayName("Multiple rule-sets triggers two iterations and handles branch false twice")
+  public void test_TC05() throws Exception {
+    // "a{} b{}" yields two rule-sets
+    Reader reader = new StringReader("a{} b{}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    assertEquals(2, doc.selectorsCount);
+    assertEquals(2, doc.endSelectorsCount);
+  }
+
+  @Test
+  @DisplayName("IOException thrown by Reader is propagated by scan")
+  public void test_TC06() {
+    Reader reader = new Reader() {
+      @Override public int read(char[] cbuf, int off, int len) throws IOException { throw new IOException("fail"); }
+      @Override public void close() throws IOException {}
+    };
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    assertThrows(IOException.class, () -> new CssParser().parse(reader, "id", err, doc));
+    assertEquals(0, doc.startDocCount);
+  }
+
+  @Test
+  @DisplayName("Overload parse(CssSource) delegates to parse(reader) with one simple rule-set")
+  public void test_TC07() throws Exception {
+    CssSource source = new CssSource() {
+      @Override public Reader newReader() { return new StringReader("p{}"); }
+      @Override public String getSystemID() { return "sys"; }
+    };
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(source, err, doc);
+    assertEquals(1, doc.selectorsCount);
+  }
+
+  @Test
+  @DisplayName("At-rule with block and nested rule-set triggers hasRuleSet true branch")
+  public void test_TC08() throws Exception {
+    // "@media{h1{}}" yields block with nested ruleset
+    Reader reader = new StringReader("@media{h1{}}\n");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    assertTrue(doc.startAtRuleNames.contains("media"));
+    assertEquals(1, doc.selectorsCount);
+    assertTrue(doc.endAtRuleNames.contains("media"));
+  }
+
+  @Test
+  @DisplayName("At-rule with block and declarations triggers hasRuleSet false branch")
+  public void test_TC09() throws Exception {
+    // "@media{color:red;}" yields at-rule block without nested ruleset
+    Reader reader = new StringReader("@media{color:red;}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    // One declaration inside media
+    assertEquals(1, doc.declarationCount);
+    assertTrue(doc.startAtRuleNames.contains("media"));
+    assertTrue(doc.endAtRuleNames.contains("media"));
+  }
+
+  @Test
+  @DisplayName("Mixed at-rule and rule-set in one document iterates twice with both branches")
+  public void test_TC10() throws Exception {
+    // "@x{} h1{}" yields one at-rule then one ruleset
+    Reader reader = new StringReader("@x{} h1{}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser().parse(reader, "id", err, doc);
+    assertTrue(doc.startAtRuleNames.contains("x"));
+    assertEquals(1, doc.selectorsCount);
+  }
+}

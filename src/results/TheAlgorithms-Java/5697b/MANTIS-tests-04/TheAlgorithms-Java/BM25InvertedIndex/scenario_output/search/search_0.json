@@ -1,0 +1,146 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search nonexistent term returns empty list (B0 false)",
+      "path": "B0→B1",
+      "precondition": "new BM25InvertedIndex with no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "empty-index",
+        "overload:String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search missing term",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    String term = \"unknown\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search single-term single-document returns one result sorted by BM25 (B0 true, loop-1, B3 true)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "none",
+      "expectedResult": "returned list size is 1; result.get(0).getDocId()==1",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "single-result",
+        "overload:String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search single doc",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Title\", 8.0, 2000, \"alpha beta\");",
+        "    String term = \"alpha\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search term in multiple docs returns sorted results by relevance (loop-N, B3 true)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "none",
+      "expectedResult": "returned list size is 2; first docId==2 has higher score than second docId==1",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "multi-result",
+        "overload:String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search two docs sorted",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"A\", 7.0, 1990, \"x x x y\");",
+        "    idx.addMovie(2, \"B\", 9.0, 2000, \"x y\");",
+        "    String term = \"x\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 2;",
+        "    assert results.get(0).getDocId() == 2;",
+        "    assert results.get(1).getDocId() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search term with index entry but missing movie skips entry (B3 false)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "index contains term->docId but movies map has no entry for that docId; remove movie via reflection",
+      "expectedResult": "returned list is empty after skipping missing movie",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "missing-movie",
+        "overload:String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search skip missing movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Name\", 5.0, 2010, \"term\");",
+        "    // Remove movie mapping to force movie==null",
+        "    idx.movies.remove(1);",
+        "    String term = \"term\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search uppercase term is normalized and returns result (term normalization at B0 true)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "none",
+      "expectedResult": "returned list size is 1; result.get(0).getDocId()==3",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "normalization",
+        "overload:String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search uppercase normalization",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(3, \"C\", 8.5, 2020, \"Gamma Delta\");",
+        "    String term = \"GAMMA\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 3;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+class Element_child_Test {
+
+    @Test
+    @DisplayName("TC01: child(0) on element with no children throws IndexOutOfBoundsException (empty list branch)")
+    void test_TC01() {
+        // GIVEN an element with no children -> childNodeSize==0 triggers empty branch
+        Element el = new Element("div");
+        // WHEN & THEN: calling child(0) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02: child(0) returns the only element child (single-element list branch)")
+    void test_TC02() {
+        // GIVEN an element with exactly one element child -> childNodeSize>0 and loop yields one Element
+        Element el = new Element("div");
+        el.appendElement("p");
+        // WHEN retrieving first child
+        Element result = el.child(0);
+        // THEN result.tagName()=="p"
+        assertEquals("p", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC03: child(-1) on non-empty element throws IndexOutOfBoundsException (negative index)")
+    void test_TC03() {
+        // GIVEN an element with one child -> childNodeSize>0 but negative index invalid
+        Element el = new Element("div");
+        el.appendElement("span");
+        // WHEN & THEN: negative index should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC04: child(1) on element with two element children returns second child (multi-element branch)")
+    void test_TC04() {
+        // GIVEN an element with two element children -> childNodeSize>0 and loop yields two Elements
+        Element el = new Element("div");
+        el.appendElement("a");
+        el.appendElement("b");
+        // WHEN retrieving second child
+        Element result = el.child(1);
+        // THEN result.tagName()=="b"
+        assertEquals("b", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC05: child(2) after appendChild(TextNode) and appendElement throws IndexOutOfBoundsException (mixed nodes)")
+    void test_TC05() {
+        // GIVEN an element with mixed children: one TextNode and one Element -> only one Element in filtered list
+        Element el = new Element("div");
+        el.appendText("text");
+        el.appendElement("p");
+        // WHEN & THEN: requesting index 2 (out of bounds on element-only list) throws exception
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(2));
+    }
+
+    @Test
+    @DisplayName("TC06: child(0) builds childElementsList with loop of size 3 and returns first element")
+    void test_TC06() {
+        // GIVEN an element with three li children -> childElementsList loop runs 3 times
+        Element el = new Element("ul");
+        el.appendElement("li");
+        el.appendElement("li");
+        el.appendElement("li");
+        // WHEN retrieving first child
+        Element result = el.child(0);
+        // THEN result.tagName()=="li"
+        assertEquals("li", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC07: child(2) on cached childElementsList returns third child without rebuilding (cache branch)")
+    void test_TC07() {
+        // GIVEN an element with three children and cache primed by a prior child(1) call -> shadowChildrenRef != null
+        Element el = new Element("div");
+        el.appendElement("x");
+        el.appendElement("y");
+        el.appendElement("z");
+        // PRIME cache by accessing child(1)
+        el.child(1);
+        // WHEN retrieving third child from cache
+        Element result = el.child(2);
+        // THEN result.tagName()=="z"
+        assertEquals("z", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC08: child(3) on element with three element children throws IndexOutOfBoundsException (upper bound)")
+    void test_TC08() {
+        // GIVEN an element with three children -> element count is 3, valid indexes are 0-2
+        Element el = new Element("div");
+        el.appendElement("a");
+        el.appendElement("b");
+        el.appendElement("c");
+        // WHEN & THEN: index 3 is out of upper bound, should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(3));
+    }
+}

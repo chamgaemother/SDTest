@@ -1,0 +1,83 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty Elements when no child nodes present (childNodeSize==0 branch-true, loop-0)")
+    public void test_TC01() {
+        // GIVEN an element with no children: childNodeSize == 0 triggers the empty shortcut branch
+        Element el = new Element("div");
+        // WHEN calling children()
+        Elements result = el.children();
+        // THEN expect an empty list
+        assertTrue(result.isEmpty(), "Expected no child elements when none have been added");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns empty Elements when childNodes exist but none are Element instances (childNodeSize>0 branch-false, loop-1 no Element)")
+    public void test_TC02() {
+        // GIVEN an element with one TextNode child: childNodeSize > 0 but no Element instances in loop
+        Element el = new Element("p");
+        el.appendText("text"); // adds a TextNode, not an Element
+        // WHEN calling children()
+        Elements result = el.children();
+        // THEN expect an empty list since the only child is non-Element
+        assertTrue(result.isEmpty(), "Expected no element children when only text nodes are present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() returns one-element list when exactly one Element child present (childNodeSize>0 branch-false, loop-1 include Element)")
+    public void test_TC03() {
+        // GIVEN a parent with exactly one Element child: loop will see one Element and include it
+        Element parent = new Element("div");
+        Element child = parent.appendElement("span");
+        // WHEN calling children()
+        Elements result = parent.children();
+        // THEN expect exactly that one child
+        assertAll(
+            () -> assertEquals(1, result.size(), "Expected exactly one child element"),
+            () -> assertSame(child, result.get(0), "Expected the returned element to be the same instance appended")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns all Element children in order when multiple Element and non-Element nodes present (branch-false, loop-N includes only Element instances)")
+    public void test_TC04() {
+        // GIVEN an element with mixed children: text, Element e1, text, Element e2
+        Element el = new Element("ul");
+        el.appendText("ignore"); // non-Element
+        Element e1 = el.appendElement("li"); // first Element to collect
+        el.appendText("skip"); // non-Element
+        Element e2 = el.appendElement("li"); // second Element to collect
+        // WHEN calling children()
+        Elements result = el.children();
+        // THEN expect only the two Element children in the order they were appended
+        assertAll(
+            () -> assertEquals(2, result.size(), "Expected two element children"),
+            () -> assertSame(e1, result.get(0), "First child should be e1"),
+            () -> assertSame(e2, result.get(1), "Second child should be e2")
+        );
+    }
+
+    @Test
+    @DisplayName("TC05: children() updates cache on structure change: first call caches list, then after modifying childNodes and invalidating cache, returns updated list (cache path then branch-false)")
+    public void test_TC05() {
+        // GIVEN an element and one initial child element 'a'
+        Element el = new Element("div");
+        el.appendElement("a"); // initial child, causes childNodeSize>0 branch
+        // WHEN first children() populates the cache with one Element
+        Elements first = el.children();
+        assertEquals(1, first.size(), "First children() should have one child");
+        // WHEN we mutate structure by appending another Element, invalidating the cache via nodelistChanged()
+        el.appendElement("b");
+        // THEN a second children() should re-evaluate and return two elements
+        Elements second = el.children();
+        assertEquals(2, second.size(), "After appending, children() should reflect two children");
+    }
+}

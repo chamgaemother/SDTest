@@ -1,0 +1,117 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07_O2",
+      "description": "parseInput(Reader, String) with non-null Reader and null baseUri throws IllegalArgumentException",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Reader = StringReader(\"<p>Test</p>\"), baseUri = null",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload",
+        "null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_O2 reader-baseUri-null",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<p>Test</p>\");",
+        "    String baseUri = null;",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O1",
+      "description": "parseInput(String, String) with empty html string returns Document with empty body",
+      "path": "B0→B1→B3→B5",
+      "precondition": "html = \"\", baseUri = \"http://ex/\"",
+      "expectedResult": "return non-null Document with body html equal to empty string",
+      "tags": [
+        "positive",
+        "boundary",
+        "empty-input",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08_O1 empty-html-string",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://ex/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    assertEquals(\"\", doc.body().html());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parseInput(String, String) with whitespace-only html returns Document with text node",
+      "path": "B0→B1→B3→B5",
+      "precondition": "html = \"   \", baseUri = \"http://site/\"",
+      "expectedResult": "return Document containing a text node with whitespace",
+      "tags": [
+        "positive",
+        "boundary",
+        "whitespace",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09_O1 whitespace-html",
+        "  GIVEN",
+        "    String html = \"   \";",
+        "    String baseUri = \"http://site/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    List<Node> nodes = doc.body().childNodes();",
+        "    assertEquals(1, nodes.size());",
+        "    assertTrue(nodes.get(0).toString().trim().isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "xmlParser.parseInput(String, String) with valid XML returns Document without HTML body tags",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser = Parser.xmlParser(), html = \"<root><a/></root>\", baseUri = \"uri\"",
+      "expectedResult": "return Document representing XML root element; doc.body() has no children",
+      "tags": [
+        "positive",
+        "xml",
+        "alternative-treebuilder",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10_O1 xml-parser-string-overload",
+        "  GIVEN",
+        "    String xml = \"<root><a/></root>\";",
+        "    String baseUri = \"uri\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    assertTrue(doc.select(\"root > a\").size() == 1);",
+        "    assertEquals(0, doc.body().childNodeSize());",
+        "END"
+      ]
+    }
+  ]
+}

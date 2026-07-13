@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "Reader overload with null Reader reference throws NullPointerException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser created via htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseFragmentInput reader-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    Element ctx = new Element(Tag.valueOf(\"div\"), \"base\", new Attributes());",
+        "    String base = \"base\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, ctx, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "String overload with null baseUri returns parsed nodes from stub TreeBuilder",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "StubTreeBuilder returns single nodeA",
+      "expectedResult": "returned list contains nodeA",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseFragmentInput string-null-baseUri",
+        "  GIVEN",
+        "    Node nodeA = new Element(Tag.valueOf(\"p\"), \"\", new Attributes());",
+        "    StubTreeBuilder sb = new StubTreeBuilder(List.of(nodeA));",
+        "    Parser parser = new Parser(sb);",
+        "    String fragment = \"<p>hi</p>\";",
+        "    Element ctx = new Element(Tag.valueOf(\"div\"), \"\", new Attributes());",
+        "    String base = null;",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, ctx, base);",
+        "  THEN",
+        "    assert result.equals(List.of(nodeA));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Reader overload with null baseUri returns parsed nodes from stub TreeBuilder",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "StubTreeBuilder returns single nodeB",
+      "expectedResult": "returned list contains nodeB",
+      "tags": [
+        "positive",
+        "null-baseUri",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput reader-null-baseUri",
+        "  GIVEN",
+        "    Node nodeB = new Element(Tag.valueOf(\"span\"), \"\", new Attributes());",
+        "    StubTreeBuilder sb = new StubTreeBuilder(List.of(nodeB));",
+        "    Parser parser = new Parser(sb);",
+        "    Reader reader = new StringReader(\"<span>ok</span>\");",
+        "    Element ctx = new Element(Tag.valueOf(\"span\"), \"\", new Attributes());",
+        "    String base = null;",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, ctx, base);",
+        "  THEN",
+        "    assert result.equals(List.of(nodeB));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Jsoup.parseBodyFragment(String, String)
+ */
+public class Jsoup_parseBodyFragment_1_Test {
+
+    @Test
+    @DisplayName("parseBodyFragment(String bodyHtml, String baseUri) with null baseUri throws NullPointerException")
+    public void test_TC11() {
+        // GIVEN a non-null bodyHtml and a null baseUri
+        String bodyHtml = "<p>Test</p>";
+        String baseUri = null;
+        // WHEN & THEN: expect NullPointerException because baseUri is required for resolution path B1→B6
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment respects <base href> tag and overrides provided baseUri for link resolution")
+    public void test_TC12() {
+        // GIVEN a fragment containing a <base> tag that should override the provided baseUri
+        String bodyHtml = "<base href='http://override.com/'><a href='a.html'>link</a>";
+        String baseUri = "http://example.com/";
+        // WHEN we parse the body fragment
+        Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);
+        // THEN the absolute URL for the link should use the base href from the fragment, not the provided baseUri
+        Elements links = doc.body().select("a");
+        assertEquals(1, links.size(), "There should be exactly one <a> element");
+        String absHref = links.get(0).absUrl("href");
+        assertEquals("http://override.com/a.html", absHref,
+                "The <base> tag in the fragment should override the provided baseUri for link resolution");
+    }
+}

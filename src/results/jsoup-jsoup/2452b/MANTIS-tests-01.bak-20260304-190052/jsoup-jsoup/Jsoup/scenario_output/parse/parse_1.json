@@ -1,0 +1,270 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName) uses file path as baseUri when charsetName non-null",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temporary HTML file exists with content '<p>foo</p>' and charset 'UTF-8'",
+      "expectedResult": "Document.body().html() == '<p>foo</p>' and doc.baseUri() equals file.getAbsolutePath()",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse file two-arg overload",
+        "  GIVEN",
+        "    File f = createTempFile(\"<p>foo</p>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>foo</p>\");",
+        "    assert doc.baseUri().equals(f.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File) determines charsetName=null, baseUri=file path, returns parsed document",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "temporary HTML file exists with content '<div>bar</div>'",
+      "expectedResult": "Document.body().html() == '<div>bar</div>' and doc.baseUri() equals file.getAbsolutePath()",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse file single-arg overload",
+        "  GIVEN",
+        "    File f = createTempFile(\"<div>bar</div>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>bar</div>\");",
+        "    assert doc.baseUri().equals(f.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File, charsetName, baseUri, parser) throws IOException on invalid charsetName",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "IOException is thrown for unsupported charset 'INVALID-CHARSET'",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse file with invalid charset",
+        "  GIVEN",
+        "    File f = createTempFile(\"<p>x</p>\");",
+        "    String badCharset = \"INVALID-CHARSET\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(f, badCharset, \"http://base/\", parser);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path, charsetName, baseUri) succeeds reading from Path",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Path p to temp file with '<span>z</span>' and charset 'UTF-8'",
+      "expectedResult": "Document.body().html() == '<span>z</span>' and doc.baseUri() equals baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "path"
+      ],
+      "priority": "P1",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC14 parse path with explicit charset and baseUri",
+        "  GIVEN",
+        "    Path p = writeTempFilePath(\"<span>z</span>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>z</span>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path, charsetName) uses path.toAbsolutePath() as baseUri with charsetName non-null",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Path p to temp file with '<em>e</em>' and charset 'UTF-8'",
+      "expectedResult": "Document.body().html() == '<em>e</em>' and doc.baseUri() equals p.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "default-base"
+      ],
+      "priority": "P1",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC15 parse path two-arg overload",
+        "  GIVEN",
+        "    Path p = writeTempFilePath(\"<em>e</em>\");",
+        "    String charset = \"UTF-8\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<em>e</em>\");",
+        "    assert doc.baseUri().equals(p.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path) determines charsetName=null and baseUri as absolute path",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Path p to temp file with '<i>i</i>'",
+      "expectedResult": "Document.body().html() == '<i>i</i>' and doc.baseUri() equals p.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "default-all"
+      ],
+      "priority": "P1",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC16 parse path single-arg overload",
+        "  GIVEN",
+        "    Path p = writeTempFilePath(\"<i>i</i>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i>i</i>\");",
+        "    assert doc.baseUri().equals(p.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(Path, charsetName, baseUri, parser) succeeds with XML parser",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Path p to temp file with '<root/>' and charset null",
+      "expectedResult": "Document.selectFirst('root') != null and doc.baseUri() equals baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P2",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC17 parse path with parser overload",
+        "  GIVEN",
+        "    Path p = writeTempFilePath(\"<root/>\");",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, null, \"http://b/\", parser);",
+        "  THEN",
+        "    assert doc.selectFirst(\"root\") != null;",
+        "    assert doc.baseUri().equals(\"http://b/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(InputStream, charsetName, baseUri, parser) closes stream after parse",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "ByteArrayInputStream in with XML '<a/>' and parser=xmlParser",
+      "expectedResult": "Document.selectFirst('a') != null and in.read() == -1",
+      "tags": [
+        "positive",
+        "overload",
+        "stream",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse inputstream with parser overload",
+        "  GIVEN",
+        "    ByteArrayInputStream in = new ByteArrayInputStream(\"<a/>\".getBytes());",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, \"UTF-8\", \"http://b/\", parser);",
+        "  THEN",
+        "    assert doc.selectFirst(\"a\") != null;",
+        "    assert in.read() == -1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(String, String) resolves relative links when baseUri non-empty",
+      "path": "B0→B1→B2→B3",
+      "precondition": "bodyHtml '<a href=\"r.html\">x</a>' and baseUri 'http://u/'",
+      "expectedResult": "doc.body().selectFirst('a').attr('abs:href') == 'http://u/r.html'",
+      "tags": [
+        "positive",
+        "overload",
+        "fragment",
+        "relative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"r.html\\\">x</a>\";",
+        "    String base = \"http://u/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, base);",
+        "  THEN",
+        "    assert doc.body().selectFirst(\"a\").attr(\"abs:href\").equals(\"http://u/r.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parseBodyFragment(String) uses empty baseUri and returns fragment",
+      "path": "B0→B1→B2→B4",
+      "precondition": "bodyHtml '<p>z</p>'",
+      "expectedResult": "doc.body().html() == '<p>z</p>' and doc.baseUri() == ''",
+      "tags": [
+        "positive",
+        "overload",
+        "fragment",
+        "default-base"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parseBodyFragment default overload",
+        "  GIVEN",
+        "    String html = \"<p>z</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>z</p>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    }
+  ]
+}

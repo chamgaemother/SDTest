@@ -1,0 +1,119 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "String overload with xmlParser and non-null context appends parsed node to context",
+      "path": "B0→B3→B4→B7→B8",
+      "precondition": "Element context = new Element(\"div\"); Parser parser = Parser.xmlParser()",
+      "expectedResult": "context.children() contains one Element with tagName 'a'",
+      "tags": [
+        "positive",
+        "xml",
+        "context",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 xmlParser string-overload with context",
+        "  GIVEN",
+        "    String fragment = \"<a/>\";",
+        "    Element context = new Element(\"div\");",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assertEquals(1, result.size());",
+        "    Element el = (Element) result.get(0);",
+        "    assertEquals(\"a\", el.tagName());",
+        "    assertTrue(context.children().contains(el));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Reader overload with stub TreeBuilderReturningEmpty and non-null context returns empty result and leaves context unchanged",
+      "path": "B0→B1→B2→B3→unlock",
+      "precondition": "StubTreeBuilderReturningEmpty stub = new StubTreeBuilderReturningEmpty(); Parser parser = new Parser(stub); Element context = new Element(\"div\");",
+      "expectedResult": "result.isEmpty() and context.children() is empty",
+      "tags": [
+        "negative",
+        "stub",
+        "context",
+        "reader-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 stub-returning-empty reader-overload with context",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"anything\");",
+        "    StubTreeBuilderReturningEmpty stub = new StubTreeBuilderReturningEmpty();",
+        "    Parser parser = new Parser(stub);",
+        "    Element context = new Element(\"div\");",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assertTrue(result.isEmpty());",
+        "    assertTrue(context.children().isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Reader overload with stub TreeBuilderThrowingIOException and non-null context throws UncheckedIOException",
+      "path": "B0→lock→B3→exception→unlock",
+      "precondition": "StubTreeBuilderThrowingIOException stub = new StubTreeBuilderThrowingIOException(); Parser parser = new Parser(stub); Element context = new Element(\"div\");",
+      "expectedResult": "throws UncheckedIOException",
+      "tags": [
+        "negative",
+        "exception",
+        "stub",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 stub-throwing-io reader-overload with context",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"any\");",
+        "    StubTreeBuilderThrowingIOException stub = new StubTreeBuilderThrowingIOException();",
+        "    Parser parser = new Parser(stub);",
+        "    Element context = new Element(\"div\");",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "String overload with xmlParser and empty fragment returns empty list and leaves context unchanged",
+      "path": "B0→B3→B4→B7(empty)→unlock",
+      "precondition": "String fragment = \"\"; Element context = new Element(\"p\"); Parser parser = Parser.xmlParser();",
+      "expectedResult": "result.isEmpty() and context.children() is empty",
+      "tags": [
+        "boundary",
+        "xml",
+        "empty",
+        "string-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 xmlParser string-overload empty-fragment",
+        "  GIVEN",
+        "    String fragment = \"\";",
+        "    Element context = new Element(\"p\");",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assertTrue(result.isEmpty());",
+        "    assertTrue(context.children().isEmpty());",
+        "END"
+      ]
+    }
+  ]
+}

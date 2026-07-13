@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "clone() on a document with XML output syntax clones OutputSettings.syntax=xml and its escapeMode change branch",
+      "path": "B0→B1→B2",
+      "precondition": "Document.createShell(\"http://x\").outputSettings().syntax(OutputSettings.Syntax.xml)",
+      "expectedResult": "clone.outputSettings().syntax() == Syntax.xml and clone.outputSettings().escapeMode() == Entities.EscapeMode.xhtml",
+      "tags": [
+        "positive",
+        "branch",
+        "output-settings",
+        "xml-syntax"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone xml-syntax-output",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://x\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assert cloned != doc;",
+        "    assert cloned.outputSettings().syntax() == OutputSettings.Syntax.xml;",
+        "    assert cloned.outputSettings().escapeMode() == Entities.EscapeMode.xhtml;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() on document with doctype node preserves and deep-copies the DocumentType child branch",
+      "path": "B0→B1→B2",
+      "precondition": "Document original with appended DocumentType node and text node before leaf node",
+      "expectedResult": "cloned.documentType() equals original.documentType() and modifications to clone.documentType().name() do not affect original",
+      "tags": [
+        "positive",
+        "branch",
+        "documentType",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 clone with doctype-child",
+        "  GIVEN",
+        "    Document original = new Document(\"http://u\");",
+        "    original.prependChild(new DocumentType(\"html\", \"\", \"\"));",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    assert cloned.documentType() != null;",
+        "    assertNotSame(cloned.documentType(), original.documentType());",
+        "    // Change the cloned doctype internal name and ensure original is unchanged",
+        "    cloned.documentType().attr(\"publicId\", \"changed\");",
+        "    assertNotEquals(cloned.documentType().attr(\"publicId\"), original.documentType().attr(\"publicId\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() on document with custom parser settings clones parser via Parser.clone() branch",
+      "path": "B0→B1→B2",
+      "precondition": "Document.createShell(\"p\").parser(Parser.htmlParser().settings(Parser.htmlParser().settings()))",
+      "expectedResult": "cloned.parser() != original.parser() and cloned.parser().settings() equals original.parser().settings()",
+      "tags": [
+        "positive",
+        "branch",
+        "parser",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 clone with custom parser",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser().settings(Parser.htmlParser().settings());",
+        "    Document original = Document.createShell(\"p\").parser(p);",
+        "  WHEN",
+        "    Document cloned = original.clone();",
+        "  THEN",
+        "    assertNotSame(cloned.parser(), original.parser());",
+        "    assertEquals(cloned.parser().settings(), original.parser().settings());",
+        "END"
+      ]
+    }
+  ]
+}

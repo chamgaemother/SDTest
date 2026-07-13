@@ -1,0 +1,109 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on element with no children returns empty Elements (childNodeSize()==0 branch)",
+      "path": "B0→B1",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() filters out non-Element nodes only (one TextNode only)",
+      "path": "B0→B1→B2(loop×1)",
+      "precondition": "Element el = new Element(\"p\"); el.appendChild(new TextNode(\"text\"));",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children only-text",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns only Element children preserving order (mixed nodes)",
+      "path": "B0→B1→B2(loop×3)",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"a\")); el.appendChild(new Element(\"span\")); el.appendChild(new Element(\"em\"));",
+      "expectedResult": "returned Elements contains span then em in that order",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"a\"));",
+        "    el.appendChild(new Element(\"span\"));",
+        "    el.appendChild(new Element(\"em\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0).tagName().equals(\"span\");",
+        "    assert result.get(1).tagName().equals(\"em\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() rebuilds cache after mutation: initial elements, then after appendChild",
+      "path": "B0→B1→B2(loop×2)→B1→B2(loop×3)",
+      "precondition": "Element el = new Element(\"ul\"); el.appendChild(new Element(\"li\")); el.appendChild(new Element(\"li\")); // initial two",
+      "expectedResult": "first call size==2; after el.appendChild(new Element(\"li\")), second call size==3",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "cache-invalidate",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-invalidation",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    el.appendChild(new Element(\"li\"));",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 2;",
+        "    assert second.size() == 3;"
+      ]
+    }
+  ]
+}

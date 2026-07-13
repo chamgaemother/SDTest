@@ -1,0 +1,117 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader, String) with empty Reader returns Document with empty body",
+      "path": "B0→B3→B4→B5",
+      "precondition": "Reader over empty string, non-null baseUri",
+      "expectedResult": "return Document whose body has no child nodes",
+      "tags": [
+        "positive",
+        "boundary",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput empty-reader",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    String baseUri = \"http://ex/\";",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 0;"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(Reader, String) with whitespace-only content produces single whitespace text node",
+      "path": "B0→B3→B4→B5",
+      "precondition": "Reader over whitespace-only string, non-null baseUri",
+      "expectedResult": "return Document whose body has one text node of whitespace",
+      "tags": [
+        "positive",
+        "iteration",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseInput whitespace-reader",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"   \\n  \");",
+        "    String baseUri = \"http://site/\";",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodes().size() == 1;",
+        "    assert doc.body().childNodes().get(0).toString().trim().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput(String, String) bubbles RuntimeException from custom TreeBuilder.parse",
+      "path": "B0→B1→B2→B6",
+      "precondition": "Parser with stub TreeBuilder whose parse(html) throws RuntimeException",
+      "expectedResult": "RuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseInput string-overload treebuilder-exception",
+        "  GIVEN",
+        "    TreeBuilder tb = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new RuntimeException(\"fail\");",
+        "      }",
+        "    };",
+        "    Parser parser = new Parser(tb);",
+        "    String html = \"<p>fail</p>\";",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws RuntimeException with message \"fail\";"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseInput(Reader, String) bubbles unchecked error from custom TreeBuilder.parseFragment",
+      "path": "B0→B3→B4→B6",
+      "precondition": "Parser with stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parseInput reader-overload treebuilder-exception",
+        "  GIVEN",
+        "    TreeBuilder tb = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new IllegalStateException(\"oops\");",
+        "      }",
+        "    };",
+        "    Reader reader = new StringReader(\"<div>x</div>\");",
+        "    String baseUri = \"base\";",
+        "    Parser parser = new Parser(tb);",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"oops\";"
+      ]
+    }
+  ]
+}

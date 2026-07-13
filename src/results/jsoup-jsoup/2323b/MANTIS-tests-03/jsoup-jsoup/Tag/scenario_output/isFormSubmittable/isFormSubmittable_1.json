@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "valueOf(null, namespace, settings) throws IllegalArgumentException for null tagName",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown due to Validate.notNull(tagName)",
+      "tags": [
+        "negative",
+        "exception",
+        "valueOf-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 valueOf null-tagName throws",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "valueOf(trimmed-empty, namespace, settings) throws IllegalArgumentException for empty tagName",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown due to Validate.notEmpty(tagName)",
+      "tags": [
+        "negative",
+        "exception",
+        "valueOf-overload",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 valueOf empty-tagName throws",
+        "  GIVEN",
+        "    String tagName = \"   \"; // whitespace only",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "valueOf(nonexistent, custom namespace, preserve case) returns new tag with formSubmit=false",
+      "path": "B0→B1→B4→B5→B6",
+      "precondition": "none",
+      "expectedResult": "return Tag instance with isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "unknown-tag",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 unknown-tag new-instance",
+        "  GIVEN",
+        "    String tagName = \"myCustom\";",
+        "    String normalName = ParseSettings.normalName(tagName);",
+        "    String namespace = \"http://example.com/ns\";",
+        "    ParseSettings settings = new ParseSettings(false, false);",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, namespace, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;",
+        "END"
+      ]
+    }
+  ]
+}

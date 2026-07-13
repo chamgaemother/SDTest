@@ -1,0 +1,66 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_0_Test {
+
+    @Test
+    @DisplayName("dataset returns empty map when element has no attributes (loop-0)")
+    public void test_TC01() {
+        // Given an element with no attributes: should trigger zero-iteration in dataset filter loop
+        Element el = new Element("div");
+        // When
+        Map<String, String> ds = el.dataset();
+        // Then: expect empty map
+        assertTrue(ds.isEmpty(), "Expected dataset to be empty when no data- attributes present");
+    }
+
+    @Test
+    @DisplayName("dataset returns single-entry map for one data- attribute (loop-1)")
+    public void test_TC02() {
+        // Given an element with one data- attribute: triggers exactly one iteration yielding one entry
+        Element el = new Element("span");
+        el.attr("data-user", "alice");
+        // When
+        Map<String, String> ds = el.dataset();
+        // Then: map should contain exactly one entry "user"->"alice"
+        assertEquals(1, ds.size(), "Dataset size should be 1 for one data- attribute");
+        assertEquals("alice", ds.get("user"), "Dataset should map 'user' to 'alice'");
+    }
+
+    @Test
+    @DisplayName("dataset ignores non-data attributes and returns only data entries (loop-N)")
+    public void test_TC03() {
+        // Given element with mixed attributes: 'class' should be filtered out, two data- attributes included
+        Element el = new Element("p");
+        el.attr("class", "x");       // non-data- attribute to ignore
+        el.attr("data-a", "1");     // data- attribute #1
+        el.attr("data-b", "2");     // data- attribute #2
+        // When
+        Map<String, String> ds = el.dataset();
+        // Then: only keys 'a' and 'b' present, 'class' not present
+        assertEquals(2, ds.size(), "Dataset should contain exactly two entries");
+        assertTrue(ds.containsKey("a"), "Dataset should contain key 'a'");
+        assertTrue(ds.containsKey("b"), "Dataset should contain key 'b'");
+        assertFalse(ds.containsKey("class"), "Dataset should not include non 'data-' attributes");
+        assertEquals("1", ds.get("a"));
+        assertEquals("2", ds.get("b"));
+    }
+
+    @Test
+    @DisplayName("dataset map is live view: modifying returned map updates element attributes")
+    public void test_TC04() {
+        // Given: initial empty dataset map from new element
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset();
+        // When: put an entry into the returned map -> should update underlying attributes live
+        ds.put("k", "v");
+        // Then: element attributes should reflect 'data-k' = 'v', and subsequent dataset reflects it
+        assertEquals("v", el.attr("data-k"), "Element attribute 'data-k' should be set to 'v' by ds.put");
+        assertEquals("v", el.dataset().get("k"), "Dataset view should reflect the newly added entry");
+    }
+}

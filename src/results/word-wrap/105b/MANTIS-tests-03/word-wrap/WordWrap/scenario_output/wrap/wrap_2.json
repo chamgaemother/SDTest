@@ -1,0 +1,181 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "ignore '\\r' carriage return branch then emit following character on EOF",
+      "path": "B0→B1→B2(c=='\\r')→B3→B4(EOF)→B5(final word write)",
+      "precondition": "Reader over \"\\rA\"",
+      "expectedResult": "return value is \"A\"",
+      "tags": [
+        "branch",
+        "carriage-return",
+        "EOF"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"\\rA\");",
+        "    WordWrap.Builder b = WordWrap.from(r);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"A\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "punctuation branch sets previousWasPunctuation and non-letter branch retains comma",
+      "path": "B0→B1→B2(letter->word)×4→B6(punctuation)→B7(non-word branch)→...→B_end",
+      "precondition": "text \"word, next\", maxWidth=3",
+      "expectedResult": "at least one output line contains ','",
+      "tags": [
+        "branch",
+        "punctuation",
+        "non-word"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 punctuation-retained",
+        "  GIVEN",
+        "    WordWrap.Builder b = WordWrap.from(\"word, next\").maxWidth(3);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.stream().anyMatch(l -> l.contains(\",\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "includeExtraWordChars makes comma a word character preventing split at comma",
+      "path": "B0→B1→isWordCharacter true for ','→B8→final write",
+      "precondition": "text \"a,b\", maxWidth=2, includeExtraWordChars(\",\")",
+      "expectedResult": "return value is \"a,b\"",
+      "tags": [
+        "branch",
+        "extra-word-char",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 include-comma-as-word",
+        "  GIVEN",
+        "    WordWrap.Builder b = WordWrap.from(\"a,b\").maxWidth(2).includeExtraWordChars(\",\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a,b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "custom stringWidth function always returns constant preventing any segment exceeding maxWidth",
+      "path": "B0→tooLong always false→no wrapping branches→final write",
+      "precondition": "text \"longtext\", maxWidth=1, stringWidth(s)->1",
+      "expectedResult": "return value is \"longtext\"",
+      "tags": [
+        "branch",
+        "custom-stringWidth",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 custom-stringWidth-no-wrap",
+        "  GIVEN",
+        "    Function<CharSequence,Number> f = s -> 1;",
+        "    WordWrap.Builder b = WordWrap.from(\"longtext\").stringWidth(f).maxWidth(1);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"longtext\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap(LineConsumer) throws IORuntimeException when consumer.writeNewLine fails",
+      "path": "B0→B1→consumer.writeNewLine throws→catch→throw IORuntimeException",
+      "precondition": "LineConsumer whose writeNewLine() throws IOException",
+      "expectedResult": "IORuntimeException is thrown wrapping underlying IOException",
+      "tags": [
+        "exception",
+        "LineConsumer",
+        "IO"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 wrap-consumer-newline-exception",
+        "  GIVEN",
+        "    LineConsumer bad = new LineConsumer() {",
+        "      write(String s){}; write(char[] c,int o,int l){}; writeNewLine(){ throw new IOException(\"fail\"); }",
+        "    };",
+        "    Reader r = new StringReader(\"a\\n\");",
+        "    WordWrap.Builder b = WordWrap.from(r, false);",
+        "  WHEN",
+        "    call b.wrap(bad);",
+        "  THEN",
+        "    throws IORuntimeException with cause message \"fail\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "close(reader) throws IORuntimeException when underlying Reader.close fails",
+      "path": "B0→B1→EOF→finally→close→IOException→throw IORuntimeException",
+      "precondition": "Reader that throws IOException on close()",
+      "expectedResult": "IORuntimeException is thrown with cause message \"close fail\"",
+      "tags": [
+        "exception",
+        "close",
+        "IO"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 reader-close-exception",
+        "  GIVEN",
+        "    Reader r = new Reader() { read(...) { return -1; } close() throws IOException(\"close fail\"); };",
+        "    WordWrap.Builder b = WordWrap.from(r, true);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws IORuntimeException with cause message \"close fail\"",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "wrap(String filename,Charset) writes wrapped output to file via overload chain",
+      "path": "B0→wrap(File,Charset)→wrap(Writer)→write→final",
+      "precondition": "temp filename, text \"xyz123\", charset=US-ASCII",
+      "expectedResult": "file content equals \"xyz123\"",
+      "tags": [
+        "overload",
+        "file",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 wrap-to-filename-with-charset",
+        "  GIVEN",
+        "    File temp = createTempFile();",
+        "    String fname = temp.getAbsolutePath();",
+        "    WordWrap.Builder b = WordWrap.from(\"xyz123\");",
+        "  WHEN",
+        "    b.wrap(fname, StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    assert new String(Files.readAllBytes(temp.toPath()), US_ASCII).equals(\"xyz123\");",
+        "END"
+      ]
+    }
+  ]
+}

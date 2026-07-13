@@ -1,0 +1,116 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("TC19: parse(File, String charsetName) returns Document and uses file absolute path as baseUri when charsetName is non-null")
+    public void test_TC19() throws IOException {
+        // create a temporary HTML file with known UTF-8 content to hit File + charset overload branch
+        Path tempPath = Files.createTempFile("jsoup-test-", ".html");
+        Files.write(tempPath, "<p>Test</p>".getBytes("UTF-8"));
+        File file = tempPath.toFile();
+        String charset = "UTF-8";
+
+        // invoke the method under test
+        Document doc = Jsoup.parse(file, charset);
+
+        // verify that baseUri is the file absolute path and the body contains our markup
+        assertEquals(file.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri to be the file's absolute path for non-null charset");
+        assertTrue(doc.body().html().contains("<p>Test</p>"),
+                "Expected body HTML to contain the original <p>Test</p> fragment");
+        
+        // cleanup
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    @DisplayName("TC20: parse(Path) returns Document and uses path.toAbsolutePath as baseUri for default charset")
+    public void test_TC20() throws IOException {
+        // write a temp HTML file without BOM to test Path default overload branch
+        Path tempPath = Files.createTempFile("jsoup-path-", ".html");
+        Files.write(tempPath, "<div>PathTest</div>".getBytes("UTF-8"));
+        Path p = tempPath;
+
+        // call overload that takes Path only
+        Document doc = Jsoup.parse(p);
+
+        // expect baseUri equals p.toAbsolutePath().toString() and body contains our div
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri(),
+                "Expected baseUri to be the path's absolute string for default Path overload");
+        assertTrue(doc.body().html().contains("<div>PathTest</div>"),
+                "Expected body HTML to contain the <div>PathTest</div> markup");
+        
+        // cleanup
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    @DisplayName("TC21: parse(Path, String charsetName) returns Document using explicit charset and path absolute as baseUri")
+    public void test_TC21() throws IOException {
+        // prepare a file with ISO-8859-1 encoding to hit Path + charset overload branch
+        Path tempPath = Files.createTempFile("jsoup-iso-", ".html");
+        String isoContent = "<span>Å</span>";
+        Files.write(tempPath, isoContent.getBytes("ISO-8859-1"));
+        Path p = tempPath;
+        String charset = "ISO-8859-1";
+
+        // parse with explicit charset
+        Document doc = Jsoup.parse(p, charset);
+
+        // verify correct baseUri and content
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri(),
+                "Expected baseUri to be the path's absolute string for explicit charset overload");
+        assertTrue(doc.body().html().contains("Å"),
+                "Expected body HTML to contain the ISO-encoded character Å");
+        
+        // cleanup
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    @DisplayName("TC22: parse(Path) throws IOException when path does not exist")
+    public void test_TC22() {
+        // choose a non-existent path to trigger IOException in Path overload
+        Path missing = Paths.get("no_such_file.html");
+
+        // expect an IOException when calling parse on a missing file
+        assertThrows(IOException.class, () -> Jsoup.parse(missing),
+                "Expected IOException when parsing a non-existent Path");
+    }
+
+    @Test
+    @DisplayName("TC23: parse(InputStream, String charsetName, String baseUri, Parser) uses provided Parser overload on InputStream")
+    public void test_TC23() throws IOException {
+        // prepare ByteArrayInputStream over an XML fragment to hit InputStream + parser overload
+        byte[] xmlBytes = "<tag>A</tag>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(xmlBytes);
+        String charset = "UTF-8";
+        String baseUri = "http://x/";
+        Parser parser = Parser.xmlParser();
+
+        // invoke the InputStream+charset+baseUri+parser overload
+        Document doc = Jsoup.parse(in, charset, baseUri, parser);
+
+        // baseUri should be exactly what we passed, and body should equal the XML fragment
+        assertEquals(baseUri, doc.baseUri(),
+                "Expected baseUri to match the provided baseUri for InputStream+parser overload");
+        assertEquals("<tag>A</tag>", doc.body().html(),
+                "Expected body HTML to exactly equal the XML fragment when using xmlParser");
+    }
+}

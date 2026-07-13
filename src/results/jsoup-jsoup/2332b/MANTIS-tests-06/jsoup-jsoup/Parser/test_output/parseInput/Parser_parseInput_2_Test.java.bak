@@ -1,0 +1,90 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with empty Reader returns Document with empty body")
+    public void test_TC11() {
+        // GIVEN a reader over an empty string to trigger the branch where no nodes are created
+        Reader reader = new StringReader("");
+        String baseUri = "http://ex/";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // WHEN parsing the empty input
+        Document doc = parser.parseInput(reader, baseUri);
+        // THEN the document body should have no child nodes (empty body)
+        Element body = doc.body();
+        assertNotNull(body, "Body element should not be null");
+        assertEquals(0, body.childNodeSize(), "Expected no child nodes in the body for empty input");
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with whitespace-only content produces single whitespace text node")
+    public void test_TC12() {
+        // GIVEN a reader over whitespace-only content to cover iteration over whitespace characters
+        String whitespaceContent = "   \n  ";
+        Reader reader = new StringReader(whitespaceContent);
+        String baseUri = "http://site/";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // WHEN parsing the whitespace-only input
+        Document doc = parser.parseInput(reader, baseUri);
+        // THEN the body should contain exactly one text node which is whitespace
+        Element body = doc.body();
+        List<Node> nodes = body.childNodes();
+        assertEquals(1, nodes.size(), "Expected exactly one text node for whitespace-only input");
+        String text = nodes.get(0).toString();
+        // the trimmed text should be empty, confirming it's a whitespace text node
+        assertTrue(text.trim().isEmpty(), "Expected the single node to be purely whitespace");
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) bubbles RuntimeException from custom TreeBuilder.parse")
+    public void test_TC13() {
+        // GIVEN a stub TreeBuilder that throws a RuntimeException on parse to hit the exception path
+        TreeBuilder stubTb = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new RuntimeException("fail");
+            }
+        };
+        Parser parser = new Parser(stubTb);
+        String html = "<p>fail</p>";
+        String baseUri = "uri";
+        // WHEN / THEN: parsing via the String overload should propagate the RuntimeException
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> parser.parseInput(html, baseUri),
+            "Expected RuntimeException to be thrown from stubbed parse method");
+        assertEquals("fail", ex.getMessage(), "Exception message should bubble up unchanged");
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader, String) bubbles unchecked error from custom TreeBuilder.parse")
+    public void test_TC14() {
+        // GIVEN a stub TreeBuilder that throws IllegalStateException to test unchecked exception propagation
+        TreeBuilder stubTb = new HtmlTreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new IllegalStateException("oops");
+            }
+        };
+        Reader reader = new StringReader("<div>x</div>");
+        String baseUri = "base";
+        Parser parser = new Parser(stubTb);
+        // WHEN / THEN: parsing should propagate the IllegalStateException
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> parser.parseInput(reader, baseUri),
+            "Expected IllegalStateException to be thrown from stubbed parse method");
+        assertEquals("oops", ex.getMessage(), "Exception message should bubble up unchanged");
+    }
+}

@@ -1,0 +1,156 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) returns a Document with resolved baseUri",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() contains fragment and baseUri equals provided value",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String bodyHtml = \"<div>X</div>\";",
+        "    String baseUri = \"https://site/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<div>X</div>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(String bodyHtml) returns a Document with empty baseUri",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() contains fragment and baseUri is empty",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment without baseUri",
+        "  GIVEN",
+        "    String bodyHtml = \"<span>Y</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<span>Y</span>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "clean(String html, String baseUri, Safelist) sets DummyUri when baseUri empty and preserveRelativeLinks true",
+      "path": "B0→B1(empty)→B2(preserve=true)→B5",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML contains allowed fragment and baseUri used internally is DummyUri",
+      "tags": [
+        "positive",
+        "branch",
+        "clean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 clean with preserveRelativeLinks true",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"p.png\\\">link</a>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.simpleText().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert out.contains(\"<a href=\\\"p.png\\\">link</a>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "clean(String html, String baseUri, Safelist) does not set DummyUri when preserveRelativeLinks false",
+      "path": "B0→B1(empty)→B2(preserve=false)→B6",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML contains allowed fragment and no exception",
+      "tags": [
+        "positive",
+        "branch",
+        "clean"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 clean without preserveRelativeLinks",
+        "  GIVEN",
+        "    String html = \"<b>Z</b>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.none();",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert out.equals(\"Z\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "clean(String html, String baseUri, Safelist, OutputSettings) applies custom output settings",
+      "path": "B0→B1→B2→B3→B7",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML respects provided outputSettings",
+      "tags": [
+        "positive",
+        "overload",
+        "clean"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 clean with outputSettings",
+        "  GIVEN",
+        "    String html = \"<p>Hi</p>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.basic();",
+        "    Document.OutputSettings settings = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist, settings);",
+        "  THEN",
+        "    assert out.contains(\"<p>Hi</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "isValid(String bodyHtml, Safelist) returns false for disallowed tags",
+      "path": "B0→B1→B2(isValidBodyHtml=false)→B4",
+      "precondition": "none",
+      "expectedResult": "return value is false",
+      "tags": [
+        "negative",
+        "validation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 isValid returns false",
+        "  GIVEN",
+        "    String html = \"<script>alert(1)</script>\";",
+        "    Safelist safelist = Safelist.relaxed();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid == false;",
+        "END"
+      ]
+    }
+  ]
+}

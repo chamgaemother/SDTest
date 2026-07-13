@@ -1,0 +1,106 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Uppercase known form-submit tag 'INPUT' with preserveTagCase=false returns static instance with formSubmit=true",
+      "path": "B0→B1→B2→B10→B11→B12",
+      "precondition": "ParseSettings preserveTagCase=false",
+      "expectedResult": "returned tag == static registry instance; isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "case-insensitive",
+        "identity"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 uppercase-known-submit-without-preserve-case",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveLowerCase;",
+        "  WHEN",
+        "    Tag resultTag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "  THEN",
+        "    assertSame(Tag.valueOf(\"input\"), resultTag);",
+        "    assertTrue(resultTag.isFormSubmittable());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Null tagName in valueOf throws NullPointerException before isFormSubmittable",
+      "path": "B0→B1→exception",
+      "precondition": "none",
+      "expectedResult": "NullPointerException thrown by Validate.notNull(tagName)",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null-tagName-exception",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Blank tagName (\"   \") in valueOf throws IllegalArgumentException after trim",
+      "path": "B0→B1→B3→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException thrown by Validate.notEmpty(tagName)",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 blank-tagName-exception",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Null namespace in valueOf throws NullPointerException before isFormSubmittable",
+      "path": "B0→B1→B2→exception",
+      "precondition": "none",
+      "expectedResult": "NullPointerException thrown by Validate.notNull(namespace)",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 null-namespace-exception",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

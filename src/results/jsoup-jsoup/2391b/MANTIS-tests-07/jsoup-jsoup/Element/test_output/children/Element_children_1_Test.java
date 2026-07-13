@@ -1,0 +1,29 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * Test class for Element.children() method
+ */
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("children() on element with only non-Element child nodes (childNodeSize()>0 but no Element instances) returns empty list")
+    public void test_TC07() {
+        // Create a div element and append two TextNode children (non-Element nodes)
+        Element el = new Element("div");
+        // appendText ensures childNodeSize()>0 but no Element instances in childNodes list
+        el.appendText("one");
+        el.appendText("two");
+
+        // When: calling children(), which should filter out only Element instances
+        Elements result = el.children();
+
+        // Then: expect an empty Elements list since no Element children exist (B3→B4 loop with zero hits)
+        assertEquals(0, result.size(), "Expected no Element children when only text nodes are present");
+    }
+}

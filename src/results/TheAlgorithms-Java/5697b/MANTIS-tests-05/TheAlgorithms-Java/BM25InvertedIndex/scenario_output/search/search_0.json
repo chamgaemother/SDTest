@@ -1,0 +1,121 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search(term not in index) returns empty list (branch B0 false)",
+      "path": "B0→B1",
+      "precondition": "new BM25InvertedIndex with no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "empty-index",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN an empty BM25InvertedIndex",
+        "WHEN calling search(\"missing\")",
+        "THEN the result list is empty"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search(term with empty posting list) returns empty list (branch B0 true, loop-0)",
+      "path": "B0→B2→B7→B6",
+      "precondition": "BM25InvertedIndex instanced; via reflection inject index.put(\"foo\", new HashMap<>());",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "reflection-injection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a BM25InvertedIndex with index[\"foo\"] = empty map (injected via reflection)",
+        "WHEN calling search(\"foo\")",
+        "THEN the result list is empty"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search(term with posting entry but missing movie) skips entry (B3 false)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "BM25InvertedIndex instanced; via reflection inject index.put(\"bar\", map containing entry docId=1→freq=2); movies map remains empty",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "movie-null",
+        "reflection-injection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a BM25InvertedIndex with index[\"bar\"] = {1=2} and no movies added",
+        "WHEN calling search(\"bar\")",
+        "THEN the result list is empty"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search(single-term) returns single SearchResult (B3 true, loop-1)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "new BM25InvertedIndex; addMovie(1,\"Name\",\"\",0,\"alpha alpha\")",
+      "expectedResult": "returned list contains one SearchResult with docId=1 and relevanceScore = computeBM25Score(2,3,idf) where idf = log((1-1+0.5)/(1+0.5))",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "normal-case"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a BM25InvertedIndex with one movie containing term \"alpha\" twice",
+        "WHEN calling search(\"alpha\")",
+        "THEN result list size is 1 and result.get(0).getDocId() == 1"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search(term in two movies) returns two SearchResults sorted by descending score (loop-N)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "new BM25InvertedIndex; addMovie(1,\"A\",0.0,0,\"x x x\"); addMovie(2,\"B\",0.0,0,\"x x\");",
+      "expectedResult": "returned list contains SearchResult(docId=1) before SearchResult(docId=2)",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "sorting",
+        "multiple-results"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a BM25InvertedIndex with two movies: doc1 has term thrice, doc2 twice",
+        "WHEN calling search(\"x\")",
+        "THEN result.get(0).getDocId() == 1 and result.get(1).getDocId() == 2"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "search(term case-insensitivity) matches uppercase input (B0 true, normalization)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "new BM25InvertedIndex; addMovie(1,\"T\",\"\",0,\"Bone\")",
+      "expectedResult": "returned list contains one result with docId=1",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "case-normalization"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a BM25InvertedIndex with movie containing term \"bone\"",
+        "WHEN calling search(\"BONE\")",
+        "THEN result list size is 1 and result.get(0).getDocId() == 1"
+      ]
+    }
+  ]
+}

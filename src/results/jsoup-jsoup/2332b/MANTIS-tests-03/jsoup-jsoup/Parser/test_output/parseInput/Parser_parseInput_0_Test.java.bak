@@ -1,0 +1,122 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String, String) with valid HTML and baseUri returns parsed Document")
+    public void test_TC01_O1() {
+        // setup: branch through normal HTML parsing path
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        String html = "<p>Test</p>";
+        String base = "http://example.com";
+        // exercise
+        Document doc = parser.parseInput(html, base);
+        // verify baseUri and parsed content
+        assertEquals(base, doc.baseUri(), "Document baseUri should match provided base");
+        Element p = doc.selectFirst("p");
+        assertNotNull(p, "Parsed document should contain a <p> element");
+        assertEquals("Test", p.text(), "<p> text should be 'Test'");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseInput(String, String) with empty HTML returns empty body Document")
+    public void test_TC02_O1() {
+        // setup: empty HTML still follows normal parsing path
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        String html = "";
+        String base = "base";
+        // exercise
+        Document doc = parser.parseInput(html, base);
+        // verify empty body and base URI
+        assertEquals(base, doc.baseUri(), "Document baseUri should match provided base");
+        assertTrue(doc.body().children().isEmpty(), "Body should have no children for empty HTML");
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseInput(String, String) with null HTML throws NullPointerException")
+    public void test_TC03_O1() {
+        // setup: null HTML should cause NPE when creating StringReader
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        String html = null;
+        String base = "b";
+        // exercise & verify
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, base),
+            "parseInput should throw NullPointerException when html is null");
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseInput(String, String) with null baseUri throws IllegalArgumentException")
+    public void test_TC04_O1() {
+        // setup: null baseUri should be invalid
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        String html = "<div/>";
+        String base = null;
+        // exercise & verify that IllegalArgumentException is thrown due to invalid baseUri
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> parser.parseInput(html, base),
+            "parseInput should throw IllegalArgumentException when baseUri is null");
+        assertTrue(ex.getMessage().contains("baseUri"),
+            "Exception message should mention 'baseUri'");
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseInput(Reader, String) with valid Reader returns parsed Document")
+    public void test_TC05_O2() {
+        // setup: branch via Reader overload for normal parsing
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        Reader rdr = new StringReader("<span>R</span>");
+        String base = "u";
+        // exercise
+        Document doc = parser.parseInput(rdr, base);
+        // verify
+        assertEquals(base, doc.baseUri(), "Document baseUri should match provided base");
+        Element span = doc.selectFirst("span");
+        assertNotNull(span, "Parsed document should contain a <span> element");
+        assertEquals("R", span.text(), "<span> text should be 'R'");
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseInput(Reader, String) when TreeBuilder.parse throws IOException wraps in RuntimeException")
+    public void test_TC06_O2() {
+        // setup: custom TreeBuilder that throws IOException in parse
+        TreeBuilder customBuilder = new TreeBuilder() {
+            @Override
+            public Document parse(Reader reader, String baseUri, Parser parser) throws IOException {
+                throw new IOException("io fail");
+            }
+            @Override
+            public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                return null;
+            }
+            @Override
+            public TreeBuilder newInstance() {
+                return this; // return same stub for copy
+            }
+            @Override
+            public ParseSettings defaultSettings() { return new ParseSettings(); }
+        };
+        Parser parser = new Parser(customBuilder);
+        Reader rdr = new StringReader("x");
+        String base = "b";
+        // exercise & verify wrapping of IOException in RuntimeException
+        RuntimeException rex = assertThrows(RuntimeException.class,
+            () -> parser.parseInput(rdr, base),
+            "parseInput should wrap IOException into RuntimeException");
+        assertNotNull(rex.getCause(), "Wrapped exception should have a cause");
+        assertTrue(rex.getCause() instanceof IOException,
+            "Cause of RuntimeException should be IOException");
+    }
+}

@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild preserves existing childNodes list instance when non-empty (ensureChildNodes skip creation)",
+      "path": "B0→B3→B4→B5",
+      "precondition": "parent.ensureChildNodes() called once",
+      "expectedResult": "childNodes instance before and after appendChild is same NodeList",
+      "tags": [
+        "positive",
+        "iteration",
+        "instance-reuse"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild preserves NodeList instance",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    // invoke ensureChildNodes to create NodeList",
+        "    List<Node> before = parent.ensureChildNodes();",
+        "    TextNode child = new TextNode(\"x\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    // same list instance used",
+        "    assert parent.ensureChildNodes() == before;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "appendChild resets shadowChildrenRef cache on element parent (nodelistChanged path)",
+      "path": "B0→B3→B4→B5→B6",
+      "precondition": "parent has at least one Element child to build shadowChildrenRef",
+      "expectedResult": "shadowChildrenRef field is null after appendChild",
+      "tags": [
+        "positive",
+        "cache-invalidation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild invalidates shadowChildrenRef cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child1 = new Element(\"p\");",
+        "    parent.appendChild(child1);",
+        "    // populate cache",
+        "    parent.childElementsList();",
+        "    // ensure cache non-null via reflection",
+        "    assert getPrivate(parent, \"shadowChildrenRef\") != null;",
+        "    Element child2 = new Element(\"span\");",
+        "  WHEN",
+        "    parent.appendChild(child2);",
+        "  THEN",
+        "    // cache invalidated",
+        "    assert getPrivate(parent, \"shadowChildrenRef\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild of an Element node correctly reparents and assigns sibling index",
+      "path": "B0→B3→B4→B5",
+      "precondition": "oldParent.appendChild(grandChild) executed",
+      "expectedResult": "newParent has the Element child at index 0 and child.parent updated",
+      "tags": [
+        "positive",
+        "reparent",
+        "element-node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 appendChild element node reparenting",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"section\");",
+        "    Element child = new Element(\"article\");",
+        "    oldParent.appendChild(child);",
+        "    assertEquals(1, oldParent.childNodeSize());",
+        "  WHEN",
+        "    Element returned = newParent.appendChild(child);",
+        "  THEN",
+        "    assertSame(newParent, returned);",
+        "    assertEquals(0, child.siblingIndex());",
+        "    assertEquals(1, newParent.childNodeSize());",
+        "    assertEquals(0, oldParent.childNodeSize());",
+        "END"
+      ]
+    }
+  ]
+}

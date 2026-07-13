@@ -1,0 +1,72 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * JUnit5 tests for org.jsoup.Jsoup parsing methods based on provided scenarios.
+ */
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(html, baseUri) with valid inputs uses default HTML parser and sets baseUri")
+    public void test_TC10() {
+        // Given: a simple HTML fragment and a non-empty baseUri to follow path B0->B1->B4->B5
+        String html = "<span>OK</span>";
+        String baseUri = "http://test.example";
+        // When: parsing with default HTML parser overload
+        Document doc = Jsoup.parse(html, baseUri);
+        // Then: the body HTML preserves the fragment and baseUri is set correctly
+        assertEquals("<span>OK</span>", doc.body().html(), "Body HTML should match input fragment");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be preserved as provided");
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with null html throws NullPointerException")
+    public void test_TC11() {
+        // Given: null HTML input to trigger NullPointerException at entry (path B0->B1->B6)
+        String baseUri = "http://any";
+        // When/Then: parsing null html should throw NPE
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(null, baseUri));
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with null baseUri throws NullPointerException")
+    public void test_TC12() {
+        // Given: valid HTML but null baseUri to trigger NPE at entry (path B0->B1->B6)
+        String html = "<div/>";
+        // When/Then: parsing with null baseUri should throw NPE
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, null));
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(bodyHtml, baseUri) with empty baseUri uses \"\" and returns fragment in body")
+    public void test_TC13() {
+        // Given: a body fragment and default-base overload uses empty baseUri (path B0->B1->B2->B3)
+        String fragment = "<p>frag</p>";
+        // When: parsing body fragment without specifying baseUri
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then: body HTML matches fragment and baseUri is empty string
+        assertEquals("<p>frag</p>", doc.body().html(), "Body HTML should contain the fragment exactly");
+        assertEquals("", doc.baseUri(), "Default baseUri for parseBodyFragment should be empty string");
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) with unsupported protocol throws MalformedURLException")
+    public void test_TC14() throws Exception {
+        // Given: a URL with unsupported protocol 'ftp' and a timeout
+        URL url = new URL("ftp://example.com");
+        int timeout = 1000;
+        // When/Then: parsing via URL overload should throw MalformedURLException for unsupported protocol (path B0->B1->B7)
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, timeout));
+    }
+}

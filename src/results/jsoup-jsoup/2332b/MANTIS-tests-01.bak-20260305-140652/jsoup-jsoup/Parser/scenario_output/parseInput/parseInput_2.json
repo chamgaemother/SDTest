@@ -1,0 +1,98 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseInput(Reader,String) propagates RuntimeException from treeBuilder.parse",
+      "path": "B4→B6",
+      "precondition": "Parser with stub TreeBuilder whose parse(Reader,…) throws RuntimeException",
+      "expectedResult": "RuntimeException is thrown with the stub message",
+      "tags": [
+        "exception",
+        "reader-overload",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput reader-overload builder-exception",
+        "  GIVEN",
+        "    // Arrange a stub TreeBuilder that throws",
+        "    TreeBuilder stubBuilder = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new RuntimeException(\"boom\");",
+        "      }",
+        "    };",
+        "    Parser p = new Parser(stubBuilder);",
+        "    Reader reader = new StringReader(\"<x/>\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    // Act & capture",
+        "    call p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    // Assert that the stub exception propagates",
+        "    throws RuntimeException(\"boom\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String,String) with XML parser and null baseUri returns Document with null baseUri",
+      "path": "B1→B2→B4→B5",
+      "precondition": "Parser.xmlParser() and null baseUri",
+      "expectedResult": "returns Document; document.baseUri() is null",
+      "tags": [
+        "positive",
+        "string-overload",
+        "xml",
+        "null-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 xmlParser parseInput string-overload null-baseUri",
+        "  GIVEN",
+        "    String xml = \"<root/>\";",
+        "    String baseUri = null;",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    assertNull(doc.baseUri());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseInput(String,String) returns null when underlying stub TreeBuilder.parse returns null",
+      "path": "B1→B2→B3",
+      "precondition": "Parser with stub TreeBuilder whose parse(Reader,…) returns null",
+      "expectedResult": "returned Document instance is null",
+      "tags": [
+        "boundary",
+        "string-overload",
+        "stub",
+        "null-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 string-overload builder-null-return",
+        "  GIVEN",
+        "    TreeBuilder stubBuilder = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        return null;",
+        "      }",
+        "    };",
+        "    Parser p = new Parser(stubBuilder);",
+        "    String html = \"<empty/>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    Document result = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assertNull(result);",
+        "END"
+      ]
+    }
+  ]
+}

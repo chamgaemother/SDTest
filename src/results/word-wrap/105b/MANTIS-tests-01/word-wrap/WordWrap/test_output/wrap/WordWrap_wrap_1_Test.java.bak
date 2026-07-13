@@ -1,0 +1,117 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.Preconditions;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("wrap() ignores carriage return characters (branch ch=='\\r')")
+    public void test_TC11() throws Exception {
+        // Input contains 'A', then CR which should be ignored, then LF to trigger newline branch
+        String text = "A\r\n";
+        // use public from(CharSequence)
+        WordWrap.Builder builder = WordWrap.from(text);
+        String result = builder.wrap();
+        // Expect only 'A' plus LF
+        assertEquals("A\n", result);
+    }
+
+    @Test
+    @DisplayName("wrap() breaks long word without inserting hyphens when insertHyphens=false")
+    public void test_TC12() throws Exception {
+        // A single long word exceeding maxWidth=3 causes splits; insertHyphens=false so no hyphens
+        String longWord = "CCCCCCCC";
+        WordWrap.Builder builder = WordWrap.from(longWord)
+                .maxWidth(3)
+                .insertHyphens(false);
+        String result = builder.wrap();
+        // No hyphen should appear anywhere in the output
+        assertFalse(result.contains("-"));
+        // Splitting into multiple lines means at least one newline
+        assertTrue(result.split("\\n").length > 1);
+    }
+
+    @Test
+    @DisplayName("wrap() with custom stringWidth causing every char to exceed width triggers repeated word splits")
+    public void test_TC13() throws Exception {
+        // Custom width function doubling length makes any char length>1 => immediate break
+        String text = "XYZ";
+        Function<CharSequence, Number> widthFn = s -> s.length() * 2;
+        WordWrap.Builder builder = WordWrap.from(text)
+                .maxWidth(1)
+                .stringWidth(widthFn);
+        List<String> lines = builder.wrapToList();
+        // Each character should be on its own line
+        assertEquals(3, lines.size());
+        assertEquals("X", lines.get(0));
+        assertEquals("Y", lines.get(1));
+        assertEquals("Z", lines.get(2));
+    }
+
+    @Test
+    @DisplayName("wrap() treats dot as punctuation when excluded via excludeExtraWordChars (branch isPunctuation)")
+    public void test_TC14() throws Exception {
+        // Text 'a.b' with '.' excluded from word characters, so '.' is punctuation => break before dot
+        String text = "a.b";
+        WordWrap.Builder builder = WordWrap.from(text)
+                .excludeExtraWordChars(".");
+        List<String> lines = builder.wrapToList();
+        // First line should be 'a'
+        assertEquals("a", lines.get(0));
+        // Second line should start with '.b'
+        assertTrue(lines.get(1).startsWith(".b"));
+    }
+
+    @Test
+    @DisplayName("wrap() propagates IORuntimeException when reader.close() throws IOException")
+    public void test_TC15() throws Exception {
+        // Create Reader that returns -1 on read, and throws IOException on close to hit close(reader) catch
+        Reader faulty = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) {
+                return -1; // EOF immediately
+            }
+            @Override
+            public void close() throws IOException {
+                throw new IOException("close-fail");
+            }
+        };
+        // Use reflection to call package-private from(Reader, boolean)
+        Method m = WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);
+        m.setAccessible(true);
+        WordWrap.Builder builder = (WordWrap.Builder) m.invoke(null, faulty, true);
+        StringWriter out = new StringWriter();
+        // wrap(Writer) should propagate IORuntimeException on close
+        Exception ex = assertThrows(RuntimeException.class, () -> builder.wrap(out));
+        // Ensure cause message contains "close-fail"
+        assertTrue(ex.getCause() instanceof IOException);
+        assertEquals("close-fail", ex.getCause().getMessage());
+    }
+
+    @Test
+    @DisplayName("wrap() fromClasspathUtf8 on missing resource throws NullPointerException")
+    public void test_TC16() {
+        // Attempt to wrap a non-existent classpath resource
+        String resource = "/no_such.txt";
+        WordWrap.Builder builder = WordWrap.fromClasspathUtf8(resource);
+        // Calling wrap() should cause a NullPointerException due to getResourceAsStream returning null
+        assertThrows(NullPointerException.class, () -> builder.wrap());
+    }
+}

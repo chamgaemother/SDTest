@@ -1,0 +1,106 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Deep clone produces distinct Document instance with same base state",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document is not the same instance as original; returned.location() equals original.location(); returned.baseUri() equals original.baseUri(); returned.quirksMode() equals original.quirksMode()",
+      "tags": [
+        "instance-distinct",
+        "field-copy",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone distinct instance",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy != orig;",
+        "    assert copy.location().equals(orig.location());",
+        "    assert copy.quirksMode() == orig.quirksMode();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Deep clone clones OutputSettings so modifications do not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "modifying copy.outputSettings().prettyPrint(false) does not change orig.outputSettings().prettyPrint()",
+      "tags": [
+        "outputSettings",
+        "independence",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone outputSettings independence",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"u\");",
+        "    Document copy = orig.clone();",
+        "  WHEN",
+        "    copy.outputSettings().prettyPrint(false);",
+        "  THEN",
+        "    assert orig.outputSettings().prettyPrint() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Deep clone clones Parser so modifications do not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after copy.parser().setTrackErrors(1), orig.parser().getTrackErrors() remains at default",
+      "tags": [
+        "parser",
+        "independence",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone parser independence",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"u\");",
+        "    int defaultErrors = orig.parser().getTrackErrors().size();",
+        "    Document copy = orig.clone();",
+        "  WHEN",
+        "    copy.parser().setTrackErrors(1);",
+        "  THEN",
+        "    assert orig.parser().getTrackErrors().size() == defaultErrors;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Deep clone preserves Connection field when set non-null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "copy.connection() returns the same Connection instance set on orig",
+      "tags": [
+        "connection",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone preserve connection",
+        "  GIVEN",
+        "    Connection conn = Jsoup.newSession();",
+        "    Document orig = Document.createShell(\"u\").connection(conn);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.connection() == conn;",
+        "END"
+      ]
+    }
+  ]
+}

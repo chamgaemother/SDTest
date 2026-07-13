@@ -1,0 +1,214 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseInput(String,baseUri) creates a Document with expected title and baseUri",
+      "path": "B0→B1→B2(string overload)→B3→B6",
+      "precondition": "none",
+      "expectedResult": "Document.body().text() == \"Hello\" and doc.baseUri() == \"http://example/\"",
+      "tags": [
+        "positive",
+        "overload",
+        "parseInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput string-overload",
+        "  GIVEN",
+        "    String html = \"<html><body>Hello</body></html>\";",
+        "    String base = \"http://example/\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, base);",
+        "  THEN",
+        "    assert doc.body().text().equals(\"Hello\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(Reader,baseUri) with empty input returns empty body",
+      "path": "B0→B1→B4(reader overload)→B3→B6",
+      "precondition": "none",
+      "expectedResult": "Document.body().children().isEmpty() == true",
+      "tags": [
+        "boundary",
+        "overload",
+        "parseInput"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput reader-overload empty",
+        "  GIVEN",
+        "    Reader input = new StringReader(\"\");",
+        "    String base = \"URL\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(input, base);",
+        "  THEN",
+        "    assert doc.body().children().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseFragmentInput(fragment, null, baseUri) returns list of nodes for top-level fragment",
+      "path": "B0→B1→B2(fragment String)→B5(context null)→B7",
+      "precondition": "none",
+      "expectedResult": "list contains one Element with tag name 'p' and text 'X'",
+      "tags": [
+        "positive",
+        "nullable",
+        "parseFragmentInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseFragmentInput with null context",
+        "  GIVEN",
+        "    String frag = \"<p>X</p>\";",
+        "    String base = \"B\";",
+        "  WHEN",
+        "    List<Node> nodes = new Parser(new HtmlTreeBuilder()).parseFragmentInput(frag, null, base);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert (nodes.get(0) instanceof Element);",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"p\");",
+        "    assert nodes.get(0).childNode(0).toString().equals(\"X\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "static parseFragment(html, context, baseUri) uses Document.createShell and retains head empty",
+      "path": "B0→S1(static)→T1→L1(loop removal none)→L4(append nodes)",
+      "precondition": "context = Document.createShell(\"u\").body()",
+      "expectedResult": "result.body().childNodeSize()==1 and head().children().isEmpty()",
+      "tags": [
+        "positive",
+        "static",
+        "parseBodyFragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment single-node",
+        "  GIVEN",
+        "    String bodyHtml = \"<div>1</div>\";",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(bodyHtml, base);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 1;",
+        "    assert doc.head().children().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "static parseBodyFragment with multiple siblings removes all but first in reverse loop",
+      "path": "B0→S1(static)→T1→L2(loop×n)→L4",
+      "precondition": "html has three top-level siblings",
+      "expectedResult": "doc.body().children().size() == 3 and order preserved",
+      "tags": [
+        "positive",
+        "loop",
+        "static",
+        "parseBodyFragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseBodyFragment multiple",
+        "  GIVEN",
+        "    String bodyHtml = \"<a/> <b/> <c/>\";",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(bodyHtml, base);",
+        "  THEN",
+        "    assert doc.body().child(0).tagName().equals(\"a\");",
+        "    assert doc.body().child(1).tagName().equals(\"b\");",
+        "    assert doc.body().child(2).tagName().equals(\"c\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "defaultNamespace() returns SVG namespace for svgBuilder via xmlParser and then setTreeBuilder",
+      "path": "B0→B1→B2(xmlParser)→S3(setTreeBuilder)→N1(defaultNamespace)",
+      "precondition": "parser = Parser.xmlParser(); parser.setTreeBuilder(new SvgTreeBuilderStub())",
+      "expectedResult": "parser.defaultNamespace() == SvgTreeBuilderStub.NAMESPACE",
+      "tags": [
+        "positive",
+        "custom",
+        "defaultNamespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 defaultNamespace custom builder",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    SvgTreeBuilderStub stub = new SvgTreeBuilderStub();",
+        "  WHEN",
+        "    parser.setTreeBuilder(stub);",
+        "  THEN",
+        "    assert parser.defaultNamespace().equals(SvgTreeBuilderStub.NAMESPACE);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "isContentForTagData returns true for 'script' and false for 'div'",
+      "path": "B0→C1(true) and B0→C1(false)",
+      "precondition": "parser = Parser.htmlParser()",
+      "expectedResult": "true for 'script', false for 'div'",
+      "tags": [
+        "positive",
+        "branch",
+        "isContentForTagData"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 isContentForTagData branches",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    boolean scriptOk = parser.isContentForTagData(\"script\");",
+        "    boolean divOk = parser.isContentForTagData(\"div\");",
+        "  THEN",
+        "    assert scriptOk;",
+        "    assert !divOk;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "static parseXmlFragment with invalid XML fragment still returns nodes list",
+      "path": "B0→X1(static)→P1(parseXmlFragment)→R1",
+      "precondition": "fragment contains mismatched tags",
+      "expectedResult": "list size >=1 without exception",
+      "tags": [
+        "positive",
+        "xml",
+        "static",
+        "parseXmlFragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parseXmlFragment malformed",
+        "  GIVEN",
+        "    String xml = \"<a><b></a>\";",
+        "    String base = \"xml:base\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, base);",
+        "  THEN",
+        "    assert nodes.size() > 0;",
+        "END"
+      ]
+    }
+  ]
+}

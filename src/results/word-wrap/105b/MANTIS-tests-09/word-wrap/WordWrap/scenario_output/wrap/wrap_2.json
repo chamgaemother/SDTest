@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "wrap(Writer) ignores lone carriage return without producing output or error",
+      "path": "B0→B3(loop×1: c=='\\r')→B1(loop→exit)→B2(final-word→write)",
+      "precondition": "none",
+      "expectedResult": "single non-whitespace char after CR is written without extra newline",
+      "tags": [
+        "control-char",
+        "carriage-return",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 carriage-return-ignored",
+        "  GIVEN",
+        "    Reader r = new java.io.StringReader(\"\\rX\");",
+        "    Builder b = WordWrap.from(r, true);",
+        "    StringWriter w = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"X\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "from(File,Charset) throws IORuntimeException when source File not found",
+      "path": "B0→B7(FileInputStream→FileNotFoundException)→exception-handler→throw IORuntimeException",
+      "precondition": "file does not exist on disk",
+      "expectedResult": "IORuntimeException is thrown with FileNotFoundException as cause",
+      "tags": [
+        "exception",
+        "io",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 missing-file-throws",
+        "  GIVEN",
+        "    File f = new File(\"nonexistent_file_123.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException with cause instanceof FileNotFoundException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "wrap(Writer) breaks very short word (length=2) into prefix and remainder without hyphens",
+      "path": "B0→B3(loop×1: isWordCharacter)→tooLong(lineAndWord)→line.length==0→breakWords&insertHyphens→writeBrokenWord→else-branch→newline→final write",
+      "precondition": "none",
+      "expectedResult": "word \"ab\" with maxWidth=1 splits into \"a\" then newline then \"b\"",
+      "tags": [
+        "boundary",
+        "break-words",
+        "hyphen-branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 short-word-split-no-hyphen",
+        "  GIVEN",
+        "    Builder b = WordWrap.from((CharSequence)\"ab\").maxWidth(1).insertHyphens(true);",
+        "    StringWriter w = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    // first line: 'a', second line: 'b'",
+        "    assert w.toString().equals(\"a\\n b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "wrap(Writer) uses custom newLine string when writing line breaks",
+      "path": "B0→B3(loop×1: ch=='\\n')→writeNewLine uses custom delimiter→final",
+      "precondition": "none",
+      "expectedResult": "line break uses CRLF sequence",
+      "tags": [
+        "configuration",
+        "newLine",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 custom-newLine-CRLF",
+        "  GIVEN",
+        "    Builder b = WordWrap.from((CharSequence)\"a b\").maxWidth(1).newLine(\"\\r\\n\");",
+        "    StringWriter w = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"a\\r\\n b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "from(InputStream,Charset) path reads stream and wraps text correctly",
+      "path": "B0→from(InputStream)→wrap→writer branch→final return",
+      "precondition": "none",
+      "expectedResult": "content of UTF-8 InputStream is wrapped like from(Reader)",
+      "tags": [
+        "overload",
+        "positive",
+        "stream"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 wrap-from-inputstream-utf8",
+        "  GIVEN",
+        "    byte[] data = \"hello world\".getBytes(StandardCharsets.UTF_8);",
+        "    InputStream in = new java.io.ByteArrayInputStream(data);",
+        "    Builder b = WordWrap.fromUtf8(in).maxWidth(5);",
+        "    StringWriter w = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    // splits after 'hello'",
+        "    assert w.toString().equals(\"hello\\n world\");",
+        "END"
+      ]
+    }
+  ]
+}

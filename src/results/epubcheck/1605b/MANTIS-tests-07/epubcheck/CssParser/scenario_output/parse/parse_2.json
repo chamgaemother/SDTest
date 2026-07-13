@@ -1,0 +1,101 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "parse(): breaks loop on PrematureEOFException thrown by handleAtRule and still calls endDocument",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "CssParser.handleAtRule overridden to throw PrematureEOFException",
+      "expectedResult": "endDocument called once without propagating exception",
+      "tags": [
+        "exception",
+        "loop-exit",
+        "ATKEYWORD"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parse premature EOF in at-rule",
+        "  GIVEN",
+        "    // stub scan() to return iterator yielding one ATKEYWORD token then no more",
+        "    CssParser parser = new CssParser() {",
+        "      @Override protected CssTokenList.CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {",
+        "        return new FakeIterator(new CssToken[]{ new CssToken(CssToken.Type.ATKEYWORD, \"@x\", null,0) }, null);",
+        "      }",
+        "      @Override protected void handleAtRule(CssToken t, CssTokenIterator i, CssContentHandler d, CssErrorHandler e) throws CssException {",
+        "        throw new PrematureEOFException();",
+        "      }",
+        "    };",
+        "    StubContentHandler doc = new StubContentHandler();",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    // parser catches PrematureEOFException and breaks",
+        "    assert doc.startCount == 1;",
+        "    assert doc.endCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(): breaks loop on PrematureEOFException thrown by handleRuleSet and still calls endDocument",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "CssParser.handleRuleSet overridden to throw PrematureEOFException",
+      "expectedResult": "endDocument called once without propagating exception",
+      "tags": [
+        "exception",
+        "loop-exit",
+        "ruleSet"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse premature EOF in rule-set",
+        "  GIVEN",
+        "    // stub scan() to return iterator yielding one IDENT token then no more",
+        "    CssParser parser = new CssParser() {",
+        "      @Override protected CssTokenList.CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {",
+        "        return new FakeIterator(new CssToken[]{ new CssToken(CssToken.Type.IDENT, \"id\", null,0) }, null);",
+        "      }",
+        "      @Override protected void handleRuleSet(CssToken t, CssTokenIterator i, CssContentHandler d, CssErrorHandler e) throws CssException {",
+        "        throw new PrematureEOFException();",
+        "      }",
+        "    };",
+        "    StubContentHandler doc = new StubContentHandler();",
+        "  WHEN",
+        "    parser.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    assert doc.startCount == 1;",
+        "    assert doc.endCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(): propagates unchecked RuntimeException from scan()",
+      "path": "B0",
+      "precondition": "CssParser.scan overridden to throw IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "propagation",
+        "scan"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse scan runtime exception",
+        "  GIVEN",
+        "    CssParser parser = new CssParser() {",
+        "      @Override protected CssTokenList.CssTokenIterator scan(Reader r, String id, CssErrorHandler e) {",
+        "        throw new IllegalStateException(\"fatal\");",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    call parser.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), new StubContentHandler());",
+        "  THEN",
+        "    throws IllegalStateException with message \"fatal\";",
+        "END"
+      ]
+    }
+  ]
+}

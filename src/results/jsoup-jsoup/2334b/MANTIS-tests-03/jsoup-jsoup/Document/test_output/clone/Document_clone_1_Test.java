@@ -1,0 +1,92 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.Validate;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_1_Test {
+
+    @Test
+    @DisplayName("clone() on a Document with a custom Connection preserves the connection reference in the clone")
+    public void test_TC04() {
+        // GIVEN a Document with a non-null Connection to test branch where connection != null
+        Connection conn = Jsoup.connect("http://example.com");
+        Document original = new Document("http://example.com");
+        original.connection(conn);
+        // WHEN cloning
+        Document clone = original.clone();
+        // THEN the clone should reuse the same Connection instance (no new session)
+        assertSame(conn, clone.connection(), "clone should preserve the same Connection reference");
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with a modified OutputSettings.indentAmount triggers deep copy of settings")
+    public void test_TC05() {
+        // GIVEN a Document with custom indent amount to exercise deep copy of outputSettings
+        Document original = new Document("uri");
+        original.outputSettings().indentAmount(5);
+        assertEquals(5, original.outputSettings().indentAmount(), "precondition: indentAmount set to 5");
+        // WHEN cloning
+        Document clone = original.clone();
+        // THEN the outputSettings instance should be different but have equal indentAmount
+        assertNotSame(original.outputSettings(), clone.outputSettings(),
+                "outputSettings should be a distinct deep-copied instance");
+        assertEquals(5, clone.outputSettings().indentAmount(),
+                "clone should preserve the indentAmount value");
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with parser having custom settings yields independent parser clones")
+    public void test_TC06() throws Exception {
+        // GIVEN a Document with a custom XML parser to test deep copy of parser
+        Parser xmlParser = Parser.xmlParser();
+        Document original = new Document("uri");
+        original.parser(xmlParser);
+        // WHEN cloning
+        Document clone = original.clone();
+        // THEN parser instances should be distinct
+        assertNotSame(original.parser(), clone.parser(),
+                "parser() should return a distinct Parser instance after clone");
+        // AND they should have the same default namespace to reflect same settings
+        assertEquals(original.parser().defaultNamespace(), clone.parser().defaultNamespace(),
+                "clone.parser should retain same default namespace settings");
+        // Also verify via reflection that the private settings field is equal in content
+        Field settingsField = Parser.class.getDeclaredField("settings");
+        settingsField.setAccessible(true);
+        Object origSettings = settingsField.get(original.parser());
+        Object cloneSettings = settingsField.get(clone.parser());
+        assertNotSame(origSettings, cloneSettings,
+                "internal ParseSettings instance should be deep-copied, not the same reference");
+        assertEquals(origSettings, cloneSettings,
+                "deep-copied ParseSettings should be equal in content");
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with existing child FormElements retains the correct child structure")
+    public void test_TC07() {
+        // GIVEN a Document shell with two <form> elements appended to body to test node cloning
+        Document original = Document.createShell("uri");
+        original.body().append("<form id=one><input /></form>");
+        original.body().append("<form id=two><input /></form>");
+        List<FormElement> origForms = original.forms();
+        assertEquals(2, origForms.size(), "precondition: original has two form elements");
+        // WHEN cloning
+        Document clone = original.clone();
+        List<FormElement> cloneForms = clone.forms();
+        // THEN clone should also have two form elements
+        assertEquals(2, cloneForms.size(), "clone should have same number of form elements");
+        // AND each FormElement should be a distinct instance from the original
+        for (int i = 0; i < 2; i++) {
+            assertNotSame(origForms.get(i), cloneForms.get(i),
+                    "each form element in clone should be a distinct instance from the original");
+        }
+    }
+}

@@ -1,0 +1,89 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+/**
+ * Test class for Jsoup.parseBodyFragment overloads.
+ */
+public class Jsoup_parseBodyFragment_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseBodyFragment(String bodyHtml, String baseUri) with simple single tag retains element in body")
+    public void test_TC01_O1() {
+        // Branch path B0→B1→B2→B3: normal flow parsing a single element body fragment
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        assertNotNull(doc, "Document should not be null");
+        // The body should contain exactly the provided <p>Test</p>
+        assertEquals("<p>Test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseBodyFragment(String bodyHtml, String baseUri) with empty bodyHtml yields empty body")
+    public void test_TC02_O1() {
+        // Branch path B0→B1→B2→B3: normal flow with empty input produces empty body
+        String html = "";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        assertNotNull(doc, "Document should not be null");
+        // Empty input should produce empty body content
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseBodyFragment(String bodyHtml, String baseUri) resolves relative link when baseUri non-empty")
+    public void test_TC03_O1() {
+        // Branch path B0→B1→B2→B3: when baseUri is non-empty, relative href should resolve
+        String html = "<a href=\"/path\">link</a>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        assertNotNull(doc, "Document should not be null");
+        Element link = doc.selectFirst("a");
+        assertNotNull(link, "Link element should be present");
+        // absUrl should combine baseUri and relative /path
+        assertEquals("http://example.com/path", link.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseBodyFragment(String bodyHtml, String baseUri) retains fragments order with multiple siblings")
+    public void test_TC04_O1() {
+        // Branch path B0→B1→B2→B3: parsing multiple sibling elements should maintain order
+        String html = "<div>A</div><span>B</span>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parseBodyFragment(html, baseUri);
+        assertNotNull(doc, "Document should not be null");
+        // The body html should exactly match the sibling order
+        assertEquals("<div>A</div><span>B</span>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseBodyFragment(String bodyHtml) with simple single tag and empty baseUri produces same result as explicit empty baseUri")
+    public void test_TC05_O2() {
+        // Branch path B0→B1→B2→B3: using overload without baseUri should treat baseUri as empty string
+        String html = "<p>Alpha</p>";
+        Document doc = Jsoup.parseBodyFragment(html);
+        assertNotNull(doc, "Document should not be null");
+        // Should produce same html as explicit empty baseUri
+        assertEquals("<p>Alpha</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseBodyFragment(String bodyHtml) does not resolve relative link when baseUri empty")
+    public void test_TC06_O2() {
+        // Branch path B0→B1→B2→B3: with empty baseUri, relative href should not resolve to absolute, absUrl returns empty
+        String html = "<a href=\"/no\">x</a>";
+        Document doc = Jsoup.parseBodyFragment(html);
+        assertNotNull(doc, "Document should not be null");
+        Element link = doc.selectFirst("a");
+        assertNotNull(link, "Link element should be present");
+        // Without baseUri, absUrl should return empty string for relative URL
+        assertEquals("", link.absUrl("href"));
+    }
+}

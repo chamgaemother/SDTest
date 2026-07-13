@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() handles concurrent access: first thread populates cache, second sees cache hit under synchronization",
+      "path": "B0→B1(childNodeSize>0)→B2(cachedChildren==null)→B3→B4",
+      "precondition": "Element with attributes() called and two appended element children",
+      "expectedResult": "both threads receive same Elements list of size 2 without race",
+      "tags": [
+        "positive",
+        "concurrency",
+        "cache"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 concurrent-children-cache",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes();",
+        "    el.appendElement(\"span\"); el.appendElement(\"em\");",
+        "  WHEN",
+        "    // Thread A",
+        "    Runnable r1 = () -> assertEquals(2, el.children().size());",
+        "    // Thread B",
+        "    Runnable r2 = () -> assertEquals(2, el.children().size());",
+        "    runBothConcurrently(r1, r2);",
+        "  THEN",
+        "    // both see size 2 and no exceptions",
+        "    passes without errors;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() re-stashes cache when modCount mismatch in cachedChildren (attributes.userData stale entry)",
+      "path": "B0→B1(childNodeSize>0)→B2(cachedChildren!=null?modCountMismatch→null)→B3→B4",
+      "precondition": "Element with attributes() called, one child appended, manual userData injection with wrong modCount",
+      "expectedResult": "children() returns correct fresh list of size 1 and updates cache",
+      "tags": [
+        "positive",
+        "cache",
+        "modcount"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 stale-cache-modcount",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.attributes();",
+        "    Element li = el.appendElement(\"li\");",
+        "    // inject stale cache ref",
+        "    Map<String,Object> data = el.attributes().userData();",
+        "    data.put(\"jsoup.childEls\", new WeakReference<>(Collections.singletonList(li)));",
+        "    data.put(\"jsoup.childElsMod\", -999);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == li;",
+        "    // cache updated to modCount==childNodes.modCount()",
+        "    assert ((Integer)el.attributes().userData().get(\"jsoup.childElsMod\")) == el.childNodeSize();",
+        "END"
+      ]
+    }
+  ]
+}

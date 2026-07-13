@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "clone() on new empty Document results in distinct outputSettings and parser",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "clone is a new instance; outputSettings and parser are deep‐cloned",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "empty-document"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone empty document deep-clone",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertNotSame(doc, clone);",
+        "    assertEquals(doc.baseUri(), clone.baseUri());",
+        "    assertNotSame(doc.outputSettings(), clone.outputSettings());",
+        "    assertNotSame(doc.parser(), clone.parser());"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() preserves custom Parser.trackErrors and isolates subsequent parser changes",
+      "path": "B0→B1→B2(parser-set)→B3→B4",
+      "precondition": "none",
+      "expectedResult": "clone.parser.trackErrors equals original; modifying clone parser does not affect original",
+      "tags": [
+        "positive",
+        "parser",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone preserves parser trackErrors",
+        "  GIVEN",
+        "    Parser p = Parser.xmlParser().setTrackErrors(7);",
+        "    Document doc = new Document(\"u\").parser(p);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertEquals(7, clone.parser().getTrackErrors());",
+        "    clone.parser().setTrackErrors(0);",
+        "    assertEquals(7, doc.parser().getTrackErrors());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() copies non-null Connection so clone.connection() returns same reference branch",
+      "path": "B0→B1→B2(connection-set)→B3→B5",
+      "precondition": "none",
+      "expectedResult": "clone.connection() returns the provided Connection; modifying clone connection does not affect original",
+      "tags": [
+        "positive",
+        "connection",
+        "session"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 clone copies a non-null connection",
+        "  GIVEN",
+        "    Connection c = Jsoup.connect(\"http://host\");",
+        "    Document doc = new Document(\"http://host\").connection(c);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    Connection origConn = doc.connection();",
+        "    Connection cloneConn = clone.connection();",
+        "    assertSame(origConn, cloneConn);",
+        "    int origTimeout = origConn.timeout();",
+        "    cloneConn.timeout(origTimeout + 1234);",
+        "    assertEquals(origTimeout, origConn.timeout());"
+      ]
+    }
+  ]
+}

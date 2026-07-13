@@ -1,0 +1,93 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("dataset().put on existing key updates underlying attribute (live view update path)")
+    public void test_TC08() {
+        // GIVEN an element with a pre-existing data-key attribute
+        Element el = new Element("div");
+        el.attributes().put("data-key", "old"); // attributes non-null, enters loop B3
+
+        // WHEN putting via dataset live-view map
+        Map<String, String> ds = el.dataset(); // B1->B2->B3->B4 builds map
+        ds.put("key", "new");           // update path at B7
+
+        // THEN the underlying attribute should be updated
+        assertEquals("new", el.attr("data-key"));
+    }
+
+    @Test
+    @DisplayName("dataset().remove removes underlying data- attribute (live view removal path)")
+    public void test_TC09() {
+        // GIVEN an element with one data-remove attribute and one non-data class
+        Element el = new Element("span");
+        el.attr("data-remove", "yes");    // data-remove present, B3 loop sees one entry
+        el.attr("class", "keep");         // non-data attribute remains
+
+        // WHEN removing via dataset live-view map
+        Map<String, String> ds = el.dataset();
+        ds.remove("remove");               // removal path at B7
+
+        // THEN data-remove attribute is gone, other attribute intact
+        assertFalse(el.attributes().hasKey("data-remove"));
+        assertEquals("keep", el.attr("class"));
+    }
+
+    @Test
+    @DisplayName("dataset() maps multi-hyphenated keys to camelCase correctly")
+    public void test_TC10() {
+        // GIVEN an element with a multi-hyphen data attribute
+        Element el = new Element("p");
+        el.attributes().put("data-very-long-name-test", "x"); // one entry yields loop B3
+
+        // WHEN retrieving dataset map for transformation path B5
+        Map<String, String> ds = el.dataset();
+
+        // THEN key is camelCased and value matches
+        assertTrue(ds.containsKey("veryLongNameTest"));
+        assertEquals("x", ds.get("veryLongNameTest"));
+    }
+
+    @Test
+    @DisplayName("dataset().clear removes all data- attributes but retains non-data attributes")
+    public void test_TC11() {
+        // GIVEN an element with multiple data-* attributes and a non-data attribute
+        Element el = new Element("div");
+        el.attr("data-a", "1");           // B3 loop over data-a
+        el.attr("data-b", "2");           // B3 loop over data-b
+        el.attr("foo", "bar");            // should persist
+
+        // WHEN clearing the dataset live-view
+        Map<String, String> ds = el.dataset();
+        ds.clear();                          // clear path triggers removal of data-* only
+
+        // THEN data-* attributes gone, non-data remains
+        assertFalse(el.attributes().hasKey("data-a"));
+        assertFalse(el.attributes().hasKey("data-b"));
+        assertEquals("bar", el.attr("foo"));
+    }
+
+    @Test
+    @DisplayName("dataset().put then get on newly inserted key exercises insertion path")
+    public void test_TC12() {
+        // GIVEN an element with no attributes (attributes==null branch)
+        Element el = new Element("span"); // attributes() will initialize attributes upon dataset
+
+        // WHEN inserting new data via dataset map
+        Map<String, String> ds = el.dataset(); // dataset sees attributes null, sets to new Attributes, B2 empty loop
+        ds.put("newOne", "value1");         // insertion path at B7
+
+        // THEN dataset.get returns value and underlying attr is set
+        assertEquals("value1", ds.get("newOne"));
+        assertEquals("value1", el.attr("data-new-one"));
+    }
+}

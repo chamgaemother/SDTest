@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild reparent of first child when oldParent has multiple children updates siblingIndex of remaining siblings",
+      "path": "B0→B1(false)→B2(true)→B3(true)→B4→B5",
+      "precondition": "oldParent has two appended children child1 and child2",
+      "expectedResult": "child1 removed from oldParent, child1.parent is newParent, newParent.childNodeSize()==1, child1.siblingIndex()==0, oldParent.childNodeSize()==1, remaining child2.siblingIndex()==0",
+      "tags": [
+        "positive",
+        "reparent",
+        "siblingIndex",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild reparent with multiple siblings",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element child1 = new Element(\"span\");",
+        "    Element child2 = new Element(\"p\");",
+        "    oldParent.appendChild(child1);",
+        "    oldParent.appendChild(child2);",
+        "    Element newParent = new Element(\"section\");",
+        "  WHEN",
+        "    newParent.appendChild(child1);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 1;",
+        "    assert child2.siblingIndex() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert child1.parent() == newParent;",
+        "    assert child1.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild of a TextNode child on fresh element initializes childNodes and appends text node",
+      "path": "B0→B1(false)→B2(false)→B3(true)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "text node appended to element, childNodeSize()==1, child.parent is element, siblingIndex()==0",
+      "tags": [
+        "positive",
+        "textnode",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild with TextNode",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    TextNode text = new TextNode(\"hello\");",
+        "  WHEN",
+        "    Element returned = el.appendChild(text);",
+        "  THEN",
+        "    assert returned == el;",
+        "    assert el.childNodeSize() == 1;",
+        "    assert text.parent() == el;",
+        "    assert text.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

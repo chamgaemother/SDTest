@@ -1,0 +1,149 @@
+{
+  "method": "child",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "child(0) on element with no children throws IndexOutOfBoundsException (empty childElementsList branch)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "throws IndexOutOfBoundsException",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 child on empty children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "child(0) returns only child when exactly one child Element present (single iteration in filter loop)",
+      "path": "B0→B1→B4→B5→B6",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendElement(\"li\");",
+      "expectedResult": "return value is the appended <li> element",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 child single element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == child;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "child(1) returns second Element when multiple Element children present (multiple iterations filter includes only Elements)",
+      "path": "B0→B1→B4→B5→B6(loop×2)→B7",
+      "precondition": "Element parent = new Element(\"ol\"); parent.appendElement(\"li\"); parent.appendElement(\"li\");",
+      "expectedResult": "return value is the second appended <li> element",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 child second element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ol\");",
+        "    parent.appendElement(\"li\");",
+        "    Element second = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assert result == second;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "child(index) skips non-Element nodes and returns correct Element (filter loop skips TextNode)",
+      "path": "B0→B1→B4→B5→B6(loop×2)→B7",
+      "precondition": "Element parent = new Element(\"p\"); parent.appendText(\"text\"); Element child = parent.appendElement(\"span\");",
+      "expectedResult": "return value is the <span> child",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "mixed-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 child skips non-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    parent.appendText(\"text\");",
+        "    Element span = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == span;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "child(-1) on non-empty children list throws IndexOutOfBoundsException (negative index boundary)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"a\");",
+      "expectedResult": "throws IndexOutOfBoundsException",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "boundary",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 child negative index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"a\");",
+        "  WHEN",
+        "    call parent.child(-1);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "child(size) equals count throws IndexOutOfBoundsException (upper boundary)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendElement(\"span\"); el.appendElement(\"br\");",
+      "expectedResult": "throws IndexOutOfBoundsException",
+      "tags": [
+        "boundary",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child equal size",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    el.appendElement(\"br\");",
+        "  WHEN",
+        "    call el.child(2);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    }
+  ]
+}

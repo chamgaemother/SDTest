@@ -1,0 +1,230 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "clean(String, String, Safelist) with empty baseUri and safelist.preserveRelativeLinks=true retains relative href using DummyUri branch",
+      "path": "B0→B1→B2(true)→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned HTML contains href starting with DummyUri placeholder and original relative path",
+      "tags": [
+        "positive",
+        "clean",
+        "branch",
+        "relative-links"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 clean retains relative links via DummyUri",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"page.html\\\">link</a>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.relaxed().preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, baseUri, safelist);",
+        "  THEN",
+        "    assert result.contains(\"href=\\\"\" + SharedConstants.DummyUri + \"page.html\\\"\");"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "clean(String, Safelist) default preserveRelativeLinks removes relative href attribute branch",
+      "path": "B0→B1→B2(false)→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "returned HTML does not contain href attribute for relative link",
+      "tags": [
+        "positive",
+        "clean",
+        "branch",
+        "relative-links"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 clean removes relative link attributes by default",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"other.html\\\">x</a>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, safelist);",
+        "  THEN",
+        "    assert !result.contains(\"href\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "clean(String, String, Safelist, OutputSettings) applies custom OutputSettings branch",
+      "path": "B0→B3→B6→B7",
+      "precondition": "none",
+      "expectedResult": "returned HTML has no pretty printing (single line) and raw entity preserved",
+      "tags": [
+        "positive",
+        "clean",
+        "output-settings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 clean respects OutputSettings",
+        "  GIVEN",
+        "    String html = \"<p>1 &lt; 2</p>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.none();",
+        "    Document.OutputSettings settings = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String result = Jsoup.clean(html, baseUri, safelist, settings);",
+        "  THEN",
+        "    assert !result.contains(\"\\n\");",
+        "    assert result.contains(\"&lt;\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "isValid(String, Safelist) returns true for HTML matching safelist branch",
+      "path": "B0→B1(false)→B2(true)→B3",
+      "precondition": "none",
+      "expectedResult": "isValid returns true when input has only allowed tags",
+      "tags": [
+        "positive",
+        "isValid"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 isValid returns true for allowed tags",
+        "  GIVEN",
+        "    String html = \"<p>ok</p>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert valid;"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "isValid(String, Safelist) returns false when input has disallowed tags branch",
+      "path": "B0→B1(false)→B2(false)→B4",
+      "precondition": "none",
+      "expectedResult": "isValid returns false when input contains disallowed tags",
+      "tags": [
+        "negative",
+        "isValid"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 isValid returns false for disallowed tags",
+        "  GIVEN",
+        "    String html = \"<script>alert()</script>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean valid = Jsoup.isValid(html, safelist);",
+        "  THEN",
+        "    assert !valid;"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(File, String, String) throws IOException for invalid charsetName branch",
+      "path": "B0→B1(invalid-charset)→exception",
+      "precondition": "create temp HTML file with simple content",
+      "expectedResult": "IOException is thrown due to unsupported charsetName",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse(File, invalid charset) throws IOException",
+        "  GIVEN",
+        "    File file = Files.createTempFile(\"f\",\".html\").toFile();",
+        "    Files.write(file.toPath(), \"<p>x</p>\".getBytes());",
+        "    String charsetName = \"BAD-CHARSET\";",
+        "    String baseUri = \"http://u\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, charsetName, baseUri);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(File) reads .gz file and parses gzipped HTML branch",
+      "path": "B0→B1(.gz)→B2→B3",
+      "precondition": "create temp .gz file with gzipped HTML",
+      "expectedResult": "body contains uncompressed HTML fragment",
+      "tags": [
+        "positive",
+        "file",
+        "gzip",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parse gzipped .gz file",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"t\",\".html.gz\");",
+        "    try(OutputStream out=new java.util.zip.GZIPOutputStream(Files.newOutputStream(p))){",
+        "      out.write(\"<i>GZ</i>\".getBytes(\"UTF-8\"));",
+        "    }",
+        "    File gz = p.toFile();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(gz);",
+        "  THEN",
+        "    assertEquals(\"<i>GZ</i>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parseBodyFragment(String, String) sets baseUri and wraps fragment in body branch",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals fragment and baseUri equals provided URI",
+      "tags": [
+        "positive",
+        "parse-body-fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parseBodyFragment with explicit baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span>F</span>\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assertEquals(fragment, doc.body().html());",
+        "    assertEquals(baseUri, doc.baseUri());"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parseBodyFragment(String) uses empty baseUri branch",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "Document.baseUri() is empty string and body contains fragment",
+      "tags": [
+        "positive",
+        "parse-body-fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC26 parseBodyFragment defaults to empty baseUri",
+        "  GIVEN",
+        "    String fragment = \"<u>U2</u>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assertEquals(\"\", doc.baseUri());",
+        "    assertEquals(fragment, doc.body().html());"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Removing a data key via dataset().remove(...) removes the corresponding data-* attribute",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element has data-foo=\"bar\" and data-baz=\"qux\"",
+      "expectedResult": "dataset no longer contains 'foo', and el.hasAttr(\"data-foo\") == false; 'baz' remains",
+      "tags": [
+        "positive",
+        "mutation",
+        "live-view",
+        "removal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset removal live-view",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-foo\",\"bar\");",
+        "    el.attr(\"data-baz\",\"qux\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.remove(\"foo\");",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-foo\"));",
+        "    assertEquals(1, ds.size());",
+        "    assertEquals(\"qux\", ds.get(\"baz\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Clearing the dataset map via dataset().clear() removes all data-* attributes",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Element has data-a=\"1\", data-b=\"2\", and non-data attr id=\"X\"",
+      "expectedResult": "dataset() is empty, el.hasAttr(\"data-a\") and el.hasAttr(\"data-b\") are false, id remains",
+      "tags": [
+        "positive",
+        "mutation",
+        "live-view",
+        "clear"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset clear live-view",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"1\");",
+        "    el.attr(\"data-b\",\"2\");",
+        "    el.attr(\"id\",\"X\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertTrue(ds.isEmpty());",
+        "    assertFalse(el.hasAttr(\"data-a\"));",
+        "    assertFalse(el.hasAttr(\"data-b\"));",
+        "    assertTrue(el.hasAttr(\"id\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "dataset() normalizes uppercase data-* keys to lower camel-case keys",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Element has attribute data-FooBar=\"baz\"",
+      "expectedResult": "dataset contains single entry key 'fooBar' with value 'baz'",
+      "tags": [
+        "positive",
+        "key-normalization",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 dataset key normalization",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-FooBar\",\"baz\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertEquals(1, ds.size());",
+        "    assertTrue(ds.containsKey(\"fooBar\"));",
+        "    assertEquals(\"baz\", ds.get(\"fooBar\"));",
+        "END"
+      ]
+    }
+  ]
+}

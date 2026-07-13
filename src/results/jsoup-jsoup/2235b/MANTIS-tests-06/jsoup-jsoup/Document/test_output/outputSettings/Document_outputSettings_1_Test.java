@@ -1,0 +1,41 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_outputSettings_1_Test {
+
+    @Test
+    @DisplayName("outputSettings(OutputSettings) with a modified OutputSettings instance sets and returns this Document")
+    public void test_TC04() {
+        // GIVEN: a new Document and a custom OutputSettings with prettyPrint=false and indentAmount=5
+        Document doc = new Document("http://example.com");
+        OutputSettings custom = new OutputSettings().prettyPrint(false).indentAmount(5);
+        // WHEN: we call the setter with a valid non-null settings instance
+        // This should traverse B0→B1→B2: non-null argument branch
+        Document result = doc.outputSettings(custom);
+        // THEN: result should be the same doc (chaining) and the internal settings should be the custom instance
+        assertSame(doc, result, "Setter should return the same Document instance for chaining");
+        assertSame(custom, doc.outputSettings(), "Document's outputSettings should be replaced by the provided custom instance");
+    }
+
+    @Test
+    @DisplayName("outputSettings(OutputSettings) with null argument throws IllegalArgumentException and leaves field unchanged")
+    public void test_TC05() throws Exception {
+        // GIVEN: a new Document and capture its original OutputSettings via public getter
+        Document doc = new Document("http://example.com");
+        OutputSettings original = doc.outputSettings();
+        // WHEN / THEN: calling the setter with null should throw IllegalArgumentException
+        IllegalArgumentException thrown = assertThrows(
+            IllegalArgumentException.class,
+            () -> doc.outputSettings(null),
+            "Passing null to outputSettings should throw IllegalArgumentException"
+        );
+        // AND: the internal field should remain unchanged (original instance)
+        // Using public getter, since outputSettings() is public
+        assertSame(original, doc.outputSettings(), "Document's outputSettings should remain unchanged after exception");
+    }
+}

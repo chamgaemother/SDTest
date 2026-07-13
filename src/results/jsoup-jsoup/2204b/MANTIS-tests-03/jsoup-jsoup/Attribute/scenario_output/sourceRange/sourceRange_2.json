@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "sourceRange() delegates to parent.sourceRange(key) when parent is non-null",
+      "path": "B0→B2",
+      "precondition": "Attributes stub with non-null parent implementing sourceRange(String)",
+      "expectedResult": "returns the exact AttributeRange instance provided by stubParent.sourceRange(key)",
+      "tags": [
+        "positive",
+        "delegation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange delegates to parent",
+        "  GIVEN",
+        "    // Arrange: stub Attributes to return a known range",
+        "    Range.AttributeRange fakeRange = new Range.AttributeRange(new Range.Position(1), new Range.Position(2));",
+        "    Attributes stubParent = new Attributes() {",
+        "      @Override",
+        "      public Range.AttributeRange sourceRange(String key) {",
+        "        return fakeRange;",
+        "      }",
+        "    };",
+        "    Attribute attr = new Attribute(\"testKey\",\"testVal\",stubParent);",
+        "  WHEN",
+        "    // Act: call sourceRange",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    // Assert: should be the same instance from stubParent",
+        "    assertSame(fakeRange, result);",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+package org.jsoup.select;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("traverse: replacement in head on a mid-tree node with siblings triggers B8→B11 path and correct depth adjustments")
+    public void test_TC13() {
+        // GIVEN: root with nested <span><a/><b/></span>, so 'b' has a sibling and is at depth 2
+        Element root = Jsoup.parse("<div><span><a/><b/></span></div>").body().child(0);
+        List<String> log = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                // replace 'b' at depth 2 to force branch B8: origSize equals after replace
+                if ("b".equals(n.nodeName()) && d == 2) {
+                    Element replacement = new Element("c");
+                    n.replaceWith(replacement);
+                    // after replacement, the new node 'c' will appear at same index, depth remains 2
+                }
+                log.add("h:" + n.nodeName() + ":" + d);
+            }
+
+            @Override
+            public void tail(Node n, int d) {
+                log.add("t:" + n.nodeName() + ":" + d);
+            }
+        };
+
+        // WHEN: traverse should visit replacement 'c' at same depth
+        NodeTraversor.traverse(visitor, (Node) root);
+
+        // THEN: ensure 'c' was visited in head at depth 2
+        assertTrue(log.contains("h:c:2"), "Expected replacement node 'c' to be visited at depth 2");
+    }
+
+    @Test
+    @DisplayName("traverse: removal in head on a leaf with no nextSibling triggers B9 removal→ ascend→ continue at parent")
+    public void test_TC14() {
+        // GIVEN: root<ul> with single <li>, so li has no nextSibling and depth=1
+        Element root = new Element("ul");
+        Element li = new Element("li");
+        root.appendChild(li);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                // remove the <li> in head to force branch B9: removal path
+                if (n instanceof Element && ((Element) n).tagName().equals("li")) {
+                    n.remove();
+                }
+                calls.add("h:" + n.nodeName() + ":" + d);
+            }
+
+            @Override
+            public void tail(Node n, int d) {
+                calls.add("t:" + n.nodeName() + ":" + d);
+            }
+        };
+
+        // WHEN: traverse after removal should not call tail on removed node
+        NodeTraversor.traverse(visitor, (Node) root);
+
+        // THEN: 't:li:1' should not appear, but head of li should
+        assertFalse(calls.contains("t:li:1"), "Tail for removed 'li' should not be called");
+        assertTrue(calls.contains("h:li:1"), "Head for 'li' should be called before removal");
+    }
+
+    @Test
+    @DisplayName("traverse: ascend-loop branch when a node has nextSibling!=null at depth=0 triggers B16→B20→B22")
+    public void test_TC15() {
+        // GIVEN: root<div> with two text children, each leaf at depth=1, siblings present
+        Element root = new Element("div");
+        root.appendChild(new TextNode("a")); // first leaf, has nextSibling
+        root.appendChild(new TextNode("b")); // second leaf, depth=1
+        List<String> seq = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                seq.add("h:" + n.nodeName() + ":" + d);
+            }
+
+            @Override
+            public void tail(Node n, int d) {
+                seq.add("t:" + n.nodeName() + ":" + d);
+            }
+        };
+
+        // WHEN: traverse should handle nextSibling at depth=0 for 'b', hitting B20->B22
+        NodeTraversor.traverse(visitor, (Node) root);
+
+        // THEN: ensure correct visit order of 'b' at depth=1
+        // positions: 0=h:div:0,1=h:#text:1,2=h:b:1,3=t:b:1,...
+        assertEquals("h:b:1", seq.get(2), "Expected head for 'b' at index 2");
+        assertEquals("t:b:1", seq.get(3), "Expected tail for 'b' at index 3");
+    }
+}

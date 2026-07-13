@@ -1,0 +1,104 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException when child is null (Validate.notNull fail)",
+      "path": "B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no child added",
+      "tags": [
+        "exception",
+        "branch-false(child!=null)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild(firstChild) creates new childNodes list and sets sibling index to 0",
+      "path": "B1→B2→B3→B4→B5",
+      "precondition": "parent.childNodes == EmptyNodes",
+      "expectedResult": "return value is parent; parent.childNodeSize() == 1; parent.child(0) == child; child.parent() == parent; child.siblingIndex == 0",
+      "tags": [
+        "branch-true(child!=null)",
+        "branch-true(empty childNodes)",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent; assert parent.childNodeSize() == 1; assert parent.child(0) == child; assert child.parent() == parent; assert child.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild(secondChild) reuses existing childNodes list and sets sibling index to 1",
+      "path": "B1→B2→B3→B5",
+      "precondition": "parent.childNodes != EmptyNodes (one child already added)",
+      "expectedResult": "parent.childNodeSize() == 2; parent.child(1) == second; second.parent() == parent; second.siblingIndex == 1",
+      "tags": [
+        "branch-true(child!=null)",
+        "branch-false(empty childNodes)",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2; assert parent.child(1) == second; assert second.parent() == parent; assert second.siblingIndex() == 1;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild(chained) supports chaining calls and maintains order across three children",
+      "path": "B1→B2→B3→B4→B5→B3→B5→B3→B5",
+      "precondition": "none",
+      "expectedResult": "parent.childNodeSize() == 3; children in order [c1,c2,c3]; each child.parent() == parent; sibling indices 0,1,2 respectively",
+      "tags": [
+        "branch-true(child!=null)",
+        "loop-N",
+        "chain"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild chained-multiple",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode c1 = new TextNode(\"1\");",
+        "    TextNode c2 = new TextNode(\"2\");",
+        "    TextNode c3 = new TextNode(\"3\");",
+        "  WHEN",
+        "    parent.appendChild(c1).appendChild(c2).appendChild(c3);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 3; assert parent.child(0)==c1; assert parent.child(1)==c2; assert parent.child(2)==c3; assert c1.siblingIndex()==0; assert c2.siblingIndex()==1; assert c3.siblingIndex()==2;"
+      ]
+    }
+  ]
+}

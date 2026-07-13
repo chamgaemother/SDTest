@@ -1,0 +1,131 @@
+{
+  "method": "isFormSubmittable",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Known HTML input tag is recognized as form-submittable (Tags.containsKey true & formSubmit true)",
+      "path": "valueOf(String)→isFormSubmittable",
+      "precondition": "Ensure static initializer has loaded Tags with 'input' in formSubmitTags",
+      "expectedResult": "return value is true",
+      "tags": [
+        "branch-true",
+        "overload:String",
+        "default-namespace",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 known-form-submit-default",
+        "  GIVEN",
+        "    String tag = \"input\";",
+        "  WHEN",
+        "    boolean result = Tag.valueOf(tag).isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Known HTML div tag is not form-submittable (Tags.containsKey true & formSubmit false)",
+      "path": "valueOf(String)→isFormSubmittable",
+      "precondition": "Ensure static initializer has loaded Tags with 'div' not in formSubmitTags",
+      "expectedResult": "return value is false",
+      "tags": [
+        "branch-false",
+        "overload:String",
+        "default-namespace",
+        "P0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 known-non-form-submit-default",
+        "  GIVEN",
+        "    String tag = \"div\";",
+        "  WHEN",
+        "    boolean result = Tag.valueOf(tag).isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Unknown custom tag returns non-form-submittable (Tags.containsKey false → new Tag.formSubmit false)",
+      "path": "valueOf(String)→isFormSubmittable",
+      "precondition": "Ensure Tags does not contain 'custom'; uses real implementation",
+      "expectedResult": "return value is false",
+      "tags": [
+        "branch-false",
+        "overload:String",
+        "unknown-tag",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 unknown-tag-not-form-submit",
+        "  GIVEN",
+        "    String tag = \"custom\";",
+        "  WHEN",
+        "    boolean result = Tag.valueOf(tag).isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Known HTML textarea tag is recognized as form-submittable (case preserved vs default)",
+      "path": "valueOf(String,ParseSettings)→isFormSubmittable",
+      "precondition": "Use ParseSettings.preserveCase stub which returns preserveTagCase=true",
+      "expectedResult": "return value is true",
+      "tags": [
+        "branch-true",
+        "overload:String,ParseSettings",
+        "custom-settings",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 preserved-case-form-submit",
+        "  GIVEN",
+        "    String tag = \"TextArea\";",
+        "  WHEN",
+        "    boolean result = Tag.valueOf(tag, ParseSettings.preserveCase).isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Known SVG input-like tag in non-HTML namespace is not form-submittable (namespace mismatch)",
+      "path": "valueOf(String,namespace,ParseSettings)→isFormSubmittable",
+      "precondition": "Use namespace = Parser.NamespaceSvg; settings default; no stubs",
+      "expectedResult": "return value is false",
+      "tags": [
+        "branch-false",
+        "overload:String,namespace,ParseSettings",
+        "svg-namespace",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 svg-namespace-not-form-submit",
+        "  GIVEN",
+        "    String tag = \"input\";",
+        "    String ns = Parser.NamespaceSvg;",
+        "  WHEN",
+        "    boolean result = Tag.valueOf(tag, ns, ParseSettings.preserveCase).isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

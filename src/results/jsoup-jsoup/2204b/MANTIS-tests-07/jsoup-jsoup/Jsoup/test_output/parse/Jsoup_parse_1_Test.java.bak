@@ -1,0 +1,201 @@
+package org.jsoup;
+
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC11: parse(html non-empty) uses default baseUri and returns parsed Document")
+    public void test_TC11() {
+        // Branches: no baseUri overload → default baseUri="" path
+        String html = "<div>X</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("<div>X</div>", doc.body().html());
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC12: parse(html null) overload without baseUri throws IllegalArgumentException")
+    public void test_TC12() {
+        // Passing null html should trigger IllegalArgumentException check in Parser.parse
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse((String) null));
+    }
+
+    @Test
+    @DisplayName("TC13: parseBodyFragment(bodyHtml, baseUri) returns Document with correct baseUri and body fragment")
+    public void test_TC13() {
+        // Direct call to parseBodyFragment with provided baseUri
+        String fragment = "<span>f</span>";
+        String base = "https://base/";
+        Document doc = Jsoup.parseBodyFragment(fragment, base);
+        assertEquals("<span>f</span>", doc.body().html());
+        assertEquals(base, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC14: parseBodyFragment(bodyHtml) overload uses empty baseUri")
+    public void test_TC14() {
+        // Overload that defaults baseUri=""
+        String fragment = "<i>i</i>";
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        assertEquals("<i>i</i>", doc.body().html());
+        assertEquals("", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC15: parse(File, charsetName) uses file path as baseUri when charsetName is non-null")
+    public void test_TC15() throws IOException {
+        // File with known HTML, charset provided
+        Path temp = Files.createTempFile("jsoup-test", ".html");
+        Files.write(temp, "<h1>H</h1>".getBytes("UTF-8"));
+        File f = temp.toFile();
+        Document doc = Jsoup.parse(f, "UTF-8");
+        assertEquals("<h1>H</h1>", doc.body().html());
+        assertEquals(f.getAbsolutePath(), doc.baseUri());
+        f.delete();
+    }
+
+    @Test
+    @DisplayName("TC16: parse(File) overload determines charset null and uses file path as baseUri")
+    public void test_TC16() throws IOException {
+        // File without specifying charset, should default to UTF-8
+        Path temp = Files.createTempFile("jsoup-test", ".html");
+        Files.write(temp, "<p>P</p>".getBytes("UTF-8"));
+        File f = temp.toFile();
+        Document doc = Jsoup.parse(f);
+        assertEquals("<p>P</p>", doc.body().html());
+        assertEquals(f.getAbsolutePath(), doc.baseUri());
+        f.delete();
+    }
+
+    @Test
+    @DisplayName("TC17: parse(File, charsetName, baseUri, parser) delegates to provided parser")
+    public void test_TC17() throws IOException {
+        // Using xmlParser to preserve tags exactly
+        Path temp = Files.createTempFile("jsoup-test", ".html");
+        Files.write(temp, "<x></x>".getBytes("UTF-8"));
+        File f = temp.toFile();
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(f, null, "http://u/", parser);
+        assertEquals("<x></x>", doc.body().html());
+        assertEquals("http://u/", doc.baseUri());
+        f.delete();
+    }
+
+    @Test
+    @DisplayName("TC18: parse(Path, charsetName, baseUri) loads via Path overload")
+    public void test_TC18() throws IOException {
+        // Path overload with charset and baseUri
+        Path p = Files.createTempFile("jsoup-test", ".html");
+        Files.write(p, "<li>L</li>".getBytes("UTF-8"));
+        String base = "base://";
+        Document doc = Jsoup.parse(p, "UTF-8", base);
+        assertEquals("<li>L</li>", doc.body().html());
+        assertEquals(base, doc.baseUri());
+        Files.delete(p);
+    }
+
+    @Test
+    @DisplayName("TC19: parse(Path, charsetName) overload uses absolutePath as baseUri")
+    public void test_TC19() throws IOException {
+        Path p = Files.createTempFile("jsoup-test", ".html");
+        Files.write(p, "<em>E</em>".getBytes("UTF-8"));
+        Document doc = Jsoup.parse(p, "UTF-8");
+        assertEquals("<em>E</em>", doc.body().html());
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri());
+        Files.delete(p);
+    }
+
+    @Test
+    @DisplayName("TC20: parse(Path) overload determines charset null and uses absolutePath as baseUri")
+    public void test_TC20() throws IOException {
+        Path p = Files.createTempFile("jsoup-test", ".html");
+        Files.write(p, "<u>U</u>".getBytes("UTF-8"));
+        Document doc = Jsoup.parse(p);
+        assertEquals("<u>U</u>", doc.body().html());
+        assertEquals(p.toAbsolutePath().toString(), doc.baseUri());
+        Files.delete(p);
+    }
+
+    @Test
+    @DisplayName("TC21: parse(Path, charsetName, baseUri, parser) delegates to DataUtil with parser")
+    public void test_TC21() throws IOException {
+        Path p = Files.createTempFile("jsoup-test", ".html");
+        Files.write(p, "<z></z>".getBytes("UTF-8"));
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(p, null, "uri://", parser);
+        assertEquals("<z></z>", doc.body().html());
+        assertEquals("uri://", doc.baseUri());
+        Files.delete(p);
+    }
+
+    @Test
+    @DisplayName("TC22: parse(InputStream, charsetName, baseUri) reads and parses from InputStream")
+    public void test_TC22() throws IOException {
+        String html = "<p>S</p>";
+        ByteArrayInputStream in = new ByteArrayInputStream(html.getBytes("UTF-8"));
+        String base = "http://b/";
+        Document doc = Jsoup.parse(in, "UTF-8", base);
+        assertEquals("<p>S</p>", doc.body().html());
+        assertEquals(base, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC23: parse(InputStream, charsetName, baseUri, parser) uses provided parser for stream")
+    public void test_TC23() throws IOException {
+        String html = "<a></a>";
+        ByteArrayInputStream in = new ByteArrayInputStream(html.getBytes("UTF-8"));
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(in, null, "u:", parser);
+        assertEquals("<a></a>", doc.body().html());
+        assertEquals("u:", doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC24: clean(html, safelist) overload removes disallowed tags using empty baseUri")
+    public void test_TC24() {
+        String html = "<script>bad</script><p>ok</p>";
+        Safelist sl = Safelist.basic();
+        String out = Jsoup.clean(html, sl);
+        assertEquals("<p>ok</p>", out);
+    }
+
+    @Test
+    @DisplayName("TC25: clean(html, baseUri, safelist, outputSettings) applies custom outputSettings")
+    public void test_TC25() {
+        String html = "<div><b>t</b></div>";
+        Safelist sl = Safelist.simpleText();
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+        String out = Jsoup.clean(html, "", sl, os);
+        assertEquals("<b>t</b>", out);
+    }
+
+    @Test
+    @DisplayName("TC26: parse(URL, timeoutMillis) GETs from HTTP server and returns parsed Document")
+    public void test_TC26() throws Exception {
+        MockWebServer server = new MockWebServer();
+        server.enqueue(new MockResponse().setBody("<h>H</h>").setHeader("Content-Type", "text/html"));
+        server.start();
+        URL url = server.url("/").url();
+        Document doc = Jsoup.parse(url, 2000);
+        assertEquals("<h>H</h>", doc.body().html());
+        server.shutdown();
+    }
+}

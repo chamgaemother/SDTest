@@ -1,0 +1,164 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "wrap() ignores carriage return characters (branch ch=='\\r')",
+      "path": "B0→B3(loop: read 'A')→B3(loop: read '\\r')→B3(loop: read '\\n')→B1(exit)",
+      "precondition": "none",
+      "expectedResult": "treat CR as no-op, preserve newline after LF only: \"A\n\"",
+      "tags": [
+        "positive",
+        "newline",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    String text = \"A\\r\\n\";",
+        "    WordWrap.Builder builder = WordWrap.from(text);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"A\\n\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap() breaks long word without inserting hyphens when insertHyphens=false",
+      "path": "B0→B3(loop: word overflow)→B5(writeBrokenWord else)→B1(exit)",
+      "precondition": "none",
+      "expectedResult": "long words split by newlines but no hyphens present",
+      "tags": [
+        "positive",
+        "breakWords",
+        "no-hyphens"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 split-without-hyphens",
+        "  GIVEN",
+        "    String longWord = \"CCCCCCCC\";",
+        "    WordWrap.Builder builder = WordWrap.from(longWord).maxWidth(3).insertHyphens(false);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert !result.contains(\"-\");",
+        "    assert result.split(\"\\\\n\").length > 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap() with custom stringWidth causing every char to exceed width triggers repeated word splits",
+      "path": "B0→B3(loop: tooLong at first char)→B4→B5(writeBrokenWord)→B3→B1",
+      "precondition": "none",
+      "expectedResult": "each character on its own line due to width function doubling length",
+      "tags": [
+        "positive",
+        "custom-stringWidth",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 custom-width-splits-every-char",
+        "  GIVEN",
+        "    String text = \"XYZ\";",
+        "    Function<CharSequence,Number> widthFn = s -> s.length() * 2;",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(1).stringWidth(widthFn);",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.size() == 3;",
+        "    assert lines.get(0).equals(\"X\");",
+        "    assert lines.get(1).equals(\"Y\");",
+        "    assert lines.get(2).equals(\"Z\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap() treats dot as punctuation when excluded via excludeExtraWordChars (branch isPunctuation)",
+      "path": "B0→B3(loop: letter 'a')→B7(non-word branch for '.')→B10(writeLine)→B1",
+      "precondition": "none",
+      "expectedResult": "'.' excluded yields break before dot: lines contain 'a' then '.b'",
+      "tags": [
+        "positive",
+        "punctuation",
+        "excludeExtraWordChars"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 exclude-punctuation-dot",
+        "  GIVEN",
+        "    String text = \"a.b\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).excludeExtraWordChars(\".\");",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.get(0).equals(\"a\");",
+        "    assert lines.get(1).startsWith(\".b\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap() propagates IORuntimeException when reader.close() throws IOException",
+      "path": "Builder.wrap(writer)→close(reader)→IOException→catch→throw IORuntimeException",
+      "precondition": "reader stub throws IOException on close",
+      "expectedResult": "wrap(...) throws IORuntimeException wrapping the close error",
+      "tags": [
+        "exception",
+        "close",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 reader-close-exception",
+        "  GIVEN",
+        "    Reader faulty = new Reader() {",
+        "      public int read(char[] c, int off, int len) { return -1; }",
+        "      public void close() throws IOException { throw new IOException(\"close-fail\"); }",
+        "    };",
+        "    WordWrap.Builder builder = WordWrap.from(faulty, true);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    call builder.wrap(out);",
+        "  THEN",
+        "    throws IORuntimeException with cause message containing \"close-fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "wrap() fromClasspathUtf8 on missing resource throws NullPointerException",
+      "path": "fromClasspathUtf8→fromClasspath→new InputStreamReader(null)→NPE",
+      "precondition": "resource not on classpath",
+      "expectedResult": "NullPointerException thrown",
+      "tags": [
+        "exception",
+        "classpath",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 missing-classpath-resource",
+        "  GIVEN",
+        "    String resource = \"/no_such.txt\";",
+        "    WordWrap.Builder builder = WordWrap.fromClasspathUtf8(resource);",
+        "  WHEN",
+        "    call builder.wrap();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

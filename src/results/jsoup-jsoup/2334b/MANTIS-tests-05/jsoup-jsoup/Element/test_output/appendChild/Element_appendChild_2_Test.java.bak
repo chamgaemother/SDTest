@@ -1,0 +1,59 @@
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild invalidates cached shadowChildrenRef via nodelistChanged and updates children list")
+    void test_TC07() {
+        // GIVEN parent with two children to populate the shadowChildrenRef cache via children()
+        Element parent = new Element("div");
+        Element a = new Element("a");
+        Element b = new Element("b");
+        parent.appendChild(a).appendChild(b);
+        // populate cache: childElementsList() returns [a,b]
+        int before = parent.children().size(); // expect 2
+        
+        // WHEN appending a new element c
+        Element c = new Element("c");
+        parent.appendChild(c); // should invalidate cache and update it
+        int after = parent.children().size(); // expect 3
+        
+        // THEN the size before was 2 and after is 3
+        assertAll(
+            () -> assertEquals(2, before, "Initial children count should be 2"),
+            () -> assertEquals(3, after, "Children count after append should be 3")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild on deeply nested child preserves correct parent and siblingIndex for reparented subtree")
+    void test_TC08() {
+        // GIVEN a root and a subtree sub->leaf
+        Element root = new Element("root");
+        Element sub = new Element("sub");
+        Element leaf = new Element("leaf");
+        sub.appendChild(leaf);
+        root.appendChild(sub);
+        // precondition: root children size is 1, sub has one child leaf
+        assertEquals(1, root.childrenSize(), "Root should have one child before reparenting");
+        assertEquals(1, sub.childrenSize(), "Sub should have one leaf child");
+
+        // WHEN moving sub from root to newParent
+        Element newParent = new Element("parent");
+        newParent.appendChild(sub); // reparenting sub
+       
+        // THEN root no longer has sub, newParent has sub, leaf remains under sub, siblingIndex of sub is 0
+        assertAll(
+            () -> assertEquals(0, root.childrenSize(), "Original root should have no children after reparenting"),
+            () -> assertEquals(1, newParent.childrenSize(), "New parent should have one child after reparenting"),
+            () -> assertSame(newParent, leaf.parent().parent(),
+                    "Leaf's grandparent should now be newParent"),
+            () -> assertEquals(0, sub.siblingIndex(),
+                    "Sub element should have siblingIndex 0 under newParent")
+        );
+    }
+}

@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "child(n) rebuilds shadowChildrenList when cache exists but invalidated via nodelistChanged",
+      "path": "B0→B1→B2(loop×2)→B3(cache branch skipped)→B4(nodelistChanged)→B2(loop×2)→B5",
+      "precondition": "Element with two element children, cache primed then nodelistChanged invoked",
+      "expectedResult": "returns correct Element on rebuilt childElementsList",
+      "tags": [
+        "positive",
+        "cache",
+        "rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 child after manual cache clear",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"a\");",
+        "    el.appendElement(\"b\");",
+        "    // prime cache",
+        "    Element prime = el.child(1);",
+        "    assert prime.tagName().equals(\"b\");",
+        "    // invalidate cache",
+        "    el.nodelistChanged();",
+        "  WHEN",
+        "    Element result = el.child(0);",
+        "  THEN",
+        "    assert result.tagName().equals(\"a\");"
+      ]
+    }
+  ]
+}

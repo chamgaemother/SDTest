@@ -1,0 +1,145 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(InputStream, charset, baseUri) uses DataUtil.load without parser",
+      "path": "B0→B9→B38→B39",
+      "precondition": "ByteArrayInputStream wrapping HTML bytes",
+      "expectedResult": "Document with body HTML matching input and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "inputstream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse(InputStream, charsetName, baseUri) without parser",
+        "  GIVEN",
+        "    byte[] htmlBytes = \"<u>U</u>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(htmlBytes);",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"http://inputstream/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<u>U</u>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(InputStream, null charsetName, baseUri) closes stream and handles null charset",
+      "path": "B0→B9→B38→B39",
+      "precondition": "ByteArrayInputStream wrapping HTML bytes",
+      "expectedResult": "Document parsed using BOM/meta or UTF-8 fallback, stream closed",
+      "tags": [
+        "positive",
+        "null-charset",
+        "inputstream"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse(InputStream, null, baseUri) handles null charset",
+        "  GIVEN",
+        "    byte[] htmlBytes = \"<i>Null</i>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(htmlBytes);",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, \"http://null-charset/\");",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<i>Null</i>\");",
+        "    assert doc.baseUri().equals(\"http://null-charset/\");",
+        "    assert in.read() == -1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File) uses default null charset and file path as baseUri",
+      "path": "B0→B5→B16→B17",
+      "precondition": "Temp file with UTF-8 HTML content exists",
+      "expectedResult": "Document with body HTML match and baseUri equals file absolute path",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse(File) default charset",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"jsoupTC21\", \".html\");",
+        "    temp.deleteOnExit();",
+        "    Files.write(temp.toPath(), \"<h1>Default</h1>\".getBytes(\"UTF-8\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(temp);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h1>Default</h1>\");",
+        "    assert doc.baseUri().equals(temp.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(File, null charsetName, baseUri) triggers BOM/meta detection path",
+      "path": "B0→B5→B18→B19",
+      "precondition": "Temp file with HTML content exists, charsetName null",
+      "expectedResult": "Document parsed with fallback charset and baseUri preserved",
+      "tags": [
+        "positive",
+        "null-charset",
+        "file"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse(File, null charsetName, baseUri)",
+        "  GIVEN",
+        "    File f = File.createTempFile(\"jsoupTC22\", \".html\");",
+        "    f.deleteOnExit();",
+        "    Files.write(f.toPath(), \"<p>BOM</p>\".getBytes(\"UTF-8\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, null, \"https://bom.example/\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>BOM</p>\");",
+        "    assert doc.baseUri().equals(\"https://bom.example/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, timeout) propagates HttpStatusException from connection.get()",
+      "path": "B0→B2→B?→exception",
+      "precondition": "Mocked HttpConnection.connect(url) returns connection whose get() throws HttpStatusException",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "url",
+        "httpexception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse(URL, timeoutMillis) throws HttpStatusException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com/error\");",
+        "    HttpConnection.Connection con = Mockito.mock(org.jsoup.Connection.class);",
+        "    Mockito.when(con.timeout(500)).thenReturn(con);",
+        "    Mockito.when(con.get()).thenThrow(new org.jsoup.HttpStatusException(\"status error\", 500, url.toString()));",
+        "    try (MockedStatic<HttpConnection> ms = Mockito.mockStatic(HttpConnection.class)) {",
+        "      ms.when(() -> HttpConnection.connect(url)).thenReturn(con);",
+        "  WHEN",
+        "      call Jsoup.parse(url, 500);",
+        "  THEN",
+        "      throws org.jsoup.HttpStatusException;",
+        "    }",
+        "END"
+      ]
+    }
+  ]
+}

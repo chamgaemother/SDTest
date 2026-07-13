@@ -1,0 +1,123 @@
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvEntry;
+import io.github.cdimascio.dotenv.internal.DotenvParser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
+import org.mockito.Mockito;
+
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mockConstruction;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("load() returns DotenvImpl when systemProperties is false and no entries are returned (branch-false, loop-0)")
+    void test_TC01() throws Exception {
+        // We spy on DotenvParser construction so parse() returns empty, hitting branch-false (systemProperties=false)
+        try (MockedConstruction<DotenvParser> mocked =
+                     mockConstruction(DotenvParser.class,
+                             (mock, ctx) -> Mockito.when(mock.parse()).thenReturn(Collections.emptyList()))) {
+            DotenvBuilder builder = new DotenvBuilder();
+            // systemProperties remains false by default -> branch B0→B2
+            Dotenv result = builder.load();
+            assertNotNull(result, "Should return a DotenvImpl instance");
+            // entries() should reflect only actual system env entries since parser list is empty
+            Set<DotenvEntry> expected = System.getenv()
+                    .entrySet().stream()
+                    .map(e -> new DotenvEntry(e.getKey(), e.getValue()))
+                    .collect(Collectors.toSet());
+            assertEquals(expected, result.entries(), "entries() must match system environment variables exactly");
+        }
+    }
+
+    @Test
+    @DisplayName("load() sets system properties when systemProperties is true but no entries (branch-true, loop-0)")
+    void test_TC02() throws Exception {
+        // Enable systemProperties -> branch B0→B1→B2, mock parse() to empty list (loop 0)
+        try (MockedConstruction<DotenvParser> mocked =
+                     mockConstruction(DotenvParser.class,
+                             (mock, ctx) -> Mockito.when(mock.parse()).thenReturn(Collections.emptyList()))) {
+            DotenvBuilder builder = new DotenvBuilder().systemProperties();
+            // no new entries from parser
+            Dotenv result = builder.load();
+            assertNotNull(result, "Should return a DotenvImpl instance");
+            // every entry in result.entries() must also correspond to a system property set
+            for (DotenvEntry e : result.entries()) {
+                String key = e.getKey();
+                String val = e.getValue();
+                assertEquals(val, System.getProperty(key),
+                        "System property " + key + " must be set to " + val);
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("load() sets one system property when systemProperties is true and parser returns one entry (branch-true, loop-1)")
+    void test_TC03() throws Exception {
+        // Enable systemProperties -> branch B0→B1→B2, mock parse() to one entry (loop 1)
+        DotenvEntry entry = new DotenvEntry("KEY1", "VALUE1");
+        try (MockedConstruction<DotenvParser> mocked =
+                     mockConstruction(DotenvParser.class,
+                             (mock, ctx) -> Mockito.when(mock.parse()).thenReturn(List.of(entry)))) {
+            DotenvBuilder builder = new DotenvBuilder().systemProperties();
+            // exactly one entry produced by parser
+            Dotenv result = builder.load();
+            // verify the single system property set
+            assertEquals("VALUE1", System.getProperty("KEY1"), 
+                    "System property KEY1 must be set to VALUE1");
+            // result.entries() should include the new entry
+            assertTrue(result.entries().contains(entry),
+                    "Result entries must contain the parser-provided entry");
+        }
+    }
+
+    @Test
+    @DisplayName("load() sets multiple system properties when systemProperties is true and parser returns multiple entries (branch-true, loop-N)")
+    void test_TC04() throws Exception {
+        // Enable systemProperties -> branch B0→B1→B2, mock parse() to multiple entries
+        List<DotenvEntry> list = List.of(
+                new DotenvEntry("A", "1"),
+                new DotenvEntry("B", "2"),
+                new DotenvEntry("C", "3")
+        );
+        try (MockedConstruction<DotenvParser> mocked =
+                     mockConstruction(DotenvParser.class,
+                             (mock, ctx) -> Mockito.when(mock.parse()).thenReturn(list))) {
+            DotenvBuilder builder = new DotenvBuilder().systemProperties();
+            Dotenv result = builder.load();
+            // all provided keys must have been set as system properties and match result.get(key)
+            for (String k : List.of("A", "B", "C")) {
+                assertEquals(result.get(k), System.getProperty(k),
+                        "System property " + k + " should equal Dotenv.get(" + k + ")");
+            }
+            // ensure entries contain all parser entries
+            assertTrue(result.entries().containsAll(list),
+                    "Result entries must include all parser-provided entries");
+        }
+    }
+
+    @Test
+    @DisplayName("load() propagates DotenvException when parser.parse() throws (exception)")
+    void test_TC05() {
+        // Mock parse() to throw DotenvException, expecting propagation
+        try (MockedConstruction<DotenvParser> mocked =
+                     mockConstruction(DotenvParser.class,
+                             (mock, ctx) -> Mockito.when(mock.parse())
+                                     .thenThrow(new DotenvException("fail")))) {
+            DotenvBuilder builder = new DotenvBuilder();
+            DotenvException ex = assertThrows(DotenvException.class, builder::load,
+                    "load() should propagate DotenvException from parser.parse()");
+            assertEquals("fail", ex.getMessage(),
+                    "Exception message must be 'fail'");
+        }
+    }
+}

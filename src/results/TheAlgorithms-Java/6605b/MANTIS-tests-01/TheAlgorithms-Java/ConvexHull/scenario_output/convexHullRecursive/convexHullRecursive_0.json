@@ -1,0 +1,153 @@
+{
+  "method": "convexHullRecursive",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "empty list input triggers IndexOutOfBoundsException at points.get(0)",
+      "path": "B0",
+      "precondition": "points = []",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "exception",
+        "branch-true",
+        "null-check",
+        "precondition-failure"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-input-exception",
+        "  GIVEN",
+        "    List<Point> points = Collections.emptyList();",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "single-point list returns that single point without looping (loop-0)",
+      "path": "B0→B7→B6",
+      "precondition": "points = [P0] where P0 arbitrary",
+      "expectedResult": "return list [P0]",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 single-point",
+        "  GIVEN",
+        "    List<Point> points = List.of(P0);",
+        "  WHEN",
+        "    List<Point> hull = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert hull.equals(List.of(P0));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "two-point list returns both points sorted without looping (loop-0)",
+      "path": "B0→B7→B6",
+      "precondition": "points = [P1,P2] where P1<P2 by natural order",
+      "expectedResult": "return list [P1,P2]",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 two-points",
+        "  GIVEN",
+        "    List<Point> points = List.of(P1, P2);",
+        "  WHEN",
+        "    List<Point> hull = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert hull.equals(List.of(P1, P2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "three colinear points only endpoints in hull (det==0 both branches)",
+      "path": "B0→B7→B1→B3→B5→B7→B6",
+      "precondition": "points = [A,B,C] colinear, sorted A<B<C",
+      "expectedResult": "return list [A,C]",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-1",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 colinear-three",
+        "  GIVEN",
+        "    List<Point> points = List.of(A, B, C);",
+        "  WHEN",
+        "    List<Point> hull = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert hull.equals(List.of(A, C));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "three non-colinear triangle returns all three points (upperHull non-empty, lowerHull empty)",
+      "path": "B0→B7→B1→B2→B5→B7→B6",
+      "precondition": "points = [L, M, R] with orientation(L,R,M)>0",
+      "expectedResult": "return sorted list [L, M, R]",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "positive",
+        "triangle"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 simple-triangle",
+        "  GIVEN",
+        "    List<Point> points = List.of(L, M, R);",
+        "  WHEN",
+        "    List<Point> hull = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert hull.equals(List.of(L, M, R));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "four points forming a square returns all four hull points (mixed upper and lower, loop-N)",
+      "path": "B0→B7→B1→B2→B5→B7→B1→B3→B4→B5→B7→B6",
+      "precondition": "points = [BL, TL, TR, BR] square corners sorted before call",
+      "expectedResult": "return sorted list [BL, BR, TR, TL]",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-N",
+        "multipoint"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 square-hull",
+        "  GIVEN",
+        "    List<Point> points = List.of(BL, TL, TR, BR);",
+        "  WHEN",
+        "    List<Point> hull = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert hull.equals(List.of(BL, BR, TR, TL));",
+        "END"
+      ]
+    }
+  ]
+}

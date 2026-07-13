@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "visitor replaces a child node in head triggers the 'replaced' branch (origSize==childSize)",
+      "path": "B0→B1→B2→B5→B6→B7→B8→B11→B12→B23→B1→B5→B11→B16→B20→B22→B23→B1→B24",
+      "precondition": "Element root with one child <p>",
+      "expectedResult": "visits head:div, head:p, head:span, tail:span, tail:div in order",
+      "tags": [
+        "positive",
+        "replace",
+        "branch-replaced"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 replace-child triggers replaced-branch",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    root.appendChild(child);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(Node node, int depth) {",
+        "        calls.add(\"head:\" + node.nodeName() + \":\" + depth);",
+        "        if (\"p\".equals(node.nodeName())) {",
+        "          node.replaceWith(new Element(\"span\"));",
+        "        }",
+        "      }",
+        "      tail(Node node, int depth) {",
+        "        calls.add(\"tail:\" + node.nodeName() + \":\" + depth);",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(",
+        "      \"head:div:0\",",
+        "      \"head:p:1\",",
+        "      \"head:span:1\",",
+        "      \"tail:span:1\",",
+        "      \"tail:div:0\"",
+        "    ), calls);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "tree with two sibling children exercises sibling-iteration branch at depth>0 (B17→B18)",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B5→B11→B12→B23→B1→B5→B11→B16→B17→B18→B20→B21→B24",
+      "precondition": "Element root with two children <a> and <b>",
+      "expectedResult": "visits head/tail on <a> at depth1 then head/tail on <b> at depth1 then tail on root",
+      "tags": [
+        "positive",
+        "iteration",
+        "siblings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 two-sibling-children triggers sibling-branch",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    root.appendChild(a);",
+        "    root.appendChild(b);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      head(Node node, int depth) { calls.add(\"H:\" + node.nodeName() + \":\" + depth); }",
+        "      tail(Node node, int depth) { calls.add(\"T:\" + node.nodeName() + \":\" + depth); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(",
+        "      \"H:div:0\",",
+        "      \"H:a:1\",",
+        "      \"T:a:1\",",
+        "      \"H:b:1\",",
+        "      \"T:b:1\",",
+        "      \"T:div:0\"",
+        "    ), calls);",
+        "END"
+      ]
+    }
+  ]
+}

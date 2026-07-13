@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Custom TreeBuilder stub with mixed-case duplicate tags; preserveCase=false yields lowercase unique tag names",
+      "path": "B0→B2→B4→B5",
+      "precondition": "stub TreeBuilder.getSupportedTags returns Set.of(\"AbC\",\"AbC\",\"XyZ\") and parser.settings(ParseSettings(false,false))",
+      "expectedResult": "return Set.of(\"abc\",\"xyz\")",
+      "tags": [
+        "positive",
+        "case-insensitive",
+        "deduplication"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 tagSet lowercases and deduplicates",
+        "  GIVEN",
+        "    TreeBuilder dupStub = new TreeBuilder(){",
+        "      @Override public Set<String> getSupportedTags(){ return Set.of(\"AbC\",\"AbC\",\"XyZ\"); }",
+        "      @Override public ParseSettings defaultSettings(){ return new ParseSettings(false,false); }",
+        "      @Override public TreeBuilder newInstance(){ return this; }",
+        "      @Override public Document parse(Reader in,String baseUri,Parser parser){return null;}",
+        "      @Override public List<Node> parseFragment(Reader in,@Nullable Element context,String baseUri,Parser parser){return List.of();}",
+        "      @Override public boolean isContentForTagData(String normalName){return false;}",
+        "      @Override public String defaultNamespace(){return \"\";}",
+        "      @Override public void initialiseParse(Reader reader,String baseUri,Parser parser){}",
+        "      @Override public void process(org.jsoup.parser.Token token){}",
+        "    };",
+        "    Parser parser = new Parser(dupStub).settings(new ParseSettings(false,false));",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.equals(Set.of(\"abc\",\"xyz\"));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Custom TreeBuilder stub returns null supported tags causing NullPointerException",
+      "path": "B0→B2→B?→exception",
+      "precondition": "stub TreeBuilder.getSupportedTags returns null",
+      "expectedResult": "NullPointerException thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 tagSet throws NPE on null tags",
+        "  GIVEN",
+        "    TreeBuilder nullStub = new TreeBuilder(){",
+        "      @Override public Set<String> getSupportedTags(){ return null; }",
+        "      @Override public ParseSettings defaultSettings(){ return new ParseSettings(false,false); }",
+        "      @Override public TreeBuilder newInstance(){ return this; }",
+        "      @Override public Document parse(Reader in,String baseUri,Parser parser){return null;}",
+        "      @Override public List<Node> parseFragment(Reader in,@Nullable Element context,String baseUri,Parser parser){return List.of();}",
+        "      @Override public boolean isContentForTagData(String normalName){return false;}",
+        "      @Override public String defaultNamespace(){return \"\";}",
+        "      @Override public void initialiseParse(Reader reader,String baseUri,Parser parser){}",
+        "      @Override public void process(org.jsoup.parser.Token token){}",
+        "    };",
+        "    Parser parser = new Parser(nullStub).settings(new ParseSettings(false,false));",
+        "  WHEN",
+        "    call parser.tagSet();",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

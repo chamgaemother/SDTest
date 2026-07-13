@@ -1,0 +1,132 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on an Element with no child nodes returns an empty Elements list (loop-0)",
+      "path": "B1→B2",
+      "precondition": "Create a standalone Element with no children",
+      "expectedResult": "returned Elements instance is empty (size == 0)",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() on an Element with one child Element returns a single-element list (loop-1)",
+      "path": "B1→B3→B4→B5",
+      "precondition": "Element has exactly one child node of type Element",
+      "expectedResult": "returned Elements list contains exactly that one Element",
+      "tags": [
+        "loop-1",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 children one-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    parent.appendChild(li);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == li;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() filters out non-Element nodes and returns only Element children (mixed-node filtering)",
+      "path": "B1→B3→B4→B5",
+      "precondition": "Element has mixed childNodes including non-Element TextNode and an Element",
+      "expectedResult": "returned Elements list contains only the Element child, excludes TextNode",
+      "tags": [
+        "filtering",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    parent.appendText(\"text\");",
+        "    Element span = new Element(\"span\");",
+        "    parent.appendChild(span);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == span;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() caches the filtered list on first call and reuses it on second call without recomputation (cache-hit)",
+      "path": "B1→B3→B4→B6→B5",
+      "precondition": "Element has two Element children; second call should hit cache",
+      "expectedResult": "first and second calls return equal list instance (==), same contents",
+      "tags": [
+        "cache",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 children cache-behavior",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first == second;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() invalidates cache after childNodes change via nodelistChanged (cache-invalidation)",
+      "path": "B1→B3→B4→B6→B5→B7→B3→B4→B5",
+      "precondition": "Element with two children; after calling children(), modify childNodes by empty(), which triggers cache invalidation",
+      "expectedResult": "after modification, new children() returns empty list not equal to initial cached list",
+      "tags": [
+        "cache-invalidation",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children cache-invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"p\");",
+        "    parent.appendElement(\"span\");",
+        "    Elements initial = parent.children();",
+        "  WHEN",
+        "    parent.empty();",
+        "    Elements afterEmpty = parent.children();",
+        "  THEN",
+        "    assert initial != afterEmpty;",
+        "    assert afterEmpty.size() == 0;"
+      ]
+    }
+  ]
+}

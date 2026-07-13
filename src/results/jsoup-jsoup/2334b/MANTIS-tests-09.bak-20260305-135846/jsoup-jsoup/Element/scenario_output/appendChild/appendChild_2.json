@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild on a parent with two existing children sets correct sibling index 2 for the third child",
+      "path": "B0→B2→B3→B5",
+      "precondition": "parent has two existing TextNode children (sibling indices 0 and 1), childNodes != EmptyNodes",
+      "expectedResult": "new child's siblingIndex is 2 and parent.childNodeSize() increases to 3",
+      "tags": [
+        "positive",
+        "iteration",
+        "sibling-index"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild third-child-index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    TextNode second = new TextNode(\"two\");",
+        "    parent.appendChild(first);",
+        "    parent.appendChild(second);",
+        "    assert parent.childNodeSize() == 2;",
+        "  WHEN",
+        "    TextNode third = new TextNode(\"three\");",
+        "    parent.appendChild(third);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 3;",
+        "    assert third.parent() == parent;",
+        "    assert getSiblingIndex(third) == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "appendChild moves an Element child from old parent with multiple children to new parent and resets its sibling index",
+      "path": "B0→B2(reparent)→B3→B5",
+      "precondition": "oldParent has two element children [childA, childB], newParent empty",
+      "expectedResult": "oldParent loses childB, newParent gains childB at index 0, and childB.parent is newParent",
+      "tags": [
+        "positive",
+        "reparenting",
+        "element-node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild reparent-element",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"ul\");",
+        "    Element childA = new Element(\"li\");",
+        "    Element childB = new Element(\"li\");",
+        "    oldParent.appendChild(childA);",
+        "    oldParent.appendChild(childB);",
+        "    assert oldParent.childNodeSize() == 2;",
+        "    Element newParent = new Element(\"ol\");",
+        "    assert newParent.childNodeSize() == 0;",
+        "  WHEN",
+        "    newParent.appendChild(childB);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 1;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert childB.parent() == newParent;",
+        "    assert getSiblingIndex(childB) == 0;",
+        "END"
+      ]
+    }
+  ]
+}

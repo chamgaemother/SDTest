@@ -1,0 +1,170 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "empty matrix returns [-1,-1] covering loop-0 exit by B1 colPointer<0",
+      "path": "B0→B9→B8",
+      "precondition": "matrix is T[0][]; key arbitrary; no stubs needed",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "boundary",
+        "loop-0",
+        "branch-true",
+        "exit-colPointer<0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 search empty matrix",
+        "  GIVEN matrix = new Integer[0][], key = 5",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "single-element equal returns [0,0] covering B2 comp==0",
+      "path": "B0→B9→B1→B2→B3",
+      "precondition": "matrix is {{10}}; no mocks",
+      "expectedResult": "return value is [0, 0]",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "match",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 search single-element match",
+        "  GIVEN matrix = new Integer[][]{{10}}, key = 10",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{0, 0}, result)"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "single-element smaller target returns [-1,-1] via B4 comp>0→B5→B7→B9 exit",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "matrix is {{5}}; no stubs",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false",
+        "comp>0",
+        "loop-N",
+        "exit-rowPointer>=length"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 search single-element too small",
+        "  GIVEN matrix = new Integer[][]{{5}}, key = 10",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "single-element larger target returns [-1,-1] via B4 comp<=0→B6→B7→B9→B8",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B8",
+      "precondition": "matrix is {{5}}; no mocks",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false",
+        "comp<0",
+        "loop-N",
+        "exit-colPointer<0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 search single-element too large",
+        "  GIVEN matrix = new Integer[][]{{5}}, key = 2",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "found at [1,1] after one rowPointer increment covering comp>0 on first iteration",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "matrix = {{1,2},{3,4}}; no stubs",
+      "expectedResult": "return value is [1, 1]",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "comp>0 then comp==0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 search two-by-two found second row",
+        "  GIVEN matrix = new Integer[][]{{1,2},{3,4}}, key = 4",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{1, 1}, result)"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "mixed moves then found at [2,1] covering comp<0 then comp>0 then comp==0",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "matrix = {{1,4,7},{2,5,8},{3,6,9}}; no mocks",
+      "expectedResult": "return value is [2, 1]",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "branch-true",
+        "mixed-path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 search mixed moves",
+        "  GIVEN matrix = new Integer[][]{{1,4,7},{2,5,8},{3,6,9}}, key = 6",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{2, 1}, result)"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "not found exits by colPointer<0 covering repeated comp<0 moves",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B6→B7→B9→B1→B8",
+      "precondition": "matrix = {{5,6},{7,8}}; no stubs",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "exit-colPointer<0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 search multi not found colPointer exit",
+        "  GIVEN matrix = new Integer[][]{{5,6},{7,8}}, key = 4",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "not found exits by rowPointer>=length covering repeated comp>0 moves",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "matrix = {{5,6},{7,8}}; no mocks",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "exit-rowPointer>=length"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 search multi not found rowPointer exit",
+        "  GIVEN matrix = new Integer[][]{{5,6},{7,8}}, key = 10",
+        "  WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key)",
+        "  THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    }
+  ]
+}

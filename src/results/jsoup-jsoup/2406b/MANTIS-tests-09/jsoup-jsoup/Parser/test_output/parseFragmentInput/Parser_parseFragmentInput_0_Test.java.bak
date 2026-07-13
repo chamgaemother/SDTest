@@ -1,0 +1,241 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Comment;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_Test {
+
+    @Test
+    @DisplayName("String-overload: non-empty fragment and non-null context invokes treeBuilder.parseFragment once and returns its result")
+    public void test_TC01_O1() {
+        // branch B1->B2->B3: non-null fragment and context
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                // stub returns single TextNode
+                return List.of(new TextNode("x", ""));
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Element ctx = new Element("div");
+        String frag = "<p>x</p>";
+        String uri = "base";
+
+        List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);
+
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof TextNode);
+        assertEquals("x", ((TextNode) nodes.get(0)).text());
+    }
+
+    @Test
+    @DisplayName("String-overload: fragment is null, triggers NullPointerException before parsing")
+    public void test_TC02_O1() {
+        // branch B1->B2(ex): null fragment leads to NPE at reader creation
+        Parser parser = Parser.htmlParser();
+        Element ctx = new Element("div");
+        String frag = null;
+        String uri = "base";
+
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(frag, ctx, uri));
+    }
+
+    @Test
+    @DisplayName("String-overload: context is null, passes null context through to treeBuilder")
+    public void test_TC03_O1() {
+        // branch B1->B2->B3: context null forwarded
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                assertNull(context); // confirm forwarded null
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Element ctx = null;
+        String frag = "hi";
+        String uri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);
+        assertTrue(nodes.isEmpty());
+    }
+
+    @Test
+    @DisplayName("String-overload: BaseUri is null, parseFragment accepts null baseUri and returns stub result")
+    public void test_TC04_O1() {
+        // branch B1->B2->B3: null baseUri forwarded
+        class RecordingBuilder extends TreeBuilder {
+            String lastBaseUri = "";
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                lastBaseUri = baseUri;
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        }
+        RecordingBuilder stub = new RecordingBuilder();
+        Parser parser = new Parser(stub);
+        Element ctx = new Element("span");
+        String frag = "<b/>";
+        String uri = null;
+
+        List<Node> nodes = parser.parseFragmentInput(frag, ctx, uri);
+        assertTrue(nodes.isEmpty());
+        assertNull(stub.lastBaseUri);
+    }
+
+    @Test
+    @DisplayName("String-overload: treeBuilder.parseFragment throws IOException on Reader.read, propagates as UncheckedIOException")
+    public void test_TC05_O1() {
+        // branch B1->B2(ex): simulate IO error from reader
+        TreeBuilder ioBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                try { reader.read(); } catch (IOException e) { throw new UncheckedIOException(e); }
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(ioBuilder);
+        Element ctx = new Element("p");
+        String frag = "err";
+        String uri = "b";
+
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class,
+            () -> parser.parseFragmentInput(frag, ctx, uri));
+        assertTrue(ex.getCause() instanceof IOException);
+    }
+
+    @Test
+    @DisplayName("Reader-overload: non-empty fragment and non-null context invokes treeBuilder.parseFragment once and returns its result")
+    public void test_TC06_O2() {
+        // branch B1->B2->B3: reader overload, non-null reader/context
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                return List.of(new Comment("c", ""));
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Element ctx = new Element("p");
+        Reader r = new StringReader("<--c-->");
+        String uri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Comment);
+        assertEquals("c", ((Comment) nodes.get(0)).getData());
+    }
+
+    @Test
+    @DisplayName("Reader-overload: fragment Reader is null, triggers NullPointerException before parsing")
+    public void test_TC07_O2() {
+        // branch B1->B2(ex): null reader leads to NPE
+        Parser parser = Parser.htmlParser();
+        Reader r = null;
+        Element ctx = new Element("p");
+        String uri = "b";
+
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(r, ctx, uri));
+    }
+
+    @Test
+    @DisplayName("Reader-overload: context is null, passes null context and stub returns empty")
+    public void test_TC08_O2() {
+        // branch B1->B2->B3: reader overload with null context
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                assertNull(context);
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Reader r = new StringReader("data");
+        Element ctx = null;
+        String uri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);
+        assertTrue(nodes.isEmpty());
+    }
+
+    @Test
+    @DisplayName("Reader-overload: baseUri is null, stub records null and returns list")
+    public void test_TC09_O2() {
+        // branch B1->B2->B3: reader overload with null baseUri
+        class RecordingBuilder extends TreeBuilder {
+            String lastBaseUri = "";
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                lastBaseUri = baseUri;
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        }
+        RecordingBuilder stub = new RecordingBuilder();
+        Parser parser = new Parser(stub);
+        Reader r = new StringReader("<i/> ");
+        Element ctx = new Element("i");
+        String uri = null;
+
+        List<Node> nodes = parser.parseFragmentInput(r, ctx, uri);
+        assertTrue(nodes.isEmpty());
+        assertNull(stub.lastBaseUri);
+    }
+
+    @Test
+    @DisplayName("Reader-overload: treeBuilder.parseFragment throws IOException on Reader.read, propagates as UncheckedIOException")
+    public void test_TC10_O2() {
+        // branch B1->B2(ex): reader overload IO error propagation
+        TreeBuilder ioBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+                try { reader.read(); } catch (IOException e) { throw new UncheckedIOException(e); }
+                return Collections.emptyList();
+            }
+            @Override public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) { return null; }
+        };
+        Parser parser = new Parser(ioBuilder);
+        Reader r = new StringReader("ioerr");
+        Element ctx = new Element("span");
+        String uri = "b";
+
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class,
+            () -> parser.parseFragmentInput(r, ctx, uri));
+        assertTrue(ex.getCause() instanceof IOException);
+    }
+}

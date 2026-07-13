@@ -1,0 +1,104 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search(term) returns empty list when index does not contain the term (B0 false)",
+      "path": "B0→B1",
+      "precondition": "fresh BM25InvertedIndex with no movies added",
+      "expectedResult": "return value is an empty list",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search missing-term",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"foobar\");",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search(term) returns single result for one document containing term (B0 true, loop-1, movie non-null)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex idx with one movie added containing 'hello' in name",
+      "expectedResult": "return list with one SearchResult(docId=1) whose relevanceScore equals computeBM25Score(1,docLength,idf)",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search single-term",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Hello World\", 8.0, 2000, \"\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"hello\");",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search(term) skips entries with missing Movie object (movie==null branch-false)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "BM25InvertedIndex idx stubbed: manually put index entry for term 'ghost' mapping docId 42 without adding movie",
+      "expectedResult": "return value is an empty list",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search skip-missing-movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.index.put(\"ghost\", Map.of(42,1)); // stub bypass addMovie",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"ghost\");",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search(term) returns multiple results sorted by descending score (loop-N, branch-true)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex idx with two movies; both contain 'test' differing lengths to produce different scores",
+      "expectedResult": "return list of two SearchResults sorted by relevanceScore in descending order",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search multiple-results",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Test One\", 7.0, 2010, \"alpha beta gamma\");",
+        "    idx.addMovie(2, \"Test Two\", 9.0, 2015, \"alpha beta\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"test\");",
+        "  THEN",
+        "    assert results.size() == 2;",
+        "    assert results.get(0).getRelevanceScore() >= results.get(1).getRelevanceScore();",
+        "END"
+      ]
+    }
+  ]
+}

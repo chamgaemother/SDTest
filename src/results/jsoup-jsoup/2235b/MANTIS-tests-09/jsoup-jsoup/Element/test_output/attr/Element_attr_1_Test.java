@@ -1,0 +1,36 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_attr_1_Test {
+
+    @Test
+    @DisplayName("TC06: attr(String,String): null value argument throws IllegalArgumentException (branch: Validate.notNull(value) fails)")
+    void test_TC06() {
+        // GIVEN an Element with no pre-existing attributes
+        Element el = new Element("div");
+        String key = "data-null";
+        String value = null;
+        // WHEN & THEN: passing a null value should trigger parameter non-null validation and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            // branch B1: value null causes Validate.notNull to fail
+            el.attr(key, value);
+        });
+    }
+
+    @Test
+    @DisplayName("TC07: attr(String,boolean): false on non-existing key results in no attribute added (branch: attributeValue false, key absent)")
+    void test_TC07() {
+        // GIVEN an Element with no pre-existing attributes
+        Element el = new Element("input");
+        String key = "readonly";
+        // WHEN: calling attr(key, false) on an element that does not have 'readonly'
+        Element returned = el.attr(key, false);
+        // THEN: no attribute is added and the same Element instance is returned
+        assertFalse(el.attributes().hasKey(key), "No attribute should be present when setting boolean false on absent key (branch: no-op removal)");
+        assertSame(el, returned, "Method should return this Element instance for chaining even when no change was made");
+    }
+}

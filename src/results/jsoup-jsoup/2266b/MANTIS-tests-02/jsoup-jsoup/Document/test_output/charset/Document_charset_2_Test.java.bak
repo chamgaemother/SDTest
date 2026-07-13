@@ -1,0 +1,53 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("TC10: charset(htmlSyntax, both existing meta[charset] and meta[name=charset]) updates charset and removes obsolete only")
+    public void test_TC10() {
+        // GIVEN a new shell document with existing meta[charset] and duplicate obsolete meta[name=charset]
+        Document doc = Document.createShell("http://example.com");
+        Element head = doc.head();
+        // add an existing meta charset element (should be updated, not duplicated)
+        head.appendElement("meta").attr("charset", "OLD");
+        // add two obsolete meta[name=charset] elements (should be removed)
+        head.appendElement("meta").attr("name", "charset").attr("content", "a");
+        head.appendElement("meta").attr("name", "charset").attr("content", "b");
+
+        // WHEN updating charset with updateMetaCharsetElement(true) invoked inside charset()
+        doc.charset(StandardCharsets.US_ASCII);
+
+        // THEN the document's outputSettings charset is updated to US_ASCII
+        assertEquals(StandardCharsets.US_ASCII, doc.outputSettings().charset(),
+                "OutputSettings charset should be updated to US_ASCII");
+        // AND exactly one meta[charset] remains, with its charset attribute set to US-ASCII
+        Elements charsetMetas = doc.head().select("meta[charset]");
+        assertEquals(1, charsetMetas.size(), "There should be exactly one meta[charset] element");
+        assertEquals("US-ASCII", charsetMetas.first().attr("charset"),
+                "The charset attribute should be updated to US-ASCII");
+        // AND all obsolete meta[name=charset] elements should be removed
+        Elements obsolete = doc.head().select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "All obsolete meta[name=charset] elements should be removed");
+    }
+
+    @Test
+    @DisplayName("TC11: charset(null) throws NullPointerException on null Charset parameter")
+    public void test_TC11() {
+        // GIVEN a new shell document without any meta elements
+        Document doc = Document.createShell("http://test");
+        // WHEN calling charset with null, THEN expect NullPointerException
+        assertThrows(NullPointerException.class,
+                () -> doc.charset(null),
+                "Calling charset(null) should throw NullPointerException");
+    }
+}

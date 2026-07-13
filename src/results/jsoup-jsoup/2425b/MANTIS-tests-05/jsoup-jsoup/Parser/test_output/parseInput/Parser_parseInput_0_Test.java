@@ -1,0 +1,77 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String,baseUri) with valid HTML returns a Document containing expected elements")
+    public void test_TC01_O1() {
+        // Given: a simple HTML string with one <p> element, baseUri set
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // When: parsing the HTML string overload, covering normal branch B0→B1→B2→B3→B4
+        Document doc = parser.parseInput(html, baseUri);
+        // Then: the parsed document should contain the <p> element with text "Hello"
+        assertEquals("Hello", doc.select("p").text());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseInput(String,baseUri) with empty HTML returns an empty Document body")
+    public void test_TC02_O1() {
+        // Given: empty HTML string to simulate boundary of no content
+        String html = "";
+        String baseUri = "http://example.com";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // When: calling parseInput on empty input covers normal branch B0→B1→B2→B3→B4
+        Document doc = parser.parseInput(html, baseUri);
+        // Then: the body should have zero child elements
+        Elements children = doc.body().children(); // Changed List<Node> to Elements
+        assertEquals(0, children.size());
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parseInput(Reader,baseUri) with valid Reader returns same content Document")
+    public void test_TC03_O2() {
+        // Given: a Reader over a div with id 'test'
+        Reader reader = new StringReader("<div id='test'></div>");
+        String baseUri = "http://example.com";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // When: parsing via Reader overload covers B0→B1→B2→B3→B4
+        Document doc = parser.parseInput(reader, baseUri);
+        // Then: the parsed document should contain one <div id='test'>
+        assertEquals(1, doc.select("div#test").size());
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseInput(Reader,baseUri) wraps IOException from Reader into UncheckedIOException")
+    public void test_TC04_O2() {
+        // Given: a Reader stub that always throws IOException to drive branch B5 exception path
+        Reader reader = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override public void close() throws IOException { /* no-op */ }
+        };
+        String baseUri = "http://example.com";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        // When & Then: parsing should wrap IOException into UncheckedIOException
+        assertThrows(UncheckedIOException.class, () -> parser.parseInput(reader, baseUri));
+    }
+}

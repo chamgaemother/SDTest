@@ -1,0 +1,262 @@
+package com.ezylang.evalex.parser;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.config.FunctionDictionaryIfc;
+import com.ezylang.evalex.config.OperatorDictionaryIfc;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class Tokenizer_parse_Test {
+
+    @Test
+    @DisplayName("TC11: Structure separator between two variables produces VARIABLE_OR_CONSTANT, STRUCTURE_SEPARATOR, VARIABLE_OR_CONSTANT tokens")
+    void test_TC11() throws Exception {
+        // GIVEN a config that allows structures so '.' is recognized and not part of number
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isStructuresAllowed()).thenReturn(true);
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "a.b";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN
+        List<Token> tokens = tz.parse();
+
+        // THEN
+        assertEquals(3, tokens.size(), "Expect exactly three tokens");
+        assertEquals(Token.TokenType.VARIABLE_OR_CONSTANT, tokens.get(0).getType());
+        assertEquals("a", tokens.get(0).getTokenValue());
+        assertEquals(Token.TokenType.STRUCTURE_SEPARATOR, tokens.get(1).getType());
+        assertEquals(".", tokens.get(1).getTokenValue());
+        assertEquals(Token.TokenType.VARIABLE_OR_CONSTANT, tokens.get(2).getType());
+        assertEquals("b", tokens.get(2).getTokenValue());
+    }
+
+    @Test
+    @DisplayName("TC12: Array close at start throws 'Array close not allowed here'")
+    void test_TC12() {
+        // GIVEN a config that allows arrays so ']' is attempted to parse as ARRAY_CLOSE
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(true);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "]";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Array close not allowed here"));
+    }
+
+    @Test
+    @DisplayName("TC13: Unexpected closing brace at start throws 'Unexpected closing brace'")
+    void test_TC13() {
+        // GIVEN default config not allowing special features
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = ")";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Unexpected closing brace"));
+    }
+
+    @Test
+    @DisplayName("TC14: Decimal number with two dots throws 'Number contains more than one decimal point'")
+    void test_TC14() {
+        // GIVEN default config
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "1.2.3";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Number contains more than one decimal point"));
+    }
+
+    @Test
+    @DisplayName("TC15: Illegal scientific format '1e+' throws 'Illegal scientific format'")
+    void test_TC15() {
+        // GIVEN default config
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "1e+";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Illegal scientific format"));
+    }
+
+    @Test
+    @DisplayName("TC16: Hexadecimal number literal '0x1F' produces NUMBER_LITERAL token")
+    void test_TC16() throws Exception {
+        // GIVEN default config
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "0x1F";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN
+        List<Token> tokens = tz.parse();
+
+        // THEN
+        assertEquals(1, tokens.size());
+        Token t = tokens.get(0);
+        assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType());
+        assertEquals("0x1F", t.getTokenValue());
+    }
+
+    @Test
+    @DisplayName("TC17: Unterminated string literal throws 'Closing quote not found'")
+    void test_TC17() {
+        // GIVEN config allowing single-quoted strings
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(true);
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+
+        String expr = "'abc";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Closing quote not found"));
+    }
+
+    @Test
+    @DisplayName("TC18: Unknown escape in string literal throws 'Unknown escape character'")
+    void test_TC18() {
+        // GIVEN config allowing single-quoted strings
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(true);
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+
+        String expr = "'a\\q'";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Unknown escape character"));
+    }
+
+    @Test
+    @DisplayName("TC19: Undefined function call throws \"Undefined function 'foo'\"")
+    void test_TC19() {
+        // GIVEN config with no function named foo
+        FunctionDictionaryIfc fdict = mock(FunctionDictionaryIfc.class);
+        when(fdict.hasFunction("foo")).thenReturn(false);
+
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(fdict);
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "foo()";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Undefined function 'foo'"));
+    }
+
+    @Test
+    @DisplayName("TC20: Implicit multiplication inserted between two grouped expressions when allowed (BRACE_CLOSE→BRACE_OPEN)")
+    void test_TC20() throws Exception {
+        // GIVEN config allowing implicit multiplication
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(true);
+        when(cfg.isArraysAllowed()).thenReturn(false);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "(1)(2)";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN
+        List<Token> tokens = tz.parse();
+
+        // THEN
+        assertEquals(7, tokens.size());
+        assertEquals(Token.TokenType.BRACE_OPEN, tokens.get(0).getType());
+        assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(1).getType());
+        assertEquals(Token.TokenType.BRACE_CLOSE, tokens.get(2).getType());
+        assertEquals(Token.TokenType.INFIX_OPERATOR, tokens.get(3).getType());
+        assertEquals("*", tokens.get(3).getTokenValue());
+        assertEquals(Token.TokenType.BRACE_OPEN, tokens.get(4).getType());
+        assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(5).getType());
+        assertEquals(Token.TokenType.BRACE_CLOSE, tokens.get(6).getType());
+    }
+
+    @Test
+    @DisplayName("TC21: Unmatched open array throws 'Closing array not found'")
+    void test_TC21() {
+        // GIVEN config allowing arrays but no closing ']'
+        ExpressionConfiguration cfg = mock(ExpressionConfiguration.class);
+        when(cfg.getOperatorDictionary()).thenReturn(mock(OperatorDictionaryIfc.class));
+        when(cfg.getFunctionDictionary()).thenReturn(mock(FunctionDictionaryIfc.class));
+        when(cfg.isArraysAllowed()).thenReturn(true);
+        when(cfg.isStructuresAllowed()).thenReturn(false);
+        when(cfg.isImplicitMultiplicationAllowed()).thenReturn(false);
+        when(cfg.isSingleQuoteStringLiteralsAllowed()).thenReturn(false);
+
+        String expr = "[";
+        Tokenizer tz = new Tokenizer(expr, cfg);
+
+        // WHEN / THEN
+        ParseException ex = assertThrows(ParseException.class, tz::parse);
+        assertTrue(ex.getMessage().contains("Closing array not found"));
+    }
+}

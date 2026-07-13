@@ -1,0 +1,110 @@
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.NodeTraversor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("remove first of two siblings in head: triggers non-last-sibling removal branch (origSize > childSize) and continues traversal on next sibling without tail for removed node")
+    void test_TC12() {
+        // GIVEN: a root element with two children, a and b
+        Element root = new Element("root");
+        TextNode a = new TextNode("a");
+        TextNode b = new TextNode("b");
+        root.appendChild(a);
+        root.appendChild(b);
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                // remove 'a' in its head callback to trigger origSize > childSize branch
+                if (n == a) {
+                    n.remove();
+                }
+                events.add(n.outerHtml());
+            }
+            @Override
+            public void tail(Node n, int depth) { /* no-op */ }
+        };
+
+        // WHEN: traverse starting at the first child (a)
+        NodeTraversor.traverse(visitor, root.childNode(0));
+
+        // THEN: 'b' must have been visited in head after 'a' removal
+        assertTrue(events.contains("b"), "Expected head to be called for node 'b' after 'a' removal");
+        // THEN: root should only have 'b' remaining
+        assertEquals(1, root.childNodeSize(), "Root should retain only one child after removal");
+    }
+
+    @Test
+    @DisplayName("deep tree with nested single child triggers ancestor-tail loop branch (node.nextSibling null && depth>0) at depth>1")
+    void test_TC13() {
+        // GIVEN: parse <a><b><c/></b></a> to get nested single-child structure
+        List<Node> nodes = Parser.parseFragment("<a><b><c/></b></a>", "", Parser.htmlParser());
+        Node root = nodes.get(0);
+        List<String> records = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                records.add("head" + depth);
+            }
+            @Override
+            public void tail(Node n, int depth) {
+                records.add("tail" + depth);
+            }
+        };
+
+        // WHEN: traverse the nested tree
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: should record head0,head1,head2,tail2,tail1,tail0 in that exact order
+        List<String> expected = List.of("head0", "head1", "head2", "tail2", "tail1", "tail0");
+        assertEquals(expected, records, "Expected depth-first head/tail recording on deep single-child tree");
+    }
+
+    @Test
+    @DisplayName("visitor replaces then removal of a replaced node: triggers replace branch (origSize==childSize) then removal on next sibling")
+    void test_TC14() {
+        // GIVEN: a root with two TextNode children orig (a) and next (b)
+        Element root = new Element("root");
+        TextNode a = new TextNode("orig");
+        TextNode b = new TextNode("next");
+        root.appendChild(a);
+        root.appendChild(b);
+        List<String> events = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                // first, replace 'orig' with 'x' to trigger origSize==childSize branch
+                if (n == a) {
+                    n.replaceWith(new TextNode("x"));
+                }
+                // then remove the replaced node 'x' on its own head to trigger removal on next
+                else if ("x".equals(n.outerHtml())) {
+                    n.remove();
+                }
+                events.add(n.outerHtml());
+            }
+            @Override
+            public void tail(Node n, int depth) { /* no-op */ }
+        };
+
+        // WHEN: traverse starting at childNode(0) (orig)
+        NodeTraversor.traverse(visitor, root.childNode(0));
+
+        // THEN: 'next' must have been visited after replace & removal
+        assertTrue(events.contains("next"), "Expected head to be called for node 'next' after replace and removal");
+        // THEN: root should only have one child after replacement and subsequent removal
+        assertEquals(1, root.childNodeSize(), "Root should retain only the 'next' node after replace-then-remove");
+    }
+}

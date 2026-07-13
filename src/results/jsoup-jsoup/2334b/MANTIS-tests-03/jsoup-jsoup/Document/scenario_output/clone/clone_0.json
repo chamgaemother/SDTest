@@ -1,0 +1,79 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on an empty Document returns a deep copy with distinct instance and cloned outputSettings and parser",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original = new Document(\"http://example.com\"); // no child nodes",
+      "expectedResult": "clone != original; clone.location().equals(original.location()); clone.outputSettings() != original.outputSettings(); clone.parser() != original.parser(); clone.childNodes().isEmpty()",
+      "tags": [
+        "branch-normal",
+        "deep-copy",
+        "empty",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone empty-Document",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone != original; assert clone.location().equals(original.location()); assert clone.outputSettings() != original.outputSettings(); assert clone.parser() != original.parser(); assert clone.childNodes().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() on a shell Document preserves child structure and produces distinct child instances",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original = Document.createShell(\"http://site\"); // has html, head, body",
+      "expectedResult": "clone.childNodes().size() == original.childNodes().size(); for each index i: clone.childNodes().get(i) != original.childNodes().get(i); clone.select(\"html\").first() != original.select(\"html\").first()",
+      "tags": [
+        "branch-normal",
+        "deep-copy",
+        "populated",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone shell-Document",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://site\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assert clone.childNodes().size() == original.childNodes().size(); for each i: assert clone.childNodes().get(i) != original.childNodes().get(i);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() produces isolation: modifications to clone do not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original = Document.createShell(\"uri\"); original.title(\"Title\");",
+      "expectedResult": "after clone.title(\"New\"): original.title().equals(\"Title\"); clone.title().equals(\"New\")",
+      "tags": [
+        "branch-normal",
+        "isolation",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone isolation",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"uri\"); original.title(\"Title\");",
+        "  WHEN",
+        "    Document clone = original.clone(); clone.title(\"New\");",
+        "  THEN",
+        "    assert original.title().equals(\"Title\"); assert clone.title().equals(\"New\");",
+        "END"
+      ]
+    }
+  ]
+}

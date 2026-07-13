@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Invoke private static tagSet() via reflection and assert it returns a non-empty Set<String>",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser class loaded",
+      "expectedResult": "returned Set contains known tag names, size > 0",
+      "tags": [
+        "positive",
+        "reflection",
+        "private-method"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 invoke-tagSet-success",
+        "  GIVEN",
+        "    // Arrange",
+        "    Class<?> cls = Parser.class;",
+        "    Method m = cls.getDeclaredMethod(\"tagSet\");",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    // Act",
+        "    Object result = m.invoke(null);",
+        "  THEN",
+        "    // Assert",
+        "    assert result instanceof Set;",
+        "    assert ((Set<?>) result).size() > 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Attempt to invoke non-existent tagSetFake() via reflection and expect NoSuchMethodException",
+      "path": "B0→B1→B3",
+      "precondition": "Parser class loaded",
+      "expectedResult": "NoSuchMethodException is thrown",
+      "tags": [
+        "negative",
+        "reflection",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 invoke-tagSet-failure",
+        "  GIVEN",
+        "    // Arrange",
+        "    Class<?> cls = Parser.class;",
+        "  WHEN",
+        "    // Act & Assert",
+        "    assertThrows(NoSuchMethodException.class, () -> cls.getDeclaredMethod(\"tagSetFake\"));",
+        "END"
+      ]
+    }
+  ]
+}

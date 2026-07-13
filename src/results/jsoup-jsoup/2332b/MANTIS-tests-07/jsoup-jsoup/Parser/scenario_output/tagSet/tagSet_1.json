@@ -1,0 +1,204 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setTrackErrors enables tracking when maxErrors > 0 and isTrackErrors returns true",
+      "path": "B0→B3(true)→B6→B8",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "parser.isTrackErrors() == true and parser.getErrors().getMaxSize() == 5",
+      "tags": [
+        "positive",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 enable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == true;",
+        "    assert parser.getErrors().getMaxSize() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors disables tracking when maxErrors == 0 and isTrackErrors returns false",
+      "path": "B0→B3(false)→B7→B8",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "parser.isTrackErrors() == false and parser.getErrors().getMaxSize() == 0",
+      "tags": [
+        "negative",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 disable-error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == false;",
+        "    assert parser.getErrors().getMaxSize() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackPosition toggles on when argument true and isTrackPosition returns true",
+      "path": "B0→B9(true)→B12",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "parser.isTrackPosition() == true",
+      "tags": [
+        "positive",
+        "branch",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 enable-position-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert parser.isTrackPosition() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "setTrackPosition toggles off when argument false and isTrackPosition returns false",
+      "path": "B0→B9(false)→B11",
+      "precondition": "Parser parser = Parser.htmlParser().setTrackPosition(true)",
+      "expectedResult": "parser.isTrackPosition() == false",
+      "tags": [
+        "negative",
+        "branch",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 disable-position-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true);",
+        "  WHEN",
+        "    parser.setTrackPosition(false);",
+        "  THEN",
+        "    assert parser.isTrackPosition() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "newInstance returns deep copy: changing original settings does not affect clone",
+      "path": "B0→B13→B15",
+      "precondition": "Parser orig = Parser.htmlParser().setTrackErrors(3).setTrackPosition(true)",
+      "expectedResult": "clone.isTrackErrors() == false and clone.isTrackPosition() == false",
+      "tags": [
+        "positive",
+        "clone",
+        "independent-instance"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 newInstance-deep-copy",
+        "  GIVEN",
+        "    Parser orig = Parser.htmlParser().setTrackErrors(3).setTrackPosition(true);",
+        "  WHEN",
+        "    Parser clone = orig.newInstance();",
+        "    orig.setTrackErrors(1).setTrackPosition(false);",
+        "  THEN",
+        "    // clone retains initial settings before original was modified",
+        "    assert clone.isTrackErrors() == true;",
+        "    assert clone.getErrors().getMaxSize() == 3;",
+        "    assert clone.isTrackPosition() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "defaultNamespace returns HTML namespace for htmlParser",
+      "path": "B0→B16(html)→B18",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "parser.defaultNamespace() == Parser.NamespaceHtml",
+      "tags": [
+        "positive",
+        "namespace",
+        "html"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 html-default-namespace",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceHtml);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "defaultNamespace returns XML namespace for xmlParser",
+      "path": "B0→B16(xml)→B18",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "parser.defaultNamespace() == Parser.NamespaceXml",
+      "tags": [
+        "positive",
+        "namespace",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 xml-default-namespace",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceXml);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "isContentForTagData returns true for 'script' with HtmlTreeBuilder and false for 'div'",
+      "path": "B0→B19(script→true)→B20 and B0→B19(div→false)→B21",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "parser.isContentForTagData(\"script\") == true and parser.isContentForTagData(\"div\") == false",
+      "tags": [
+        "positive",
+        "branch",
+        "content-for-data"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 content-for-tag-data-branches",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    boolean b1 = parser.isContentForTagData(\"script\");",
+        "    boolean b2 = parser.isContentForTagData(\"div\");",
+        "  THEN",
+        "    assert b1 == true;",
+        "    assert b2 == false;",
+        "END"
+      ]
+    }
+  ]
+}

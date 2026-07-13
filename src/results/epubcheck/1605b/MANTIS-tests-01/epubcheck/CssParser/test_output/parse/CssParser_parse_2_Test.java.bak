@@ -1,0 +1,65 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.NoSuchElementException;
+
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssTokenList.CssTokenIterator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_Test {
+
+  @Test
+  @DisplayName("scan(...) throws PrematureEOFException → propagate as CssException")
+  public void test_TC13() throws Exception {
+    // GIVEN a CssParser spy whose scan method throws PrematureEOFException
+    CssParser parser = spy(new CssParser(java.util.Locale.ENGLISH));
+    Reader reader = new StringReader("/* empty */");
+    String systemID = "test.css";
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    // stub scan to throw PrematureEOFException to satisfy path B0->scan->throw
+    doThrow(new PrematureEOFException())
+        .when(parser).scan(any(Reader.class), any(String.class), any(CssErrorHandler.class));
+
+    // WHEN/THEN: parsing should propagate the PrematureEOFException unchecked
+    assertThrows(PrematureEOFException.class, () -> {
+      parser.parse(reader, systemID, err, doc);
+    });
+  }
+
+  @Test
+  @DisplayName("iterator.next(predicate) throws NoSuchElementException → propagate unchecked")
+  public void test_TC14() throws Exception {
+    // GIVEN a CssParser spy and a fake iterator that hasNext->true and next->throw
+    CssParser parser = spy(new CssParser(java.util.Locale.ENGLISH));
+    Reader reader = new StringReader("a{};");
+    String systemID = "test.css";
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+    // create mock iterator: hasNext(predicate) returns true, next(predicate) throws NoSuchElementException
+    CssTokenIterator iter = mock(CssTokenIterator.class);
+    doReturn(true).when(iter).hasNext(anyObject());
+    doThrow(new NoSuchElementException())
+        .when(iter).next(anyObject());
+    // stub scan to return our fake iterator
+    doReturn(iter)
+        .when(parser).scan(any(Reader.class), any(String.class), any(CssErrorHandler.class));
+
+    // WHEN/THEN: parse should propagate NoSuchElementException from iterator.next
+    assertThrows(NoSuchElementException.class, () -> {
+      parser.parse(reader, systemID, err, doc);
+    });
+  }
+}

@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC01: dataset() returns empty map when no attributes set (attributes==null branch)")
+    public void test_TC01() {
+        // GIVEN an element with no attributes, so attributes==null triggers branch where no data- processing occurs
+        Element el = new Element("div");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect empty dataset map
+        assertTrue(ds.isEmpty(), "Expected dataset to be empty when no attributes present");
+    }
+
+    @Test
+    @DisplayName("TC02: dataset() returns empty map when attributes exist but no data- entries (attributes!=null, loop 0)")
+    public void test_TC02() {
+        // GIVEN an element with a non-data attribute only, attributes!=null but no key starts with "data-"
+        Element el = new Element("span");
+        el.attr("class", "foo");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect empty dataset map since no data- prefixed attributes
+        assertTrue(ds.isEmpty(), "Expected dataset to be empty when only non-data attributes");
+    }
+
+    @Test
+    @DisplayName("TC03: dataset() returns single entry for one data-attribute (loop 1)")
+    public void test_TC03() {
+        // GIVEN an element with exactly one data- attribute, triggers loop processing for one entry
+        Element el = new Element("p");
+        el.attr("data-key", "value");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect single entry with key 'key' and value 'value'
+        assertEquals(1, ds.size(), "Expected dataset size 1 for one data- attribute");
+        assertEquals("value", ds.get("key"), "Expected dataset entry 'key' to map to 'value'");
+    }
+
+    @Test
+    @DisplayName("TC04: dataset() returns multiple entries for several data-attributes (loop N)")
+    public void test_TC04() {
+        // GIVEN an element with two data- attributes, triggers loop processing for multiple entries
+        Element el = new Element("div");
+        el.attr("data-one", "1");
+        el.attr("data-two", "2");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect two entries 'one'->'1' and 'two'->'2'
+        assertEquals(2, ds.size(), "Expected dataset size 2 for two data- attributes");
+        assertEquals("1", ds.get("one"), "Expected dataset entry 'one' to map to '1'");
+        assertEquals("2", ds.get("two"), "Expected dataset entry 'two' to map to '2'");
+    }
+
+    @Test
+    @DisplayName("TC05: dataset() ignores attributes with prefix case mismatch (Data- uppercase)")
+    public void test_TC05() {
+        // GIVEN an element where attribute key 'Data-Key' uses uppercase 'Data-' so should not be recognized as data- prefix
+        Element el = new Element("a");
+        // Use direct attributes() to insert a case-mismatched key
+        el.attributes().put("Data-Key", "v");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect empty dataset since prefix matching is case-sensitive
+        assertTrue(ds.isEmpty(), "Expected dataset to ignore keys with uppercase 'Data-' prefix");
+    }
+}

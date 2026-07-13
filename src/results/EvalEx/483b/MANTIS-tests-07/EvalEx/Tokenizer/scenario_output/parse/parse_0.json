@@ -1,0 +1,260 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty expression returns empty token list without exceptions",
+      "path": "B0→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "return empty List<Token>",
+      "tags": [
+        "branch-false:r14==null",
+        "braceBalance<=0:true",
+        "arrayBalance>0:false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-expression",
+        "  GIVEN",
+        "    String expr = \"\";",
+        "  WHEN",
+        "    List<Token> result = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single number literal parsed and returned",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "return List<Token> of size 1 with a NUMBER_LITERAL token value \"123\"",
+      "tags": [
+        "branch-false:implicitMultiplicationPossible",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-number",
+        "  GIVEN",
+        "    String expr = \"123\";",
+        "  WHEN",
+        "    List<Token> result = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert result.size() == 1 && result.get(0).getType() == TokenType.NUMBER_LITERAL && result.get(0).getValue().equals(\"123\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Unmatched closing brace throws Unexpected closing brace exception",
+      "path": "B0→B1→B2→B6→B1→B2→B6...→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "throws ParseException of type ParseException with message containing \"Unexpected closing brace\"",
+      "tags": [
+        "exception",
+        "loop-1",
+        "braceBalance<0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse unmatched-closing-brace",
+        "  GIVEN",
+        "    String expr = \")\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Unexpected closing brace\""
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Unmatched opening brace throws Closing brace not found exception",
+      "path": "B0→B1→B2→B6→B1→B7→B8",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "throws ParseException of type ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "exception",
+        "loop-1",
+        "braceBalance>0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse unmatched-opening-brace",
+        "  GIVEN",
+        "    String expr = \"(\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Closing brace not found\""
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Implicit multiplication between number and variable with allowed enabled inserts '*'",
+      "path": "B0→B1→B2→B3→B4→B6→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration.setImplicitMultiplicationAllowed(true)",
+      "expectedResult": "return tokens [NUMBER_LITERAL(\"2\"), INFIX_OPERATOR(\"*\"), VARIABLE_OR_CONSTANT(\"x\")]",
+      "tags": [
+        "branch-true:implicitMultiplicationPossible",
+        "branch-false:isImplicitMultiplicationAllowed",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse implicit-multiplication-allowed",
+        "  GIVEN",
+        "    configuration.setImplicitMultiplicationAllowed(true);",
+        "    String expr = \"2x\";",
+        "  WHEN",
+        "    List<Token> result = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert result.get(1).getType() == TokenType.INFIX_OPERATOR && result.get(1).getValue().equals(\"*\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Implicit multiplication disallowed throws Missing operator exception",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "ExpressionConfiguration.setImplicitMultiplicationAllowed(false)",
+      "expectedResult": "throws ParseException of type ParseException with message \"Missing operator\"",
+      "tags": [
+        "branch-true:implicitMultiplicationPossible",
+        "branch-true:isImplicitMultiplicationAllowed",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse implicit-multiplication-disallowed",
+        "  GIVEN",
+        "    configuration.setImplicitMultiplicationAllowed(false);",
+        "    String expr = \"2x\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Missing operator\""
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Misplaced structure separator at start throws Misplaced structure operator",
+      "path": "B0→B1→B2→B6→B1→...→B2→B6...→B1",
+      "precondition": "ExpressionConfiguration.setStructuresAllowed(true)",
+      "expectedResult": "throws ParseException of type ParseException with message \"Misplaced structure operator\"",
+      "tags": [
+        "exception",
+        "branch-true:isAtStringLiteralStart:false",
+        "branch-true:isNextCharNumberChar:false",
+        "structure"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse misplaced-structure-separator",
+        "  GIVEN",
+        "    configuration.setStructuresAllowed(true);",
+        "    String expr = \".abc\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Misplaced structure operator\""
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Unexpected token after infix operator throws exception",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B2→B6…",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "throws ParseException of type ParseException with message \"Unexpected token after infix operator\"",
+      "tags": [
+        "exception",
+        "branch-true:invalidTokenAfterInfixOperator"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse unexpected-token-after-infix",
+        "  GIVEN",
+        "    String expr = \"1+*2\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Unexpected token after infix operator\""
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Decimal number literal with single dot parsed correctly",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "return List<Token> with NUMBER_LITERAL(\"1.23\")",
+      "tags": [
+        "positive",
+        "number-format",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse decimal-number",
+        "  GIVEN",
+        "    String expr = \"1.23\";",
+        "  WHEN",
+        "    List<Token> result = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert result.get(0).getValue().equals(\"1.23\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Illegal scientific notation missing exponent throws exception",
+      "path": "B0→B1→B2→B6→B1…",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "throws ParseException of type ParseException with message \"Illegal scientific format\"",
+      "tags": [
+        "exception",
+        "number-format"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse illegal-scientific",
+        "  GIVEN",
+        "    String expr = \"1e\";",
+        "  WHEN",
+        "    call new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    throws ParseException.class and message contains \"Illegal scientific format\""
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Hexadecimal number literal parsed correctly",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with default settings",
+      "expectedResult": "return List<Token> with NUMBER_LITERAL(\"0x1A\")",
+      "tags": [
+        "positive",
+        "number-format",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse hex-number",
+        "  GIVEN",
+        "    String expr = \"0x1A\";",
+        "  WHEN",
+        "    List<Token> result = new Tokenizer(expr, configuration).parse();",
+        "  THEN",
+        "    assert result.get(0).getValue().equals(\"0x1A\");"
+      ]
+    }
+  ]
+}

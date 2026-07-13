@@ -1,0 +1,74 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException for null child parameter",
+      "path": "B0→B1→B1.throw",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no child added",
+      "tags": [
+        "branch-false",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child-exception",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.appendChild(null);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild(child) on fresh element initializes childNodes and appends one child",
+      "path": "B0→B1→B2→B3_true→B4→B5→B6",
+      "precondition": "element created has no prior children",
+      "expectedResult": "return this element; element.childNodeSize() == 1; child.parent() == element; child.siblingIndex == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "initial-append"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child-initializes-childNodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); Node child = new Element(\"span\");",
+        "  WHEN",
+        "    Element returned = el.appendChild(child);",
+        "  THEN",
+        "    assert returned == el; assert el.childNodeSize() == 1; assert child.parent() == el; assert child.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild(child) on element with existing children appends second child without reinitializing childNodes",
+      "path": "B0→B1→B2→B3_false→B4→B5→B6",
+      "precondition": "element already has one child added",
+      "expectedResult": "return this element; element.childNodeSize() == 2; secondChild.parent() == element; secondChild.siblingIndex == 1",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "subsequent-append"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild second-child-appended",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); Node first = new Element(\"p\"); el.appendChild(first); Node second = new Element(\"span\");",
+        "  WHEN",
+        "    Element returned = el.appendChild(second);",
+        "  THEN",
+        "    assert returned == el; assert el.childNodeSize() == 2; assert second.parent() == el; assert second.siblingIndex() == 1;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+package com.thealgorithms.geometry;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * JUnit tests for ConvexHull.convexHullRecursive method covering multiple scenarios.
+ */
+public class ConvexHull_convexHullRecursive_0_Test {
+
+    @Test
+    @DisplayName("Empty input list throws IndexOutOfBoundsException at initial access")
+    public void test_TC01() {
+        // GIVEN an empty list: triggers get(0) causing IndexOutOfBoundsException
+        List<Point> points = new ArrayList<>();
+        // WHEN & THEN: expect IndexOutOfBoundsException due to accessing points.get(0)
+        assertThrows(IndexOutOfBoundsException.class, () -> ConvexHull.convexHullRecursive(points));
+    }
+
+    @Test
+    @DisplayName("Single-element list returns that element (loop 0)")
+    public void test_TC02() {
+        // GIVEN a single point list: no iteration (i from 1 to size-2), only leftMost and rightMost are same
+        Point p = new Point(0, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(p));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: only the single point should be returned
+        assertEquals(Arrays.asList(p), result);
+    }
+
+    @Test
+    @DisplayName("Two-point list returns both endpoints (loop 0)")
+    public void test_TC03() {
+        // GIVEN two distinct points in unsorted order: sorting yields endpoints
+        Point a = new Point(1, 1);
+        Point b = new Point(0, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(a, b));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: sorted result should be [Point(0,0), Point(1,1)]
+        assertEquals(Arrays.asList(b, a), result);
+    }
+
+    @Test
+    @DisplayName("Three collinear points return only endpoints (det==0 branch)")
+    public void test_TC04() {
+        // GIVEN three collinear points on x-axis: middle point has orientation det==0 so excluded
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, 0);
+        Point p2 = new Point(2, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(p0, p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: only the extreme endpoints should remain
+        assertEquals(Arrays.asList(p0, p2), result);
+    }
+
+    @Test
+    @DisplayName("Three points with middle above baseline include all (det>0 branch)")
+    public void test_TC05() {
+        // GIVEN three points forming an upward triangle: middle point yields det>0 into upperHull
+        Point p0 = new Point(2, 0);
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(0, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(p0, p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: all three points are part of the convex hull sorted by coordinates
+        assertEquals(Arrays.asList(p2, p1, p0), result);
+    }
+
+    @Test
+    @DisplayName("Three points with middle below baseline include all (det<0 branch)")
+    public void test_TC06() {
+        // GIVEN three points forming a downward triangle: middle point yields det<0 into lowerHull
+        Point p0 = new Point(0, 0);
+        Point p1 = new Point(1, -1);
+        Point p2 = new Point(2, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(p0, p1, p2));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: all three points are part of the convex hull sorted by coordinates
+        assertEquals(Arrays.asList(p0, p1, p2), result);
+    }
+
+    @Test
+    @DisplayName("Four points with both upper and lower hull processed (multiple iterations)")
+    public void test_TC07() {
+        // GIVEN four points where two lie above and below the baseline: exercises both upper and lower hull recursion
+        Point p0 = new Point(3, 0);
+        Point p1 = new Point(1, 1);
+        Point p2 = new Point(2, -1);
+        Point p3 = new Point(0, 0);
+        List<Point> points = new ArrayList<>(Arrays.asList(p0, p1, p2, p3));
+        // WHEN
+        List<Point> result = ConvexHull.convexHullRecursive(points);
+        // THEN: convex hull includes all four boundary points sorted by coordinates
+        assertEquals(Arrays.asList(p3, p1, p2, p0), result);
+    }
+}

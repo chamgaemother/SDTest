@@ -1,0 +1,163 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "Implicit '*' inserted between closing and opening brace when implicit multiplication allowed",
+      "path": "B0→B1→B2(implicitPossible)→B4(multiplication insert)→B6→...→B11",
+      "precondition": "ExpressionConfiguration with implicit multiplication allowed and '*' in operator dictionary",
+      "expectedResult": "Tokens: '(', '1', ')', '*', '(', '2', ')'; no exception",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "brace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 implicit multiplication between braces",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig()",
+        "        .allowImplicitMul(true)",
+        "        .withInfix(\"*\");",
+        "    Tokenizer tokenizer = new Tokenizer(\"(1)(2)\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(3).getTokenString().equals(\"*\");",
+        "    assert tokens.size() == 7;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Missing operator exception when implicit multiplication between braces not allowed",
+      "path": "B0→B1→B2(implicitPossible)→B3->B5",
+      "precondition": "ExpressionConfiguration with implicit multiplication disabled",
+      "expectedResult": "ParseException with message 'Missing operator'",
+      "tags": [
+        "negative",
+        "implicit-multiplication",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 error on implicit between braces disallowed",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig()",
+        "        .allowImplicitMul(false)",
+        "        .withInfix(\"*\");",
+        "    Tokenizer tokenizer = new Tokenizer(\"(1)(2)\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Missing operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Valid structure separator between variable and variable when structures allowed",
+      "path": "B0→B1→...→parseStructureSeparator→validateToken→...→B11",
+      "precondition": "ExpressionConfiguration with structures allowed",
+      "expectedResult": "Tokens: 'a', '.', 'b' with middle STRUCTURE_SEPARATOR, no exception",
+      "tags": [
+        "positive",
+        "structure",
+        "separator"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 valid structure separator",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig()",
+        "        .allowStructures(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"a.b\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(1).getType() == Token.TokenType.STRUCTURE_SEPARATOR;",
+        "    assert tokens.size() == 3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Hexadecimal number literal parsed correctly",
+      "path": "B0→B1→...→parseNumberLiteral→parseHexNumberLiteral→validateToken→...→B11",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "Single NUMBER_LITERAL token '0x1A'",
+      "tags": [
+        "positive",
+        "number",
+        "hex"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 hex number literal",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig().withInfix(\"+\");",
+        "    Tokenizer tokenizer = new Tokenizer(\"0x1A\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getTokenString().equals(\"0x1A\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Unknown escape character in string literal throws exception",
+      "path": "B0→B1→...→parseStringLiteral→escapeCharacter->exception",
+      "precondition": "ExpressionConfiguration with single‐quote strings allowed",
+      "expectedResult": "ParseException with message 'Unknown escape character'",
+      "tags": [
+        "negative",
+        "string",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 unknown escape in string",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig()",
+        "        .allowSingleQuotes(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"'\\\\z'\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing 'Unknown escape character';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Prefix operator recognized before number when allowed",
+      "path": "B0→B1→...→parseIdentifier-or-operator→validateToken→...→B11",
+      "precondition": "ExpressionConfiguration default with prefix '-' in dictionary",
+      "expectedResult": "Tokens: '-' as PREFIX_OPERATOR, '5' as NUMBER_LITERAL",
+      "tags": [
+        "positive",
+        "prefix-operator"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 prefix operator minus",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig().onPrefix(\"-\");",
+        "    Tokenizer tokenizer = new Tokenizer(\"-5\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == Token.TokenType.PREFIX_OPERATOR;",
+        "    assert tokens.get(1).getTokenString().equals(\"5\");",
+        "END"
+      ]
+    }
+  ]
+}

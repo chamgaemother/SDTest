@@ -1,0 +1,136 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn(null, dfColumn) should add null when input string is null (r0 == null branch)",
+      "path": "B0→B1→B4",
+      "precondition": "Use a simple stub DfColumn that records added objects; no mocking framework required",
+      "expectedResult": "dfColumn.getLastAdded() == null",
+      "tags": [
+        "branch-true(r0==null)",
+        "normal",
+        "P0"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(csvSchema, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn(\"   \", dfColumn) should add null when trimmed string is empty (trimmed.isEmpty true)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Use the same StubDfColumn as for TC01",
+      "expectedResult": "dfColumn.getLastAdded() == null",
+      "tags": [
+        "branch-false(r0==null)",
+        "branch-true(trimmed.isEmpty)",
+        "loop-0",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn whitespace-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(csvSchema, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"   \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn(\"2020-12-31\", dfColumn) should add LocalDate parsed using default pattern (parse success)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Use StubDfColumn; default pattern is 'uuuu-M-d' when constructor receives null pattern",
+      "expectedResult": "dfColumn.getLastAdded().equals(LocalDate.of(2020,12,31))",
+      "tags": [
+        "branch-false(r0==null)",
+        "branch-false(trimmed.isEmpty)",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-default-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(csvSchema, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"2020-12-31\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getLastAdded().equals(LocalDate.of(2020,12,31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn(\"31/12/2020\", dfColumn) with custom pattern dd/MM/uuuu should add correct LocalDate",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Use StubDfColumn; instantiate DateSchemaColumn with newPattern=\"dd/MM/uuuu\"",
+      "expectedResult": "dfColumn.getLastAdded().equals(LocalDate.of(2020,12,31))",
+      "tags": [
+        "branch-false(r0==null)",
+        "branch-false(trimmed.isEmpty)",
+        "normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn valid-custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(csvSchema, \"d\", \"dd/MM/uuuu\");",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"31/12/2020\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getLastAdded().equals(LocalDate.of(2020,12,31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn(\"invalid-date\", dfColumn) throws DateTimeParseException on parse failure",
+      "path": "B0→B1→B2→B3(exception)",
+      "precondition": "Use StubDfColumn; invalid date string does not match formatter",
+      "expectedResult": "throws DateTimeParseException; dfColumn.getCountAdded()==0",
+      "tags": [
+        "branch-false(r0==null)",
+        "branch-false(trimmed.isEmpty)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn invalid-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(csvSchema, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"invalid-date\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    }
+  ]
+}

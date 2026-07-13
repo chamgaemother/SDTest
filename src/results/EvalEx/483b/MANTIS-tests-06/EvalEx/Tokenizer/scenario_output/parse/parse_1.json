@@ -1,0 +1,237 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse() throws Unexpected closing brace when encountering unmatched ')' at start",
+      "path": "B0→B1→B2(false)→B6→B1→B2(false)→B6→B1→B7→B8",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Unexpected closing brace'",
+      "tags": [
+        "exception",
+        "brace",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 unmatched closing brace",
+        "  GIVEN",
+        "    String expr = \")\";",
+        "    ExpressionConfiguration cfg = defaultConfig();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing 'Unexpected closing brace';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse() throws Unexpected closing array on extra ']' after balanced array",
+      "path": "B0→B1→B2(false)→B6→ ... → array open/close → B1→B2(false)→B6→B1→B2(false)→B6→B1→B7→B9→B10",
+      "precondition": "arraysAllowed=true",
+      "expectedResult": "ParseException with message 'Unexpected closing array'",
+      "tags": [
+        "exception",
+        "array",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 extra closing array underflow",
+        "  GIVEN",
+        "    String expr = \"[5]]\";",
+        "    ExpressionConfiguration cfg = builder().arraysAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected closing array';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse() throws Illegal scientific format for dangling 'e' in number literal",
+      "path": "B0→B1→B2(false)→B6→ ... → parseDecimalNumberLiteral throw at scientificNotation check",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Illegal scientific format'",
+      "tags": [
+        "exception",
+        "number",
+        "scientific"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 illegal scientific notation",
+        "  GIVEN",
+        "    String expr = \"1e\";",
+        "    Tokenizer tokenizer = new Tokenizer(expr, defaultConfig());",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Illegal scientific format';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse() throws Number contains more than one decimal point on '1.2.3'",
+      "path": "B0→B1→B2(false)→B6→ ... → parseDecimalNumberLiteral detects second dot → throw",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Number contains more than one decimal point'",
+      "tags": [
+        "exception",
+        "number",
+        "decimal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 multiple decimal points",
+        "  GIVEN",
+        "    String expr = \"1.2.3\";",
+        "    Tokenizer tokenizer = new Tokenizer(expr, defaultConfig());",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Number contains more than one decimal point';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse() recognizes hex number literal '0xFa' as NUMBER_LITERAL",
+      "path": "B0→B1→B2(false)→B6→ ... → parseNumberLiteral→parseHexNumberLiteral→add literal→return",
+      "precondition": "none",
+      "expectedResult": "one token of type NUMBER_LITERAL with text '0xFa'",
+      "tags": [
+        "positive",
+        "number",
+        "hexadecimal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 hex literal parsing",
+        "  GIVEN",
+        "    String expr = \"0xFa\";",
+        "    Tokenizer tokenizer = new Tokenizer(expr, defaultConfig());",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getText().equals(\"0xFa\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse() throws Undefined operator for unknown operator token '$'",
+      "path": "B0→B1→B2(false)→B6→ ... → parseOperator → throw undefined operator",
+      "precondition": "none",
+      "expectedResult": "ParseException with message \"Undefined operator '$'\"",
+      "tags": [
+        "exception",
+        "operator",
+        "error-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 undefined operator error",
+        "  GIVEN",
+        "    String expr = \"$\";",
+        "    Tokenizer tokenizer = new Tokenizer(expr, defaultConfig());",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined operator '$'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse() throws Undefined function when encountering unknown identifier followed by '('",
+      "path": "B0→B1→B2(false)→B6→ ... → parseIdentifier→throw undefined function",
+      "precondition": "functionDictionary.hasFunction('foo')==false",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": [
+        "exception",
+        "function",
+        "identifier"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 undefined function call",
+        "  GIVEN",
+        "    String expr = \"foo()\";",
+        "    Tokenizer tokenizer = new Tokenizer(expr, defaultConfig());",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined function 'foo'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse() successfully parses structure separator '.' between variables when allowed",
+      "path": "B0→B1→B2(false)→B6→ ... → parseStructureSeparator→add token→continue",
+      "precondition": "structuresAllowed=true",
+      "expectedResult": "tokens: VARIABLE_OR_CONSTANT 'x', STRUCTURE_SEPARATOR '.', VARIABLE_OR_CONSTANT 'y'",
+      "tags": [
+        "positive",
+        "structure",
+        "separator"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 valid structure access",
+        "  GIVEN",
+        "    String expr = \"x.y\";",
+        "    ExpressionConfiguration cfg = builder().structuresAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(1).getType() == STRUCTURE_SEPARATOR;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse() inserts implicit '*' between two parenthesized subexpressions when allowed",
+      "path": "B0→B1→B2(true)→B4→B6→ ...",
+      "precondition": "implicitMultiplicationAllowed=true",
+      "expectedResult": "tokens: BRACE_OPEN, NUMBER_LITERAL '1', BRACE_CLOSE, INFIX_OPERATOR '*', BRACE_OPEN, NUMBER_LITERAL '2', BRACE_CLOSE",
+      "tags": [
+        "positive",
+        "implicit",
+        "multiplication"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 implicit multiplication between parentheses",
+        "  GIVEN",
+        "    String expr = \"(1)(2)\";",
+        "    ExpressionConfiguration cfg = builder().implicitMultiplicationAllowed(true).build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(3).getType() == INFIX_OPERATOR;",
+        "    assert tokens.get(3).getText().equals(\"*\");",
+        "END"
+      ]
+    }
+  ]
+}

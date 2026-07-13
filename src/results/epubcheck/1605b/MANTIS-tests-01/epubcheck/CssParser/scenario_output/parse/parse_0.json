@@ -1,0 +1,190 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "When the token iterator has no tokens (loop-0), parse should call startDocument/endDocument without invoking handleAtRule or handleRuleSet",
+      "path": "B0→B1→B8",
+      "precondition": "Stub CssParser.scan(...) to return an iterator with hasNext() == false; no mocks besides scan stub",
+      "expectedResult": "doc.startDocument() and doc.endDocument() are each called exactly once; no calls to handleAtRule or handleRuleSet",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "normal-flow"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse zero-iterations",
+        "  GIVEN",
+        "    Parser p stubbed scan->emptyIterator(); Reader r; CssErrorHandler err; CssContentHandler doc;",
+        "  WHEN",
+        "    p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocument() called once; assert doc.endDocument() called once;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "When the iterator yields one ATKEYWORD token (loop-1, branch-true), parse should invoke handleAtRule once then endDocument",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Stub CssParser.scan(...) to return iterator with one CssToken of type ATKEYWORD; stub handleAtRule to record invocation; no other mocks",
+      "expectedResult": "handleAtRule(startToken, iterator, doc, err) is called once; doc.startDocument() and doc.endDocument() called once",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "atkeyword"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-ATKEYWORD",
+        "  GIVEN",
+        "    Parser p stubbed scan->iterator([ATKEYWORD]); stub handleAtRule to record; Reader r; err; doc;",
+        "  WHEN",
+        "    p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    assert handleAtRule called once; assert doc.endDocument() called"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "When the iterator yields one non-ATKEYWORD token (loop-1, branch-false), parse should invoke handleRuleSet once then endDocument",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Stub CssParser.scan(...) to return iterator with one CssToken of type IDENT; stub handleRuleSet to record invocation",
+      "expectedResult": "handleRuleSet(startToken, iterator, doc, err) is called once; doc.startDocument() and doc.endDocument() called once",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "ruleset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-nonATKEYWORD",
+        "  GIVEN",
+        "    Parser p stubbed scan->iterator([IDENT]); stub handleRuleSet to record; Reader r; err; doc;",
+        "  WHEN",
+        "    p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    assert handleRuleSet called once; assert doc.endDocument() called"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "When the iterator yields ATKEYWORD then IDENT tokens (loop-N, mix of branches), parse should call handleAtRule then handleRuleSet",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Stub CssParser.scan(...) to return iterator([ATKEYWORD, IDENT]); stub both handleAtRule and handleRuleSet to record invocations",
+      "expectedResult": "handleAtRule called once then handleRuleSet called once; doc.startDocument() and doc.endDocument() each once",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "branch-false",
+        "mixed"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse two-tokens-mixed",
+        "  GIVEN",
+        "    Parser p stubbed scan->iterator([ATKEYWORD, IDENT]); stub both handlers; Reader r; err; doc;",
+        "  WHEN",
+        "    p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    assert handleAtRule count==1; assert handleRuleSet count==1"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "When scan(...) throws IOException, parse should propagate the IOException",
+      "path": "B0",
+      "precondition": "Stub CssParser.scan(...) to throw IOException(\"fail-scan\"); no other stubs",
+      "expectedResult": "IOException with message \"fail-scan\" is thrown",
+      "tags": [
+        "exception",
+        "IOException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan-ioexception",
+        "  GIVEN",
+        "    Parser p stubbed scan->throw IOException(\"fail-scan\"); Reader r; err; doc;",
+        "  WHEN",
+        "    call p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException with message \"fail-scan\""
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "When scan(...) throws CssException, parse should propagate the CssException",
+      "path": "B0",
+      "precondition": "Stub CssParser.scan(...) to throw CssException(\"fail-css\");",
+      "expectedResult": "CssException with message \"fail-css\" is thrown",
+      "tags": [
+        "exception",
+        "CssException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan-cssexception",
+        "  GIVEN",
+        "    Parser p stubbed scan->throw new CssException(\"fail-css\"); Reader r; err; doc;",
+        "  WHEN",
+        "    call p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssException with message \"fail-css\""
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "When handleAtRule throws PrematureEOFException, parse should break loop and still endDocument (exception suppressed)",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "Stub CssParser.scan(...) to return iterator([ATKEYWORD]); stub handleAtRule to throw PrematureEOFException() to simulate premature EOF",
+      "expectedResult": "doc.startDocument() and doc.endDocument() called once; no exception propagated",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "exception",
+        "PrematureEOFException"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse premature-eof-in-atRule",
+        "  GIVEN",
+        "    Parser p stubbed scan->iterator([ATKEYWORD]); stub handleAtRule->throw PrematureEOFException;",
+        "  WHEN",
+        "    p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.endDocument() called; no exception"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "When handleRuleSet throws CssGrammarException, parse should propagate that CssException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Stub CssParser.scan(...) to return iterator([IDENT]); stub handleRuleSet to throw new CssGrammarException(GRAMMAR_UNEXPECTED_TOKEN, loc, locale, \"tok\");",
+      "expectedResult": "CssGrammarException is thrown with code GRAMMAR_UNEXPECTED_TOKEN",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception",
+        "CssGrammarException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse ruleset-exception",
+        "  GIVEN",
+        "    Parser p stubbed scan->iterator([IDENT]); stub handleRuleSet->throw CssGrammarException(GRAMMAR_UNEXPECTED_TOKEN,...);",
+        "  WHEN",
+        "    call p.parse(r, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssGrammarException with error code GRAMMAR_UNEXPECTED_TOKEN"
+      ]
+    }
+  ]
+}

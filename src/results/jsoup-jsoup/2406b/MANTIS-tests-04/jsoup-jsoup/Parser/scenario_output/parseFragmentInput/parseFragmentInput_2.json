@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "parseFragmentInput(String,Element,baseUri) with non-null context and empty fragment returns empty list",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser.htmlParser() created, context = Document.body()",
+      "expectedResult": "return empty list",
+      "tags": [
+        "positive",
+        "boundary",
+        "empty-fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 empty-fragment-with-context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Element context = new Document(\"http://example.com\").body();",
+        "    String fragment = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseFragmentInput on xmlParser preserves uppercase tag names in XML fragment with null context",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser.xmlParser() created, context = null",
+      "expectedResult": "one Element node with tagName 'TAG'",
+      "tags": [
+        "positive",
+        "xml-parser",
+        "case-sensitivity"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 xml-parser-uppercase-tag",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String fragment = \"<TAG></TAG>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://xml\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"TAG\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with null Reader throws NullPointerException",
+      "path": "B0→B1→exception",
+      "precondition": "Parser.htmlParser() created, context = Document.body()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 reader-null-input",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    Element context = new Document(\"http://example.com\").body();",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

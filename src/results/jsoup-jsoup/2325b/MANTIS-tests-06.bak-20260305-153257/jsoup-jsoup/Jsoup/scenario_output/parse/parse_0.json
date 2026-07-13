@@ -1,0 +1,188 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(html, baseUri) with non-empty html and non-empty baseUri calls Parser.parse and returns a Document",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose html() equals the input html and baseUri() equals the input baseUri",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "baseUri-nonEmpty",
+        "branch-calls-Parser.parse"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parse(String, String) standard-case",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\";",
+        "    String baseUri = \"https://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.html().contains(\"<p>Hello</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(html, baseUri) with empty html returns an empty Document with only html/body tags",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose body() is empty and baseUri() equals the input baseUri",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "html-empty",
+        "branch-calls-Parser.parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parse(String, String) empty-html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://test/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parse(html, baseUri) with null html throws IllegalArgumentException",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no Document created",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "html-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O1 parse(String, String) html-null",
+        "  GIVEN",
+        "    String html = null;",
+        "    String baseUri = \"https://x/\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parse(html, baseUri, parser) with custom Parser returns parser.parseInput result",
+      "path": "B0→B1→B2",
+      "precondition": "Parser stub returns a known Document when parseInput is called",
+      "expectedResult": "return value is exactly the Document returned by parser.parseInput(html, baseUri)",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive",
+        "inject-parser",
+        "branch-calls-parser.parseInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O2 parse(String, String, Parser) custom-parser",
+        "  GIVEN",
+        "    String html = \"<div>Test</div>\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = new Parser() { public Document parseInput(String h,String b){return Document.createShell(b);} };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O3",
+      "description": "parse(html, parser) with non-empty html and custom parser uses empty baseUri",
+      "path": "B0→B1→B2",
+      "precondition": "Parser stub returns Document with baseUri = empty",
+      "expectedResult": "return value is the stub Document with baseUri equal to \"\"",
+      "tags": [
+        "overload:String,Parser",
+        "positive",
+        "baseUri-empty",
+        "branch-calls-parser.parseInput"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O3 parse(String, Parser) no-baseUri",
+        "  GIVEN",
+        "    String html = \"<span/>\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.select(\"span\").size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O4",
+      "description": "parse(html) with non-empty html and no baseUri returns Document with baseUri empty",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "return value is a Document that contains the input html and baseUri equals \"\"",
+      "tags": [
+        "overload:String",
+        "positive",
+        "baseUri-empty",
+        "branch-calls-Parser.parse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_O4 parse(String) standard",
+        "  GIVEN",
+        "    String html = \"<h1>Title</h1>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.html().contains(\"<h1>Title</h1>\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O4",
+      "description": "parse(html) with null html throws IllegalArgumentException",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no Document created",
+      "tags": [
+        "overload:String",
+        "exception",
+        "html-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_O4 parse(String) html-null",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

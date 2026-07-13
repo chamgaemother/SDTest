@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "After initial child(0) caches shadowChildrenRef, appending a new element invalidates cache and child(1) returns the new element",
+      "path": "B0→B1(cache-build)→B0→B1(cache-null-after-nodelistChanged)→B1(loop×2)→B2",
+      "precondition": "parent has one Element child and shadowChildrenRef is populated",
+      "expectedResult": "child(1) returns the newly appended second Element",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 cache invalidation after mutation",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    // populate cache",
+        "    assert parent.child(0) == first;",
+        "  WHEN",
+        "    Element second = parent.appendElement(\"li\"); // triggers nodelistChanged",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assert result == second;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(1) on element with interleaved TextNode, DataNode, Element, TextNode, Element returns the second Element",
+      "path": "B0→B1(loop×n filter non-Element)→B2",
+      "precondition": "parent has mixed childNodes: TextNode, DataNode, Element first, TextNode, Element second",
+      "expectedResult": "child(1) returns the second Element, skipping non-Element nodes",
+      "tags": [
+        "positive",
+        "filtering",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 mixed-node filtering for child index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"a\");",
+        "    parent.appendChild(new DataNode(\"d\"));",
+        "    Element first = parent.appendElement(\"span\");",
+        "    parent.appendText(\"b\");",
+        "    Element second = parent.appendElement(\"span\");",
+        "  WHEN",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assert result == second;",
+        "END"
+      ]
+    }
+  ]
+}

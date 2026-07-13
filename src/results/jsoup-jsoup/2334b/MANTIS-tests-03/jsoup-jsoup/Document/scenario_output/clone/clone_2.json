@@ -1,0 +1,120 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "clone() on a Document parsed from HTML with a doctype retains and deep‐copies the DocumentType node",
+      "path": "B0→super.clone()→clone.outputSettings→clone.parser→return",
+      "precondition": "Document created via Jsoup.parse(\"<!DOCTYPE html><p>text</p>\")",
+      "expectedResult": "clone.documentType() is equal in name to original but a distinct instance",
+      "tags": [
+        "positive",
+        "doctype",
+        "deep-copy",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone of document with doctype",
+        "  GIVEN",
+        "    Document original = Jsoup.parse(\"<!DOCTYPE html><p>text</p>\");",
+        "    DocumentType origDt = original.documentType();",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    DocumentType cloneDt = clone.documentType();",
+        "  THEN",
+        "    assertNotNull(origDt);",
+        "    assertNotNull(cloneDt);",
+        "    assertNotSame(origDt, cloneDt);",
+        "    assertEquals(origDt.name(), cloneDt.name());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() retains non-default QuirksMode and deep-copies it",
+      "path": "B0→super.clone()→clone.outputSettings→clone.parser→return",
+      "precondition": "none",
+      "expectedResult": "clone.quirksMode() equals original.quirksMode() set to quirks",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 clone preserves custom quirksMode",
+        "  GIVEN",
+        "    Document original = new Document(\"baseUri\");",
+        "    original.quirksMode(Document.QuirksMode.quirks);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.quirks, clone.quirksMode());"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() deep-copies document and element attributes on root and body",
+      "path": "B0→super.clone()→clone.outputSettings→clone.parser→return",
+      "precondition": "Document shell created; attributes set on Document and on body element",
+      "expectedResult": "clone and original have equal attribute maps but distinct instances",
+      "tags": [
+        "positive",
+        "attributes",
+        "deep-copy",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 clone deep-copies attributes",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"uri\");",
+        "    original.attr(\"data-root\",\"r\");",
+        "    original.body().attr(\"data-body\",\"b\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertEquals(original.attr(\"data-root\"), clone.attr(\"data-root\"));",
+        "    assertNotSame(original.attributes(), clone.attributes());",
+        "    Element origBody = original.body();",
+        "    Element cloneBody = clone.body();",
+        "    assertEquals(origBody.attr(\"data-body\"), cloneBody.attr(\"data-body\"));",
+        "    assertNotSame(origBody.attributes(), cloneBody.attributes());"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "clone() after switching to XML syntax and generating XmlDeclaration deep-copies the declaration node",
+      "path": "B0→super.clone()→clone.outputSettings→clone.parser→return",
+      "precondition": "Document shell; call original.charset(Charset.forName(\"UTF-16\")); outputSettings().syntax(XML)",
+      "expectedResult": "clone.firstChild() is XmlDeclaration distinct from original, with same encoding attr",
+      "tags": [
+        "positive",
+        "xml",
+        "declaration",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 clone deep-copies xml declaration",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"uri\");",
+        "    original.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    original.charset(Charset.forName(\"UTF-16\"));",
+        "    Node origFirst = original.childNodes().get(0);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "    Node cloneFirst = clone.childNodes().get(0);",
+        "  THEN",
+        "    assertTrue(origFirst instanceof XmlDeclaration);",
+        "    assertTrue(cloneFirst instanceof XmlDeclaration);",
+        "    assertNotSame(origFirst, cloneFirst);",
+        "    XmlDeclaration declClone = (XmlDeclaration) cloneFirst;",
+        "    assertEquals(\"UTF-16\", declClone.attr(\"encoding\"));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap() with empty input yields empty string (no loop iterations)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Builder.from(\"\") using CharSequence reader",
+      "expectedResult": "return value is \"\"",
+      "tags": [
+        "overload:",
+        "wrap():String",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-input",
+        "  GIVEN",
+        "    String text = \"\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap() with single short word below maxWidth appends word without newline",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Builder.from(\"hello\") default maxWidth=80",
+      "expectedResult": "return value is \"hello\"",
+      "tags": [
+        "overload:wrap():String",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 single-word",
+        "  GIVEN",
+        "    String text = \"hello\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap() with word longer than maxWidth breaks word with hyphen default behavior",
+      "path": "B0→B1→B2→B6→B7→B8",
+      "precondition": "Builder.from(\"abcdefgh\").maxWidth(5).insertHyphens(true)",
+      "expectedResult": "return value is \"abc-\\nde\" + \"fgh\"",
+      "tags": [
+        "overload:wrap():String",
+        "branch-true",
+        "breakWords-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 broken-word-with-hyphen",
+        "  GIVEN",
+        "    String text = \"abcdefgh\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).maxWidth(5).wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc-\\nde\" + \"fgh\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap() with breakWords=false does not break long word, emits entire word on new line",
+      "path": "B0→B1→B2→B6→B9→B10",
+      "precondition": "Builder.from(\"abcdef\").maxWidth(3).breakWords(false)",
+      "expectedResult": "return value is \"abcdef\"",
+      "tags": [
+        "overload:wrap():String",
+        "branch-false",
+        "breakWords-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 no-break-word",
+        "  GIVEN",
+        "    String text = \"abcdef\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).maxWidth(3).breakWords(false).wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcdef\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "wrapToList() returns list of lines for multi-line input",
+      "path": "B0→B1→B2(loop×2)→B3→B5",
+      "precondition": "Builder.from(\"a b c d\").maxWidth(1)",
+      "expectedResult": "return value is [\"a\", \"b\", \"c\", \"d\"]",
+      "tags": [
+        "overload:wrapToList",
+        "loop-N",
+        "multiple-lines"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrap-to-list multiple-lines",
+        "  GIVEN",
+        "    String text = \"a b c d\";",
+        "  WHEN",
+        "    List<String> lines = WordWrap.from(text).maxWidth(1).wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"a\",\"b\",\"c\",\"d\"));"
+      ]
+    },
+    {
+      "id": "TC06_O3",
+      "description": "wrap(LineConsumer) with custom consumer collects built lines for single input",
+      "path": "B0→B1→B2→B11→B12",
+      "precondition": "custom LineConsumer stub collects write/writeNewLine calls",
+      "expectedResult": "collector.lines == [\"hello world\"]",
+      "tags": [
+        "overload:wrap(LineConsumer)",
+        "mock-stub",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 custom-consumer",
+        "  GIVEN",
+        "    String text = \"hello world\"; // no wrap",
+        "  WHEN",
+        "    List<String> lines = new ArrayList<>();",
+        "    WordWrap.from(text).wrap(new LineConsumer(){...});",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"hello world\"));"
+      ]
+    },
+    {
+      "id": "TC07_O4",
+      "description": "wrap(File,Charset) throws IORuntimeException for non-existent input file",
+      "path": "B0→B13→B14",
+      "precondition": "File file = new File(\"no-such.txt\");",
+      "expectedResult": "throws IORuntimeException; cause is FileNotFoundException",
+      "tags": [
+        "overload:wrap(File,Charset)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 missing-input-file",
+        "  GIVEN",
+        "    File file = new File(\"no-such.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(file, StandardCharsets.UTF_8).wrap(new StringWriter());",
+        "  THEN",
+        "    throws IORuntimeException; assert cause instanceof FileNotFoundException;"
+      ]
+    },
+    {
+      "id": "TC08_O5",
+      "description": "wrapUtf8(String) writes wrapped content to file using UTF-8 encoding",
+      "path": "B0→B15→B16→B17",
+      "precondition": "tempFile created; delete on exit",
+      "expectedResult": "file content equals wrapped string",
+      "tags": [
+        "overload:wrapUtf8(String)",
+        "io",
+        "file-output"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 write-utf8-file",
+        "  GIVEN",
+        "    String text = \"hello world\";",
+        "    String filename = tempFile.getAbsolutePath();",
+        "  WHEN",
+        "    WordWrap.from(text).wrapUtf8(filename);",
+        "  THEN",
+        "    assert new String(Files.readAllBytes(Paths.get(filename)), StandardCharsets.UTF_8).equals(\"hello world\");"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "wrap() with custom newLine delimiter \"\\r\\n\" produces windows newlines",
+      "path": "B0→B1→B2→B4→B18",
+      "precondition": "Builder.from(\"a b\").maxWidth(1).newLine(\"\\r\\n\")",
+      "expectedResult": "return value is \"a\\r\\nb\"",
+      "tags": [
+        "overload:wrap():String",
+        "boundary",
+        "custom-newline"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 custom-newline",
+        "  GIVEN",
+        "    String text = \"a b\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).maxWidth(1).newLine(\"\\r\\n\").wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\r\\nb\");"
+      ]
+    }
+  ]
+}

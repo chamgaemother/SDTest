@@ -1,0 +1,36 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("TC11: appendChild twice with the same child on same parent exercises reparent removal when oldParent==this")
+    public void test_TC11() throws Exception {
+        // GIVEN: a parent with no children (childNodes == EmptyNodes) and an unattached TextNode child
+        Element parent = new Element("div");
+        TextNode child = new TextNode("dup");
+
+        // WHEN: first appendChild -> B0→B2 fail (child.parent==null), then B3 ensures childNodes initialized, B4 adds child
+        parent.appendChild(child);
+        // WHEN: second appendChild -> B0→B2 true (child.parent!=null, oldParent==this triggers removal), then B3 skipped, B4 adds child back
+        parent.appendChild(child);
+
+        // THEN: only one child remains (size == 1)
+        assertEquals(1, parent.childNodeSize(), 
+            "After appending same child twice, parent should have exactly one child node");
+
+        // AND: the child's siblingIndex should be reset to 0
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int siblingIndex = idxField.getInt(child);
+        assertEquals(0, siblingIndex, 
+            "Child's siblingIndex should be 0 after being re-added as first (and only) child");
+    }
+}

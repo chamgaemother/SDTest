@@ -1,0 +1,86 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document with equal baseUri, location, outputSettings and parser when no modifications are present",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document original = new Document(\"http://example.com\"); // empty document, default settings",
+      "expectedResult": "clone != original; clone.baseUri() equals original.baseUri(); clone.location() equals original.location(); clone.outputSettings() is equal but not same instance as original.outputSettings(); clone.parser() is equal but not same instance as original.parser(); original childNodes and clone childNodes lists are equal size and elements equal but not same instances",
+      "tags": [
+        "branch",
+        "deep-copy",
+        "identity",
+        "default"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 document-clone-default",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assert copy != original;",
+        "    assert copy.baseUri().equals(original.baseUri());",
+        "    assert copy.location().equals(original.location());",
+        "    assert copy.outputSettings() != original.outputSettings();",
+        "    assert copy.outputSettings().equals(original.outputSettings());",
+        "    assert copy.parser() != original.parser();",
+        "    assert copy.parser().equals(original.parser());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() deep-copies outputSettings and parser; modifying original after clone does not affect the clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document original = new Document(\"http://x\").outputSettings(new Document.OutputSettings().indentAmount(5)).parser(Parser.xmlParser());",
+      "expectedResult": "after clone, changing original.outputSettings().indentAmount to a different value and original.parser().setTrackErrors(-1) does not change clone.outputSettings().indentAmount and clone.parser() configuration remains unchanged",
+      "tags": [
+        "deep-copy",
+        "mutation",
+        "regression"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 document-clone-mutability",
+        "  GIVEN",
+        "    Document original = new Document(\"http://x\").outputSettings(new Document.OutputSettings().indentAmount(5)).parser(Parser.xmlParser());",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    original.outputSettings().indentAmount(10);",
+        "    original.parser().setTrackErrors(1);",
+        "  THEN",
+        "    assert copy.outputSettings().indentAmount() == 5;",
+        "    assert copy.parser().getTrackErrors() == 0"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() deep-copies element children; adding an element to original after clone does not affect clone children",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document original = Document.createShell(\"http://shell\"); original.appendElement(\"div\").text(\"hi\");",
+      "expectedResult": "clone.childNodes size equals original childNodes at clone time plus shell nodes; after original.appendElement(\"p\"), clone.childNodes size remains unchanged",
+      "tags": [
+        "deep-copy",
+        "children",
+        "side-effect"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 document-clone-children",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://shell\");",
+        "    original.appendElement(\"div\").text(\"hi\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    original.appendElement(\"p\");",
+        "  THEN",
+        "    assert copy.childNodes().size() == original.childNodes().size() - 1"
+      ]
+    }
+  ]
+}

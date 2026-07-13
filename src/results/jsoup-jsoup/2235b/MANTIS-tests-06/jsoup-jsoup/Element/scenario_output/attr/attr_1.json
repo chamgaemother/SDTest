@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "attr(String,boolean) true overrides an existing non-boolean attribute value and marks it boolean",
+      "path": "B0→B2→B3",
+      "precondition": "Element has existing attribute \"data\" with non-boolean value",
+      "expectedResult": "attribute \"data\" is present with empty string value (boolean attribute)",
+      "tags": [
+        "boolean-true",
+        "override",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 boolean-true overrides non-boolean",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data\", \"initial\");",
+        "  WHEN",
+        "    el.attr(\"data\", true);",
+        "  THEN",
+        "    assert el.attributes().hasKey(\"data\");",
+        "    assertEquals(\"\", el.attributes().get(\"data\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "attr(String,String) is chainable and returns the same Element instance",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "method returns same Element, both attributes set in one chain",
+      "tags": [
+        "chainable",
+        "return-value",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 attr chaining returns same instance",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    Element result = el.attr(\"a\", \"1\").attr(\"b\", \"2\");",
+        "  THEN",
+        "    assertSame(el, result);",
+        "    assertEquals(\"1\", el.attributes().get(\"a\"));",
+        "    assertEquals(\"2\", el.attributes().get(\"b\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "attr(String,boolean) false removes only the boolean attribute and leaves other attributes intact",
+      "path": "B0→B2→B5",
+      "precondition": "Element has a boolean attribute and a normal attribute",
+      "expectedResult": "boolean attribute removed, normal attribute remains",
+      "tags": [
+        "boolean-false",
+        "remove",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 boolean-false removes only boolean attr",
+        "  GIVEN",
+        "    Element el = new Element(\"input\");",
+        "    el.attr(\"checked\", true);",
+        "    el.attr(\"title\", \"T\");",
+        "  WHEN",
+        "    el.attr(\"checked\", false);",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"checked\"));",
+        "    assertTrue(el.attributes().hasKey(\"title\"));",
+        "    assertEquals(\"T\", el.attributes().get(\"title\"));",
+        "END"
+      ]
+    }
+  ]
+}

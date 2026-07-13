@@ -1,0 +1,74 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild(null) throws NullPointerException when child is null")
+    public void test_TC01() {
+        // GIVEN a standalone Element with no children
+        Element parent = new Element("div");
+        // WHEN & THEN: passing null should trigger NullPointerException (Validate.notNull guards)
+        assertThrows(NullPointerException.class, () -> parent.appendChild(null));
+    }
+
+    @Test
+    @DisplayName("appendChild(child) on empty childNodes creates new NodeList and sets sibling index to 0")
+    public void test_TC02() {
+        // GIVEN a parent with empty childNodes and a single child node
+        Element parent = new Element("div");
+        Node child = new Element("span");
+        // Precondition: childNodes was EmptyNodes, so ensureChildNodes path is taken (branch true)
+        // WHEN appending the first child
+        Element result = parent.appendChild(child);
+        // THEN childNodeSize increases to 1, parent is returned, child.parent is set, and sibling index is 0
+        assertAll(
+            () -> assertEquals(1, parent.childNodeSize(), "Expected exactly one child node"),
+            () -> assertSame(parent, child.parent(), "Child's parent should be the parent element"),
+            () -> assertEquals(0, child.siblingIndex(), "First child should have sibling index 0"),
+            () -> assertSame(parent, result, "appendChild should return the parent for chaining")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(child) on non-empty childNodes does not recreate list and sets sibling index to 1")
+    public void test_TC03() {
+        // GIVEN a parent already with one child (so childNodes is non-empty)
+        Element parent = new Element("div");
+        Node first = new Element("p");
+        parent.appendChild(first);
+        // The first appendChild set sibling index to 0; now append a second
+        Node second = new Element("a");
+        // WHEN appending the second child
+        parent.appendChild(second);
+        // THEN childNodeSize is 2, and sibling index of second is 1
+        assertAll(
+            () -> assertEquals(2, parent.childNodeSize(), "Expected two child nodes after second append"),
+            () -> assertSame(parent, second.parent(), "Second child's parent should be the parent element"),
+            () -> assertEquals(1, second.siblingIndex(), "Second child should have sibling index 1")
+        );
+    }
+
+    @Test
+    @DisplayName("appendChild(child) reparents from old parent to new parent removing from original")
+    public void test_TC04() {
+        // GIVEN an item already appended to an oldParent
+        Element oldParent = new Element("ul");
+        Element newParent = new Element("ol");
+        Element item = new Element("li");
+        oldParent.appendChild(item);
+        // Precondition: item is child of oldParent, childrenSize()==1
+        assertEquals(1, oldParent.childrenSize(), "Precondition: oldParent should have one child");
+        // WHEN appending the same item to newParent (reparenting)
+        newParent.appendChild(item);
+        // THEN oldParent loses its child, newParent has one child, and item's parent is newParent
+        assertAll(
+            () -> assertEquals(0, oldParent.childrenSize(), "Old parent should have no children after reparenting"),
+            () -> assertEquals(1, newParent.childrenSize(), "New parent should have one child after reparenting"),
+            () -> assertSame(newParent, item.parent(), "Item's parent should be updated to the new parent")
+        );
+    }
+}

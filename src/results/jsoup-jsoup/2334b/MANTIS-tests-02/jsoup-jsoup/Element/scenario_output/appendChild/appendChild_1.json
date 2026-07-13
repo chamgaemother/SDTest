@@ -1,0 +1,41 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild(node) reparenting moves child from previous parent to new parent and updates sibling indices",
+      "path": "B0→B3→B4",
+      "precondition": "child is already appended to another parent with multiple children",
+      "expectedResult": "child removed from old parent, added to new parent at end, new siblingIndex updated, old parent size decremented",
+      "tags": [
+        "reparenting",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 appendChild reparenting",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"section\");",
+        "    TextNode child = new TextNode(\"c\");",
+        "    TextNode sib1 = new TextNode(\"a\");",
+        "    TextNode sib2 = new TextNode(\"b\");",
+        "    oldParent.appendChild(sib1).appendChild(child).appendChild(sib2);",
+        "    // oldParent now has [sib1, child, sib2]",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    // oldParent lost child",
+        "    assert oldParent.childNodeSize() == 2;",
+        "    assert oldParent.childNode(0) == sib1;",
+        "    assert oldParent.childNode(1) == sib2;",
+        "    // newParent gained child as only child",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert newParent.childNode(0) == child;",
+        "    // siblingIndex updated to 0 in new parent",
+        "    assert child.siblingIndex == 0;",
+        "END"
+      ]
+    }
+  ]
+}

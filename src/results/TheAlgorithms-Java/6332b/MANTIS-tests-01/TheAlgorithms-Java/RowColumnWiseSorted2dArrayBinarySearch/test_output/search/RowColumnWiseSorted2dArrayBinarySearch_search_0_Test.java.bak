@@ -1,0 +1,73 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+
+public class RowColumnWiseSorted2dArrayBinarySearch_search_Test {
+
+    @Test
+    @DisplayName("TC01: Empty matrix returns not found without entering loop (matrix.length=0 triggers colPointer<0)")
+    void test_TC01() {
+        // GIVEN: An empty matrix triggers colPointer = -1 immediately (length = 0)
+        Integer[][] matrix = new Integer[0][];
+        Integer key = 5;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);
+        // THEN: should return [-1, -1] without any loop iteration
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC02: Single-element matrix finds key immediately at [0][0] (comp==0)")
+    void test_TC02() {
+        // GIVEN: A 1x1 matrix where element equals key, so compareTo == 0 in first iteration
+        Integer[][] matrix = new Integer[][] {{7}};
+        Integer key = 7;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);
+        // THEN: should return [0, 0] immediately when element equals target
+        assertArrayEquals(new int[]{0, 0}, result);
+    }
+
+    @Test
+    @DisplayName("TC03: Single-row matrix, key greater than only element triggers comp>0 then exits not found")
+    void test_TC03() {
+        // GIVEN: A 1x1 matrix where key > element leads to rowPointer increment then exit loop
+        Integer[][] matrix = new Integer[][] {{3}};
+        Integer key = 5;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);
+        // THEN: after comp>0, rowPointer becomes 1 which >= matrix.length, returns [-1, -1]
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC04: Single-row matrix, key less than element triggers multiple comp<0 iterations until colPointer<0 then not found")
+    void test_TC04() {
+        // GIVEN: A single-row matrix sorted descending {5,4,3}, key=1 is less than each, comp<0 decrements colPointer each loop
+        Integer[][] matrix = new Integer[][] {{5, 4, 3}};
+        Integer key = 1;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);
+        // THEN: colPointer moves from 2->1->0->-1 then exits, returns [-1, -1]
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC05: Multi-row square matrix finds key after mix of comp<0 and comp>0 moves")
+    void test_TC05() {
+        // GIVEN: A 3x4 matrix, key=38 requires moves: start at (0,3)=>40>38 comp<0->col--, then at (0,2)=>30<38 comp>0->row++, then at (1,2)=>35<38 comp>0->row++, then at (2,2)=>38==38 found
+        Integer[][] matrix = new Integer[][] {
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48}
+        };
+        Integer key = 38;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, key);
+        // THEN: should locate at [2, 2]
+        assertArrayEquals(new int[]{2, 2}, result);
+    }
+}

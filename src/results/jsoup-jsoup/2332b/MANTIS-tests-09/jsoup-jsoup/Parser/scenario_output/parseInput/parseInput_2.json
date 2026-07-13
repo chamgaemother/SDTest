@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) with non-empty HTML delegates to TreeBuilder.parse and returns parsed Document",
+      "path": "B2→B4→B5",
+      "precondition": "Parser created via htmlParser(), Reader wrapping \"<div>Hi</div>\", baseUri non-null",
+      "expectedResult": "Document body text is \"Hi\"",
+      "tags": [
+        "positive",
+        "reader-overload",
+        "non-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput reader non-empty",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader rdr = new StringReader(\"<div>Hi</div>\");",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(rdr, base);",
+        "  THEN",
+        "    assert doc.body().text().equals(\"Hi\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, String) propagates IllegalStateException from TreeBuilder.parse",
+      "path": "B2→B4→B6",
+      "precondition": "Parser created with StubTreeBuilder whose parse(Reader, String, Parser) throws IllegalStateException",
+      "expectedResult": "IllegalStateException(\"fail\") is thrown",
+      "tags": [
+        "exception",
+        "reader-overload",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput reader exception propagation",
+        "  GIVEN",
+        "    class StubBuilder extends TreeBuilder {",
+        "      StubBuilder() { super(new ParseSettings()); }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) { throw new IllegalStateException(\"fail\"); }",
+        "      @Override protected void process(Token token) {}",
+        "    }",
+        "    Parser parser = new Parser(new StubBuilder());",
+        "    Reader rdr = new StringReader(\"x\");",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) throws NullPointerException when baseUri is null",
+      "path": "B2→B4→B7",
+      "precondition": "Parser created via xmlParser(), Reader wrapping any input, baseUri = null",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "reader-overload",
+        "null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput reader null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader rdr = new StringReader(\"<a/>\" );",
+        "    String base = null;",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

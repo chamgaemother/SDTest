@@ -1,0 +1,101 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when element has no child nodes (childNodeSize == 0 branch)",
+      "path": "B0→B1",
+      "precondition": "Element parent = new Element(\"div\"); // no children added",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns single child element when one Element child present (childNodeSize > 0, single filter iteration)",
+      "path": "B0→B2→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\");",
+      "expectedResult": "returned Elements.size() == 1 and returned Elements.get(0).tagName() == \"span\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "filter-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-element-child",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendElement(\"span\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() filters out non-Element nodes among mixed childNodes (filter excludes TextNode)",
+      "path": "B0→B2→B3(loop×2)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendText(\"hello\"); parent.appendElement(\"p\");",
+      "expectedResult": "returned Elements.size() == 1 and returned Elements.get(0).tagName() == \"p\"",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "filter-mixed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children filters-non-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendText(\"hello\"); el.appendElement(\"p\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).tagName().equals(\"p\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() returns cached children on second call without rebuilding (cachedChildren != null branch)",
+      "path": "B0→B2→B3(loop×1)→B4→B2→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"a\"); // first call builds cache, second uses cache",
+      "expectedResult": "first call and second call both return Elements size 1 and same instance tagName",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "cache-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-reuse",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendElement(\"a\");",
+        "  WHEN",
+        "    Elements first = el.children(); Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 1; assert second.size() == 1; assert second.get(0).tagName().equals(\"a\");",
+        "END"
+      ]
+    }
+  ]
+}

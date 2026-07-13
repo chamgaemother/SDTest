@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "appendChild detaches a mid-list child and updates sibling indices of remaining and moved child",
+      "path": "B0→B2→B3",
+      "precondition": "oldParent has two children c1,c2",
+      "expectedResult": "oldParent.childNodeSize()==1 with c2 at index0; newParent.childNodeSize()==1 with c1 at index0; siblingIndex updated",
+      "tags": [
+        "reparent",
+        "sibling-index",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 reparent mid-list child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"ul\");",
+        "    TextNode c1 = new TextNode(\"one\");",
+        "    TextNode c2 = new TextNode(\"two\");",
+        "    oldParent.appendChild(c1);",
+        "    oldParent.appendChild(c2);",
+        "    Element newParent = new Element(\"div\");",
+        "  WHEN",
+        "    newParent.appendChild(c1);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 1;",
+        "    assert oldParent.child(0) == c2;",
+        "    assert c2.siblingIndex() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert newParent.child(0) == c1;",
+        "    assert c1.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "appendChild uses existing NodeList when ensureChildNodes was called prior",
+      "path": "B0→B2(false)→B3",
+      "precondition": "parent.ensureChildNodes() invoked before append",
+      "expectedResult": "child appended normally at next index",
+      "tags": [
+        "ensureChildNodes",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 appendChild after ensureChildNodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.ensureChildNodes();",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert parent.child(0) == child;",
+        "    assert child.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+import org.davidmoten.text.utils.WordWrap;
+import org.davidmoten.text.utils.WordWrap.Builder;
+import org.davidmoten.text.utils.IORuntimeException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("Handles carriage return characters by ignoring '\\r' (branch ch=='\\r')")
+    public void test_TC11() throws IOException {
+        // carriage return should be ignored, so "a\r b" becomes "ab"
+        Reader r = new BufferedReader(new StringReader("a\rb"));
+        StringWriter out = new StringWriter();
+        Builder b = WordWrap.from(r);
+        b.wrap(out);
+        assertEquals("ab", out.toString());
+    }
+
+    @Test
+    @DisplayName("Treats punctuation as boundary, flushing word on encountering punctuation (previousWasPunctuation path)")
+    public void test_TC12() {
+        // comma is punctuation so flush "hi," because maxWidth=3 triggers flush after punctuation
+        Builder b = WordWrap.from("hi,there").maxWidth(3);
+        List<String> lines = b.wrapToList();
+        assertEquals(Arrays.asList("hi,", "there"), lines);
+    }
+
+    @Test
+    @DisplayName("Breaks long word at start of line with hyphens when insertHyphens=true and line is empty")
+    public void test_TC13() {
+        // initial word "ABCDEFG" > maxWidth=4 and line empty → hyphen branch
+        Builder b = WordWrap.from("ABCDEFG")
+                .maxWidth(4)
+                .insertHyphens(true)
+                .breakWords(true);
+        String result = b.wrap();
+        assertEquals("ABCDE-\nFG", result);
+    }
+
+    @Test
+    @DisplayName("Uses custom newline string '\\r\\n' in output (newLine override)")
+    public void test_TC14() {
+        // newline char triggers custom CRLF insertion
+        Builder b = WordWrap.from("x\nY")
+                .newLine("\r\n");
+        String out = b.wrap();
+        assertEquals("x\r\nY", out);
+    }
+
+    @Test
+    @DisplayName("Custom stringWidth function triggers tooLong immediately (branch tooLong true at start)")
+    public void test_TC15() {
+        // custom width always > maxWidth so each char causes immediate flush
+        Function<CharSequence, Number> wide = s -> Double.MAX_VALUE;
+        Builder b = WordWrap.from("ABC")
+                .stringWidth(wide);
+        List<String> lines = b.wrapToList();
+        assertEquals(Arrays.asList("A", "B", "C"), lines);
+    }
+
+    @Test
+    @DisplayName("Exercises wrap(LineConsumer) overload directly (LineConsumer path)")
+    public void test_TC16() throws IOException {
+        // using direct LineConsumer to capture lines for "1 2"
+        Builder b = WordWrap.from("1 2");
+        List<String> captured = new ArrayList<>();
+        WordWrap.LineConsumer lc = new WordWrap.LineConsumer() {
+            StringBuilder sb = new StringBuilder();
+            @Override
+            public void write(char[] c, int off, int len) {
+                sb.append(c, off, len);
+            }
+            @Override
+            public void writeNewLine() {
+                captured.add(sb.toString());
+                sb.setLength(0);
+            }
+        };
+        b.wrap(lc);
+        assertEquals(Arrays.asList("1 2"), captured);
+    }
+
+    @Test
+    @DisplayName("wrap(Writer) throws IORuntimeException when Reader.close() fails (close exception path)")
+    public void test_TC17() throws Exception {
+        // create Reader whose close() throws IOException to force IORuntimeException
+        Reader r = new StringReader("x") {
+            @Override public void close() throws IOException {
+                throw new IOException("fail");
+            }
+        };
+        StringWriter out = new StringWriter();
+        // use reflection to access package-private from(Reader,boolean)
+        Method m = WordWrap.class.getDeclaredMethod("from", Reader.class, boolean.class);
+        m.setAccessible(true);
+        Builder b = (Builder) m.invoke(null, r, true);
+        assertThrows(IORuntimeException.class, () -> b.wrap(out));
+    }
+
+    @Test
+    @DisplayName("Include and exclude extra word chars so '?' is treated as normal letter (extraWordChars mutation path)")
+    public void test_TC18() {
+        // include '?' as word char, exclude ',' so comma remains boundary
+        Builder b = WordWrap.from("a?b,")
+                .includeExtraWordChars("?")
+                .excludeExtraWordChars(",");
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("a?b,", out.toString());
+    }
+
+    @Test
+    @DisplayName("WriteBrokenWord else-branch when insertHyphens=true but word length<=2 (prefix whitespace path)")
+    public void test_TC19() {
+        // word length=2 and insertHyphens=true triggers else-branch of writeBrokenWord: split into 'A','B'
+        Builder b = WordWrap.from("AB")
+                .maxWidth(1)
+                .insertHyphens(true)
+                .breakWords(true);
+        List<String> lines = b.wrapToList();
+        assertEquals(Arrays.asList("A", "B"), lines);
+    }
+}

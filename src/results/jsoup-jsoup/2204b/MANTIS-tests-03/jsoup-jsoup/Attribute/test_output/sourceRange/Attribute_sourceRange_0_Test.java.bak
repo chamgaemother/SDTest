@@ -1,0 +1,45 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Attribute.sourceRange()
+ */
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("sourceRange() returns UntrackedAttr when parent is null (parent == null branch)")
+    public void test_TC01() {
+        // Given an Attribute with null parent, so parent == null branch is taken
+        Attribute attr = new Attribute("k", "v", null);
+        // When
+        Range.AttributeRange result = attr.sourceRange();
+        // Then: should return the static UntrackedAttr constant
+        assertSame(Range.AttributeRange.UntrackedAttr, result,
+            "Expected UntrackedAttr when parent is null");
+    }
+
+    @Test
+    @DisplayName("sourceRange() returns parent's sourceRange(key) when parent is non-null (parent != null branch)")
+    public void test_TC02() {
+        // Given a fake Attributes parent that returns a specific AttributeRange for key "k"
+        final Range.AttributeRange fakeRange = new Range.AttributeRange(1, 2, 3, 4);
+        Attributes fakeParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String key) {
+                // Always return our fakeRange for verification
+                return fakeRange;
+            }
+        };
+        // Create attribute with non-null parent, so parent != null branch is taken
+        Attribute attr = new Attribute("k", "v", fakeParent);
+        // When
+        Range.AttributeRange result = attr.sourceRange();
+        // Then: result should be exactly the instance returned by fakeParent.sourceRange
+        assertSame(fakeRange, result,
+            "Expected sourceRange() to return the same instance provided by parent.sourceRange(key)");
+    }
+}

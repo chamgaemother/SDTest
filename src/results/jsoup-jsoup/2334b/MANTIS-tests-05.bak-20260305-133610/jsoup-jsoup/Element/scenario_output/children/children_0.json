@@ -1,0 +1,115 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty list when no childNodes (childNodeSize==0)",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0",
+        "environment:Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children no-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() filters out non-Element nodes when only TextNode present (childNodeSize>0 but no Element instances)",
+      "path": "B0→B1→B3(loop×1)",
+      "precondition": "Element el = new Element(\"p\"); el.appendChild(new TextNode(\"text\")); // one text node",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "loop-1",
+        "P1",
+        "environment:Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children only-textnode",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns only Element instances when mixed Node types present (filters correctly)",
+      "path": "B0→B1→B3(loop×3)",
+      "precondition": "Element parent = new Element(\"div\"); Element child1 = new Element(\"span\"); parent.appendChild(child1); parent.appendChild(new TextNode(\"t\")); Element child2 = new Element(\"a\"); parent.appendChild(child2);",
+      "expectedResult": "returned Elements contains [child1, child2] in order",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "P1",
+        "environment:Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child1 = new Element(\"span\");",
+        "    parent.appendChild(child1);",
+        "    parent.appendChild(new TextNode(\"t\"));",
+        "    Element child2 = new Element(\"a\");",
+        "    parent.appendChild(child2);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0) == child1;",
+        "    assert result.get(1) == child2;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() uses cached shadowChildrenRef on subsequent call (no rebuild)",
+      "path": "B0→B1→B3(loop×2)→B1→B3(cache)",
+      "precondition": "Element el = new Element(\"div\"); Element c = new Element(\"span\"); el.appendChild(c); // first call builds cache; second call uses cache",
+      "expectedResult": "first call returns [c]; second call returns [c] without rebuilding list",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "cache-hit",
+        "P2",
+        "environment:Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-behavior",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c = new Element(\"span\");",
+        "    el.appendChild(c);",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 1 && first.get(0) == c;",
+        "    assert second.size() == 1 && second.get(0) == c;"
+      ]
+    }
+  ]
+}

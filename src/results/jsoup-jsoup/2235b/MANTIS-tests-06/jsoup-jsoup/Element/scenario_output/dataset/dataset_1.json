@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "dataset() converts hyphenated data- keys into camelCase map keys",
+      "path": "B0→B1(attributes!=null)→B2→B3(loop×1)→B4→B5",
+      "precondition": "Element has attributes with key 'data-long-name' and 'data-another-key'",
+      "expectedResult": "dataset map contains keys 'longName'->'v1' and 'anotherKey'->'v2'",
+      "tags": [
+        "positive",
+        "camelcase",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset hyphen to camelCase",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attributes().put(\"data-long-name\", \"v1\");",
+        "    el.attributes().put(\"data-another-key\", \"v2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2;",
+        "    assert ds.get(\"longName\").equals(\"v1\");",
+        "    assert ds.get(\"anotherKey\").equals(\"v2\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "dataset() returns a live view: modifying returned map updates underlying Attributes",
+      "path": "B0→B1(attributes==null)→B2→B3(loop×0)→B4→B6(mutator)→B7",
+      "precondition": "Element has no attributes before call",
+      "expectedResult": "after ds.put('newKey','newVal'), el.attr('data-new-key') == 'newVal'",
+      "tags": [
+        "positive",
+        "view",
+        "mutation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset live view propagate",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"newKey\", \"newVal\");",
+        "  THEN",
+        "    assert el.attr(\"data-new-key\").equals(\"newVal\");",
+        "END"
+      ]
+    }
+  ]
+}

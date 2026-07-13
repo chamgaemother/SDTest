@@ -1,0 +1,212 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName, baseUri, Parser) uses provided Parser overload path",
+      "path": "B0→B2→B14→return",
+      "precondition": "existing HTML file available",
+      "expectedResult": "Document returned with correct baseUri and parsed content",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse file with parser overload",
+        "  GIVEN",
+        "    File file = createTempFile(\"<u>text</u>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.body().html().contains(\"<u>text</u>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(Path, charsetName, baseUri, Parser) uses provided Parser overload path",
+      "path": "B0→B3→B15→return",
+      "precondition": "temporary HTML file path exists",
+      "expectedResult": "Document returned with correct baseUri and parsed content",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse path with parser overload",
+        "  GIVEN",
+        "    Path path = Files.write(tempPath(), \"<i>it</i>\".getBytes());",
+        "    String charset = null;",
+        "    String baseUri = \"https://x/\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.body().html().contains(\"<i>it</i>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) uses provided Parser overload path",
+      "path": "B0→B4→B16→return",
+      "precondition": "valid InputStream of HTML",
+      "expectedResult": "Document returned with expected HTML content",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse InputStream with parser overload",
+        "  GIVEN",
+        "    byte[] data = \"<b>bold</b>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<b>bold</b>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment(String, String) sets non-empty baseUri and parses fragment body",
+      "path": "B0→B7→B17→return",
+      "precondition": "none",
+      "expectedResult": "Document body contains fragment and baseUri used for resolution",
+      "tags": [
+        "positive",
+        "fragment",
+        "baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<img src='a.png'>\";",
+        "    String baseUri = \"http://img/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<img src=\\\"http://img/a.png\\\">\", true);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseBodyFragment(String) uses empty baseUri when none provided",
+      "path": "B0→B7→B18→return",
+      "precondition": "none",
+      "expectedResult": "Document body contains fragment and baseUri is empty",
+      "tags": [
+        "positive",
+        "fragment",
+        "default"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parseBodyFragment default",
+        "  GIVEN",
+        "    String fragment = \"<span>X</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.body().html().equals(\"<span>X</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(File) throws IOException when file does not exist",
+      "path": "B0→B2→error",
+      "precondition": "file path points to non-existent file",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parse missing File throws",
+        "  GIVEN",
+        "    File missing = new File(\"no-such-file.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(missing);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(Path) throws IOException when path does not exist",
+      "path": "B0→B3→error",
+      "precondition": "path points to missing file",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "path"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse missing Path throws",
+        "  GIVEN",
+        "    Path missing = Path.of(\"no-such.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(missing);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(URL, timeoutMillis) throws SocketTimeoutException when server delays beyond timeout",
+      "path": "B0→B5→B19→error",
+      "precondition": "HTTP server that delays response",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse URL with timeout",
+        "  GIVEN",
+        "    start HTTP server delaying response >100ms",
+        "    URL url = new URL(\"http://localhost:\"+port);",
+        "    int timeout = 50;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    }
+  ]
+}

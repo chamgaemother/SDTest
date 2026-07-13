@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseInput(String,String) with custom stub TreeBuilder returns stub Document (branch-custom-builder-return)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(StringReader, baseUri, parser) returns dummy Document",
+      "expectedResult": "same dummy Document instance is returned",
+      "tags": [
+        "positive",
+        "custom-builder",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput(String) stub builder return",
+        "  GIVEN",
+        "    Document dummy = new Document(\"http://x\");",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      override parse(Reader in, String uri, Parser p) { return dummy; }",
+        "      override parseFragment(...) { return null; }",
+        "      override newInstance() { return this; }",
+        "      override defaultTagSet() { return TagSet.html(); }",
+        "      override defaultSettings() { return ParseSettings.htmlDefault(); }",
+        "      override defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      override process(Token t) { /* no-op */ }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<p>x</p>\";",
+        "    String uri = \"base\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assertSame(dummy, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String,String) with stub TreeBuilder.parse throwing RuntimeException propagates same exception (exception-branch)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is propagated with original message",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-builder"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput(String) stub builder exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      override parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"fail-str\"); }",
+        "      override parseFragment(...) { return null; }",
+        "      override newInstance() { return this; }",
+        "      override defaultTagSet() { return TagSet.html(); }",
+        "      override defaultSettings() { return ParseSettings.htmlDefault(); }",
+        "      override defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      override process(Token t) { /* no-op */ }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"x\";",
+        "    String uri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, uri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail-str\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader,String) with stub TreeBuilder.parse throwing RuntimeException propagates same exception (exception-branch)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is propagated with original message",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-builder"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseInput(Reader) stub builder exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      override parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"fail-rdr\"); }",
+        "      override parseFragment(...) { return null; }",
+        "      override newInstance() { return this; }",
+        "      override defaultTagSet() { return TagSet.html(); }",
+        "      override defaultSettings() { return ParseSettings.htmlDefault(); }",
+        "      override defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      override process(Token t) { /* no-op */ }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader rdr = new StringReader(\"x\");",
+        "    String uri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, uri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail-rdr\";",
+        "END"
+      ]
+    }
+  ]
+}

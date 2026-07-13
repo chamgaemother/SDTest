@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() on an Element with only non-Element childNodes triggers full build loop and returns empty list",
+      "path": "B0→B3→B4(loop×n)→B5",
+      "precondition": "Element el with one TextNode child",
+      "expectedResult": "returns empty Elements list",
+      "tags": [
+        "positive",
+        "filter-only",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children filters non-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"some text\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(0, result.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() when shadowChildrenRef present but referent cleared rebuilds cache and returns correct elements",
+      "path": "B0→B3→B4(loop×m)→B6",
+      "precondition": "Element parent with two child Elements and a cleared WeakReference in shadowChildrenRef",
+      "expectedResult": "returns fresh cached list of two elements",
+      "tags": [
+        "positive",
+        "cache-rebuild",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache rebuild after referent cleared",
+        "  GIVEN",
+        "    Element parent = new Element(\"section\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    parent.children(); // populate cache",
+        "    // Reflectively clear referent",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<?> weak = (WeakReference<?>) refField.get(parent);",
+        "    // simulate GC clearing referent",
+        "    weak.clear();",
+        "  WHEN",
+        "    Elements result2 = parent.children();",
+        "  THEN",
+        "    assertEquals(2, result2.size());",
+        "    assertTrue(result2.contains(a) && result2.contains(b));",
+        "END"
+      ]
+    }
+  ]
+}

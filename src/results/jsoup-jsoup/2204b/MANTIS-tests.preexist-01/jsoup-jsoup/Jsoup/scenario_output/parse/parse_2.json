@@ -1,0 +1,170 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(String html, String baseUri) overload returns Document with given baseUri and parsed content",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input HTML and baseUri is preserved",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse html-with-baseUri",
+        "  GIVEN",
+        "    String html = \"<div>X</div>\";",
+        "    String baseUri = \"http://host/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>X</div>\");",
+        "    assert doc.baseUri().equals(\"http://host/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(File file, String charsetName) overload loads file with default baseUri from file path",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Temporary HTML file exists on disk",
+      "expectedResult": "Document.body().html() equals file content and baseUri equals file absolute path",
+      "tags": [
+        "positive",
+        "file",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse file-with-null-charset",
+        "  GIVEN",
+        "    Path tmp = createTempFile(\".html\");",
+        "    write tmp \"<p>File</p>\";",
+        "    File f = tmp.toFile();",
+        "    String charset = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>File</p>\");",
+        "    assert doc.baseUri().equals(f.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File file, String charsetName, String baseUri, Parser parser) overload uses custom parser and baseUri",
+      "path": "B0→B1→B4→B7",
+      "precondition": "Temporary XML file exists on disk",
+      "expectedResult": "Document parsed by xmlParser and baseUri set as given",
+      "tags": [
+        "positive",
+        "file",
+        "parser",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse file-with-parser",
+        "  GIVEN",
+        "    Path tmp = createTempFile(\".html\");",
+        "    write tmp \"<root><a/></root>\";",
+        "    File f = tmp.toFile();",
+        "    Parser xml = Parser.xmlParser();",
+        "    String base = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, null, base, xml);",
+        "  THEN",
+        "    assert doc.select(\"a\").size() == 1;",
+        "    assert doc.baseUri().equals(\"http://x/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser parser) overload uses XML parser on Path",
+      "path": "B0→B1→B4→B7",
+      "precondition": "Temporary file Path exists",
+      "expectedResult": "Document parsed by xmlParser and baseUri set to provided value",
+      "tags": [
+        "positive",
+        "path",
+        "parser",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse path-with-parser",
+        "  GIVEN",
+        "    Path tmp = createTempFile(\".html\");",
+        "    writeString tmp \"<tag>v</tag>\";",
+        "    Parser xml = Parser.xmlParser();",
+        "    String base = \"https://u/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(tmp, null, base, xml);",
+        "  THEN",
+        "    assert doc.select(\"tag\").size() == 1;",
+        "    assert doc.baseUri().equals(\"https://u/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(InputStream in, String charsetName, String baseUri) overload reads from stream and sets baseUri",
+      "path": "B0→B1→B4→B6",
+      "precondition": "ByteArrayInputStream wrapping HTML fragment",
+      "expectedResult": "Document.body().html() equals input fragment and baseUri equals provided URI",
+      "tags": [
+        "positive",
+        "stream",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse inputstream-no-parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<i>I</i>\".getBytes());",
+        "    String base = \"http://b/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i>I</i>\");",
+        "    assert doc.baseUri().equals(\"http://b/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(InputStream in, String charsetName, String baseUri, Parser parser) overload applies custom parser on stream",
+      "path": "B0→B1→B4→B7",
+      "precondition": "ByteArrayInputStream with XML fragment",
+      "expectedResult": "Document parsed by xmlParser and baseUri set correctly",
+      "tags": [
+        "positive",
+        "stream",
+        "parser",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse inputstream-with-parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<x>1</x>\".getBytes());",
+        "    Parser xml = Parser.xmlParser();",
+        "    String base = \"https://z/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, base, xml);",
+        "  THEN",
+        "    assert doc.select(\"x\").size() == 1;",
+        "    assert doc.baseUri().equals(\"https://z/\");",
+        "END"
+      ]
+    }
+  ]
+}

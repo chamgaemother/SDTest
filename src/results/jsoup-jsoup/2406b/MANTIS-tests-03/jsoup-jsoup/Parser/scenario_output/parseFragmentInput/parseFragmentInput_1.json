@@ -1,0 +1,128 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Reader overload with xmlParser parses self-closing tag in XML context",
+      "path": "B0→B3→B4→B7→B8",
+      "precondition": "none",
+      "expectedResult": "returns list with one Element node named 'a'",
+      "tags": [
+        "positive",
+        "xml",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xmlParser reader-overload",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<a/>\");",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element el = (Element) result.get(0);",
+        "    assert el.tagName().equals(\"a\");"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "String overload with xmlParser parses mismatched case tag in XML context",
+      "path": "B0→B2→B3→B4→B7→B8",
+      "precondition": "none",
+      "expectedResult": "returns list with one Element node named 'Test'",
+      "tags": [
+        "positive",
+        "xml",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 xmlParser string-overload",
+        "  GIVEN",
+        "    String fragment = \"<Test/>\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element el = (Element) result.get(0);",
+        "    assert el.tagName().equals(\"Test\");"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Reader overload throws NullPointerException when fragment reader is null",
+      "path": "B0→B3→B4→exception→finally",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException before parsing",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 reader null fragment",
+        "  GIVEN",
+        "    Reader fragment = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "String overload throws NullPointerException when fragment string is null",
+      "path": "B0→B2→exception",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException at StringReader construction",
+      "tags": [
+        "negative",
+        "exception",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 string null fragment",
+        "  GIVEN",
+        "    String fragment = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Reader overload throws NullPointerException when baseUri is null",
+      "path": "B0→B3→B4→exception→finally",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException during parseFragment invocation",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 null baseUri reader",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<p>x</p>\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, null, null);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

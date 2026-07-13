@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Chained setTrackPosition calls flip state from true to false on same instance",
+      "path": "B0→B1→B2→B1→B2",
+      "precondition": "Parser.htmlParser() with default trackPosition=false",
+      "expectedResult": "After setTrackPosition(true).setTrackPosition(false), isTrackPosition() returns false and same instance is returned each time",
+      "tags": [
+        "positive",
+        "fluent",
+        "chain"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 chained-setTrackPosition toggles correctly",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    assertFalse(parser.isTrackPosition());",
+        "  WHEN",
+        "    Parser first = parser.setTrackPosition(true);",
+        "    Parser second = first.setTrackPosition(false);",
+        "  THEN",
+        "    assertSame(parser, first);",
+        "    assertSame(first, second);",
+        "    assertFalse(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Change trackPosition on a copy does not affect original parser’s state",
+      "path": "B0→B1→B2→B4→B1→B2",
+      "precondition": "Parser.htmlParser() with default trackPosition=false",
+      "expectedResult": "Original remains false while copy.setTrackPosition(true) enables only the copy",
+      "tags": [
+        "isolation",
+        "copy",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 setTrackPosition on copy isolates original",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser();",
+        "    assertFalse(original.isTrackPosition());",
+        "  WHEN",
+        "    Parser copy = original.newInstance();",
+        "    Parser changedCopy = copy.setTrackPosition(true);",
+        "  THEN",
+        "    assertFalse(original.isTrackPosition());",
+        "    assertTrue(changedCopy.isTrackPosition());",
+        "    assertNotSame(original, copy);",
+        "    assertSame(copy, changedCopy);",
+        "END"
+      ]
+    }
+  ]
+}

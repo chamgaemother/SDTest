@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn with custom slash-based pattern parses valid date",
+      "path": "B0→B1(newPattern!=null)→B3(trimmed.isEmpty()==false)→B4→B5",
+      "precondition": "CsvSchemaColumn constructed with pattern \"dd/MM/uuuu\"",
+      "expectedResult": "stub.addedObject is LocalDate.of(2022,12,31)",
+      "tags": [
+        "positive",
+        "custom-pattern",
+        "parsing"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07 parse custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"d\", \"dd/MM/uuuu\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"31/12/2022\";",
+        "  WHEN",
+        "    column.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assert stub.addedObject.equals(LocalDate.of(2022, 12, 31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn throws DateTimeParseException for non-leap Feb 29 under strict resolver",
+      "path": "B0→B1(newPattern!=null)→B3(trimmed.isEmpty()==false)→B4(exception)",
+      "precondition": "CsvSchemaColumn constructed with default pattern \"uuuu-M-d\"",
+      "expectedResult": "DateTimeParseException is thrown",
+      "tags": [
+        "negative",
+        "strict-resolver",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 strict resolver rejects invalid date",
+        "  GIVEN",
+        "    DateSchemaColumn column = new DateSchemaColumn(null, \"d\", \"uuuu-M-d\");",
+        "    StubColumn stub = new StubColumn();",
+        "    String aString = \"2019-2-29\";",
+        "  WHEN",
+        "    call column.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    }
+  ]
+}

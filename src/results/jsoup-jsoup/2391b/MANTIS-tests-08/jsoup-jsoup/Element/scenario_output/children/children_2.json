@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "children() invalidates when cached list exists but stored modCount mismatches actual modCount",
+      "path": "B0→B1→B4(cachedChildren→hasUserData=true, ref.get()!=null)→B6(cachedChildren→modCount mismatch)→B3→B5",
+      "precondition": "parent has two Element children and cache populated; then manually set userData childElsMod to wrong modCount",
+      "expectedResult": "children() returns a new Elements instance reflecting both children and not equal to the stale cached list",
+      "tags": [
+        "cache",
+        "invalidate",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 invalidate-stale-cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"span\"); Element c2 = new Element(\"p\");",
+        "    parent.appendChild(c1); parent.appendChild(c2);",
+        "    Elements first = parent.children();  // populate cache",
+        "    // manipulate cache metadata via reflection",
+        "    String key = getStaticField(Element, \"childElsKey\");",
+        "    String modKey = getStaticField(Element, \"childElsMod\");",
+        "    Map<String,Object> ud = parent.attributes().userData();",
+        "    // set wrong modCount: e.g. -1",
+        "    ud.put(modKey, Integer.valueOf(-1));",
+        "  WHEN",
+        "    Elements updated = parent.children();",
+        "  THEN",
+        "    assertNotSame(first, updated);",
+        "    assertEquals(2, updated.size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "children() recreates cache when cached WeakReference has been cleared",
+      "path": "B0→B1→B4(cachedChildren→hasUserData=true, ref.get()==null)→B3→B5",
+      "precondition": "parent has one Element child; cache populated then userData childElsKey set to WeakReference(null) and childElsMod matches current modCount",
+      "expectedResult": "children() returns fresh Elements list with one child and repopulates the cache",
+      "tags": [
+        "cache",
+        "stale-ref",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 clear-cache-ref",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element c1 = new Element(\"li\"); parent.appendChild(c1);",
+        "    Elements first = parent.children();  // populate cache",
+        "    String key = getStaticField(Element, \"childElsKey\");",
+        "    String modKey = getStaticField(Element, \"childElsMod\");",
+        "    Map<String,Object> ud = parent.attributes().userData();",
+        "    // clear the referent",
+        "    ud.put(key, new WeakReference<List<Element>>(null));",
+        "    // leave modCount unchanged so cachedChildren sees ref.get()==null",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assertNotSame(first, second);",
+        "    assertEquals(1, second.size());",
+        "    assertSame(c1, second.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

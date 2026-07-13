@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "ATKEYWORD param error path when handleAtRuleParam returns null triggers error branch and skips to semicolon",
+      "path": "B0→B1→B2→B4→handleAtRule→param-null-branch→return→B7→B1→B8",
+      "precondition": "Reader with content \"@foo %;\"",
+      "expectedResult": "CssErrorHandler.error(...) called for GRAMMAR_UNEXPECTED_TOKEN, then parser continues and ends document without throwing",
+      "tags": [
+        "at-rule",
+        "error",
+        "param-null",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "GIVEN",
+        "  Reader r = new StringReader(\"@foo %;\");",
+        "  CssErrorHandler err = spyRealHandler();",
+        "  CssContentHandler doc = mock(CssContentHandler.class);",
+        "WHEN",
+        "  parser.parse(r, \"id\", err, doc);",
+        "THEN",
+        "  verify(err).error(argThat(ex -> ex.getCode() == GRAMMAR_UNEXPECTED_TOKEN));",
+        "  verify(doc).startAtRule(\"foo\");",
+        "  verify(doc).endAtRule(\"foo\");",
+        "  verify(doc).endDocument();"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "ATKEYWORD with empty block exercises hasBlock=true and hasRuleSet=false branch, invoking handleDeclarationBlock empty",
+      "path": "B0→B1→B2→B4→handleAtRule→semi-openbrace('{')->hasBlock=true→hasRuleSet=false→handleDeclarationBlock(empty)→endAtRule→B7→B1→B8",
+      "precondition": "Reader with content \"@foo{}\"",
+      "expectedResult": "doc.startAtRule and doc.endAtRule invoked once, no errors, document ends normally",
+      "tags": [
+        "at-rule",
+        "empty-block",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "GIVEN",
+        "  Reader r = new StringReader(\"@foo{}\");",
+        "  CssErrorHandler err = mock(CssErrorHandler.class);",
+        "  CssContentHandler doc = mock(CssContentHandler.class);",
+        "WHEN",
+        "  parser.parse(r, \"id\", err, doc);",
+        "THEN",
+        "  verify(doc).startAtRule(\"foo\");",
+        "  verify(doc).endAtRule(\"foo\");",
+        "  verifyNoInteractions(err);"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "ATKEYWORD with block containing nested ruleset exercises hasRuleSet=true branch and nested handleRuleSet",
+      "path": "B0→B1→B2→B4→handleAtRule→hasBlock→hasRuleSet=true→nested handleRuleSet→endAtRule→B7→B1→B8",
+      "precondition": "Reader with content \"@media screen { h1{color:red;} }\"",
+      "expectedResult": "doc.startAtRule(\"media\"), nested selectors and endSelectors invoked, doc.endAtRule(\"media\"), no errors",
+      "tags": [
+        "at-rule",
+        "nested-ruleset",
+        "branch",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "GIVEN",
+        "  Reader r = new StringReader(\"@media screen { h1{color:red;} }\");",
+        "  CssErrorHandler err = mock(CssErrorHandler.class);",
+        "  CssContentHandler doc = mock(CssContentHandler.class);",
+        "WHEN",
+        "  parser.parse(r, \"id\", err, doc);",
+        "THEN",
+        "  verify(doc).startAtRule(\"media\");",
+        "  verify(doc).selectors(anyList());",
+        "  verify(doc).endSelectors(anyList());",
+        "  verify(doc).endAtRule(\"media\");",
+        "  verifyNoInteractions(err);"
+      ]
+    }
+  ]
+}

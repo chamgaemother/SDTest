@@ -1,0 +1,36 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import java.lang.reflect.Field;
+public class Element_appendChild_1_Test {
+
+    @Test
+    @DisplayName("appendChild(child already attached to same parent) removes and re-adds child, resetting sibling index")
+    public void test_TC05() throws Exception {
+        // GIVEN: a parent element with one existing TextNode child
+        Element parent = new Element("div");
+        TextNode child = new TextNode("x");
+        parent.appendChild(child);
+        // precondition: child is already attached, so child.parent() == parent and one child present
+        assertEquals(1, parent.childNodeSize(), "Pre: parent should have one child");
+        assertSame(parent, child.parent(), "Pre: child.parent should be parent");
+
+        // WHEN: re-appending the same child to the same parent triggers reparenting branch (oldParent == this -> remove & re-add)
+        Element result = parent.appendChild(child);
+        // inline: because child.parent was already parent, code should remove then add, entering B3->B5 path
+
+        // THEN: parent keeps one child after re-append
+        assertEquals(1, parent.childNodeSize(), "Parent should still have exactly one child after re-append");
+        // child.parent remains parent
+        assertSame(parent, child.parent(), "Child should remain attached to parent after re-append");
+        // siblingIndex reset to 0 (only child)
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(child);
+        assertEquals(0, idx, "Sibling index should be reset to 0 after re-append");
+        // appendChild returns the parent for chaining
+        assertSame(parent, result, "appendChild should return the parent element itself");
+    }
+}

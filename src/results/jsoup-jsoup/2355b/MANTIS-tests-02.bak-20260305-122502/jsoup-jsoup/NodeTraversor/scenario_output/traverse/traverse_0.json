@@ -1,0 +1,333 @@
+{
+  "method": "traverse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "traverse(null, validRoot) throws IllegalArgumentException when visitor is null (Validate.notNull(visitor) fails)",
+      "path": "B0→B1→B24",
+      "precondition": "NodeVisitor visitor = null; Node root = new TextNode(\"text\");",
+      "expectedResult": "throws IllegalArgumentException; no traversal occurs",
+      "tags": [
+        "exception",
+        "branch-visitor-null",
+        "P0",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 traverse null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null;",
+        "    Node root = new org.jsoup.nodes.TextNode(\"text\");",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "traverse(validVisitor, null) throws IllegalArgumentException when root is null (Validate.notNull(root) fails)",
+      "path": "B0→B1→B24",
+      "precondition": "NodeVisitor visitor = (n,d)->{}; Node root = null;",
+      "expectedResult": "throws IllegalArgumentException; no traversal occurs",
+      "tags": [
+        "exception",
+        "branch-root-null",
+        "P0",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 traverse null-root",
+        "  GIVEN",
+        "    NodeVisitor visitor = (node, depth) -> {};",
+        "    Node root = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "traverse on single leaf node calls head and tail once then returns (no children, node == root)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B24",
+      "precondition": "NodeVisitor visitor collects events; Node root = new TextNode(\"leaf\");",
+      "expectedResult": "visitor.head called once with (root,0); visitor.tail called once with (root,0)",
+      "tags": [
+        "branch-parent-null",
+        "loop-0",
+        "P1",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 traverse single-node",
+        "  GIVEN",
+        "    Node events[] = {};",
+        "    NodeVisitor visitor = (n,d) -> recordHead(n,d); then recordTail(n,d);",
+        "    Node root = new org.jsoup.nodes.TextNode(\"leaf\");",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert head called exactly once with depth=0; assert tail called exactly once with depth=0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "traverse on root with one child descends then ascends (childNodeSize>0 triggers descend branch)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B13→B16→B20→B21→B24",
+      "precondition": "NodeVisitor visitor collects order; Element root = new Element(Tag.valueOf(\"div\"), \"\"); root.appendChild(new TextNode(\"c\"));",
+      "expectedResult": "visitor.head called on root(depth0), child(depth1); visitor.tail called on child(depth1), root(depth0)",
+      "tags": [
+        "branch-descend",
+        "loop-1",
+        "P1",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 traverse one-child",
+        "  GIVEN",
+        "    List<String> calls = [];",
+        "    NodeVisitor visitor = (n,d) -> calls.add(\"head:\"+n.nodeName()+\":\"+d); and then calls.add(\"tail:\"+n.nodeName()+\":\"+d);",
+        "    Element root = new Element(Tag.valueOf(\"div\"),\"\"); root.appendChild(new TextNode(\"c\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls == [\"head:div:0\",\"head:#text:1\",\"tail:#text:1\",\"tail:div:0\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "traverse handles replacement in head: parent child size same triggers replace branch",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→...→B24",
+      "precondition": "// stub visitor replaces each node with new TextNode of same index to simulate replace\nNodeVisitor visitor = new NodeVisitor() {\n  public void head(Node n,int d){\n    if(n.parentNode()!=null) n.replaceWith(new org.jsoup.nodes.TextNode(\"x\"));\n  }\n  public void tail(Node n,int d){}\n};\nElement root = new Element(Tag.valueOf(\"p\"),\"\"); root.appendChild(new TextNode(\"a\")); root.appendChild(new TextNode(\"b\"));",
+      "expectedResult": "no exceptions; traversal continues on replaced nodes in document order",
+      "tags": [
+        "branch-replace",
+        "P2",
+        "Java 8",
+        "overload:NodeVisitor,Node",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 traverse with-replace",
+        "  GIVEN",
+        "    NodeVisitor visitor = stub that replaces node in head;",
+        "    Element root = new Element(Tag.valueOf(\"p\"),\"\"); root.appendText(\"a\"); root.appendText(\"b\");",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert no IllegalStateException; traversal visited both replaced nodes;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "traverse handles removal in head: parent child size changes triggers removal branch",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B9→B1→...→B24",
+      "precondition": "// stub visitor removes each Node\nNodeVisitor visitor = new NodeVisitor() { public void head(Node n,int d){ n.remove(); } public void tail(Node n,int d){} }; Element root = new Element(Tag.valueOf(\"ul\"),\"\"); root.appendChild(new Element(Tag.valueOf(\"li\"),\"\"));",
+      "expectedResult": "no tail calls for removed nodes; traversal ascends correctly and terminates",
+      "tags": [
+        "branch-remove",
+        "P2",
+        "Java 8",
+        "overload:NodeVisitor,Node",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 traverse with-remove",
+        "  GIVEN",
+        "    NodeVisitor visitor removes node in head;",
+        "    Element root = new Element(Tag.valueOf(\"ul\"),\"\"); root.appendChild(new Element(Tag.valueOf(\"li\"),\"text\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert root.childNodeSize() == 0; no tail events for removed child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "traverse on sibling chain visits all siblings in order (childNodeSize=0, nextSibling!=null branch)",
+      "path": "B0→B1→B2→B3→B5→B11→B13→B16→B17→B18→B20→B22→B23→B1→B24",
+      "precondition": "Element root = new Element(Tag.valueOf(\"div\"),\"\"); root.appendChild(new TextNode(\"a\")); root.appendChild(new TextNode(\"b\")); NodeVisitor visitor records sequence;",
+      "expectedResult": "head and tail called on first node(depth0) then head and tail on second node(depth0)",
+      "tags": [
+        "branch-nextSibling",
+        "loop-N",
+        "P1",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 traverse siblings",
+        "  GIVEN",
+        "    List<String> seq = [];",
+        "    NodeVisitor visitor = (n,d)-> seq.add(\"h:\"+n.outerHtml()); then seq.add(\"t:\"+n.outerHtml());",
+        "    Element root = new Element(Tag.valueOf(\"div\"),\"\"); root.append(\"a\",\"b\");",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert seq == [\"h:a\",\"t:a\",\"h:b\",\"t:b\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "traverse on deeper tree with multiple descendant levels (loop >1 iterations)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B12→...→B24",
+      "precondition": "Element root = Parser.parseTree(\"<div><span><em>deep</em></span></div>\"); NodeVisitor visitor counts entries;",
+      "expectedResult": "visitor.head depth sequence [0,1,2] and visitor.tail [2,1,0]",
+      "tags": [
+        "branch-descend",
+        "loop-N",
+        "P1",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 traverse deep-tree",
+        "  GIVEN",
+        "    List<Integer> depths = [];",
+        "    NodeVisitor visitor = (n,d)-> depths.add(d) on head and on tail;",
+        "    Element root = org.jsoup.Jsoup.parse(\"<div><span><em>deep</em></span></div>\").body().child(0);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert depths starts [0,1,2,2,1,0];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "traverse(elements) with empty list does nothing (iterator.hasNext() false)",
+      "path": "B0→B1→B3",
+      "precondition": "NodeVisitor visitor = (n,d)->{}; Elements empty = new Elements();",
+      "expectedResult": "no traversal; visitor.head/tail never called",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-elements-empty",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 traverse elements empty",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d)->{};",
+        "    Elements elems = new Elements();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, elems);",
+        "  THEN",
+        "    assert no head or tail calls;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "traverse(elements) with one element invokes child overload once",
+      "path": "B0→B1→B2→B1→B3",
+      "precondition": "NodeVisitor visitor count=0; Element e = new Element(Tag.valueOf(\"p\"),\"\"); Elements list=[e];",
+      "expectedResult": "visitor called on single element as in TC03; count incremented twice (head+tail)",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-elements-single",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 traverse elements single",
+        "  GIVEN",
+        "    AtomicInteger calls=0;",
+        "    NodeVisitor visitor = (n,d)-> calls.incrementAndGet(); then calls.incrementAndGet();",
+        "    Elements elems = new Elements(new Element(Tag.valueOf(\"p\"),\"\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, elems);",
+        "  THEN",
+        "    assert calls.get() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "traverse(elements) with multiple elements invokes child overload for each in order",
+      "path": "B0→B1→B2→B1→B2→B1→B3",
+      "precondition": "NodeVisitor visitor records element tags; Elements elems=[e1,e2];",
+      "expectedResult": "visitor called for e1 then e2 sequences head+tail each",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-elements-multiple",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 traverse elements multiple",
+        "  GIVEN",
+        "    List<String> seq=[];",
+        "    NodeVisitor visitor = (n,d)-> seq.add(n.tagName()); then seq.add(n.tagName()+\":tail\");",
+        "    Elements elems = new Elements(new Element(Tag.valueOf(\"a\"),\"\"), new Element(Tag.valueOf(\"b\"),\"\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, elems);",
+        "  THEN",
+        "    assert seq == [\"a\",\"a:tail\",\"b\",\"b:tail\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "traverse on node with multiple siblings and children covers both descend and ascend loops",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B13→B16→B17→B19→B13→B...→B24",
+      "precondition": "// complex tree with siblings and grandchildren\nElement root = org.jsoup.Jsoup.parse(\"<div><p>x</p><ul><li>1</li><li>2</li></ul></div>\").body().child(0);\nNodeVisitor visitor logs events;",
+      "expectedResult": "visitor events reflect correct depth-first order across branches",
+      "tags": [
+        "branch-mixed",
+        "loop-N",
+        "P1",
+        "Java 8",
+        "overload:NodeVisitor,Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 traverse mixed-tree",
+        "  GIVEN",
+        "    List<String> log=[];",
+        "    NodeVisitor visitor = (n,d)-> log.add(\"h:\"+n.nodeName()+\":\"+d); and on tail add(\"t:\"+n.nodeName()+\":\"+d);",
+        "    Element root = org.jsoup.Jsoup.parse(\"<div><p>x</p><ul><li>1</li><li>2</li></ul></div>\").body().child(0);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert log contains correct depth-first sequence;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("TC01: wrap(Writer) with empty input triggers zero-loop and writes nothing")
+    public void test_TC01() throws IOException {
+        // empty input -> reader.read() returns -1 immediately (loop-0)
+        Writer w = new StringWriter();
+        WordWrap.from("").wrap(w);
+        assertEquals("", w.toString());
+    }
+
+    @Test
+    @DisplayName("TC02: wrap(Writer) with single short line under maxWidth writes line without newline")
+    public void test_TC02() throws IOException {
+        // "hello" length 5 < default maxWidth 80 -> never breaks, loop body writes at end only
+        Writer w = new StringWriter();
+        WordWrap.from("hello").wrap(w);
+        assertEquals("hello", w.toString());
+    }
+
+    @Test
+    @DisplayName("TC03: wrap(Writer) processes newline char branch")
+    public void test_TC03() throws IOException {
+        // contains '\n' -> triggers newline branch and preserves newline
+        Writer w = new StringWriter();
+        WordWrap.from("a\n b").wrap(w);
+        assertEquals("a\n b", w.toString());
+    }
+
+    @Test
+    @DisplayName("TC04: wrap(Writer) breaks long word with hyphens when breakWords=true and insertHyphens=true")
+    public void test_TC04() throws IOException {
+        // "abcdefghij", maxWidth=3 -> first 3 chars "abc", then hyphen and newline, then remaining
+        Writer w = new StringWriter();
+        WordWrap.from("abcdefghij").maxWidth(3).wrap(w);
+        assertEquals("abc-\nghij", w.toString());
+    }
+
+    @Test
+    @DisplayName("TC05: wrap(Writer) breaks long word without hyphens when insertHyphens=false")
+    public void test_TC05() throws IOException {
+        // "abcdef", maxWidth=2, insertHyphens=false -> break at width without hyphen
+        Writer w = new StringWriter();
+        WordWrap.from("abcdef").maxWidth(2).insertHyphens(false).wrap(w);
+        assertEquals("ab\ncdef", w.toString());
+    }
+
+    @Test
+    @DisplayName("TC06: wrapToList returns lines list for multi-line input")
+    public void test_TC06() {
+        // words fit within width=80 but input has space -> first line "one two", second "three"
+        List<String> actual = WordWrap.from("one two three").wrapToList();
+        List<String> expected = Arrays.asList("one two", "three");
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @DisplayName("TC07: wrap(LineConsumer) writes via custom consumer")
+    public void test_TC07() {
+        // single segment "xyz" -> consumer.write then writeNewLine invoked at end of wrap()
+        StringBuilder sb = new StringBuilder();
+        LineConsumer c = new LineConsumer() {
+            @Override
+            public void write(char[] chars, int offset, int length) {
+                sb.append(chars, offset, length);
+            }
+            @Override
+            public void writeNewLine() {
+                sb.append('\n');
+            }
+            @Override
+            public void write(String s) {
+                sb.append(s);
+            }
+        };
+        WordWrap.from("xyz").wrap(c);
+        assertEquals("xyz\n", sb.toString());
+    }
+
+    @Test
+    @DisplayName("TC08: wrap(File,Charset) writes output file with UTF-16 encoding")
+    public void test_TC08() throws IOException {
+        // write "foo bar" to temp file using UTF-16
+        File f = Files.createTempFile("ww", ".txt").toFile();
+        f.deleteOnExit();
+        WordWrap.from("foo bar").wrap(f, StandardCharsets.UTF_16);
+        byte[] data = Files.readAllBytes(f.toPath());
+        String content = new String(data, StandardCharsets.UTF_16);
+        assertEquals("foo bar", content);
+    }
+
+    @Test
+    @DisplayName("TC09: wrapUtf8(String) writes UTF-8 file by filename")
+    public void test_TC09() throws IOException {
+        // wrapUtf8(String) writes UTF-8 by default
+        File f = Files.createTempFile("ww2", ".txt").toFile();
+        f.deleteOnExit();
+        WordWrap.from("abc").wrapUtf8(f.getAbsolutePath());
+        byte[] data = Files.readAllBytes(f.toPath());
+        String content = new String(data, StandardCharsets.UTF_8);
+        assertEquals("abc", content);
+    }
+
+    @Test
+    @DisplayName("TC10: wrap() returns wrapped text as String for default settings")
+    public void test_TC10() {
+        // wrap() should return the same string when no wrapping needed
+        String result = WordWrap.from("hello world").wrap();
+        assertEquals("hello world", result);
+    }
+}

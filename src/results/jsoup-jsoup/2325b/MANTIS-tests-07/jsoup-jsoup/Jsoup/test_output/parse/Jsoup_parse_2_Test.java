@@ -1,0 +1,110 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_2_Test {
+
+    @Test
+    @DisplayName("parse(html, parser) throws NullPointerException when parser is null")
+    public void test_TC15() {
+        String html = "<p>text</p>";
+        // The code path will attempt parser.parseInput, so parser==null should cause NPE at entry
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parse(html, (Parser) null); // Specify Parser type to resolve ambiguity
+        });
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) throws NullPointerException when html is null")
+    public void test_TC16() {
+        String html = null;
+        Parser parser = Parser.htmlParser();
+        // Passing null html to Parser.parseInput should cause NPE early
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parse(html, parser);
+        });
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri) throws IOException when file does not exist")
+    public void test_TC17() {
+        File file = new File("no_such_file.html");
+        String charset = "UTF-8";
+        String baseUri = "http://x";
+        // Non-existent file should cause DataUtil.load to throw IOException
+        assertThrows(IOException.class, () -> {
+            Jsoup.parse(file, charset, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parse(File) with existing HTML file returns parsed Document")
+    public void test_TC18() throws IOException {
+        // Create a temp file with known HTML content
+        Path temp = Files.createTempFile("test", ".html");
+        Files.write(temp, "<div>ok</div>".getBytes(StandardCharsets.UTF_8));
+        File file = temp.toFile();
+        // Invoke parse(File) which uses default charset detection
+        Document doc = Jsoup.parse(file);
+        // The body fragment should match the file's content
+        assertEquals("<div>ok</div>", doc.body().html());
+        // The baseUri of the document must be the absolute path of the file
+        assertEquals(file.getAbsolutePath(), doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri) throws IOException when charsetName is invalid")
+    public void test_TC19() throws IOException {
+        Path path = Files.createTempFile("testInvalidCharset", ".html");
+        Files.write(path, "<p>hi</p>".getBytes(StandardCharsets.UTF_8));
+        String invalidCharset = "NoSuch-Charset";
+        String baseUri = "http://b";
+        // Invalid charsetName should cause DataUtil.load to throw IOException
+        assertThrows(IOException.class, () -> {
+            Jsoup.parse(path, invalidCharset, baseUri);
+        });
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri) returns parsed Document for valid stream")
+    public void test_TC20() throws IOException {
+        byte[] data = "<span>in</span>".getBytes(StandardCharsets.UTF_8);
+        InputStream in = new ByteArrayInputStream(data);
+        String charset = "UTF-8";
+        String baseUri = "";
+        // Valid stream and charset should parse to a document whose body.html matches input
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        assertEquals("<span>in</span>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) invokes custom parser.parseInput and returns its Document")
+    public void test_TC21() {
+        String html = "<x/>";
+        // Stub parser: parseInput returns the sentinel instance
+        final Document sentinel = new Document("stub-base");
+        Parser stubParser = new Parser() {
+            @Override
+            public Document parseInput(String inHtml, String inBaseUri) {
+                return sentinel; // Directly return the sentinel
+            }
+        };
+        Document result = Jsoup.parse(html, stubParser);
+        // Ensure the returned Document is exactly the stub sentinel
+        assertSame(sentinel, result);
+    }
+}

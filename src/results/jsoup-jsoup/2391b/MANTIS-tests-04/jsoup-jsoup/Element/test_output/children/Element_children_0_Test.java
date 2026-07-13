@@ -1,0 +1,65 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty Elements when element has no child nodes (childNodeSize == 0 branch)")
+    public void test_TC01() {
+        // GIVEN: a fresh Element with no children -> childNodeSize == 0 triggers direct empty return
+        Element el = new Element("div");
+        // WHEN: calling children()
+        Elements result = el.children();
+        // THEN: size should be zero
+        assertEquals(0, result.size(), "Expected no child elements");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns single child element when one Element child present (childNodeSize > 0, single filter iteration)")
+    public void test_TC02() {
+        // GIVEN: an Element with exactly one Element child -> ensures childNodeSize>0 and one loop iteration
+        Element parent = new Element("div");
+        Element span = parent.appendElement("span");
+        // WHEN: calling children()
+        Elements result = parent.children();
+        // THEN: exactly one child and it's the span
+        assertEquals(1, result.size(), "Expected exactly one child element");
+        assertEquals("span", result.get(0).tagName(), "Expected child tag to be 'span'");
+    }
+
+    @Test
+    @DisplayName("TC03: children() filters out non-Element nodes among mixed childNodes (filter excludes TextNode)")
+    public void test_TC03() {
+        // GIVEN: an Element with a TextNode and then an Element -> ensures filter skips non-Element
+        Element parent = new Element("div");
+        parent.appendText("hello");           // adds a TextNode, should be filtered out
+        Element p = parent.appendElement("p"); // adds an Element, should be kept
+        // WHEN: calling children()
+        Elements result = parent.children();
+        // THEN: only the <p> should remain
+        assertEquals(1, result.size(), "Expected only element children, text nodes filtered out");
+        assertEquals("p", result.get(0).tagName(), "Expected the child tag to be 'p'");
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns cached children on second call without rebuilding (cachedChildren != null branch)")
+    public void test_TC04() {
+        // GIVEN: an Element with one child; first call builds cache, second should reuse it
+        Element parent = new Element("div");
+        Element a = parent.appendElement("a");
+        // WHEN: first and second calls
+        Elements first = parent.children();  // builds and stashes children cache
+        Elements second = parent.children(); // should hit cachedChildren branch
+        // THEN: both results should contain exactly one <a> element
+        assertAll("Cache reuse verification",
+            () -> assertEquals(1, first.size(), "First call should return one child"),
+            () -> assertEquals(1, second.size(), "Second call should return one child"),
+            () -> assertEquals("a", second.get(0).tagName(), "Cached child tag should be 'a'")
+        );
+    }
+}

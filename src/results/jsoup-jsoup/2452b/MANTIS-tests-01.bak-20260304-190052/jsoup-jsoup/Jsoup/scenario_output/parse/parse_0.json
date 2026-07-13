@@ -1,0 +1,244 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse(html, baseUri) throws NullPointerException when html is null",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no document returned",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-true(html==null)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse null-html",
+        "  GIVEN",
+        "    String html = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse(html, baseUri) returns empty Document when html is empty string and baseUri is empty",
+      "path": "B0→B1→B3→B4",
+      "precondition": "none",
+      "expectedResult": "return value is a Document with no child elements and baseUri \"\"",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "branch-false(html==null)",
+        "branch-true(baseUri.isEmpty)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse empty-html-empty-base",
+        "  GIVEN",
+        "    String html = \"\"; String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().children().isEmpty();",
+        "    assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse(html, baseUri) correctly resolves relative URLs when baseUri non-empty",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose <a> href is \"http://example.com/path/page.html\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-false(html==null)",
+        "branch-false(baseUri.isEmpty)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse resolve-relative",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"page.html\\\">link</a>\";",
+        "    String baseUri = \"http://example.com/path/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    Element a = doc.selectFirst(\"a\");",
+        "    assert a.attr(\"abs:href\").equals(\"http://example.com/path/page.html\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse(html) delegates to parse(html,\"\") and returns Document with body fragment",
+      "path": "B0→B6→B4",
+      "precondition": "none",
+      "expectedResult": "return value is a Document whose body.html() equals \"<p>test</p>\"",
+      "tags": [
+        "overload:String",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse(html) no-base",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>test</p>\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parse(html, parser) uses custom parser to parse xml fragment",
+      "path": "B0→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value is a Document parsed by custom Parser",
+      "tags": [
+        "overload:String,Parser",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse with-Parser",
+        "  GIVEN",
+        "    String html = \"<root><child/></root>\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.select(\"child\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse(html, baseUri, parser) uses custom parser and resolves baseUri",
+      "path": "B0→B9→B10",
+      "precondition": "none",
+      "expectedResult": "return value is a Document parsed by custom Parser with baseUri",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse html-base-parser",
+        "  GIVEN",
+        "    String html = \"<img src='img.png'>\";",
+        "    String baseUri = \"http://host/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    Element img = doc.selectFirst(\"img\");",
+        "    assert img.attr(\"abs:src\").equals(\"http://host/img.png\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse(File, charsetName, baseUri) throws IOException when file not found",
+      "path": "B0→B11→B12",
+      "precondition": "Use non-existent File stub for DataUtil.load to throw IOException",
+      "expectedResult": "throws IOException",
+      "tags": [
+        "overload:File,String,String",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse missing-file",
+        "  GIVEN",
+        "    File file = new File(\"nonexistent.html\");",
+        "    String charset = \"UTF-8\"; String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(InputStream, charsetName, baseUri) returns Document and closes stream",
+      "path": "B0→B13→B14",
+      "precondition": "Use ByteArrayInputStream with HTML bytes; verify stream closed by catching IOException on read after parse",
+      "expectedResult": "return value is Document with body.html() and InputStream is closed",
+      "tags": [
+        "overload:InputStream,String,String",
+        "positive",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse InputStream",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<p>hi</p>\".getBytes());",
+        "    String charset = \"UTF-8\"; String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>hi</p>\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(URL, timeoutMillis) throws MalformedURLException for ftp URL",
+      "path": "B0→B15→B16",
+      "precondition": "none",
+      "expectedResult": "throws MalformedURLException",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "branch-true(non-http URL)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse URL invalid-protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com\"); int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parse(URL, timeoutMillis) returns Document for valid URL within timeout",
+      "path": "B0→B15→B17→B18",
+      "precondition": "Use HttpConnection.connect stub to return a Connection whose get() returns a dummy Document",
+      "expectedResult": "return value is the dummy Document",
+      "tags": [
+        "overload:URL,int",
+        "positive",
+        "branch-false(non-http URL)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse URL success",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com\");",
+        "    int timeout = 500;",
+        "    // Stub HttpConnection.connect to return fake Connection",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc == fakeDocument;"
+      ]
+    }
+  ]
+}

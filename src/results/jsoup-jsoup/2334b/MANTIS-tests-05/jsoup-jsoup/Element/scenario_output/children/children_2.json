@@ -1,0 +1,69 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() rebuilds list when shadowChildrenRef.get() has been cleared by GC (shadowChildrenRef non-null but reference cleared)",
+      "path": "B0→B3→B5(loop×N)→B10",
+      "precondition": "parent with two Element children, children() called once to populate cache",
+      "expectedResult": "second children() returns a new list instance (not the same as cached) containing both children",
+      "tags": [
+        "cache",
+        "weakref",
+        "gc",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache cleared by GC",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = parent.appendElement(\"span\");",
+        "    Element c2 = parent.appendElement(\"em\");",
+        "    Elements firstList = parent.children();",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<List<Element>> weak = (WeakReference<List<Element>>) refField.get(parent);",
+        "    // Clear the weak reference to simulate GC",
+        "    weak.clear();",
+        "  WHEN",
+        "    Elements secondList = parent.children();",
+        "  THEN",
+        "    assertEquals(2, secondList.size());",
+        "    assertNotSame(firstList.unwrap(), secondList.unwrap());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds list when shadowChildrenRef is non-null but contains null (explicit invalidation)",
+      "path": "B0→B3→B5(loop×M)→B10",
+      "precondition": "parent with one Element child, children() called once to populate cache; then shadowChildrenRef set to WeakReference(null) via reflection",
+      "expectedResult": "next children() call returns correct list with single element and does not throw",
+      "tags": [
+        "cache",
+        "reflection",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children explicit invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element child = parent.appendElement(\"p\");",
+        "    Elements initial = parent.children();",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    // replace with a reference that returns null",
+        "    refField.set(parent, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements rebuilt = parent.children();",
+        "  THEN",
+        "    assertEquals(1, rebuilt.size());",
+        "    assertSame(child, rebuilt.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

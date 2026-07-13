@@ -1,0 +1,47 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+/**
+ * Test class for Element.child(int) method scenarios.
+ */
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(1) on element with mixed nodes returns second element child (filters non-Element nodes, valid upper-bound index)")
+    public void test_TC07() {
+        // GIVEN a parent element with mixed text and element children
+        Element parent = new Element("div");
+        // appendText adds a TextNode -> ensures childNodeSize>0 and contributes to mixed-nodes filter
+        parent.appendText("t1");
+        // first element child
+        Element first = parent.appendElement("span");
+        // another TextNode -> still mixed nodes
+        parent.appendText("t2");
+        // second element child
+        Element second = parent.appendElement("em");
+        // WHEN retrieving the second element child (index 1)
+        Element result = parent.child(1);
+        // THEN should return the exact second appended Element instance
+        assertSame(second, result, "Expected child(1) to return the second appended Element, filtering out TextNode entries");
+    }
+
+    @Test
+    @DisplayName("child(0) on element with only text nodes throws IndexOutOfBoundsException (filtered list empty)")
+    public void test_TC08() {
+        // GIVEN a parent element with only TextNode children (no Element nodes)
+        Element parent = new Element("p");
+        // appendText adds TextNode, childNodeSize>0 but no element children -> filtered list empty
+        parent.appendText("one");
+        parent.appendText("two");
+        // WHEN calling child(0) on empty element list
+        // THEN an IndexOutOfBoundsException is expected
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0),
+                "Expected IndexOutOfBoundsException when requesting element at index 0 from empty element list");
+    }
+}

@@ -1,0 +1,34 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.select.Elements;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("children() rebuilds cache when childNodes modified (stale cache path)")
+    public void test_TC06() {
+        // GIVEN an Element with one child, and initial cache built by calling children()
+        Element parent = new Element("div");
+        // Append first child; childNodeSize > 0 to enter B1
+        Element c1 = parent.appendElement("span");
+        // First call builds and stashes cache (populate cachedChildren)
+        Elements first = parent.children();
+        assertEquals(1, first.size(), "Initial children list should have one element");
+        assertSame(c1, first.get(0), "First child should be c1");
+
+        // WHEN modifying childNodes to invalidate cache (modCount changes)
+        Element c2 = parent.appendElement("p"); // new child triggers stash rebuild path
+        // THEN children() should detect stale cache and return updated list of size 2
+        Elements after = parent.children();
+
+        // Verify that after modification, children() returns both original and new child
+        assertEquals(2, after.size(), "After adding c2, children list should have two elements");
+        assertSame(c1, after.get(0), "First element in updated list should still be c1");
+        assertSame(c2, after.get(1), "Second element in updated list should be newly added c2");
+    }
+}

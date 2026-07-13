@@ -1,0 +1,134 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Term not in index triggers B0 false and returns empty list",
+      "path": "B0→B1",
+      "precondition": "New BM25InvertedIndex with no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search term absent",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    String term = \"inexistent\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Term present but termDocs map empty triggers B0 true then B7 zero iterations and returns empty",
+      "path": "B0→B2→B7→B6",
+      "precondition": "Use reflection to insert empty Map<Integer,Integer> for term \"foo\" in private index; index.put(\"foo\", new HashMap<>()); movies remain empty; // stub to simulate no docs",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "exception-free"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search with empty termDocs",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    // reflection to access private field 'index' and put empty map",
+        "    idx.index.put(\"foo\", new HashMap<>());",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"foo\");",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single document contains term triggers B0 true, one loop iteration (B7→B3 true→B5) and returns single SearchResult with correct score",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "none",
+      "expectedResult": "returned list size is 1 and the sole result has docId=1 and relevanceScore == computeIDF(1)*( (1*(K+1))/(1+K*(1-B+B*(docLen/avgDocLen))) ) which simplifies to computeIDF(1)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "branch-true",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search single-doc",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"A\", 5.0, 2020, \"A\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"a\");",
+        "  THEN",
+        "    assert results.size() == 1; assert results.get(0).getDocId() == 1; assert results.get(0).getRelevanceScore() == Math.log((1 - 1 + 0.5)/(1 + 0.5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Multiple documents with term triggers loop N (2 entries) and sorts by relevance descending",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "none",
+      "expectedResult": "returned list size is 2, first result.docId == 2 has higher score than result.docId == 1",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "ordering"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search two-docs ordering",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Test\", 4.0, 2000, \"term term\");",
+        "    idx.addMovie(2, \"Test\", 4.0, 2000, \"term\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"term\");",
+        "  THEN",
+        "    assert results.size() == 2; assert results.get(0).getDocId() == 2; assert results.get(1).getDocId() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "termDocs entry exists for docId missing in movies triggers skip branch (B3 false)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "Use reflection to insert map for term \"ghost\" containing entry (999->1); movies map is empty; // stub to simulate missing movie",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "branch-false",
+        "exception-free"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search skips missing movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    Map<Integer,Integer> m = new HashMap<>(); m.put(999,1);",
+        "    idx.index.put(\"ghost\", m);",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"ghost\");",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

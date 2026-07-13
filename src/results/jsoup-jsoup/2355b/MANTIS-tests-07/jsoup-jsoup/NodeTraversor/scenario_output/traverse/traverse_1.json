@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "Child replaced in head triggers the replaced branch (origSize==childNodeSize) then correct head/tail sequence",
+      "path": "B0→B1→B2→B5→B6→B7→B8→B11→B12→B23→B1→B11→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "Visit original child, then replacement in head, then tails for replacement and root",
+      "tags": [
+        "positive",
+        "replace-branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 replace-child path",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element child = new Element(Tag.valueOf(\"p\"), \"\");",
+        "    root.appendChild(child);",
+        "    Element repl = new Element(Tag.valueOf(\"span\"), \"\");",
+        "    List<String> order = new ArrayList<>();",
+        "    NodeVisitor v = new NodeVisitor() {",
+        "      head(n,d) { order.add(\"H\"+n.nodeName()); if (n==child) n.replaceWith(repl); }",
+        "      tail(n,d) { order.add(\"T\"+n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"Hp\",\"Hspan\",\"Tspan\",\"Tdiv\"), order);"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Descend into first child, then sibling exists at same depth to exercise inner while B16→B17→B18 and sibling branch",
+      "path": "B0→B1→B2→B5→B6→B11→B12→B23→B1→B11→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "none",
+      "expectedResult": "Head/tail calls follow correct order H0-root,H1-c1,H1-c2,T1-c2,T0-root",
+      "tags": [
+        "positive",
+        "sibling-branch",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 sibling-at-depth path",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"ul\"), \"\");",
+        "    Element c1 = new Element(Tag.valueOf(\"li\"), \"\");",
+        "    Element c2 = new Element(Tag.valueOf(\"li\"), \"\");",
+        "    root.appendChild(c1);",
+        "    root.appendChild(c2);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor v = new NodeVisitor() {",
+        "      head(n,d) { seq.add(\"H\"+d+\":\"+n.nodeName()); }",
+        "      tail(n,d) { seq.add(\"T\"+d+\":\"+n.nodeName()); }",
+        "      };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"H0:ul\",\"H1:li\",\"T1:li\",\"H1:li\",\"T1:li\",\"T0:ul\"), seq);"
+      ]
+    }
+  ]
+}

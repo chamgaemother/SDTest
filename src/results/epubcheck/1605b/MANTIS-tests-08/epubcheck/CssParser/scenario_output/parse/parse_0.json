@@ -1,0 +1,245 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "No tokens from scan results in immediate endDocument (loop-0, branch:false)",
+      "path": "B0→B1→B8",
+      "precondition": "CssTokenIterator stub returns hasNext(FILTER_S_CMNT_CDO_CDC)=false; uses stub iterator to avoid actual I/O",
+      "expectedResult": "CssContentHandler.startDocument() then endDocument() called exactly once; no exceptions",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse no-tokens",
+        "  GIVEN",
+        "    stub CssTokenIterator.hasNext() returns false;",
+        "  WHEN",
+        "    parser.parse(reader, sysId, errHandler, contentHandler);",
+        "  THEN",
+        "    verify contentHandler.startDocument() and contentHandler.endDocument();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single ATKEYWORD token triggers handleAtRule then endDocument (loop-1, branch-true, branch:ATKEYWORD)",
+      "path": "B0→B1→B2→B4→B7→B1→B8",
+      "precondition": "CssTokenIterator stub returns one ATKEYWORD token then hasNext false; use simple stub iterator",
+      "expectedResult": "handleAtRule called once with that token; contentHandler.startDocument(), contentHandler.endDocument() each once; no exceptions",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "branch:ATKEYWORD"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse single-atrule",
+        "  GIVEN",
+        "    stub iterator: hasNext->true, next->token.type=ATKEYWORD; then hasNext->false;",
+        "  WHEN",
+        "    parser.parse(reader, id, err, doc);",
+        "  THEN",
+        "    assert handleAtRule invoked once and no exception",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single non-ATKEYWORD token triggers handleRuleSet then endDocument (loop-1, branch-true=false, branch:non-ATKEYWORD)",
+      "path": "B0→B1→B2→B3→B7→B1→B8",
+      "precondition": "CssTokenIterator stub returns one IDENT token then hasNext false; use stub iterator",
+      "expectedResult": "handleRuleSet called once; contentHandler.startDocument() and endDocument() called; no exceptions",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "branch:false",
+        "branch:non-ATKEYWORD"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    stub iterator: hasNext->true, next->token.type!=ATKEYWORD; then hasNext->false;",
+        "  WHEN",
+        "    parser.parse(reader, sid, err, doc);",
+        "  THEN",
+        "    assert handleRuleSet invoked once; endDocument called",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Two tokens (first ATKEYWORD, then non-ATKEYWORD) cover loop-2 mixed sequence",
+      "path": "B0→B1→B2→B4→B7→B1→B2→B3→B7→B1→B8",
+      "precondition": "Stub iterator yields ATKEYWORD then IDENT then no more; minimal stubbing",
+      "expectedResult": "handleAtRule then handleRuleSet invoked in order; start/endDocument once; no exceptions",
+      "tags": [
+        "loop-N",
+        "N=2",
+        "branch:ATKEYWORD",
+        "branch:non-ATKEYWORD"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse two-iterations-mixed",
+        "  GIVEN",
+        "    stub iterator: ATKEYWORD, IDENT, end;",
+        "  WHEN",
+        "    parser.parse(rdr, sysId, err, doc);",
+        "  THEN",
+        "    assert handleAtRule then handleRuleSet called; endDocument",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Three tokens (ATKEYWORD, ATKEYWORD, IDENT) cover loop-3 to exceed 2 iterations",
+      "path": "B0→B1→B2→B4→B7→B1→B2→B4→B7→B1→B2→B3→B7→B1→B8",
+      "precondition": "Stub iterator yields two ATKEYWORD then one IDENT; light stub",
+      "expectedResult": "Two handleAtRule and one handleRuleSet calls; start/endDocument; no exceptions",
+      "tags": [
+        "loop-N",
+        "N=3",
+        "branch:ATKEYWORD",
+        "branch:non-ATKEYWORD"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parse three-iterations",
+        "  GIVEN",
+        "    stub iterator: ATKEYWORD, ATKEYWORD, IDENT, end;",
+        "  WHEN",
+        "    parser.parse(rdr, id, err, doc);",
+        "  THEN",
+        "    assert two handleAtRule and one handleRuleSet calls",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "IOException from scan() is propagated (exception path)",
+      "path": "B0",
+      "precondition": "CssParser.scan(reader,systemID,err) stub throws IOException",
+      "expectedResult": "IOException is thrown; no startDocument or endDocument call",
+      "tags": [
+        "exception",
+        "IOException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parse scan-ioexception",
+        "  GIVEN",
+        "    stub scan() throws IOException;",
+        "  WHEN",
+        "    call parser.parse(reader,id,err,doc);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "CssException from scan() is propagated (exception path)",
+      "path": "B0",
+      "precondition": "CssParser.scan(reader,systemID,err) stub throws CssException",
+      "expectedResult": "CssException is thrown; no document events",
+      "tags": [
+        "exception",
+        "CssException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parse scan-cssexception",
+        "  GIVEN",
+        "    stub scan() throws CssException;",
+        "  WHEN",
+        "    parser.parse(rdr,id,err,doc);",
+        "  THEN",
+        "    throws CssException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "PrematureEOFException in handleRuleSet breaks loop and ends document (exception branch)",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Stub iterator yields one IDENT then handleRuleSet stub throws PrematureEOFException; mocking necessary to simulate EOF",
+      "expectedResult": "startDocument() then endDocument(); no propagate; handleRuleSet exception swallowed",
+      "tags": [
+        "loop-1",
+        "branch:false",
+        "exception:PrematureEOFException"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parse ruleset-pem-eof",
+        "  GIVEN",
+        "    stub iterator: IDENT; stub handleRuleSet throws PrematureEOFException;",
+        "  WHEN",
+        "    parser.parse(rdr,id,err,doc);",
+        "  THEN",
+        "    verify endDocument() after swallowing PrematureEOFException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "CssException from handleAtRule propagates (exception path)",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Stub iterator yields one ATKEYWORD then handleAtRule stub throws CssGrammarException",
+      "expectedResult": "CssGrammarException is thrown; contentHandler.startDocument() but no endDocument()",
+      "tags": [
+        "loop-1",
+        "branch:ATKEYWORD",
+        "exception:CssException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parse atrule-cssexception",
+        "  GIVEN",
+        "    stub iterator: ATKEYWORD; stub handleAtRule throws CssGrammarException;",
+        "  WHEN",
+        "    parser.parse(rdr,id,err,doc);",
+        "  THEN",
+        "    throws CssGrammarException; assert startDocument() called once;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "CssException from handleRuleSet propagates (exception path)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Stub iterator yields one IDENT then handleRuleSet stub throws CssGrammarException",
+      "expectedResult": "CssGrammarException is thrown; startDocument() invoked; endDocument() not invoked",
+      "tags": [
+        "loop-1",
+        "branch:non-ATKEYWORD",
+        "exception:CssException"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parse ruleset-cssexception",
+        "  GIVEN",
+        "    stub iterator: IDENT; stub handleRuleSet throws CssGrammarException;",
+        "  WHEN",
+        "    parser.parse(rdr,id,err,doc);",
+        "  THEN",
+        "    throws CssGrammarException; verify startDocument() only;",
+        "END"
+      ]
+    }
+  ]
+}

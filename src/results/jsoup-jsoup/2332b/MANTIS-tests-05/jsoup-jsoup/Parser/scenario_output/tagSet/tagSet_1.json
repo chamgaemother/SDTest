@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Invoke private tagSet(ParseSettings) via reflection with valid settings returns Parser instance",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser instance created via htmlParser() and non-null ParseSettings obtained",
+      "expectedResult": "returns same Parser instance and settings() equals provided settings",
+      "tags": [
+        "positive",
+        "private",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 reflect-tagSet-valid",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings newSettings = new ParseSettings(true, true);",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", ParseSettings.class);",
+        "    tagSet.setAccessible(true);",
+        "  WHEN",
+        "    Parser returned = (Parser) tagSet.invoke(parser, newSettings);",
+        "  THEN",
+        "    assert returned == parser;",
+        "    assert parser.settings() == newSettings;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Invoke private tagSet(ParseSettings) via reflection with null argument throws NullPointerException",
+      "path": "B0→B1→B3",
+      "precondition": "Parser instance exists",
+      "expectedResult": "InvocationTargetException wrapping NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reflection"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 reflect-tagSet-null",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", ParseSettings.class);",
+        "    tagSet.setAccessible(true);",
+        "  WHEN",
+        "    invoke tagSet.invoke(parser, (Object) null);",
+        "  THEN",
+        "    assert exception of type InvocationTargetException;",
+        "    assert cause is NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

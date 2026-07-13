@@ -1,0 +1,78 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseBodyFragment(String) with null html throws NullPointerException",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "overload",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment single-arg null-html",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseBodyFragment(String) sets baseUri to \"\" and retains body content",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.baseUri() is empty string and body.html() equals input",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseBodyFragment single-arg baseUri-empty",
+        "  GIVEN",
+        "    String html = \"Sample\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"\");",
+        "    assert doc.body().html().equals(\"Sample\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseBodyFragment(String) with <base> tag resets document baseUri and resolves relative links",
+      "path": "B0→B1→B3→B6→B8",
+      "precondition": "none",
+      "expectedResult": "absUrl(\"href\") on link resolves against new base from <base> tag",
+      "tags": [
+        "positive",
+        "overload",
+        "relative-link",
+        "base-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseBodyFragment single-arg base-tag-resolution",
+        "  GIVEN",
+        "    String html = \"<base href='http://x.com/sub/'/><a href='page.html'>link</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    Element a = doc.body().selectFirst(\"a\");",
+        "    assert a.absUrl(\"href\").equals(\"http://x.com/sub/page.html\");",
+        "END"
+      ]
+    }
+  ]
+}

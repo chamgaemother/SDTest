@@ -1,0 +1,255 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on empty Document returns a distinct instance with no child nodes (loop-0)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // no children",
+      "expectedResult": "result != doc; result.childNodes().size() == 0; result.baseUri().equals(\"http://example.com\");",
+      "tags": [
+        "positive",
+        "loop-0",
+        "instance-distinct"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 empty-document-clone",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result != doc;",
+        "    assert result.childNodes().size() == 0;",
+        "    assert result.baseUri().equals(\"http://example.com\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() on Document.createShell(baseUri) clones html, head, body structure (loop-N where N=3)",
+      "path": "B0→B1→(child-loop×3)→B2→B3→B4",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); // 3 child nodes appended",
+      "expectedResult": "result.childNodes().size() == 4; // root + html; html.childNodes().size()==2 (head, body)",
+      "tags": [
+        "positive",
+        "loop-N",
+        "structure-preserved"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 createShell-structure-clone",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.childNodes().size() == 4;",
+        "    Element html = result.child(0);",
+        "    assert html.child(0).tagName().equals(\"head\");",
+        "    assert html.child(1).tagName().equals(\"body\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() on Document with nested elements deep clones two-level hierarchy (loop-N where N=2)",
+      "path": "B0→B1→(child-loop×2)→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"http://x\"); Element a = doc.appendElement(\"a\"); a.appendElement(\"b\");",
+      "expectedResult": "result.select(\"a > b\").size() == 1; // structure deep-copied",
+      "tags": [
+        "positive",
+        "deep-clone",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 nested-hierarchy-clone",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://x\");",
+        "    Element a = doc.appendElement(\"a\");",
+        "    a.appendElement(\"b\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.select(\"a > b\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() preserves original OutputSettings instance state but clones the settings object",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); doc.outputSettings().indentAmount(5);",
+      "expectedResult": "result.outputSettings().indentAmount() == 5; result.outputSettings() != doc.outputSettings();",
+      "tags": [
+        "positive",
+        "outputSettings",
+        "object-independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 outputSettings-clone-independence",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    doc.outputSettings().indentAmount(5);",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.outputSettings().indentAmount() == 5;",
+        "    assert result.outputSettings() != doc.outputSettings();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() preserves original Parser settings but clones the parser instance",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); Parser p = Parser.xmlParser(); doc.parser(p);",
+      "expectedResult": "result.parser().settings().equals(p.settings()); result.parser() != p;",
+      "tags": [
+        "positive",
+        "parser",
+        "object-independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parser-clone-independence",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    Parser p = Parser.xmlParser();",
+        "    doc.parser(p);",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.parser().settings().equals(p.settings());",
+        "    assert result.parser() != p;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() on Document with attributes copies attributes to clone (loop-N where N=1)",
+      "path": "B0→B1→(child-loop×1)→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); Element e = doc.appendElement(\"div\").attr(\"key\",\"val\");",
+      "expectedResult": "result.selectFirst(\"div\").attr(\"key\").equals(\"val\"); result.selectFirst(\"div\") != e;",
+      "tags": [
+        "positive",
+        "attributes",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 attribute-copy",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    Element e = doc.appendElement(\"div\").attr(\"key\",\"val\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.selectFirst(\"div\").attr(\"key\").equals(\"val\");",
+        "    assert result.selectFirst(\"div\") != e;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() modifications to original Document after clone do not affect the clone (branch-original-modify)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); Document result = doc.clone();",
+      "expectedResult": "doc.appendElement(\"p\"); assert result.select(\"p\").isEmpty();",
+      "tags": [
+        "positive",
+        "independence",
+        "branch-original-modify"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 original-modify-independence",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    Document result = doc.clone();",
+        "  WHEN",
+        "    doc.appendElement(\"p\");",
+        "  THEN",
+        "    assert result.select(\"p\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() modifications to clone do not affect the original Document (branch-clone-modify)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\");",
+      "expectedResult": "clone.appendElement(\"span\"); assert doc.select(\"span\").isEmpty();",
+      "tags": [
+        "positive",
+        "independence",
+        "branch-clone-modify"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 clone-modify-independence",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.appendElement(\"span\");",
+        "  THEN",
+        "    assert doc.select(\"span\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() returns object of type Document distinct from original (branch-type-check)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\");",
+      "expectedResult": "result instanceof Document; result.getClass() == Document.class; result != doc;",
+      "tags": [
+        "positive",
+        "type",
+        "instance-distinct",
+        "branch-type-check"
+      ],
+      "priority": "P3",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 type-and-identity",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result instanceof Document;",
+        "    assert result.getClass() == Document.class;",
+        "    assert result != doc;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() preserves QuirksMode field value in cloned Document (branch-field-preservation)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document doc = new Document(\"u\"); doc.quirksMode(QuirksMode.limitedQuirks);",
+      "expectedResult": "result.quirksMode() == QuirksMode.limitedQuirks;",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "field-preservation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 quirksMode-preservation",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    doc.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document result = doc.clone();",
+        "  THEN",
+        "    assert result.quirksMode() == Document.QuirksMode.limitedQuirks;"
+      ]
+    }
+  ]
+}

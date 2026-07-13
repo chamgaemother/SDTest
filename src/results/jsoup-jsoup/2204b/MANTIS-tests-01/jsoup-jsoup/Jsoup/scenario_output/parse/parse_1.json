@@ -1,0 +1,270 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName, baseUri) reads HTML file with explicit charset and sets baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "a temp File containing '<p>FileTest</p>' encoded in UTF-8",
+      "expectedResult": "Document.body().html() contains '<p>FileTest</p>' and baseUri equals provided URI",
+      "tags": [
+        "positive",
+        "file",
+        "charset",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse File with charset and baseUri",
+        "  GIVEN",
+        "    File file = createTempFile(\"<p>FileTest</p>\", UTF-8);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://file.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>FileTest</p>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File) uses null charset and file absolute path as baseUri",
+      "path": "B0→B1→B2→B4",
+      "precondition": "a temp File containing '<div>Auto</div>'",
+      "expectedResult": "Document.body().html() contains '<div>Auto</div>' and baseUri equals file.getAbsolutePath()",
+      "tags": [
+        "positive",
+        "file",
+        "default-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse File default charset",
+        "  GIVEN",
+        "    File file = createTempFile(\"<div>Auto</div>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<div>Auto</div>\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File, charsetName, baseUri, Parser) applies custom parser on file input",
+      "path": "B0→B1→B2→B5",
+      "precondition": "a temp File containing '<item>42</item>'",
+      "expectedResult": "xmlParser produces <item> with text '42' and baseUri matches provided",
+      "tags": [
+        "positive",
+        "file",
+        "parser",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse File with parser",
+        "  GIVEN",
+        "    File file = createTempFile(\"<item>42</item>\");",
+        "    Parser parser = Parser.xmlParser();",
+        "    String baseUri = \"file://xml/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, null, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"item\").first().text().equals(\"42\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path, charsetName, baseUri) reads HTML from Path and sets baseUri accordingly",
+      "path": "B0→B6→B7",
+      "precondition": "a temp Path file containing '<span>PathTest</span>'",
+      "expectedResult": "Document.body().html() contains '<span>PathTest</span>' and baseUri equals provided URI",
+      "tags": [
+        "positive",
+        "path",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC14 parse Path with charset and baseUri",
+        "  GIVEN",
+        "    Path path = createTempPath(\"<span>PathTest</span>\", UTF-8);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://path.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<span>PathTest</span>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path) uses BOM or meta fallback and path.toAbsolutePath as baseUri",
+      "path": "B0→B6→B8",
+      "precondition": "a temp Path containing '<h1>BOM</h1>' encoded without BOM",
+      "expectedResult": "Document.body().html() contains '<h1>BOM</h1>' and baseUri equals path.toAbsolutePath().toString()",
+      "tags": [
+        "positive",
+        "path",
+        "default-charset"
+      ],
+      "priority": "P2",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC15 parse Path default charset",
+        "  GIVEN",
+        "    Path path = createTempPath(\"<h1>BOM</h1>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<h1>BOM</h1>\");",
+        "    assert doc.baseUri().equals(path.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path, charsetName, baseUri, Parser) with xmlParser on Path input",
+      "path": "B0→B6→B9",
+      "precondition": "a temp Path containing '<node>OK</node>'",
+      "expectedResult": "xmlParser yields <node>OK</node> and baseUri matches provided",
+      "tags": [
+        "positive",
+        "path",
+        "parser",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 11+",
+      "pseudocode": [
+        "TEST TC16 parse Path with parser",
+        "  GIVEN",
+        "    Path path = createTempPath(\"<node>OK</node>\");",
+        "    Parser parser = Parser.xmlParser();",
+        "    String baseUri = \"path://xml/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, null, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"node\").first().text().equals(\"OK\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(InputStream, charsetName, baseUri) reads from stream and applies charset",
+      "path": "B0→B10→B11",
+      "precondition": "an InputStream over '<i>Stream</i>' bytes in UTF-8",
+      "expectedResult": "Document.body().html() contains '<i>Stream</i>' and baseUri equals provided",
+      "tags": [
+        "positive",
+        "stream",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse InputStream with charset and baseUri",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<i>Stream</i>\".getBytes(UTF-8));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://stream.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<i>Stream</i>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) applies xmlParser on stream input",
+      "path": "B0→B10→B12",
+      "precondition": "an InputStream over '<data>X</data>' bytes",
+      "expectedResult": "xmlParser yields <data>X</data> node and baseUri equals provided",
+      "tags": [
+        "positive",
+        "stream",
+        "parser",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse InputStream with parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<data>X</data>\".getBytes(UTF-8));",
+        "    Parser parser = Parser.xmlParser();",
+        "    String baseUri = \"stream://xml/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"data\").first().text().equals(\"X\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(URL, timeoutMillis) fetches HTTP URL and returns Document",
+      "path": "B0→B13→B14→B15",
+      "precondition": "a local HTTP test server serving '<title>URL</title>'",
+      "expectedResult": "Document contains title 'URL'",
+      "tags": [
+        "positive",
+        "network",
+        "url"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse URL with timeout",
+        "  GIVEN",
+        "    URL url = startLocalHttpServer(\"<title>URL</title>\");",
+        "    int timeout = 5000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.title().equals(\"URL\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(URL, timeoutMillis) with non-http URL throws MalformedURLException",
+      "path": "B0→exception-B16",
+      "precondition": "URL created with protocol 'ftp://example.com'",
+      "expectedResult": "MalformedURLException is thrown",
+      "tags": [
+        "negative",
+        "network",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse URL malformed protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException;",
+        "END"
+      ]
+    }
+  ]
+}

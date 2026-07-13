@@ -1,0 +1,245 @@
+{
+  "method": "parseBodyFragment",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseBodyFragment(html with nested tags, non-empty baseUri) returns Document with correct nested structure",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.body().html() equals \"<div><p>Test</p></div>\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "nested-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parseBodyFragment nested-elements",
+        "  GIVEN",
+        "    String html = \"<div><p>Test</p></div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div><p>Test</p></div>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseBodyFragment(empty html, non-empty baseUri) returns empty body",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.body().html() equals \"\"",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parseBodyFragment empty-html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseBodyFragment(html with relative link, non-empty baseUri) resolves href to absolute URL",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.select(\"a\").first().attr(\"href\") equals \"http://example.com/foo.html\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "relative-resolution"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parseBodyFragment link-resolution",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"foo.html\\\">link</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    assert doc.select(\"a\").first().attr(\"href\").equals(\"http://example.com/foo.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseBodyFragment(html with relative link, empty baseUri) leaves href unchanged",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.select(\"a\").first().attr(\"href\") equals \"foo.html\"",
+      "tags": [
+        "overload:String,String",
+        "branch-false",
+        "empty-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseBodyFragment empty-baseUri",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"foo.html\\\">link</a>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"\");",
+        "  THEN",
+        "    assert doc.select(\"a\").first().attr(\"href\").equals(\"foo.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseBodyFragment(html with <base> tag overrides provided baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.select(\"a\").first().attr(\"href\") equals \"http://override.com/foo.png\"",
+      "tags": [
+        "overload:String,String",
+        "branch-true",
+        "base-tag-override"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseBodyFragment base-tag-override",
+        "  GIVEN",
+        "    String html = \"<base href=\\\"http://override.com/\\\"><img src=\\\"foo.png\\\">\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    assert doc.select(\"img\").first().attr(\"src\").equals(\"http://override.com/foo.png\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseBodyFragment(html, default overload) behaves like overload with empty baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.body().html() equals \"<span>OK</span>\"",
+      "tags": [
+        "overload:String",
+        "positive",
+        "default-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseBodyFragment default-overload",
+        "  GIVEN",
+        "    String html = \"<span>OK</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>OK</span>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "parseBodyFragment(null html, non-null baseUri) throws NullPointerException",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no document returned",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseBodyFragment null-html-exception",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "parseBodyFragment(null html, default overload) throws NullPointerException",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no document returned",
+      "tags": [
+        "overload:String",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment default-null-html",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parseBodyFragment(html with entity, non-empty baseUri) preserves HTML entity",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.body().html() equals \"5 is &lt; 6.\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "entity-escape"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment entity-preservation",
+        "  GIVEN",
+        "    String html = \"<p>5 is &lt; 6.</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://x/\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>5 is &lt; 6.</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "parseBodyFragment(html with comment and text, non-empty baseUri) includes comment when preserved",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "doc.body().html() contains \"<!--comment-->text\"",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "comments"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseBodyFragment comments-preserved",
+        "  GIVEN",
+        "    String html = \"<!--comment-->text\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://x/\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<!--comment-->text\");",
+        "END"
+      ]
+    }
+  ]
+}

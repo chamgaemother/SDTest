@@ -1,0 +1,71 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException when child is null",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no childNodes modified",
+      "tags": [
+        "exception",
+        "null-child"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-arg",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "append first child when childNodes is initially empty (ensureChildNodes branch-true)",
+      "path": "B0→B1→B2(true)→B3→B4→B5",
+      "precondition": "parent.childNodes == EmptyNodes",
+      "expectedResult": "return value is parent; parent.childNodeSize() == 1; child.parent() == parent; child.siblingIndex == 0",
+      "tags": [
+        "branch-true",
+        "first-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild first-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node child = new TextNode(\"text\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent; assert parent.childNodeSize() == 1; assert child.parent() == parent; assert child.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "append second child when childNodes already non-empty (ensureChildNodes branch-false)",
+      "path": "B0→B1→B2(false)→B4→B5",
+      "precondition": "parent.childNodes contains one existing child",
+      "expectedResult": "return value is parent; parent.childNodeSize() == 2; secondChild.parent() == parent; secondChild.siblingIndex == 1",
+      "tags": [
+        "branch-false",
+        "subsequent-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild subsequent-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Node first = new TextNode(\"one\"); parent.appendChild(first); Node second = new TextNode(\"two\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(second);",
+        "  THEN",
+        "    assert result == parent; assert parent.childNodeSize() == 2; assert second.parent() == parent; assert second.siblingIndex() == 1;"
+      ]
+    }
+  ]
+}

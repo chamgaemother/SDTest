@@ -1,0 +1,78 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_0_Test {
+
+    @Test
+    @DisplayName("TC01: child(0) on element with no element children throws IndexOutOfBoundsException")
+    void test_TC01() {
+        // GIVEN an element with no children → B1(empty)
+        Element el = new Element("div");
+        // WHEN & THEN: accessing child(0) should throw IndexOutOfBoundsException since element children list is empty
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02: child(0) returns the only child element when exactly one element child present (loop-1)")
+    void test_TC02() {
+        // GIVEN an element with exactly one element child → B1(non-empty), loop runs once
+        Element el = new Element("div");
+        Element span = el.appendElement("span");
+        // WHEN: get the 0th element child
+        Element result = el.child(0);
+        // THEN: the returned child's tag name should be "span"
+        assertEquals("span", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC03: child(1) returns second element child when mixed nodes produce two element children (one TextNode + two Elements)")
+    void test_TC03() {
+        // GIVEN an element containing a TextNode then two element children → B1(non-empty), loop iterates over mixed nodes
+        Element el = new Element("div");
+        el.appendText("text");      // non-element, should be skipped
+        el.appendElement("a");      // first element child
+        el.appendElement("b");      // second element child
+        // WHEN: request child(1), expecting the second element child
+        Element result = el.child(1);
+        // THEN: the returned child's tag name should be "b"
+        assertEquals("b", result.tagName());
+    }
+
+    @Test
+    @DisplayName("TC04: child(-1) on non-empty element children throws IndexOutOfBoundsException for negative index")
+    void test_TC04() {
+        // GIVEN an element with one element child → B1(non-empty), loop runs once
+        Element el = new Element("div");
+        el.appendElement("p");
+        // WHEN & THEN: negative index should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC05: child(size) on element with two element children throws IndexOutOfBoundsException at upper boundary")
+    void test_TC05() {
+        // GIVEN an element with two element children → B1(non-empty), loop runs twice
+        Element el = new Element("div");
+        el.appendElement("x");
+        el.appendElement("y");
+        int size = el.childrenSize();
+        assertEquals(2, size, "sanity check: childrenSize should be 2");
+        // WHEN & THEN: index equal to size (2) should be out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(size));
+    }
+
+    @Test
+    @DisplayName("TC06: child(0) on element with only non-element children throws IndexOutOfBoundsException")
+    void test_TC06() {
+        // GIVEN an element with only a TextNode → B1(non-empty), loop runs once but finds no Element
+        Element el = new Element("div");
+        el.appendText("only text");
+        // WHEN & THEN: no element children means child(0) is out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+}

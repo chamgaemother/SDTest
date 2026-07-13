@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "outputSettings(null) throws IllegalArgumentException with a non-empty message",
+      "path": "B0→B1→B5",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown and its message contains 'must not be null'",
+      "tags": [
+        "negative",
+        "exception",
+        "message-check"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 outputSettings null-error-message",
+        "  GIVEN",
+        "    Document doc = new Document(\"base\");",
+        "  WHEN",
+        "    call doc.outputSettings(null);",
+        "  THEN",
+        "    catch IllegalArgumentException e;",
+        "    assert e.getMessage().contains(\"must not be null\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "outputSettings(...) can be chained to override multiple settings instances",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "two distinct OutputSettings instances exist",
+      "expectedResult": "return value is the same Document with the second settings applied",
+      "tags": [
+        "positive",
+        "fluent",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 outputSettings chaining-overrides",
+        "  GIVEN",
+        "    Document doc = new Document(\"base\");",
+        "    OutputSettings first = new OutputSettings().prettyPrint(false);",
+        "    OutputSettings second = new OutputSettings().outline(true);",
+        "  WHEN",
+        "    doc.outputSettings(first).outputSettings(second);",
+        "  THEN",
+        "    assertSame(doc, doc.outputSettings(second));",
+        "    assertTrue(doc.outputSettings().outline());",
+        "    assertFalse(doc.outputSettings().prettyPrint());",
+        "END"
+      ]
+    }
+  ]
+}

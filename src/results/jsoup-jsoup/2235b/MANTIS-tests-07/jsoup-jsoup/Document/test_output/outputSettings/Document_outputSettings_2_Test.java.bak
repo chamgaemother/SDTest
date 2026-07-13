@@ -1,0 +1,46 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for {@link Document#outputSettings(Document.OutputSettings)} and {@link Document#outputSettings()}
+ * scenarios TC04 and TC05.
+ */
+public class Document_outputSettings_Test {
+
+    @Test
+    @DisplayName("TC04: Setter with non-null OutputSettings stores the instance for later retrieval")
+    public void test_TC04() {
+        // GIVEN: a new Document with default settings
+        Document doc = new Document("http://example.com");
+        // Create a custom OutputSettings instance
+        Document.OutputSettings customSettings = new Document.OutputSettings();
+        // WHEN: we set the custom settings
+        Document returned = doc.outputSettings(customSettings);
+        // THEN: the setter should return the same Document instance for chaining,
+        //       and the getter should return exactly the same OutputSettings instance passed in.
+        assertSame(doc, returned, "outputSettings(...) should return the original Document instance for chaining");
+        assertSame(customSettings, doc.outputSettings(),
+                "outputSettings() should return exactly the instance provided to the setter");
+    }
+
+    @Test
+    @DisplayName("TC05: Chaining multiple setter calls updates the stored OutputSettings each time and returns same Document")
+    public void test_TC05() {
+        // GIVEN: a new Document with default settings
+        Document doc = new Document("http://example.com");
+        // Two distinct OutputSettings instances
+        Document.OutputSettings firstSettings = new Document.OutputSettings();
+        Document.OutputSettings secondSettings = new Document.OutputSettings();
+        // WHEN: chain two setter calls
+        Document result = doc.outputSettings(firstSettings).outputSettings(secondSettings);
+        // THEN: chaining returns the same Document, and the final stored settings are the secondSettings
+        assertSame(doc, result,
+                "Chained outputSettings calls should return the original Document instance");
+        assertSame(secondSettings, doc.outputSettings(),
+                "After chaining, outputSettings() should return the last instance passed in");
+    }
+}

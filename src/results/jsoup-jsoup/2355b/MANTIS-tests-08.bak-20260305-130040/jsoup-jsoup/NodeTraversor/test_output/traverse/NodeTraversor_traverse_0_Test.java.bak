@@ -1,0 +1,230 @@
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    // Scenario TC01: visitor is null -> IllegalArgumentException
+    @Test
+    @DisplayName("visitor is null triggers Validate.notNull(visitor) exception")
+    public void test_TC01() {
+        NodeVisitor visitor = null;
+        Node root = new Node("div"){};
+        assertThrows(IllegalArgumentException.class, () -> {
+            // path B0→B1: visitor null check
+            NodeTraversor.traverse(visitor, root);
+        });
+    }
+
+    // Scenario TC02: root is null -> IllegalArgumentException
+    @Test
+    @DisplayName("root is null triggers Validate.notNull(root) exception")
+    public void test_TC02() {
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {}
+            public void tail(Node node, int depth) {}
+        };
+        Node root = null;
+        assertThrows(IllegalArgumentException.class, () -> {
+            // path B0→B1: root null check
+            NodeTraversor.traverse(visitor, root);
+        });
+    }
+
+    // Scenario TC03: single node with no children visits head and tail once
+    @Test
+    @DisplayName("single node with no children visits head and tail once")
+    public void test_TC03() {
+        Node root = new Node("root"){};
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                // depth==0 and no children
+                calls.add("head:" + node + ":" + depth);
+            }
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node + ":" + depth);
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(2, calls.size());
+        assertEquals("head:" + root + ":0", calls.get(0));
+        assertEquals("tail:" + root + ":0", calls.get(1));
+    }
+
+    // Scenario TC04: two-level tree descends into child then ascends
+    @Test
+    @DisplayName("two-level tree descends into child then ascends")
+    public void test_TC04() {
+        // root->child => depth0 head, depth1 head, depth1 tail, depth0 tail
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) { calls.add("head:" + node.nodeName() + ":" + depth);}  
+            public void tail(Node node, int depth) { calls.add("tail:" + node.nodeName() + ":" + depth);}  
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of(
+            "head:div:0", "head:span:1", "tail:span:1", "tail:div:0"
+        ), calls);
+    }
+
+    // Scenario TC05: sibling traversal visits nextSibling
+    @Test
+    @DisplayName("sibling traversal visits nextSibling")
+    public void test_TC05() {
+        Element root = new Element("div");
+        Element c1 = new Element("p");
+        Element c2 = new Element("a");
+        root.appendChild(c1);
+        root.appendChild(c2);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) { calls.add("h:" + node.nodeName() + ":" + depth);}  
+            public void tail(Node node, int depth) { calls.add("t:" + node.nodeName() + ":" + depth);}  
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of(
+            "h:div:0", "h:p:1", "t:p:1", "h:a:1", "t:a:1", "t:div:0"
+        ), calls);
+    }
+
+    // Scenario TC06: visitor.head replaces node triggers replace branch
+    @Test
+    @DisplayName("visitor.head replaces node triggers replace branch")
+    public void test_TC06() {
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                if (node instanceof Element && ((Element) node).tagName().equals("span")) {
+                    // replace span with em
+                    Element rep = new Element("em");
+                    node.replaceWith(rep);
+                    calls.add("head:replaced:" + rep.nodeName() + ":" + depth);
+                } else {
+                    calls.add("head:" + node.nodeName() + ":" + depth);
+                }
+            }
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node.nodeName() + ":" + depth);
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // original span never tailed, only em should be traversed
+        assertTrue(calls.contains("head:replaced:em:1"));
+        assertFalse(calls.stream().anyMatch(s -> s.contains("span")));
+    }
+
+    // Scenario TC07: visitor.head removes node triggers removal branch with nextSibling null
+    @Test
+    @DisplayName("visitor.head removes node triggers removal branch with nextSibling null")
+    public void test_TC07() {
+        Element root = new Element("ul");
+        Element child = new Element("li");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                if (node == child) {
+                    node.remove(); // remove only child, nextSibling null
+                    calls.add("head:removed:" + node.nodeName() + ":" + depth);
+                } else {
+                    calls.add("head:" + node.nodeName() + ":" + depth);
+                }
+            }
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node.nodeName() + ":" + depth);
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // expect head of child then head+tail of root
+        assertEquals(List.of(
+            "head:removed:li:1", // TC07 head child
+            "head:ul:0",         // then head root
+            "tail:ul:0"          // then tail root
+        ), calls);
+    }
+
+    // Scenario TC08: visitor.head removes node with nextSibling not null triggers removal branch and tail skip
+    @Test
+    @DisplayName("visitor.head removes node with nextSibling not null triggers removal branch and tail skip")
+    public void test_TC08() {
+        Element root = new Element("div");
+        Element c1 = new Element("p");
+        Element c2 = new Element("span");
+        root.appendChild(c1);
+        root.appendChild(c2);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                if (node == c1) {
+                    node.remove(); // remove c1 but c2 exists as nextSibling
+                    calls.add("head:removed:" + node.nodeName() + ":" + depth);
+                } else {
+                    calls.add("head:" + node.nodeName() + ":" + depth);
+                }
+            }
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node.nodeName() + ":" + depth);
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // Should see head removed of c1, then head/tail of c2, then tail of root
+        assertEquals(List.of(
+            "head:removed:p:1", // c1 head and removal
+            "head:span:1",      // c2 head
+            "tail:span:1",      // c2 tail
+            "tail:div:0"        // root tail
+        ), calls);
+    }
+
+    // Scenario TC10: traverse(Elements) with empty list does nothing
+    @Test
+    @DisplayName("traverse(Elements) with empty list does nothing")
+    public void test_TC10() {
+        Elements els = new Elements();
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) { calls.add("h"); }
+            public void tail(Node node, int depth) { calls.add("t"); }
+        };
+        NodeTraversor.traverse(visitor, els);
+        assertTrue(calls.isEmpty());
+    }
+
+    // Scenario TC11: traverse(Elements) with two elements invokes traverse(Node) twice
+    @Test
+    @DisplayName("traverse(Elements) with two elements invokes traverse(Node) twice")
+    public void test_TC11() {
+        Element e1 = new Element("div");
+        Element e2 = new Element("span");
+        Elements els = new Elements(e1, e2);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) { calls.add("head:" + node.nodeName() + ":" + depth); }
+            public void tail(Node node, int depth) { calls.add("tail:" + node.nodeName() + ":" + depth); }
+        };
+        NodeTraversor.traverse(visitor, els);
+        // should see head/tail for each element root once
+        assertTrue(calls.contains("head:div:0"));
+        assertTrue(calls.contains("tail:div:0"));
+        assertTrue(calls.contains("head:span:0"));
+        assertTrue(calls.contains("tail:span:0"));
+    }
+}

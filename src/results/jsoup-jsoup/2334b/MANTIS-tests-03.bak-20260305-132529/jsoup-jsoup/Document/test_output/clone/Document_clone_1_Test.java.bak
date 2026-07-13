@@ -1,0 +1,51 @@
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("TC05: clone() preserves and shares a non-null Connection field so connection() returns the same instance")
+    public void test_TC05() {
+        // GIVEN a Document with a custom Connection set
+        Document original = new Document("http://example.com");
+        Connection conn = Jsoup.connect("http://example.com");
+        original.connection(conn); // set non-null connection
+
+        // WHEN cloning
+        Document cloned = original.clone(); 
+        // THEN the clone should share the same Connection instance (branch B2 non-null)
+        assertSame(
+            original.connection(), 
+            cloned.connection(), 
+            "clone() should preserve and share a non-null Connection field"
+        );
+    }
+
+    @Test
+    @DisplayName("TC06: clone() copies quirksMode so setting a non-default QuirksMode is preserved in clone")
+    public void test_TC06() {
+        // GIVEN a Document with quirksMode set to limitedQuirks (non-default branch)
+        Document original = new Document("http://example.com");
+        original.quirksMode(Document.QuirksMode.limitedQuirks);
+
+        // WHEN cloning
+        Document cloned = original.clone();
+        // THEN the clone should have the same quirksMode value independently
+        assertEquals(
+            Document.QuirksMode.limitedQuirks, 
+            cloned.quirksMode(),
+            "clone() should preserve the quirksMode setting"
+        );
+        assertEquals(
+            original.quirksMode(), 
+            cloned.quirksMode(),
+            "clone() quirksMode should match the original document"
+        );
+    }
+}

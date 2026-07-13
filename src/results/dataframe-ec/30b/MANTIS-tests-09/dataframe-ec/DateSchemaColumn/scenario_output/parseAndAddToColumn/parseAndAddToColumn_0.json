@@ -1,0 +1,151 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn(null, column) calls addObject(null) when input string is null",
+      "path": "B0→B1→B2(true)→B3→B4",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn instance with spy on addObject",
+      "expectedResult": "dfColumn.addObject called once with argument null",
+      "tags": [
+        "branch-true",
+        "null-input",
+        "exception-free"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(null, column);",
+        "  THEN",
+        "    verify column.addObject(null) called once;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn(\"\", column) calls addObject(null) when trimmed string is empty",
+      "path": "B0→B1→B2(false)→B5(true)→B3→B4",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn",
+      "expectedResult": "dfColumn.addObject called once with argument null",
+      "tags": [
+        "branch-false",
+        "nested-true",
+        "empty-input",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn empty-string",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(\"\", column);",
+        "  THEN",
+        "    verify column.addObject(null) called once;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn(\"   \", column) calls addObject(null) when trimmed whitespace is empty",
+      "path": "B0→B1→B2(false)→B5(true)→B3→B4",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn",
+      "expectedResult": "dfColumn.addObject called once with argument null",
+      "tags": [
+        "branch-false",
+        "nested-true",
+        "whitespace-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn whitespace-only",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(\"   \", column);",
+        "  THEN",
+        "    verify column.addObject(null) called once;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn(valid date string, column) calls addObject with correct LocalDate",
+      "path": "B0→B1→B2(false)→B5(false)→B6→B4",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn",
+      "expectedResult": "dfColumn.addObject called once with LocalDate.of(2021,12,31)",
+      "tags": [
+        "branch-false",
+        "nested-false",
+        "valid-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn valid-date",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(\"2021-12-31\", column);",
+        "  THEN",
+        "    verify column.addObject(LocalDate.of(2021,12,31)) called once;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn(\" 2021-01-01 \", column) trims input before parsing",
+      "path": "B0→B1→B2(false)→B5(false)→B6→B4",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn",
+      "expectedResult": "dfColumn.addObject called once with LocalDate.of(2021,1,1)",
+      "tags": [
+        "branch-false",
+        "nested-false",
+        "whitespace-trim",
+        "valid-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn trimmed-valid-date",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(\" 2021-01-01 \", column);",
+        "  THEN",
+        "    verify column.addObject(LocalDate.of(2021,1,1)) called once;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn(invalid format, column) throws DateTimeParseException for unparsable string",
+      "path": "B0→B1→B2(false)→B5(false)→B6→B7",
+      "precondition": "DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\"); use real DfDateColumn",
+      "expectedResult": "throws DateTimeParseException; dfColumn.addObject not called",
+      "tags": [
+        "branch-false",
+        "nested-false",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn invalid-format",
+        "  GIVEN",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    call dsc.parseAndAddToColumn(\"bad-date\", column);",
+        "  THEN",
+        "    throws DateTimeParseException;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.thealgorithms.others.MiniMaxAlgorithm;
+
+/**
+ * JUnit 5 tests for the private log2(int) method of MiniMaxAlgorithm.
+ */
+public class MiniMaxAlgorithm_log2_Test {
+
+    @Test
+    @DisplayName("Reflectively invoke private log2 on n=2 to cover the recursive branch (n!=1)")
+    void test_TC06() throws Exception {
+        // GIVEN: a MiniMaxAlgorithm instance and the private log2 method
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+        Method log2Method = MiniMaxAlgorithm.class.getDeclaredMethod("log2", int.class);
+        log2Method.setAccessible(true);
+        int n = 2; // n != 1 triggers one level of recursion: log2(2) = log2(1) + 1
+
+        // WHEN: invoking log2 reflectively
+        Object result = log2Method.invoke(instance, n);
+
+        // THEN: expected log2(2) == 1
+        assertEquals(1, result, "log2(2) should be 1 as one recursive call reduces to base case");
+    }
+
+    @Test
+    @DisplayName("Reflectively invoke private log2 on n=16 to cover deeper recursive path")
+    void test_TC07() throws Exception {
+        // GIVEN: a MiniMaxAlgorithm instance and the private log2 method
+        MiniMaxAlgorithm instance = new MiniMaxAlgorithm();
+        Method log2Method = MiniMaxAlgorithm.class.getDeclaredMethod("log2", int.class);
+        log2Method.setAccessible(true);
+        int n = 16; // n != 1 triggers recursion 4 times: 16->8->4->2->1
+
+        // WHEN: invoking log2 reflectively
+        Object result = log2Method.invoke(instance, n);
+
+        // THEN: expected log2(16) == 4
+        assertEquals(4, result, "log2(16) should be 4 after four recursive halvings to reach base case");
+    }
+}

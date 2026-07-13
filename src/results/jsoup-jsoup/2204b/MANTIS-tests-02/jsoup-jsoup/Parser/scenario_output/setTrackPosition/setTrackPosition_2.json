@@ -1,0 +1,54 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Fluent chaining of setTrackPosition toggles trackPosition correctly across multiple calls",
+      "path": "B0→B1→B2→B1→B2→B1→B2",
+      "precondition": "Parser instance created via htmlParser() with default trackPosition=false",
+      "expectedResult": "After each chained call, isTrackPosition() reflects the last invocation (true→false→true)",
+      "tags": [
+        "positive",
+        "fluent-api",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 fluent-chaining-setTrackPosition",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackPosition(true).setTrackPosition(false).setTrackPosition(true);",
+        "  THEN",
+        "    assertTrue(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "newInstance deep copy isolation: modifying original after copy does not affect copy’s trackPosition",
+      "path": "B0→B1(copy-true)→B3→B4→B2",
+      "precondition": "Original parser created and setTrackPosition(true) before copying",
+      "expectedResult": "Copy retains trackPosition=true even after original is set back to false",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "state-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 deep-copy-independence",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser().setTrackPosition(true);",
+        "  WHEN",
+        "    Parser copy = original.newInstance();",
+        "    original.setTrackPosition(false);",
+        "  THEN",
+        "    assertTrue(copy.isTrackPosition());",
+        "    assertFalse(original.isTrackPosition());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Test suite for the non-existent tagSet method on Parser.
+ * No scenarios were provided, so this class serves as a compile-time placeholder.
+ */
+public class Parser_tagSet_0_Test {
+    // No test scenarios provided for tagSet; placeholder class to ensure compilation.
+}

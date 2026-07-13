@@ -1,0 +1,41 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() rebuilds cache when shadowChildrenRef exists but referent has been cleared (cache-miss branch)",
+      "path": "B0→B3→B5",
+      "precondition": "Element with two Element children and existing shadowChildrenRef",
+      "expectedResult": "children() returns fresh list of two children after referent null and rebuild cache",
+      "tags": [
+        "cache",
+        "cache-miss",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache-miss rebuild",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"span\"));",
+        "    el.appendChild(new Element(\"em\"));",
+        "    // build and cache childElementsList",
+        "    el.children();",
+        "    // simulate referent cleared: use reflection to set shadowChildrenRef referent to null",
+        "    Field shadowField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    shadowField.setAccessible(true);",
+        "    WeakReference<?> ref = (WeakReference<?>) shadowField.get(el);",
+        "    shadowField.set(el, new WeakReference<>(null));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    // verify cache was rebuilt by new referent present",
+        "    @SuppressWarnings(\"unchecked\")",
+        "    WeakReference<List<Element>> newRef = (WeakReference<List<Element>>) shadowField.get(el);",
+        "    assert newRef.get() != null;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() on element without any attributes returns empty map (attributes initially null)",
+      "path": "B0→B1→B3",
+      "precondition": "Element e = new Element(\"div\"); // attributes==null",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "loop-0",
+        "empty-case",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset no-attributes",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() on element with non-data attributes returns empty map (iterate zero data entries)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element e = new Element(\"p\"); e.attr(\"id\",\"header\"); // only non-data attribute",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "loop-0",
+        "non-data-only",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset non-data-attributes",
+        "  GIVEN",
+        "    Element e = new Element(\"p\"); e.attr(\"id\",\"header\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() on element with a single data- attribute returns map with one entry",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element e = new Element(\"span\"); e.attr(\"data-lang\",\"Java\");",
+      "expectedResult": "returned map equals {\"lang\"=\"Java\"}",
+      "tags": [
+        "loop-1",
+        "single-entry",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset single-data-attribute",
+        "  GIVEN",
+        "    Element e = new Element(\"span\"); e.attr(\"data-lang\",\"Java\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 1; assert data.get(\"lang\").equals(\"Java\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() on element with multiple data- attributes returns all entries",
+      "path": "B0→B1→B2(loop×3)→B3",
+      "precondition": "Element e = new Element(\"div\"); e.attr(\"data-one\",\"1\"); e.attr(\"data-two\",\"2\"); e.attr(\"data-three\",\"3\");",
+      "expectedResult": "returned map equals {\"one\"=\"1\",\"two\"=\"2\",\"three\"=\"3\"} (order-insensitive)",
+      "tags": [
+        "loop-N",
+        "multiple-entries",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset multiple-data-attributes",
+        "  GIVEN",
+        "    Element e = new Element(\"div\"); e.attr(\"data-one\",\"1\"); e.attr(\"data-two\",\"2\"); e.attr(\"data-three\",\"3\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 3; assert data.get(\"one\").equals(\"1\"); assert data.get(\"two\").equals(\"2\"); assert data.get(\"three\").equals(\"3\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() returns live view: modifying map updates underlying attributes",
+      "path": "B0→B1→B2(loop×1)→B4",
+      "precondition": "Element e = new Element(\"p\"); Map<String,String> data = e.dataset(); // empty live view",
+      "expectedResult": "after data.put(\"new\",\"x\"), e.attr(\"data-new\",\"x\")",
+      "tags": [
+        "mutation",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset mutation-reflects-attribute",
+        "  GIVEN",
+        "    Element e = new Element(\"p\"); Map<String,String> data = e.dataset();",
+        "  WHEN",
+        "    data.put(\"new\",\"x\");",
+        "  THEN",
+        "    assert e.attr(\"data-new\").equals(\"x\"); assert data.get(\"new\").equals(\"x\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "dataset() on element with data- prefix but empty value returns entry with empty string",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element e = new Element(\"div\"); e.attr(\"data-empty\",\"\");",
+      "expectedResult": "returned map equals {\"empty\"=\"\"}",
+      "tags": [
+        "loop-1",
+        "empty-value",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset empty-data-value",
+        "  GIVEN",
+        "    Element e = new Element(\"div\"); e.attr(\"data-empty\",\"\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 1; assert data.get(\"empty\").equals(\"\");"
+      ]
+    }
+  ]
+}

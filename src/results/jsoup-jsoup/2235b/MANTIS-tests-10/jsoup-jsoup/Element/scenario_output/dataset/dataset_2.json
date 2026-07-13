@@ -1,0 +1,141 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "dataset() normalizes multi-hyphen data keys to lower camel-case and preserves insertion order",
+      "path": "B0→B1→B2",
+      "precondition": "Element with attributes data-hello-world, data-test-value, and non-data attr",
+      "expectedResult": "dataset contains keys ['helloWorld','testValue'] in that order with correct values",
+      "tags": [
+        "positive",
+        "normalization",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 multi-hyphen normalization and order",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-hello-world\",\"hw\");",
+        "    el.attr(\"id\",\"X\");",
+        "    el.attr(\"data-test-value\",\"tv\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertEquals(2, ds.size());",
+        "    List<String> keys = new ArrayList<>(ds.keySet());",
+        "    assertEquals(Arrays.asList(\"helloWorld\",\"testValue\"), keys);",
+        "    assertEquals(\"hw\", ds.get(\"helloWorld\"));",
+        "    assertEquals(\"tv\", ds.get(\"testValue\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset() live view put overrides existing data-* attribute value",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element with initial attribute data-foo = 'old'",
+      "expectedResult": "after ds.put('foo','new'), el.attr('data-foo') == 'new'",
+      "tags": [
+        "positive",
+        "live-view",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 override existing data entry",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-foo\",\"old\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"foo\",\"new\");",
+        "  THEN",
+        "    assertEquals(\"new\", el.attr(\"data-foo\"));",
+        "    assertEquals(\"new\", ds.get(\"foo\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset().put(null,…) throws NullPointerException for null key",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element with at least attributes() initialized",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 putNullKey throws NPE",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    call ds.put(null, \"value\");",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset().remove(nonexistent) is a no-op and map remains unchanged",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element with one data-* attribute 'data-x'= '1'",
+      "expectedResult": "ds.remove('y') returns null, ds.size()==1 and 'x' still present",
+      "tags": [
+        "positive",
+        "mutation",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 removeNonexistentNoop",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-x\",\"1\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    String removed = ds.remove(\"y\");",
+        "  THEN",
+        "    assertNull(removed);",
+        "    assertEquals(1, ds.size());",
+        "    assertTrue(ds.containsKey(\"x\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "dataset().clear() on empty dataset is a no-op and does not affect non-data attributes",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Element with no data-* but with attribute 'title'='T'",
+      "expectedResult": "ds.clear() leaves ds empty and el.hasAttr('title') == true",
+      "tags": [
+        "positive",
+        "clear",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 clearEmptyNoOp",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"title\",\"T\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertTrue(ds.isEmpty());",
+        "    assertTrue(el.hasAttr(\"title\"));",
+        "END"
+      ]
+    }
+  ]
+}

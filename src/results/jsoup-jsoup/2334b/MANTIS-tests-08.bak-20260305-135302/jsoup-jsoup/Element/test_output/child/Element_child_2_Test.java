@@ -1,0 +1,52 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.child(int) method, focusing on cache rebuild when shadowChildrenRef referent is cleared.
+ */
+public class Element_child_2_Test {
+
+    @Test
+    @DisplayName("child(0) with non-null shadowChildrenRef whose referent has been cleared triggers rebuild and returns element")
+    void test_TC14() throws Exception {
+        // Arrange: create parent and one child, append to populate childNodes (ensures childElementsList cache can build)
+        Element parent = new Element("div");
+        Element childEl = new Element("span");
+        parent.appendChild(childEl);
+        // Build initial cache by calling childElementsList to set a non-null WeakReference
+        parent.childElementsList();
+
+        // Reflectively clear the referent of shadowChildrenRef to simulate expired cache
+        Field refField = Element.class.getDeclaredField("shadowChildrenRef");
+        refField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> oldRef = (WeakReference<List<Element>>) refField.get(parent);
+        // Clear the actual referent so next access must rebuild cache
+        oldRef.clear();
+        assertNull(oldRef.get(), "Precondition: referent should be cleared to trigger cache rebuild");
+
+        // Act: call child(0) - should detect empty referent, rebuild cache, and return the child element
+        Element result = parent.child(0);
+
+        // Assert: returned element is the original child
+        assertSame(childEl, result, "child(0) should return the originally appended child element");
+        
+        // Assert: shadowChildrenRef field now holds a new WeakReference whose referent list is non-null
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> newRef = (WeakReference<List<Element>>) refField.get(parent);
+        // The newRef.get() should yield the rebuilt list, not null
+        assertNotNull(newRef.get(), "After calling child(0), cache referent should be rebuilt and non-null");
+        // Also ensure the rebuilt list contains exactly our childEl at index 0
+        List<Element> rebuiltList = newRef.get();
+        assertEquals(1, rebuiltList.size(), "Rebuilt cache list should have exactly one element");
+        assertSame(childEl, rebuiltList.get(0), "Rebuilt cache should contain the original child at index 0");
+    }
+}

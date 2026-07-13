@@ -1,0 +1,92 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "CSS document starts with a CDO comment token which is skipped by FILTER_S_CMNT_CDO_CDC before parsing a rule-set",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "startDocument/endDocument called once; one selectors()/endSelectors() invocation; no errors",
+      "tags": [
+        "positive",
+        "filter",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 skip CDO comment then parse ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<!-- foo -->h1{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocCount == 1;",
+        "    assert doc.selectorsCount == 1;",
+        "    assert doc.endSelectorsCount == 1;",
+        "    assert doc.endDocCount == 1;",
+        "    assert err.errors.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "At-rule param returns null causing UNEXPECTED_TOKEN error and skipping to matching '}' without emitting startAtRule",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "err.error called with CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN; no startAtRule/endAtRule; loop continues to endDocument",
+      "tags": [
+        "negative",
+        "at-rule",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 invalid at-rule param triggers skip",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo 123 ;\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    assert err.hasErrorCode(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN);",
+        "    assert doc.startAtRuleNames.isEmpty();",
+        "    assert doc.endAtRuleNames.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Nested at-rule inside a block triggers hasRuleSet true branch and recursive handleAtRule invocation",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "startAtRule('media'), startAtRule('import'), endAtRule('import'), endAtRule('media'); one nested selectors() invocation",
+      "tags": [
+        "positive",
+        "nested",
+        "at-rule"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 nested at-rule inside media block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media{@import url('a.css');h1{}}\\n\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"sys\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"media\");",
+        "    assert doc.startAtRuleNames.contains(\"import\");",
+        "    assert doc.endAtRuleNames.contains(\"import\");",
+        "    assert doc.endAtRuleNames.contains(\"media\");",
+        "    assert doc.selectorsCount == 1;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DataFrame;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DateSchemaColumn_parseAndAddToColumn_2_Test {
+
+    // A simple stub for DfColumn to capture added objects
+    private static class StubDfColumn implements DfColumn {
+        private final List<Object> added = new ArrayList<>();
+
+        @Override
+        public void addObject(Object value) {
+            this.added.add(value);
+        }
+
+        public int getCountAdded() {
+            return this.added.size();
+        }
+
+        public Object getLastAdded() {
+            if (this.added.isEmpty()) {
+                return null;
+            }
+            return this.added.get(this.added.size() - 1);
+        }
+
+        @Override
+        public void copyTo(DataFrame df) {
+            // No implementation needed for this test
+        }
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn trims input and correctly parses a valid date with surrounding whitespace under custom pattern")
+    public void test_TC09() {
+        // B0→B1→B3→B4: input is non-null, trimmed is non-empty, so parseAsLocalDate -> parsed value
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "dd/MM/uuuu");
+        StubDfColumn dfColumn = new StubDfColumn();
+        String aString = " 31/12/2020 ";
+        col.parseAndAddToColumn(aString, dfColumn);
+        assertEquals(1, dfColumn.getCountAdded(), "Should have added exactly one date");
+        assertEquals(LocalDate.of(2020, 12, 31),
+                     dfColumn.getLastAdded(),
+                     "The added date should be 2020-12-31 after trimming");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses the minimum representable date under default pattern")
+    public void test_TC10() {
+        // B0→B1→B3→B4: using default pattern "uuuu-M-d", input "0001-1-1" yields LocalDate.of(1,1,1)
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn dfColumn = new StubDfColumn();
+        String aString = "0001-1-1";
+        col.parseAndAddToColumn(aString, dfColumn);
+        assertEquals(1, dfColumn.getCountAdded(), "Should have added exactly one date");
+        assertEquals(LocalDate.of(1, 1, 1),
+                     dfColumn.getLastAdded(),
+                     "The added date should be the minimum date 0001-1-1");
+    }
+
+    @Test
+    @DisplayName("constructor throws IllegalArgumentException when pattern is syntactically invalid (empty string)")
+    public void test_TC11() {
+        // ctor→exception: empty pattern is invalid for DateTimeFormatter.ofPattern("")
+        assertThrows(IllegalArgumentException.class,
+                     () -> new DateSchemaColumn(null, "d", ""),
+                     "Constructor should throw IllegalArgumentException for empty pattern");
+    }
+}

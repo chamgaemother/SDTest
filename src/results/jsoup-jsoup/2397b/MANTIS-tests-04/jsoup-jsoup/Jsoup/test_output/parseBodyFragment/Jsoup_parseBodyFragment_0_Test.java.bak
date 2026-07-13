@@ -1,0 +1,109 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseBodyFragment(html with nested tags, non-empty baseUri) returns Document with correct nested structure")
+    public void test_TC01_O1() {
+        // nested-elements branch: input has nested <div><p>...</p></div>
+        String html = "<div><p>Test</p></div>";
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        // Expect the body HTML to preserve nested structure exactly
+        assertEquals("<div><p>Test</p></div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseBodyFragment(empty html, non-empty baseUri) returns empty body")
+    public void test_TC02_O1() {
+        // empty-input branch: html is empty string
+        String html = "";
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        // Expect body to be empty
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseBodyFragment(html with relative link, non-empty baseUri) resolves href to absolute URL")
+    public void test_TC03_O1() {
+        // relative-resolution branch: baseUri non-empty so relative links are resolved
+        String html = "<a href=\"foo.html\">link</a>";
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        // Expect href resolved to absolute URL
+        assertEquals("http://example.com/foo.html", doc.select("a").first().attr("href"));
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseBodyFragment(html with relative link, empty baseUri) leaves href unchanged")
+    public void test_TC04_O1() {
+        // empty-baseUri branch: baseUri is empty so no resolution of relative links
+        String html = "<a href=\"foo.html\">link</a>";
+        Document doc = Jsoup.parseBodyFragment(html, "");
+        // Expect href unchanged
+        assertEquals("foo.html", doc.select("a").first().attr("href"));
+    }
+
+    @Test
+    @DisplayName("TC05_O1: parseBodyFragment(html with <base> tag overrides provided baseUri")
+    public void test_TC05_O1() {
+        // base-tag-override branch: presence of <base href> should override provided baseUri
+        String html = "<base href=\"http://override.com/\"><img src=\"foo.png\">";
+        Document doc = Jsoup.parseBodyFragment(html, "http://example.com/");
+        // Expect img src resolved against base tag URL
+        assertEquals("http://override.com/foo.png", doc.select("img").first().attr("src"));
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseBodyFragment(html, default overload) behaves like overload with empty baseUri")
+    public void test_TC06_O2() {
+        // default-overload branch: calling single-arg overload uses empty baseUri
+        String html = "<span>OK</span>";
+        Document doc = Jsoup.parseBodyFragment(html);
+        // Expect same as empty-baseUri: content preserved
+        assertEquals("<span>OK</span>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC07_O1: parseBodyFragment(null html, non-null baseUri) throws NullPointerException")
+    public void test_TC07_O1() {
+        // null-input branch: html is null, should throw NullPointerException before parsing
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment(null, "http://example.com/");
+        });
+    }
+
+    @Test
+    @DisplayName("TC08_O2: parseBodyFragment(null html, default overload) throws NullPointerException")
+    public void test_TC08_O2() {
+        // null-input branch on default overload: html is null
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parseBodyFragment((String) null);
+        });
+    }
+
+    @Test
+    @DisplayName("TC09_O1: parseBodyFragment(html with entity, non-empty baseUri) preserves HTML entity")
+    public void test_TC09_O1() {
+        // entity-escape branch: ensure existing entities in HTML are not unescaped
+        String html = "<p>5 is &lt; 6.</p>";
+        Document doc = Jsoup.parseBodyFragment(html, "http://x/");
+        // Expect entity &lt; preserved in output HTML
+        assertEquals("<p>5 is &lt; 6.</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC10_O1: parseBodyFragment(html with comment and text, non-empty baseUri) includes comment when preserved")
+    public void test_TC10_O1() {
+        // comments branch: ensure comments in fragment are preserved in body HTML
+        String html = "<!--comment-->text";
+        Document doc = Jsoup.parseBodyFragment(html, "http://x/");
+        // Expect comment and text preserved exactly
+        assertEquals("<!--comment-->text", doc.body().html());
+    }
+}

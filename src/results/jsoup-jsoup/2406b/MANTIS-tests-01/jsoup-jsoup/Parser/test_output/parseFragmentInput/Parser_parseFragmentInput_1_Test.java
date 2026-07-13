@@ -1,0 +1,109 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.TagSet;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_1_Test {
+
+    /**
+     * FakeTreeBuilder allows injecting behavior for parseFragment.
+     */
+    static class FakeTreeBuilder implements TreeBuilder {
+        interface FragmentFunction {
+            List<Node> apply(Reader reader, Element context, String baseUri, Parser parser);
+        }
+        private final FragmentFunction func;
+        FakeTreeBuilder(FragmentFunction func) { this.func = func; }
+
+        @Override
+        public List<Node> parseFragment(Reader reader, Element context, String baseUri, Parser parser) {
+            return func.apply(reader, context, baseUri, parser);
+        }
+        // Unused methods stubbed
+        @Override
+        public org.jsoup.nodes.Document parse(Reader reader, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public String defaultNamespace() { return ""; }
+        @Override
+        public ParseSettings defaultSettings() { return new ParseSettings(true, true); }
+        @Override
+        public TagSet defaultTagSet() { return TagSet.Html(); }
+        @Override
+        public TreeBuilder newInstance() { return this; }
+    }
+
+    @Test
+    @DisplayName("Reader overload with null context and non-empty fragment returns nodes list (context == null branch)")
+    void test_TC07() {
+        // Given a FakeTreeBuilder that returns two distinct node instances
+        Node nodeA = org.jsoup.nodes.Document.createShell("baseUri");
+        Node nodeB = org.jsoup.nodes.Document.createShell("baseUri");
+        FakeTreeBuilder fb = new FakeTreeBuilder(
+            (rdr, ctx, uri, parser) -> Arrays.asList(nodeA, nodeB)
+        );
+        Parser parser = new Parser((TreeBuilder) fb);
+        // Using Reader overload and null context to force context==null branch (B3→B5)
+        Reader fragmentReader = new StringReader("<p>X</p><div>Y</div>");
+        Element ctx = null;
+        // When
+        List<Node> result = parser.parseFragmentInput(fragmentReader, ctx, "baseUri");
+        // Then: returns exactly the two nodes in order
+        assertEquals(2, result.size(), "Expected two nodes returned");
+        assertSame(nodeA, result.get(0), "First element should be nodeA");
+        assertSame(nodeB, result.get(1), "Second element should be nodeB");
+    }
+
+    @Test
+    @DisplayName("String overload propagates UncheckedIOException thrown by TreeBuilder (exception path)")
+    void test_TC08() {
+        // Given a FakeTreeBuilder that throws UncheckedIOException in parseFragment
+        FakeTreeBuilder fb = new FakeTreeBuilder(
+            (rdr, ctx, uri, parser) -> { throw new UncheckedIOException(new IOException("tree failure")); }
+        );
+        Parser parser = new Parser((TreeBuilder) fb);
+        // Use String overload, context non-null so fragmentReader created internally
+        Element ctx = Element.createShell("base");
+        // When & Then: UncheckedIOException propagates with original cause message
+        UncheckedIOException ex = assertThrows(UncheckedIOException.class,
+            () -> parser.parseFragmentInput("<a/>", ctx, "base")
+        );
+        assertNotNull(ex.getCause(), "Cause should be present");
+        assertEquals("tree failure", ex.getCause().getMessage(), "Cause message should match original");
+    }
+
+    @Test
+    @DisplayName("Reader overload propagates RuntimeException thrown by TreeBuilder (exception path)")
+    void test_TC09() {
+        // Given a FakeTreeBuilder that throws RuntimeException in parseFragment
+        FakeTreeBuilder fb = new FakeTreeBuilder(
+            (rdr, ctx, uri, parser) -> { throw new RuntimeException("fatal"); }
+        );
+        Parser parser = new Parser((TreeBuilder) fb);
+        // Using Reader overload with non-null context to bypass null branch
+        Reader fragmentReader = new StringReader("<span/>"); // Fixed unclosed string literal
+        Element ctx = Element.createShell("uri");
+        // When & Then: RuntimeException propagates with message
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> parser.parseFragmentInput(fragmentReader, ctx, "uri")
+        );
+        assertEquals("fatal", ex.getMessage(), "Exception message should match thrown message");
+    }
+}

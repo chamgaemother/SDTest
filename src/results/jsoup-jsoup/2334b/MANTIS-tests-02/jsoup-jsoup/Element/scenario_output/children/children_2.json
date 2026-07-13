@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() with only non-Element children caches empty list on first call and returns same on second",
+      "path": "B0→B2→B3→B5    (first) and B0→B2→B3→B4→B5    (second, cached non-null)",
+      "precondition": "Element has only TextNode and DataNode appended",
+      "expectedResult": "First children() returns empty Elements and second returns same instance",
+      "tags": [
+        "cache",
+        "empty",
+        "iteration=2nd-call"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children empty-list caching",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"a\"));",
+        "    parent.appendChild(new DataNode(\"b\"));",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 0;",
+        "    assert first == second;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds cache when previous WeakReference target has been GC-collected",
+      "path": "B0→B2→B3→B5    (first) → simulate referral drop → B2→B3→B5    (rebuild)",
+      "precondition": "Element has one Element child, initial children() called, then drop strong refs to cached list and force GC",
+      "expectedResult": "Second children() returns new Elements instance equal in content but not same reference",
+      "tags": [
+        "cache",
+        "weakref",
+        "rebuild"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children weakref-rebuild",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = new Element(\"li\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    // Drop strong ref to first to allow GC of cached shadow list",
+        "    first = null;",
+        "    System.gc();",
+        "    Thread.sleep(50);",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second.size() == 1;",
+        "    assert second.get(0) == child;",
+        "    // Cannot assert same instance due to rebuild: ensure new list created",
+        "END"
+      ]
+    }
+  ]
+}

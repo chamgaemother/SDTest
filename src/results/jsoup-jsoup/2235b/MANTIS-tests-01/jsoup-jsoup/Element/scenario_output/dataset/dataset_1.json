@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "dataset remove operation updates underlying attributes (live-view remove branch)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element with two data- attributes",
+      "expectedResult": "ds.remove(\"a\") removes 'data-a' and subsequent dataset().containsKey('a') is false",
+      "tags": [
+        "live-view",
+        "mutation",
+        "negative",
+        "branch-remove"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset live-view remove",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"1\");",
+        "    el.attr(\"data-b\", \"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.remove(\"a\");",
+        "  THEN",
+        "    assertFalse(el.dataset().containsKey(\"a\"));",
+        "    assertNull(el.attr(\"data-a\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "dataset hyphenated key is normalized to camelCase (hyphen-split mapping branch)",
+      "path": "B0→B1→B2(loop×2)→B4",
+      "precondition": "Element with one hyphenated data- attribute",
+      "expectedResult": "dataset().get(\"userName\") == \"jsmith\"",
+      "tags": [
+        "positive",
+        "normalization",
+        "branch-hyphen",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset camel-case hyphen keys",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-user-name\", \"jsmith\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertEquals(1, ds.size());",
+        "    assertTrue(ds.containsKey(\"userName\"));",
+        "    assertEquals(\"jsmith\", ds.get(\"userName\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "dataset preserves empty key for attribute 'data-' (edge-case empty name branch)",
+      "path": "B0→B1→B2(loop×1)→B4",
+      "precondition": "Element with attribute key exactly 'data-'",
+      "expectedResult": "dataset().containsKey(\"\") and value == 'empty'",
+      "tags": [
+        "edge-case",
+        "positive",
+        "boundary",
+        "branch-empty-key"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset empty-key edge-case",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-\", \"empty\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertEquals(1, ds.size());",
+        "    assertTrue(ds.containsKey(\"\"));",
+        "    assertEquals(\"empty\", ds.get(\"\"));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "visitor.head removes first of two siblings exercises removal branch where nextSibling != null",
+      "path": "B0→B1→B2→B3→B5→B6→B11→B12→B23→B1→B5→B6→B7→B9→B1→B5→B11→B16→B17→B18→B20→B21→B24",
+      "precondition": "Element root with two children A and B",
+      "expectedResult": "Only B is visited (head:root, head:B, tail:B, tail:root), A removed before tail, no tail:A",
+      "tags": [
+        "positive",
+        "removal",
+        "branch-removal-sibling"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 removal-of-first-sibling",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"p\");",
+        "    Element b = new Element(\"span\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) {",
+        "        if (node == a) node.remove();",
+        "      }",
+        "      public void tail(Node node, int depth) {}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    // removed A in head, so only B is traversed",
+        "    // Expected calls: head:div:0, head:span:1, tail:span:1, tail:div:0",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "visitor.head replaces only child triggers replacement branch and continues traversal",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→B12→B23→B1→B5→B11→B16→B20→B21→B24",
+      "precondition": "Element root with single child C",
+      "expectedResult": "Child replaced by D, traversal continues on replacement D (head:root, head:D, tail:D, tail:root)",
+      "tags": [
+        "positive",
+        "replacement",
+        "branch-replace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 replacement-of-only-child",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c = new Element(\"p\");",
+        "    root.appendChild(c);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) {",
+        "        if (node == c) {",
+        "          Element d = new Element(\"span\");",
+        "          node.replaceWith(d);",
+        "        }",
+        "      }",
+        "      public void tail(Node node, int depth) {}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    // replaced child, so replacement visited",
+        "    // Expected calls: head:div:0, head:span:1, tail:span:1, tail:div:0",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "null Elements list throws IllegalArgumentException at Validate.notNull(elements)",
+      "path": "B0→B1→B3",
+      "precondition": "visitor non-null, Elements = null",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "elements-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 traverse-null-elements-exception",
+        "  GIVEN",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) {}",
+        "      public void tail(Node n, int d) {}",
+        "    };",
+        "    Elements elements = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

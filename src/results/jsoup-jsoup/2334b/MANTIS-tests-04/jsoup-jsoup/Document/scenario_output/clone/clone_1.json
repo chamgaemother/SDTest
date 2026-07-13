@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "clone() produces independent outputSettings and parser clones such that modifying original does not affect clone",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell(\"/base\")",
+      "expectedResult": "clone.outputSettings and clone.parser remain at defaults after original is mutated",
+      "tags": [
+        "positive",
+        "state-independence",
+        "deep-clone"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone deep-copy of mutable fields",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/base\");",
+        "    Document copy = doc.clone();",
+        "  WHEN",
+        "    doc.outputSettings().charset(Charset.forName(\"UTF-16\"));",
+        "    Parser origParser = doc.parser();",
+        "    origParser.setTrackErrors(5);",
+        "    doc.parser(origParser);",
+        "  THEN",
+        "    assertEquals(\"UTF-8\", copy.outputSettings().charset().name());",
+        "    assertEquals(0, copy.parser().getTrackErrors());"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() modifications to clone do not affect original's outputSettings and parser",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document.createShell(\"/doc\")",
+      "expectedResult": "original.outputSettings and original.parser remain at defaults after clone is mutated",
+      "tags": [
+        "positive",
+        "state-independence",
+        "deep-clone",
+        "inverse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 mutate clone without impacting original",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"/doc\");",
+        "    Document copy = doc.clone();",
+        "  WHEN",
+        "    copy.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    Parser copyParser = copy.parser();",
+        "    copyParser.setTrackErrors(7);",
+        "    copy.parser(copyParser);",
+        "  THEN",
+        "    assertEquals(Document.OutputSettings.Syntax.html, doc.outputSettings().syntax());",
+        "    assertEquals(0, doc.parser().getTrackErrors());"
+      ]
+    }
+  ]
+}

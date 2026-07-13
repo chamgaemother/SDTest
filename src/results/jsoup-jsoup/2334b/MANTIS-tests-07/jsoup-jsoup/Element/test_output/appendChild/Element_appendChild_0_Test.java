@@ -1,0 +1,66 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_appendChild_0_Test {
+
+    @Test
+    @DisplayName("appendChild throws IllegalArgumentException when child is null")
+    public void test_TC01() {
+        // GIVEN: an element with no children
+        Element el = new Element("div");
+        // WHEN & THEN: appending null should trigger validation failure (branch-null-child)
+        assertThrows(IllegalArgumentException.class, () -> el.appendChild(null));
+    }
+
+    @Test
+    @DisplayName("appendChild adds a first child to empty childNodes")
+    public void test_TC02() throws Exception {
+        // GIVEN: an element without any children (childNodes empty triggers ensureChildNodes path)
+        Element el = new Element("div");
+        Node child = new Element("span");
+        // WHEN: appendChild is called for the first time (B2→B3→B4 path for first child)
+        Element result = el.appendChild(child);
+        // THEN: should return self
+        assertSame(el, result);
+        // THEN: childNodeSize()==1 and the stored node is our child
+        assertEquals(1, el.childNodeSize());
+        assertSame(child, el.childNodes().get(0));
+        // THEN: child.parent==el
+        assertSame(el, child.parent());
+        // THEN: siblingIndex on child is 0
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(child);
+        assertEquals(0, idx);
+    }
+
+    @Test
+    @DisplayName("appendChild adds a second child to non-empty childNodes and updates siblingIndex")
+    public void test_TC03() throws Exception {
+        // GIVEN: an element with one existing child to follow (subsequent-child branch)
+        Element el = new Element("div");
+        Node first = new Element("a");
+        el.appendChild(first); // first child at index 0
+        Node second = new Element("b");
+        // WHEN: appendChild called again to get second child (loop 1→2)
+        el.appendChild(second);
+        // THEN: two children present
+        assertEquals(2, el.childNodeSize());
+        // THEN: second child at index 1
+        assertSame(second, el.childNodes().get(1));
+        // THEN: second.parent == el
+        assertSame(el, second.parent());
+        // THEN: siblingIndex of first remains 0, of second is 1
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idxFirst = idxField.getInt(first);
+        int idxSecond = idxField.getInt(second);
+        assertAll(
+            () -> assertEquals(0, idxFirst, "first child's siblingIndex should remain 0"),
+            () -> assertEquals(1, idxSecond, "second child's siblingIndex should be 1")
+        );
+    }
+}

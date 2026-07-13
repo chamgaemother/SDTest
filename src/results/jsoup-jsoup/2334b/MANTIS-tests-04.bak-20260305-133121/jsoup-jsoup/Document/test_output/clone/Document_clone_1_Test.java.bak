@@ -1,0 +1,91 @@
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Document.OutputSettings.Syntax;
+import org.jsoup.parser.Parser;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.nodes.DocumentType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() on a default Document returns a distinct instance with independent outputSettings and parser")
+    public void test_TC04() {
+        // GIVEN a default document created without custom settings (uses default UTF-8 charset and HTML parser)
+        Document original = new Document("http://example.com");
+        // WHEN clone is invoked
+        Document copy = original.clone();
+        // THEN the clone is a different object
+        assertNotSame(original, copy);
+        // outputSettings() should be equal in value but distinct instance
+        assertEquals(original.outputSettings().charset(), copy.outputSettings().charset());
+        assertNotSame(original.outputSettings(), copy.outputSettings());
+        // parser() should be equal in state (no tracking errors by default) but distinct instance
+        assertEquals(original.parser().getErrors().size(), copy.parser().getErrors().size());
+        assertNotSame(original.parser(), copy.parser());
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with children deep-copies the node tree so mutations to original do not affect clone")
+    public void test_TC05() {
+        // GIVEN a Document shell with html, head, body, and an appended <div> child 
+        Document original = Document.createShell("http://shell");
+        original.appendElement("div").text("hello");
+        // WHEN clone is invoked and then original is mutated further
+        Document copy = original.clone();
+        int origCountBefore = original.childNodes().size();
+        // Append another child to original; clone should not see this
+        original.appendElement("span");
+        // THEN clone has same child count as original had before mutation
+        assertEquals(origCountBefore, copy.childNodes().size());
+        // Original now has one more node
+        assertEquals(origCountBefore + 1, original.childNodes().size());
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with a custom Connection retains the same connection reference in clone")
+    public void test_TC06() throws Exception {
+        // GIVEN a custom Connection set on the original document (non-null field path)
+        Connection customConn = Jsoup.connect("http://example.com");
+        Document original = new Document("http://example.com").connection(customConn);
+        // WHEN clone is invoked (super.clone() should shallow-copy the connection field)
+        Document copy = original.clone();
+        // THEN the private 'connection' field inside clone should reference the same Connection object
+        Field connField = Document.class.getDeclaredField("connection");
+        connField.setAccessible(true);
+        Object originalConnField = connField.get(original);
+        Object copyConnField = connField.get(copy);
+        assertSame(originalConnField, copyConnField);
+        // Also, calling connection() should return the same instance when non-null
+        assertSame(customConn, copy.connection());
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with XML parser and xml syntax outputSettings deep-copies parser state including syntax-driven escapeMode")
+    public void test_TC07() {
+        // GIVEN a Document configured with an XML parser and outputSettings set to XML syntax
+        Document original = new Document("http://xml");
+        original.parser(Parser.xmlParser());
+        original.outputSettings().syntax(Syntax.xml);
+        // WHEN clone is invoked
+        Document copy = original.clone();
+        // THEN parser instances should be distinct but have equivalent error state
+        assertNotSame(original.parser(), copy.parser());
+        assertEquals(original.parser().getErrors().size(), copy.parser().getErrors().size());
+        // outputSettings instances should be distinct
+        assertNotSame(original.outputSettings(), copy.outputSettings());
+        // The clone's syntax should remain XML and escapeMode should be xhtml
+        assertEquals(Syntax.xml, copy.outputSettings().syntax());
+        assertEquals(OutputSettings.Syntax.xml, copy.outputSettings().syntax());
+        assertEquals(org.jsoup.nodes.Entities.EscapeMode.xhtml, copy.outputSettings().escapeMode());
+    }
+}

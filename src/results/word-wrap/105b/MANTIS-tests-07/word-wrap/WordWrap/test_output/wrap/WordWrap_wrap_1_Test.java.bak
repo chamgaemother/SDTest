@@ -1,0 +1,68 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("maxWidth(0) throws IllegalArgumentException for invalid width argument")
+    public void test_TC11() {
+        // Given a builder for some text
+        WordWrap.Builder b = WordWrap.from("text");
+        Number invalid = 0;
+        // When & Then: maxWidth(0) must trigger argument validation failure in Preconditions
+        assertThrows(IllegalArgumentException.class, () -> b.maxWidth(invalid));
+    }
+
+    @Test
+    @DisplayName("Long word broken with hyphens when insertHyphens=true and breakWords=true")
+    public void test_TC12() {
+        // Given input longer than maxWidth and hyphens allowed (breakWords true by default)
+        WordWrap.Builder b = WordWrap.from("abcdef").maxWidth(4);
+        // When wrapping, word length 6 exceeds maxWidth 4, so writeBrokenWord uses hyphens -> 'abcd-' then 'ef'
+        String result = b.wrap();
+        // Then output should contain hyphenated split at maxWidth boundary
+        assertEquals("abcd-\nef", result);
+    }
+
+    @Test
+    @DisplayName("Long word broken without hyphens when insertHyphens=false but breakWords=true")
+    public void test_TC13() {
+        // Given a word of length 4, maxWidth 3, breakWords true but hyphens disabled
+        WordWrap.Builder b = WordWrap.from("abcd").maxWidth(3).insertHyphens(false);
+        // When wrapping, since breakWords=true and insertHyphens=false, split into 'abc' and 'd'
+        String result = b.wrap();
+        // Then expect newline between parts without hyphen
+        assertEquals("abc\nd", result);
+    }
+
+    @Test
+    @DisplayName("Custom newLine string is used when wrapping at spaces")
+    public void test_TC14() {
+        // Given text with spaces where lines break at width boundary on space, custom newline marker
+        WordWrap.Builder b = WordWrap.from("aa bb cc").maxWidth(5).newLine("<NL>");
+        // When wrapping, 'aa bb' fits into 5 chars, then newline, then 'cc'
+        String result = b.wrap();
+        // Then custom delimiter '<NL>' should separate the lines
+        assertEquals("aa bb<NL>cc", result);
+    }
+
+    @Test
+    @DisplayName("excludeExtraWordChars('-') treats hyphen as punctuation and breaks word boundary")
+    public void test_TC15() {
+        // Given input containing hyphen and hyphen excluded from extraWordChars set
+        WordWrap.Builder b = WordWrap.from("hello-world").maxWidth(5).excludeExtraWordChars("-");
+        // When wrapping to list, hyphen is punctuation boundary, so 'hello' then '-world'
+        List<String> lines = b.wrapToList();
+        // Then two distinct lines should be produced
+        assertEquals(2, lines.size());
+        assertEquals("hello", lines.get(0));
+        assertEquals("-world", lines.get(1));
+    }
+}

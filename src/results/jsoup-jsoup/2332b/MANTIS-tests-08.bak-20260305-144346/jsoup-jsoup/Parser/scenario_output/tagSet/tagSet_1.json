@@ -1,0 +1,127 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "tagSet(nullptr) throws NullPointerException",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 tagSet null-input exception",
+        "  GIVEN",
+        "    String input = null;",
+        "  WHEN",
+        "    call Parser.tagSet(input);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "tagSet(\"\") returns an empty set (empty-input branch)",
+      "path": "B0→B2→B5",
+      "precondition": "none",
+      "expectedResult": "return value is empty Set<String>",
+      "tags": [
+        "boundary",
+        "positive",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 tagSet empty-string returns empty-set",
+        "  GIVEN",
+        "    String input = \"\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "tagSet(\"a\") returns Set containing single tag (no-split loop zero-iterations)",
+      "path": "B0→B3→B6(loop×1)→B5",
+      "precondition": "none",
+      "expectedResult": "return value contains exactly \"a\"",
+      "tags": [
+        "positive",
+        "single-token",
+        "iteration=1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 tagSet single-token",
+        "  GIVEN",
+        "    String input = \"a\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.contains(\"a\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "tagSet(\"a,b, c\") splits on commas and trims whitespace (loop multiple iterations)",
+      "path": "B0→B3→B6(loop×3)→B5",
+      "precondition": "none",
+      "expectedResult": "return value contains \"a\",\"b\",\"c\"",
+      "tags": [
+        "positive",
+        "iteration>1",
+        "whitespace-trim"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 tagSet multi-token whitespace-trim",
+        "  GIVEN",
+        "    String input = \"a,b, c\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.containsAll(Arrays.asList(\"a\",\"b\",\"c\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "tagSet(\"a,a,b\") returns unique tags only (duplicate elimination branch)",
+      "path": "B0→B3→B6(loop×3)→B7→B5",
+      "precondition": "none",
+      "expectedResult": "return value contains exactly \"a\",\"b\"",
+      "tags": [
+        "positive",
+        "duplicates",
+        "set-behavior"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 tagSet duplicate-elimination",
+        "  GIVEN",
+        "    String input = \"a,a,b\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.containsAll(Arrays.asList(\"a\",\"b\"));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.davidmoten.text.utils.WordWrap;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class WordWrap_wrap_0_Test {
+
+    @Test
+    @DisplayName("TC01: wrap() with short text under default maxWidth does not insert newlines (maxWidth boundary false)")
+    public void test_TC01() {
+        // input "Hello world" length 11 < default maxWidth 80: no wrap
+        String result = WordWrap.from("Hello world").wrap();
+        assertEquals("Hello world", result);
+    }
+
+    @Test
+    @DisplayName("TC02: wrap() with text length exactly equal to maxWidth does not split (maxWidth boundary equal)")
+    public void test_TC02() {
+        // "aaaaa" length exactly maxWidth 5 => no wrap
+        String fiveA = "aaaaa";
+        String result = WordWrap.from(fiveA).maxWidth(5).wrap();
+        assertEquals("aaaaa", result);
+    }
+
+    @Test
+    @DisplayName("TC03: wrap() with embedded newline resets line accumulation (ch=='\\n' branch)")
+    public void test_TC03() {
+        // embedded '\n' forces line break regardless of width
+        String text = "foo\nbar";
+        String result = WordWrap.from(text).wrap();
+        assertEquals("foo\nbar", result);
+    }
+
+    @Test
+    @DisplayName("TC04: wrap() breaks long word with hyphens when breakWords=true and insertHyphens=true (tooLong true path)")
+    public void test_TC04() {
+        // long word length 12 > maxWidth 5; breakWords=true, insertHyphens=true should hyphenate
+        String longWord = "abcdefghijkl";
+        String result = WordWrap.from(longWord).maxWidth(5).breakWords(true).insertHyphens(true).wrap();
+        // Expect first line to end with hyphen and newline
+        assertTrue(result.startsWith("abc-"), "Expected hyphen after split prefix");
+        assertTrue(result.contains("-\n"), "Expected hyphenated newline in output");
+    }
+
+    @Test
+    @DisplayName("TC05: wrap() with breakWords=false does not insert hyphens and preserves overflow (breakWords false path)")
+    public void test_TC05() {
+        // long word length 11 > maxWidth 5; breakWords=false should not hyphenate, keep full word in line
+        String longWord = "abcdefghijk";
+        String result = WordWrap.from(longWord).maxWidth(5).breakWords(false).wrap();
+        assertTrue(result.contains("abcdefghijk"), "Full word should be preserved without hyphens");
+    }
+
+    @Test
+    @DisplayName("TC06: wrap() treats punctuation as word char when in extraWordChars (extraWordChars true path)")
+    public void test_TC06() {
+        // dot '.' included as extra word char so "foo.bar" is a single word < maxWidth => no wrap
+        Set<Character> extras = new HashSet<>();
+        extras.add('.');
+        String result = WordWrap.from("foo.bar baz").extraWordChars(extras).maxWidth(7).wrap();
+        assertEquals("foo.bar baz", result);
+    }
+
+    @Test
+    @DisplayName("TC07: wrap() with custom newLine delimiter uses \"<NL>\" instead of \"\\n\" (newLine path)")
+    public void test_TC07() {
+        // embedded '\n' replaced by custom "<NL>"
+        String text = "one\ntwo";
+        String result = WordWrap.from(text).newLine("<NL>").wrap();
+        assertEquals("one<NL>two", result);
+    }
+
+    @Test
+    @DisplayName("TC08: wrap() returns empty string for empty input reader (loop zero iterations and empty final)")
+    public void test_TC08() {
+        // empty input produces empty output
+        String result = WordWrap.from("").wrap();
+        assertEquals("", result);
+    }
+
+    @Test
+    @DisplayName("TC09: wrap() throws IllegalArgumentException if maxWidth <=0 (precondition exception)")
+    public void test_TC09() {
+        // maxWidth(0) violates precondition and should throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            WordWrap.from("any").maxWidth(0).wrap();
+        });
+    }
+
+    @Test
+    @DisplayName("TC10: wrapToList returns lines list for wrapToList overload")
+    public void test_TC10() {
+        // "aa bb" with maxWidth 2 should produce ["aa","bb"]
+        List<String> lines = WordWrap.from("aa bb").maxWidth(2).wrapToList();
+        assertEquals(Arrays.asList("aa", "bb"), lines);
+    }
+}

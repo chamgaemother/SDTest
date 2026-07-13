@@ -1,0 +1,192 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "fromClasspathUtf8 with missing resource throws NullPointerException on InputStreamReader",
+      "path": "B0→B2→B4→B6→B7",
+      "precondition": "no such classpath resource '/no-resource.txt'",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "classpath",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 missing classpath resource",
+        "  GIVEN",
+        "    String resource = \"/no-resource.txt\";",
+        "  WHEN",
+        "    call WordWrap.fromClasspathUtf8(resource).wrap();",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap(Writer) rethrows IOException from Writer as IORuntimeException",
+      "path": "B0→B10→B11→B12→B13",
+      "precondition": "custom Writer throws IOException on write",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io",
+        "writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 writer throws IOException",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"abc\"));",
+        "    Writer w = new Writer() {",
+        "      @Override public void write(char[] c,int o,int l) throws IOException { throw new IOException(\"fail\"); }",
+        "      @Override public void write(String s) throws IOException { throw new IOException(\"fail\"); }",
+        "      @Override public void flush(){} @Override public void close(){}",
+        "    };",
+        "  WHEN",
+        "    call WordWrap.from(r).wrap(w);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "close(reader) IOException on Reader.close() triggers IORuntimeException in finally",
+      "path": "B0→B10→B14→B15",
+      "precondition": "Reader whose close() throws IOException",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io",
+        "reader",
+        "finally"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 reader.close throws IOException",
+        "  GIVEN",
+        "    Reader r = new Reader() {",
+        "      @Override public int read(char[] c,int o,int l){ return -1; }",
+        "      @Override public void close() throws IOException { throw new IOException(\"fail-close\"); }",
+        "    };",
+        "  WHEN",
+        "    call WordWrap.from(r, true).wrap(new StringWriter());",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Input containing carriage returns ignores '\\r' branch",
+      "path": "B0→B20→B21→B22→B23",
+      "precondition": "text contains CR and LF",
+      "expectedResult": "CR chars are dropped, LF produces newline in output",
+      "tags": [
+        "positive",
+        "boundary",
+        "newline",
+        "carriage-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 carriage return ignored",
+        "  GIVEN",
+        "    String text = \"A\\r\\nB\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assertEquals(\"A\\nB\", result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Default punctuation triggers word boundary and line break when too long after punctuation",
+      "path": "B0→B30→B31→B32→B33→B34",
+      "precondition": "text contains punctuation comma and small maxWidth",
+      "expectedResult": "line breaks at comma boundary without hyphen",
+      "tags": [
+        "positive",
+        "boundary",
+        "punctuation",
+        "break"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 punctuation as boundary",
+        "  GIVEN",
+        "    String text = \"word1,word2\";",
+        "    int maxWidth = 6;",
+        "  WHEN",
+        "    String result = WordWrap.from(text).maxWidth(maxWidth).wrap();",
+        "  THEN",
+        "    // comma is boundary, so break before word2",
+        "    assertTrue(result.startsWith(\"word1,\"));",
+        "    assertTrue(result.contains(\"word2\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "from(InputStream, Charset) wraps input from stream like CharSequence",
+      "path": "B0→B1→B5→B6→B7",
+      "precondition": "ByteArrayInputStream wrapping UTF-8 bytes",
+      "expectedResult": "wrapped text identical to from(CharSequence)",
+      "tags": [
+        "positive",
+        "stream",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 wrap from InputStream and Charset",
+        "  GIVEN",
+        "    byte[] data = \"hello stream test\".getBytes(StandardCharsets.UTF_8);",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "  WHEN",
+        "    String s1 = WordWrap.from(in, StandardCharsets.UTF_8).wrap();",
+        "    String s2 = WordWrap.from(\"hello stream test\").wrap();",
+        "  THEN",
+        "    assertEquals(s2, s1);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "from(File, Charset) with non-existent file throws IORuntimeException",
+      "path": "B0→B8→B9",
+      "precondition": "File pointing to non-existent path",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 missing input file",
+        "  GIVEN",
+        "    File f = new File(\"does_not_exist.txt\");",
+        "  WHEN",
+        "    call WordWrap.from(f, StandardCharsets.UTF_8).wrap();",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "Removing entries via dataset().entrySet().iterator().remove() clears corresponding data- attributes (iterator remove branch)",
+      "path": "B0→B1→B2(removeViaIterator)→B3",
+      "precondition": "Element has two data- attributes 'data-a' and 'data-b'",
+      "expectedResult": "Both 'data-a' and 'data-b' attributes are removed after iterator.remove()",
+      "tags": [
+        "live-view",
+        "iterator",
+        "remove",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 dataset iterator removal",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-a\", \"1\");",
+        "    el.attr(\"data-b\", \"2\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "    Iterator<Map.Entry<String,String>> it = data.entrySet().iterator();",
+        "    while (it.hasNext()) it.next();",
+        "    it.remove();",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-a\") || el.hasAttr(\"data-b\"));"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Calling dataset().putAll(null) throws NullPointerException (null argument exception path)",
+      "path": "B0→B1→B2(putAllNull)→B4",
+      "precondition": "Element has no data- attributes",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 dataset putAll null argument",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    Map<String,String> additions = null;",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "    call data.putAll(additions);",
+        "  THEN",
+        "    throws NullPointerException"
+      ]
+    }
+  ]
+}

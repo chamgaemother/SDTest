@@ -1,0 +1,67 @@
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.Tokeniser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(Reader,String) propagates IllegalStateException from custom TreeBuilder.parse")
+    public void test_TC10() {
+        // Arrange: stub TreeBuilder that always throws on parse(Reader, String, Parser) 
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public Document parse(Reader in, String uri, Parser p) {
+                // branch B2: always throw to simulate parse failure
+                throw new IllegalStateException("fail");
+            }
+            @Override public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }
+            @Override public ParseSettings defaultSettings() { return ParseSettings.preserveCase; }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public boolean isContentForTagData(String n) { return false; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public void initialiseParse(Reader in, String baseUri, Parser p) {}
+            @Override public void process(org.jsoup.parser.Token t) {}
+        };
+        Parser parser = new Parser(new org.jsoup.parser.HtmlTreeBuilder()).setTreeBuilder(stub);
+        Reader reader = new StringReader("<x>");
+        String baseUri = "http://base/";
+        // Act & Assert: should propagate the IllegalStateException thrown by stub.parse
+        assertThrows(IllegalStateException.class, () -> parser.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseInput(String,String) propagates IllegalStateException from custom TreeBuilder.parse")
+    public void test_TC11() {
+        // Arrange: stub TreeBuilder that always throws on parse(Reader, String, Parser) 
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public Document parse(Reader in, String uri, Parser p) {
+                // branch B2: always throw to simulate parse failure
+                throw new IllegalStateException("fail");
+            }
+            @Override public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }
+            @Override public ParseSettings defaultSettings() { return ParseSettings.preserveCase; }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public boolean isContentForTagData(String n) { return false; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public void initialiseParse(Reader in, String baseUri, Parser p) {}
+            @Override public void process(org.jsoup.parser.Token t) {}
+        };
+        Parser parser = new Parser(new org.jsoup.parser.HtmlTreeBuilder()).setTreeBuilder(stub);
+        String html = "<x>";
+        String baseUri = "http://base/";
+        // Act & Assert: calling the String overload routes through reader-overload then into stub, expecting exception
+        assertThrows(IllegalStateException.class, () -> parser.parseInput(html, baseUri));
+    }
+}

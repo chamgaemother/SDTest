@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "children() on Element with initialized but empty childNodes uses short-circuit and does not cache",
+      "path": "B0→B1(short-circuit)",
+      "precondition": "parser created; element.ensureChildNodes() called",
+      "expectedResult": "returns empty Elements list; shadowChildrenRef remains null",
+      "tags": [
+        "positive",
+        "no-cache",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children on empty NodeList",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.ensureChildNodes();",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "    // internal cache not set",
+        "    assert FieldHelper.getWeakRef(el, \"shadowChildrenRef\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() filters out DataNode and CDataNode, including only Element children in build loop",
+      "path": "B0→B3(loop×3)→B5",
+      "precondition": "none",
+      "expectedResult": "returns list containing only appended Element among mixed DataNode and CDataNode",
+      "tags": [
+        "positive",
+        "filtering",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children filters DataNode and CDataNode",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new DataNode(\"data\"));",
+        "    parent.appendChild(new CDataNode(\"cdata\"));",
+        "    Element child = new Element(\"span\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assertEquals(1, result.size());",
+        "    assertSame(child, result.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

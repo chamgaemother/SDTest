@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Modifying original outputSettings after clone does not affect clone’s prettyPrint setting",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original Document has default prettyPrint=true",
+      "expectedResult": "clone.outputSettings().prettyPrint() remains true even after original.prettyPrint set to false",
+      "tags": [
+        "positive",
+        "deep-isolation",
+        "outputSettings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 modify-original-outputSettings-isolated",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://isolated.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    original.outputSettings().prettyPrint(false);",
+        "  THEN",
+        "    assert copy.outputSettings().prettyPrint() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Modifying clone quirksMode does not affect original quirksMode",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original Document has quirksMode noQuirks",
+      "expectedResult": "original.quirksMode() remains noQuirks after clone.quirksMode set to quirks",
+      "tags": [
+        "positive",
+        "deep-isolation",
+        "quirksMode"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone-quirksMode-isolation",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://quirks.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    copy.quirksMode(Document.QuirksMode.quirks);",
+        "  THEN",
+        "    assert original.quirksMode() == Document.QuirksMode.noQuirks;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() on null-connection Document yields clone.connection() new Session but distinct instances each call",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original has no explicit Connection (connection==null)",
+      "expectedResult": "copy.connection() returns a non-null Connection each call but two calls produce distinct objects",
+      "tags": [
+        "positive",
+        "connection",
+        "default"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 null-connection-clone-session",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://session.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    Connection c1 = copy.connection();",
+        "    Connection c2 = copy.connection();",
+        "  THEN",
+        "    assertNotNull(c1);",
+        "    assertNotNull(c2);",
+        "    assertNotSame(c1, c2);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "clone() preserves XML syntax in outputSettings when original set to XML and deep-copies XmlDeclaration on ensureMetaCharsetElement",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "original Document outputSettings syntax set to xml and meta charset applied",
+      "expectedResult": "copy.outputSettings().syntax() == xml and ensureXmlDecl not duplicated on clone meta operations",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "xml",
+        "outputSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 xml-syntax-outputSettings-clone",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://xml.com\");",
+        "    original.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    original.charset(Charset.forName(\"ISO-8859-1\"));",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    // invoke ensureMetaCharsetElement via charset setter",
+        "    copy.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    assert copy.outputSettings().syntax() == Document.OutputSettings.Syntax.xml;",
+        "    // XML declaration present as first child",
+        "    assert copy.childNodes().get(0) instanceof org.jsoup.nodes.XmlDeclaration;",
+        "    assertNotSame(original.childNodes().get(0), copy.childNodes().get(0));",
+        "END"
+      ]
+    }
+  ]
+}

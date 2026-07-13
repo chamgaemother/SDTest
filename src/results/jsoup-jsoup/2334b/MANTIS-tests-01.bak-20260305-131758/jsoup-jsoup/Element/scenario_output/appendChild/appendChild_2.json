@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Appending the same child twice on a parent repositions it without duplication (reparentChild branch when child already in parent)",
+      "path": "B0→reparentChild→ensureChildNodes(false)→add→return",
+      "precondition": "parent has one child (same Node)",
+      "expectedResult": "parent.childNodeSize() remains 1; child's siblingIndex resets to 0; parent returned",
+      "tags": [
+        "positive",
+        "reparent",
+        "duplicate-child"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 append same child twice",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"dup\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.parent() == parent;",
+        "    // reflection: siblingIndex == 0",
+        "    assert getSiblingIndex(child) == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Appending a non-Text Node subtype (Element) ensures reparent and correct indexing",
+      "path": "B0→reparentChild(none)→ensureChildNodes(true)→add→return",
+      "precondition": "child is new Element, not yet attached",
+      "expectedResult": "parent.childNodeSize() == 1; child.parent()==parent; siblingIndex==0",
+      "tags": [
+        "positive",
+        "element-node",
+        "first-append"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 append Element child",
+        "  GIVEN",
+        "    Element parent = new Element(\"section\");",
+        "    Element child = new Element(\"span\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.parent() == parent;",
+        "    assert getSiblingIndex(child) == 0;",
+        "END"
+      ]
+    }
+  ]
+}

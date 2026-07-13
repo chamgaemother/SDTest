@@ -1,0 +1,88 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Removing an entry from the dataset view updates the underlying element attributes (view-removal)",
+      "path": "B0→B1→B2(remove)→B3",
+      "precondition": "Element has two data- attributes",
+      "expectedResult": "After ds.remove(key) the corresponding data-key attribute is gone, other data- attributes remain",
+      "tags": [
+        "view-binding",
+        "removal",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 dataset view removal propagation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-one\", \"1\");",
+        "    el.attr(\"data-two\", \"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.remove(\"one\");",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-one\"));",
+        "    assertTrue(el.attributes().hasKey(\"data-two\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Clearing the dataset view removes all data- attributes from the element (view-clear)",
+      "path": "B0→B1→B2(clear)→B3",
+      "precondition": "Element has three data- attributes",
+      "expectedResult": "After ds.clear(), no data- attributes remain on the element",
+      "tags": [
+        "view-binding",
+        "clear",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 dataset view clear propagation",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-a\", \"A\");",
+        "    el.attr(\"data-b\", \"B\");",
+        "    el.attr(\"data-c\", \"C\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.clear();",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"data-a\"));",
+        "    assertFalse(el.attributes().hasKey(\"data-b\"));",
+        "    assertFalse(el.attributes().hasKey(\"data-c\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Multi-part hyphenated data- attribute names are converted to camelCase keys in dataset (key-normalization)",
+      "path": "B0→B1→B2(hyphen)→B3",
+      "precondition": "Element has a data- attribute with multiple hyphens",
+      "expectedResult": "Key 'userNameId' is present with its value",
+      "tags": [
+        "normalization",
+        "hyphen-case",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 hyphenated data-key to camelCase",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-user-name-id\", \"XYZ\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"userNameId\"));",
+        "    assertEquals(\"XYZ\", ds.get(\"userNameId\"));",
+        "END"
+      ]
+    }
+  ]
+}

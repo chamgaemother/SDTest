@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "htmlParser() default Parser.tagSet returns non-empty set of lowercase HTML tag names (case-insensitive branch)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser parser = Parser.htmlParser()",
+      "expectedResult": "returned set contains known HTML tag names (e.g. \"div\", \"span\") in lowercase",
+      "tags": [
+        "positive",
+        "html",
+        "case-insensitive"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 htmlParser default tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags is not empty;",
+        "    assert tags contains \"div\";",
+        "    assert tags contains \"span\";"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "xmlParser() default Parser.tagSet returns empty set (XML parser branch)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "returned set is empty",
+      "tags": [
+        "positive",
+        "xml",
+        "empty-set"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 xmlParser default tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags is empty;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Custom TreeBuilder stub supplies mixed-case tags; tagSet respects case when settings preserveCase=true",
+      "path": "B0→B2→B3→B5",
+      "precondition": "Parser parser = new Parser(customStubBuilder).settings(new ParseSettings(true, true))",
+      "expectedResult": "returned set equals stub tags exactly with original casing",
+      "tags": [
+        "positive",
+        "stub",
+        "case-sensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 custom stubBuilder with preserve-case settings",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public Set<String> getSupportedTags() { return Set.of(\"AbC\",\"XyZ\"); }",
+        "      public Parser newInstance() { return thisParserClone; }",
+        "      // other methods no-op or default",
+        "    };",
+        "    Parser parser = new Parser(stub).settings(new ParseSettings(true, true));",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags equals Set.of(\"AbC\",\"XyZ\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Custom TreeBuilder stub with no supported tags leads to empty set despite case-insensitive settings",
+      "path": "B0→B2→B4→B5",
+      "precondition": "Parser parser = new Parser(emptyStubBuilder).settings(new ParseSettings(false, false))",
+      "expectedResult": "returned set is empty",
+      "tags": [
+        "positive",
+        "stub",
+        "empty-set"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 custom stubBuilder with no tags",
+        "  GIVEN",
+        "    TreeBuilder emptyStub = new TreeBuilder() {",
+        "      public Set<String> getSupportedTags() { return Collections.emptySet(); }",
+        "      public Parser newInstance() { return thisParserClone; }",
+        "      // other methods no-op or default",
+        "    };",
+        "    Parser parser = new Parser(emptyStub).settings(new ParseSettings(false, false));",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags is empty;"
+      ]
+    }
+  ]
+}

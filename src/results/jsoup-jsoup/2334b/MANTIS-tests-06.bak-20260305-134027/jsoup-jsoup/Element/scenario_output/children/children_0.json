@@ -1,0 +1,132 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when no child nodes (childNodeSize()==0 branch)",
+      "path": "B0→B1→B2(true)→B3",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements list is empty (size()==0)",
+      "tags": [
+        "branch-true",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children no-children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() filters non-Element child (only one TextNode yields empty list)",
+      "path": "B0→B1→B2(false)→B4(loop×1)→B5",
+      "precondition": "Element el = new Element(\"p\"); el.appendChild(new TextNode(\"text\"));",
+      "expectedResult": "returned Elements list is empty (size()==0)",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children single-text-node",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns only Element children filtering out non-Element nodes (mixed nodes)",
+      "path": "B0→B1→B2(false)→B4(loop×3)→B5",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"t\")); el.appendChild(new Element(\"span\")); el.appendChild(new Comment(\"c\"));",
+      "expectedResult": "returned Elements list has one element with tagName() == \"span\"",
+      "tags": [
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"t\"));",
+        "    el.appendChild(new Element(\"span\"));",
+        "    el.appendChild(new Comment(\"c\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).tagName().equals(\"span\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() uses cached shadowChildrenRef on second call (cache hit branch)",
+      "path": "B0→B1→B2(false)→B4(loop×2)→B5 → B1→B2(false)→B6(cache-hit)→B5",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new Element(\"a\")); el.appendChild(new Element(\"b\")); // first call builds cache",
+      "expectedResult": "first call returns two children [\"a\",\"b\"]; second call returns same list instance (cache used)",
+      "tags": [
+        "branch-false",
+        "cache-hit",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-hit",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Elements first = el.children(); Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 2; assert second == first;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() returns independent Elements instance each call but same content when cache cleared by mutation",
+      "path": "B0→B1→B2(false)→B4(loop×1)→B5 → B7(nodelistChanged)→B1→B2(false)→B4(loop×2)→B5",
+      "precondition": "Element el = new Element(\"div\"); Element c1 = new Element(\"x\"); el.appendChild(c1); List<Element> list1 = el.children(); el.appendChild(new Element(\"y\")); // invalidates cache",
+      "expectedResult": "after mutation, children() returns two distinct elements [\"x\",\"y\"], list1 remains size 1",
+      "tags": [
+        "branch-false",
+        "cache-miss-after-mutation",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children cache-invalidated",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"x\");",
+        "    el.appendChild(c1);",
+        "    Elements list1 = el.children();",
+        "    el.appendChild(new Element(\"y\"));",
+        "  WHEN",
+        "    Elements list2 = el.children();",
+        "  THEN",
+        "    assert list1.size() == 1; assert list2.size() == 2; assert list2.get(1).tagName().equals(\"y\");",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,207 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setTrackErrors(0) disables error tracking, isTrackErrors() returns false",
+      "path": "B0→B3→B5",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "isTrackErrors() == false after setTrackErrors(0)",
+      "tags": [
+        "negative",
+        "exception-path",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 disable-error-tracking",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    p.setTrackErrors(0);",
+        "  THEN",
+        "    assert !p.isTrackErrors();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors(5) enables tracking with max 5, getErrors() has maxSize 5",
+      "path": "B0→B3→B4",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "getErrors().getMaxSize() == 5 and isTrackErrors() == true",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 enable-error-tracking",
+        "  GIVEN",
+        "    Parser p = Parser.xmlParser();",
+        "  WHEN",
+        "    p.setTrackErrors(5);",
+        "  THEN",
+        "    assert p.isTrackErrors();",
+        "    assert p.getErrors().getMaxSize() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackPosition(true) toggles trackPosition, isTrackPosition returns true",
+      "path": "B0→B2→B6",
+      "precondition": "Parser.newInstance() from htmlParser",
+      "expectedResult": "isTrackPosition() == true",
+      "tags": [
+        "positive",
+        "state",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 position-tracking-enable",
+        "  GIVEN",
+        "    Parser base = Parser.htmlParser();",
+        "    Parser p = base.newInstance();",
+        "  WHEN",
+        "    p.setTrackPosition(true);",
+        "  THEN",
+        "    assert p.isTrackPosition();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "settings(ParseSettings) updates and settings() returns new settings instance",
+      "path": "B0→B1→B7",
+      "precondition": "Parser created via new Parser(new XmlTreeBuilder())",
+      "expectedResult": "settings() equals passed settings object",
+      "tags": [
+        "positive",
+        "settings",
+        "configuration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 update-parse-settings",
+        "  GIVEN",
+        "    Parser p = new Parser(new XmlTreeBuilder());",
+        "    ParseSettings s = new ParseSettings(false, false);",
+        "  WHEN",
+        "    p.settings(s);",
+        "  THEN",
+        "    assert p.settings() == s;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "htmlParser().defaultNamespace delegates to HtmlTreeBuilder.defaultNamespace",
+      "path": "B0→B4→B9",
+      "precondition": "Parser via Parser.htmlParser()",
+      "expectedResult": "defaultNamespace() == Parser.NamespaceHtml",
+      "tags": [
+        "positive",
+        "static-builder",
+        "namespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 html-default-namespace",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    String ns = p.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceHtml);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "unescapeEntities handles numeric and named entities in attribute mode and text mode",
+      "path": "B0→B8→B10",
+      "precondition": "none",
+      "expectedResult": "numeric and named entities unescaped correctly for both inAttribute true/false",
+      "tags": [
+        "positive",
+        "utility",
+        "entities"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 unescape-named-and-numeric",
+        "  GIVEN",
+        "    String input = \"&amp; &#65; &lt;\";",
+        "  WHEN",
+        "    String textMode = Parser.unescapeEntities(input, false);",
+        "    String attrMode = Parser.unescapeEntities(input, true);",
+        "  THEN",
+        "    assert textMode.equals(\"& A <\");",
+        "    assert attrMode.equals(\"& A <\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseFragment overload with custom ParseErrorList injects errors into provided list",
+      "path": "B0→B5→B11",
+      "precondition": "errorList with maxSize=2",
+      "expectedResult": "returned nodes list, provided errorList contains parsing errors up to size",
+      "tags": [
+        "positive",
+        "fragment",
+        "error-list"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 fragment-with-error-list",
+        "  GIVEN",
+        "    String badHtml = \"<div><\";",
+        "    Element ctx = new Element(\"div\");",
+        "    ParseErrorList errors = ParseErrorList.tracking(2);",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragment(badHtml, ctx, \"base\", errors);",
+        "  THEN",
+        "    assert nodes.size() >= 0;",
+        "    assert errors.size() <= 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseBodyFragment re-parents nodes and leaves head empty",
+      "path": "B0→B6→B12→B13",
+      "precondition": "none",
+      "expectedResult": "body contains children from fragment, head is empty",
+      "tags": [
+        "positive",
+        "body-fragment",
+        "tree-manipulation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 body-fragment-reparent",
+        "  GIVEN",
+        "    String frag = \"<p>one</p><p>two</p>\";",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(frag, base);",
+        "  THEN",
+        "    assert doc.head().children().isEmpty();",
+        "    assert doc.body().children().size() == 2;",
+        "    assert doc.body().child(0).tagName().equals(\"p\");",
+        "END"
+      ]
+    }
+  ]
+}

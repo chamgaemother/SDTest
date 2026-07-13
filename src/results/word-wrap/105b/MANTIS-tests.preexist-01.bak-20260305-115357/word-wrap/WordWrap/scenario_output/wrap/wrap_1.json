@@ -1,0 +1,163 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "ignore carriage return and break at newline when CR before LF",
+      "path": "B0→B1(loop×4)→B10→B11→B12→B13→B15→B16",
+      "precondition": "none",
+      "expectedResult": "two lines 'a' and 'b' separated by default newline",
+      "tags": [
+        "positive",
+        "newline",
+        "carriage-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-CR-before-LF",
+        "  GIVEN",
+        "    CharSequence text = \"a\\r\\nb\";",
+        "    Builder b = WordWrap.from(text);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "treat punctuation as non-word boundary when excluded in extraWordChars",
+      "path": "B0→B1(loop×7)→B7→B8→B9→B10→B11→B13→B14→B15",
+      "precondition": "exclude '!' from extraWordChars",
+      "expectedResult": "punctuation splits words: 'abc' and 'def' on separate lines for maxWidth 3",
+      "tags": [
+        "positive",
+        "punctuation",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 punctuation-split",
+        "  GIVEN",
+        "    String text = \"abcdef!gh\";",
+        "    Builder b = WordWrap.from(text)",
+        "                  .maxWidth(3)",
+        "                  .excludeExtraWordChars(\"!\");",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.get(0).equals(\"abc\");",
+        "    assert lines.get(1).equals(\"def\");",
+        "    assert lines.get(2).equals(\"!gh\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "use wrap(LineConsumer) to collect chars and newlines via custom consumer",
+      "path": "B0→B1(loop×2)→B10→B11→B15→B16",
+      "precondition": "none",
+      "expectedResult": "consumer receives 'hi' then newline then 'yo'",
+      "tags": [
+        "positive",
+        "consumer",
+        "api"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 wrap-via-LineConsumer",
+        "  GIVEN",
+        "    StringReader r = new StringReader(\"hi yo\");",
+        "    Builder b = WordWrap.from(r, false).maxWidth(2);",
+        "    StringBuilder acc = new StringBuilder();",
+        "  WHEN",
+        "    b.wrap(new LineConsumer() {",
+        "      write(chars,off,len)->acc.append(chars,off,len);",
+        "      writeNewLine()->acc.append(\"|\");",
+        "    });",
+        "  THEN",
+        "    assert acc.toString().equals(\"hi| yo\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "final flush with broken=true and line.length()==0 trims leading whitespace on remaining word",
+      "path": "B0→B1(loop×5)→B7→B8→B9→B10→B11→B14→B18",
+      "precondition": "leading space on word, breakWords=false,maxWidth small",
+      "expectedResult": "single line 'bc' after leftTrim on ' bc'",
+      "tags": [
+        "positive",
+        "trim",
+        "broken"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 flush-with-broken-true",
+        "  GIVEN",
+        "    String text = \" a bc\";",
+        "    Builder b = WordWrap.from(text).maxWidth(1).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"bc\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap to file using wrapUtf8 and read file back yields correct content",
+      "path": "B0→B1(loop×3)→B10→B11→B15→B16→wrap(file)→writeNewLine→close",
+      "precondition": "temporary file accessible",
+      "expectedResult": "file contains 'x\\ny'",
+      "tags": [
+        "positive",
+        "file",
+        "utf8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 wrapUtf8-to-file",
+        "  GIVEN",
+        "    File f = temp file;",
+        "    Builder b = WordWrap.from(\"x y\").maxWidth(1);",
+        "  WHEN",
+        "    b.wrapUtf8(f);",
+        "    String read = readFile(f, UTF-8);",
+        "  THEN",
+        "    assert read.equals(\"x\\ny\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "wrap(String filename, Charset) throws IORuntimeException on unwritable path",
+      "path": "B0→wrap(file)→FileOutputStream→IOException→catch→throw IORuntimeException",
+      "precondition": "path to non-directory as file name",
+      "expectedResult": "IORuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "file"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 wrap-unwritable-path-exception",
+        "  GIVEN",
+        "    String fileName = \"/nonexistentdir/out.txt\";",
+        "    Builder b = WordWrap.from(\"test\");",
+        "  WHEN",
+        "    call b.wrap(fileName, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseInput(String, String) with non-null html but null baseUri throws NullPointerException",
+      "path": "B0→B1→B2→B3→(delegate)→B4",
+      "precondition": "Parser constructed with HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseInput String overload null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = null;",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) with non-null Reader but null baseUri throws NullPointerException",
+      "path": "B0→B1→B2→B3→(delegate)→B4",
+      "precondition": "Parser constructed with HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput Reader overload null-baseUri",
+        "  GIVEN",
+        "    Reader rdr = new StringReader(\"<span>Hi</span>\");",
+        "    String baseUri = null;",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "  WHEN",
+        "    call parser.parseInput(rdr, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(String, String) propagates RuntimeException from a custom TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→(delegate)→exception",
+      "precondition": "Parser constructed with stub TreeBuilder that always throws",
+      "expectedResult": "CustomRuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput String overload with failing TreeBuilder",
+        "  GIVEN",
+        "    String html = \"<div/>\";",
+        "    String baseUri = \"http://test\";",
+        "    TreeBuilder failing = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new CustomRuntimeException(\"fail\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {",
+        "        return null;",
+        "      }",
+        "      @Override public boolean isContentForTagData(String name) { return false; }",
+        "      @Override public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "    };",
+        "    Parser parser = new Parser(failing);",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws CustomRuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader, String) propagates RuntimeException from a custom TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→(delegate)→exception",
+      "precondition": "Parser constructed with stub TreeBuilder that always throws",
+      "expectedResult": "CustomRuntimeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput Reader overload with failing TreeBuilder",
+        "  GIVEN",
+        "    Reader rdr = new StringReader(\"<img/>\");",
+        "    String baseUri = \"base\";",
+        "    TreeBuilder failing = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(Reader in, String baseUri, Parser parser) {",
+        "        throw new CustomRuntimeException(\"fail-reader\");",
+        "      }",
+        "      @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {",
+        "        return null;",
+        "      }",
+        "      @Override public boolean isContentForTagData(String name) { return false; }",
+        "      @Override public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "    };",
+        "    Parser parser = new Parser(failing);",
+        "  WHEN",
+        "    call parser.parseInput(rdr, baseUri);",
+        "  THEN",
+        "    throws CustomRuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

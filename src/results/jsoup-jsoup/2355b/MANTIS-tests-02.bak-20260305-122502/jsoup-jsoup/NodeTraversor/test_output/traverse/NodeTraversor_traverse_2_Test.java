@@ -1,0 +1,75 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class NodeTraversor_traverse_2_Test {
+
+    @Test
+    @DisplayName("traverse(elements) throws IllegalArgumentException when elements is null")
+    public void test_TC16() {
+        // GIVEN a valid visitor and a null Elements reference to exercise parameter validation
+        NodeVisitor visitor = (node, depth) -> { /* no-op */ };
+        Elements elems = null;
+        // WHEN & THEN an IllegalArgumentException is thrown due to null elements (Validate.notNull)
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, elems));
+    }
+
+    @Test
+    @DisplayName("traverse(elements) throws IllegalArgumentException when visitor is null")
+    public void test_TC17() {
+        // GIVEN a null visitor to exercise parameter validation and a non-null Elements
+        NodeVisitor visitor = null;
+        Elements elems = new Elements(); 
+        elems.add(new Element("p"));  // ensure non-empty list
+        // WHEN & THEN an IllegalArgumentException is thrown due to null visitor (Validate.notNull)
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, elems));
+    }
+
+    @Test
+    @DisplayName("deep single-child chain triggers multiple ascend-loop iterations in traverse(NodeVisitor,Node)")
+    public void test_TC18() {
+        // GIVEN: build a deep chain div->a->b->c (depths 0→3)
+        Element div = new Element("div");
+        Element a = new Element("a"); div.appendChild(a);
+        Element b = new Element("b"); a.appendChild(b);
+        Element c = new Element("c"); b.appendChild(c);
+        // Visitor records head/tail calls with node name and depth
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int d) {
+                calls.add("h:" + n.nodeName() + ":" + d);
+            }
+            @Override
+            public void tail(Node n, int d) {
+                calls.add("t:" + n.nodeName() + ":" + d);
+            }
+        };
+        // WHEN: traverse the chain
+        NodeTraversor.traverse(visitor, (Node) div);
+        // THEN: we expect heads at increasing depths and tails descending back
+        List<String> expected = Arrays.asList(
+            "h:div:0", // head root at depth 0
+            "h:a:1",   // head child at depth 1
+            "h:b:2",   // head grandchild at depth 2
+            "h:c:3",   // head leaf at depth 3
+            "t:c:3",   // tail leaf at same depth
+            "t:b:2",   // tail grandchild after returning from leaf
+            "t:a:1",   // tail child after returning further up
+            "t:div:0"  // tail root at depth 0
+        );
+        assertEquals(expected, calls,
+            "Should produce matching head/tail calls for each depth in a deep single-child chain");
+    }
+}

@@ -1,0 +1,143 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.semver4j.Semver;
+
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_0_Test {
+
+    @Test
+    @DisplayName("version is null returns null (r0 == null branch)")
+    void test_TC01() {
+        // GIVEN a null input to hit the version == null branch
+        String version = null;
+        // WHEN parsing the null version
+        Semver result = Semver.parse(version);
+        // THEN we expect a null result
+        assertNull(result, "Parsing null should return null");
+    }
+
+    @Test
+    @DisplayName("valid simple version returns Semver instance with exact version string")
+    void test_TC02() {
+        // GIVEN a simple valid semver string to avoid exception and whitespace trim branches
+        String version = "1.2.3";
+        // WHEN parsing the version
+        Semver result = Semver.parse(version);
+        // THEN we expect a non-null Semver with version "1.2.3"
+        assertNotNull(result, "Valid version should not return null");
+        assertEquals("1.2.3", result.getVersion(), "Version string should be preserved exactly");
+    }
+
+    @Test
+    @DisplayName("valid version with surrounding whitespace is trimmed then parsed")
+    void test_TC03() {
+        // GIVEN a valid semver with spaces to test trimming in constructor
+        String version = "  1.2.3  ";
+        // WHEN parsing the whitespace-padded version
+        Semver result = Semver.parse(version);
+        // THEN we expect trimming and parsing succeed, version equals "1.2.3"
+        assertNotNull(result, "Parsing trimmed valid version should succeed");
+        assertEquals("1.2.3", result.getVersion(), "Trimmed version should match '1.2.3'");
+    }
+
+    @Test
+    @DisplayName("valid version with pre-release and build returns correct pre-release and build tokens")
+    void test_TC04() {
+        // GIVEN a version with pre-release and build to cover parsing of both tokens
+        String version = "1.2.3-alpha.1+001";
+        // WHEN parsing the version
+        Semver result = Semver.parse(version);
+        // THEN Semver should parse and expose the correct lists
+        assertNotNull(result, "Valid version with pre-release and build should parse");
+        assertEquals(
+            Arrays.asList("alpha", "1"),
+            result.getPreRelease(),
+            "Pre-release identifiers should be parsed into a list"
+        );
+        assertEquals(
+            Arrays.asList("001"),
+            result.getBuild(),
+            "Build identifiers should be parsed into a list"
+        );
+    }
+
+    @Test
+    @DisplayName("invalid version missing patch throws inside constructor and returns null")
+    void test_TC05() {
+        // GIVEN an invalid semver missing the patch part to drive exception in parsing
+        String version = "1.2";
+        // WHEN parsing, underlying constructor should throw and parse should catch and return null
+        Semver result = Semver.parse(version);
+        // THEN we expect null due to invalid format
+        assertNull(result, "Missing patch should lead to null result");
+    }
+
+    @Test
+    @DisplayName("invalid version non-numeric major throws and returns null")
+    void test_TC06() {
+        // GIVEN an invalid semver with non-numeric major to cause NumberFormatException
+        String version = "x.2.3";
+        // WHEN parsing the invalid input
+        Semver result = Semver.parse(version);
+        // THEN parse should catch exception and return null
+        assertNull(result, "Non-numeric major should lead to null result");
+    }
+
+    @Test
+    @DisplayName("invalid version with empty string after trim returns null")
+    void test_TC07() {
+        // GIVEN a string of only whitespace to become empty after trim and cause parse failure
+        String version = "   ";
+        // WHEN parsing trimmed-to-empty version
+        Semver result = Semver.parse(version);
+        // THEN expect null because no version content remains
+        assertNull(result, "Empty string after trim should return null");
+    }
+
+    @Test
+    @DisplayName("invalid version with illegal characters throws and returns null")
+    void test_TC08() {
+        // GIVEN a semver with illegal character to cause parsing exception
+        String version = "1.2.@";
+        // WHEN parsing the illegal version
+        Semver result = Semver.parse(version);
+        // THEN expect null due to invalid character in version
+        assertNull(result, "Illegal characters should cause parse to return null");
+    }
+
+    @Test
+    @DisplayName("valid version with leading zeros in numeric parts is parsed preserving numeric values")
+    void test_TC09() {
+        // GIVEN a version with leading zeros to ensure numeric fields parsed correctly
+        String version = "01.02.003";
+        // WHEN parsing this version
+        Semver result = Semver.parse(version);
+        // THEN major, minor, patch should be parsed as integers without leading zeros
+        assertNotNull(result, "Valid version with leading zeros should parse");
+        assertAll("Numeric parts should be parsed ignoring leading zeros",
+            () -> assertEquals(1, result.getMajor(), "Major should be 1"),
+            () -> assertEquals(2, result.getMinor(), "Minor should be 2"),
+            () -> assertEquals(3, result.getPatch(), "Patch should be 3")
+        );
+    }
+
+    @Test
+    @DisplayName("valid version with multiple pre-release identifiers is parsed correctly")
+    void test_TC10() {
+        // GIVEN a version with multiple pre-release tokens to test multi-token parsing
+        String version = "1.2.3-beta.rc.1";
+        // WHEN parsing the multi-token pre-release version
+        Semver result = Semver.parse(version);
+        // THEN pre-release list should contain all specified tokens
+        assertNotNull(result, "Valid version with multiple pre-release tokens should parse");
+        assertEquals(
+            Arrays.asList("beta", "rc", "1"),
+            result.getPreRelease(),
+            "Pre-release multi-token identifiers should be parsed into a list"
+        );
+    }
+}

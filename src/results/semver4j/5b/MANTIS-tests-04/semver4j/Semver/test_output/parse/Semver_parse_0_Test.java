@@ -1,0 +1,116 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_0_Test {
+
+    @Test
+    @DisplayName("parse(null) returns null when version is null (r0 == null)")
+    void test_TC01() {
+        // Branch B0->B1: version == null path true
+        String version = null;
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing a null input");
+    }
+
+    @Test
+    @DisplayName("parse(\"\") returns null when trimmed version is empty (invalid input)")
+    void test_TC02() {
+        // B0->B1: version != null, B2->B3: parsedVersion path throws, catches and returns null
+        String version = "";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing empty string");
+    }
+
+    @Test
+    @DisplayName("parse(\"   \") returns null when trimmed version is empty (blank input)")
+    void test_TC03() {
+        // B0->B1: version != null, trimmed to empty -> invalid -> catch -> null
+        String version = "   ";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing blank string");
+    }
+
+    @Test
+    @DisplayName("parse(\"a.b.c\") returns null when version format is invalid (non-numeric parts)")
+    void test_TC04() {
+        // B0->B1: version != null, B2->B3: invalid numeric parts -> parse exception -> null
+        String version = "a.b.c";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing non-numeric version");
+    }
+
+    @Test
+    @DisplayName("parse(\"-1.2.3\") returns null when negative numeric parts are not allowed")
+    void test_TC05() {
+        // B0->B1: version != null, negative major -> invalid -> catch -> null
+        String version = "-1.2.3";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null when parsing version with negative numbers");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3\") returns Semver with major=1, minor=2, patch=3, no pre-release or build")
+    void test_TC06() {
+        // B0->B1->B2->B3->B4: valid simple version path
+        String version = "1.2.3";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null for valid version");
+        assertEquals("1.2.3", result.getVersion(), "Version string should match input");
+        assertEquals(1, result.getMajor(), "Major");
+        assertEquals(2, result.getMinor(), "Minor");
+        assertEquals(3, result.getPatch(), "Patch");
+        assertTrue(result.getPreRelease().isEmpty(), "No pre-release");
+        assertTrue(result.getBuild().isEmpty(), "No build metadata");
+    }
+
+    @Test
+    @DisplayName("parse(\" 1.2.3 \") trims whitespace and returns Semver(1.2.3)")
+    void test_TC07() {
+        // B0->B1->B2->B3->B4: input trimmed to valid version
+        String version = " 1.2.3 ";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null for version with surrounding spaces");
+        assertEquals("1.2.3", result.getVersion(), "Whitespace should be trimmed");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3-alpha.1\") returns Semver with preRelease=[\"alpha\",\"1\"]")
+    void test_TC08() {
+        // B0->B1->B2->B3->B4: valid pre-release branch
+        String version = "1.2.3-alpha.1";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null for version with pre-release");
+        assertEquals("1.2.3-alpha.1", result.getVersion(), "Full version string");
+        assertEquals(Arrays.asList("alpha", "1"), result.getPreRelease(), "Pre-release tokens");
+        assertTrue(result.getBuild().isEmpty(), "No build metadata");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3+build.123\") returns Semver with build=[\"build\",\"123\"]")
+    void test_TC09() {
+        // B0->B1->B2->B3->B4: valid build metadata branch
+        String version = "1.2.3+build.123";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null for version with build metadata");
+        assertEquals("1.2.3+build.123", result.getVersion(), "Full version string");
+        assertTrue(result.getPreRelease().isEmpty(), "No pre-release");
+        assertEquals(Arrays.asList("build", "123"), result.getBuild(), "Build tokens");
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3-beta+exp.sha.5114f85\") returns Semver with both pre-release and build metadata")
+    void test_TC10() {
+        // B0->B1->B2->B3->B4: combined pre-release and build
+        String version = "1.2.3-beta+exp.sha.5114f85";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null for version with both pre-release and build");
+        assertEquals("1.2.3-beta+exp.sha.5114f85", result.getVersion(), "Full version string");
+        assertEquals(Arrays.asList("beta"), result.getPreRelease(), "Pre-release tokens");
+        assertEquals(Arrays.asList("exp", "sha", "5114f85"), result.getBuild(), "Build tokens");
+    }
+}

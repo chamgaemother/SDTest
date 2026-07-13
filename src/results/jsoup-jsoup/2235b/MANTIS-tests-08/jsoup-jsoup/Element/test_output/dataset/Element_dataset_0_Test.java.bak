@@ -1,0 +1,140 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Attributes;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC01: No attributes yields empty dataset (attributes==null branch)")
+    void test_TC01() {
+        // GIVEN an element with no attributes -> attributes field is null
+        Element el = new Element("div");
+        // WHEN fetching dataset -> should short-circuit to empty
+        Map<String, String> ds = el.dataset();
+        // THEN returned map is empty
+        assertTrue(ds.isEmpty(), "Dataset should be empty when no attributes");
+    }
+
+    @Test
+    @DisplayName("TC02: Only non-data attributes yields empty dataset (filters by 'data-' prefix)")
+    void test_TC02() {
+        // GIVEN element with only a 'class' attribute (non 'data-')
+        Element el = new Element("span");
+        el.attr("class", "x"); // attributes!=null but no data- prefix
+        // WHEN fetching dataset -> no entries
+        Map<String, String> ds = el.dataset();
+        // THEN returned map is empty
+        assertTrue(ds.isEmpty(), "Dataset should ignore non 'data-' attributes");
+    }
+
+    @Test
+    @DisplayName("TC03: Single data- attribute yields one entry (key without prefix)")
+    void test_TC03() {
+        // GIVEN element with one data-name attribute
+        Element el = new Element("p");
+        el.attr("data-name", "value"); // one data- attribute
+        // WHEN fetching dataset -> should include one entry named "name"
+        Map<String, String> ds = el.dataset();
+        // THEN size 1 and correct mapping
+        assertEquals(1, ds.size(), "Dataset size should be 1");
+        assertEquals("value", ds.get("name"), "Dataset should map key 'name' to 'value'");
+    }
+
+    @Test
+    @DisplayName("TC04: Multiple data- attributes yields multiple entries (loop-N with N=2)")
+    void test_TC04() {
+        // GIVEN element with two data- attributes
+        Element el = new Element("div");
+        el.attr("data-one", "1");
+        el.attr("data-two", "2");
+        // WHEN fetching dataset -> should include both keys
+        Map<String, String> ds = el.dataset();
+        // THEN size 2 and correct values
+        assertEquals(2, ds.size(), "Dataset size should be 2");
+        assertEquals("1", ds.get("one"), "Dataset should contain one=1");
+        assertEquals("2", ds.get("two"), "Dataset should contain two=2");
+    }
+
+    @Test
+    @DisplayName("TC05: Hyphenated data- attribute key retains inner hyphens")
+    void test_TC05() {
+        // GIVEN element with data-long-name attribute
+        Element el = new Element("div");
+        el.attr("data-long-name", "x");
+        // WHEN fetching dataset
+        Map<String, String> ds = el.dataset();
+        // THEN key retains hyphens and maps to value
+        assertTrue(ds.containsKey("long-name"), "Dataset key should retain inner hyphens");
+        assertEquals("x", ds.get("long-name"), "Dataset should map 'long-name' to 'x'");
+    }
+
+    @Test
+    @DisplayName("TC06: Upper-case data- prefix recognized case-insensitively? (should filter only lower-case 'data-')")
+    void test_TC06() {
+        // GIVEN element where attribute key has upper-case DATA- prefix
+        Element el = new Element("div");
+        // use attributes().put to bypass attr lower-casing
+        el.attributes().put("DATA-Case", "v");
+        // WHEN fetching dataset -> should ignore uppercase 'DATA-' prefix
+        Map<String, String> ds = el.dataset();
+        // THEN map does not contain entry for "Case"
+        assertFalse(ds.containsKey("Case"), "Dataset should ignore attributes with uppercase 'DATA-' prefix");
+    }
+
+    @Test
+    @DisplayName("TC07: Dataset map is live view: adding to map updates underlying attributes")
+    void test_TC07() {
+        // GIVEN fresh element and its dataset live view
+        Element el = new Element("span");
+        Map<String, String> ds = el.dataset();
+        // WHEN adding an entry to the dataset view
+        ds.put("new", "val");
+        // THEN underlying attribute 'data-new' exists with correct value
+        assertEquals("val", el.attr("data-new"), "Adding to dataset should create corresponding data- attribute");
+    }
+
+    @Test
+    @DisplayName("TC08: Removing from dataset map removes underlying data- attribute")
+    void test_TC08() {
+        // GIVEN element with data-x attribute and its dataset view
+        Element el = new Element("span");
+        el.attr("data-x", "a");
+        Map<String, String> ds = el.dataset();
+        // WHEN removing entry 'x' from dataset view
+        ds.remove("x");
+        // THEN underlying data-x attribute is removed
+        assertFalse(el.hasAttr("data-x"), "Removing from dataset should remove the data- attribute");
+    }
+
+    @Test
+    @DisplayName("TC09: Overwriting dataset entry updates underlying attribute value")
+    void test_TC09() {
+        // GIVEN element with data-k='old' and its dataset view
+        Element el = new Element("div");
+        el.attr("data-k", "old");
+        Map<String, String> ds = el.dataset();
+        // WHEN overwriting 'k' in dataset view
+        ds.put("k", "new");
+        // THEN underlying attribute is updated to new value
+        assertEquals("new", el.attr("data-k"), "Overwriting dataset entry should update the data- attribute value");
+    }
+
+    @Test
+    @DisplayName("TC10: Calling dataset after new attribute added includes the new entry (fresh view)")
+    void test_TC10() {
+        // GIVEN a fresh element
+        Element el = new Element("div");
+        // WHEN fetching first dataset (should be empty), then adding attribute and fetching again
+        Map<String, String> ds1 = el.dataset();
+        el.attr("data-a", "1");
+        Map<String, String> ds2 = el.dataset();
+        // THEN first view empty, second view reflects new attribute
+        assertTrue(ds1.isEmpty(), "First dataset view should be empty");
+        assertEquals("1", ds2.get("a"), "Second dataset view should include newly added data-a attribute");
+    }
+}

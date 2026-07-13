@@ -1,0 +1,46 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Unit tests for org.jsoup.parser.Tag.isFormSubmittable via Tag.valueOf scenarios.
+ */
+public class Tag_isFormSubmittable_Test {
+
+    @Test
+    @DisplayName("TC06: Uppercase known form-submittable tag with preserveCase=true triggers clone branch and returns true")
+    public void test_TC06() {
+        // Given an uppercase 'INPUT' which is a known tag with formSubmit=true, using preserveCase settings
+        String upper = "INPUT";
+        // Path: first lookup by tagName yields null (Tags.get("INPUT") != static case), then match by normalName in Settings.preserveCase branch triggers clone
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When
+        Tag result = Tag.valueOf(upper, Parser.NamespaceHtml, settings);
+        // Then
+        Tag staticLower = Tag.valueOf("input", Parser.NamespaceHtml, ParseSettings.preserveCase);
+        // The result should not be the same static instance, to reflect the clone path
+        assertNotSame(staticLower, result, "Expected a cloned Tag instance, not the static tag");
+        // The name should preserve the uppercase input
+        assertEquals("INPUT", result.getName(), "Expected tagName to be 'INPUT' due to preserveCase");
+        // As 'input' is form-submittable, the clone should retain formSubmit=true
+        assertTrue(result.isFormSubmittable(), "Expected isFormSubmittable() to return true for input tag");
+    }
+
+    @Test
+    @DisplayName("TC07: Known form-submittable tag in wrong namespace returns new generic tag with formSubmittable=false")
+    public void test_TC07() {
+        // Given 'input' tagName in wrong SVG namespace, even though 'input' is static in HTML NS with formSubmit=true
+        String tagName = "input";
+        String wrongNs = Parser.NamespaceSvg;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When: namespace mismatch should bypass known static tag and create a new generic tag (isBlock=false)
+        Tag result = Tag.valueOf(tagName, wrongNs, settings);
+        // Then: a generic tag is not part of Tags map
+        assertFalse(result.isKnownTag(), "Expected unknown tag for namespace mismatch");
+        // Generic tag default formSubmit is false
+        assertFalse(result.isFormSubmittable(), "Expected isFormSubmittable() to be false for generic tag");
+    }
+}

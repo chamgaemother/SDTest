@@ -1,0 +1,99 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "deep two-level tree with a single child triggers inner-while ascend branch (B16→B17→B19)",
+      "path": "B0→B1→B2→B3→B5→B11→B13→B16→B17→B19→B13→B11→B12→B23→…→B24",
+      "precondition": "none",
+      "expectedResult": "visitor.head and visitor.tail are called in correct depth order, exercising the ascend-in-inner-loop path",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-inner-loop"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 traverse two-level single-child ascend-inner",
+        "  GIVEN",
+        "    // Arrange a root with one child, and that child with one grandchild",
+        "    Element root = new Element(\"root\");",
+        "    Element child = new Element(\"child\");",
+        "    Element grand = new Element(\"grand\");",
+        "    root.appendChild(child);",
+        "    child.appendChild(grand);",
+        "    TrackVisitor visitor = new TrackVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    // Assert the inner ascend loop branch was covered",
+        "    assertEquals(List.of(\"root:0\",\"child:1\",\"grand:2\"), visitor.headCalls);",
+        "    assertEquals(List.of(\"grand:2\",\"child:1\",\"root:0\"), visitor.tailCalls);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "visitor.head replaces a middle child in three siblings triggers replace path (B7→B8) mid-traversal",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→…→B24",
+      "precondition": "none",
+      "expectedResult": "the second child is replaced and traversal continues through the new node",
+      "tags": [
+        "positive",
+        "replace",
+        "sibling",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 traverse three-sibling replacement",
+        "  GIVEN",
+        "    // Arrange root with three children",
+        "    Element root = new Element(\"list\");",
+        "    Element a = new Element(\"a\");",
+        "    Element b = new Element(\"b\");",
+        "    Element c = new Element(\"c\");",
+        "    root.appendChild(a); root.appendChild(b); root.appendChild(c);",
+        "    NodeVisitor visitor = new TrackVisitor() {",
+        "      @Override public void head(Node node, int depth) {",
+        "        super.head(node, depth);",
+        "        // Replace only the middle node",
+        "        if (node == b) node.replaceWith(new Element(\"x\"));",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    // Assert that 'b' is replaced by 'x' and 'x' was visited",
+        "    assertEquals(\"x\", root.childNode(1).nodeName());",
+        "    assertTrue(visitor.headCalls.contains(\"x:1\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "traverse over Elements with early break when elements list contains null element",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "seeing a null in elements causes Validate.notNull in recursive traverse and throws IllegalArgumentException",
+      "tags": [
+        "negative",
+        "elements",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 traverse(elements) null-element throws",
+        "  GIVEN",
+        "    Elements elements = new Elements(new Element(\"ok\"), null, new Element(\"skip\"));",
+        "    NodeVisitor visitor = (n,d) -> {};",
+        "  WHEN",
+        "    // Act & Assert",
+        "    assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, elements));",
+        "END"
+      ]
+    }
+  ]
+}

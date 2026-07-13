@@ -1,0 +1,118 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssException;
+import org.idpf.epubcheck.util.css.CssErrorHandler;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssContentHandler;
+import org.idpf.epubcheck.util.css.CssGrammar.CssAtRule;
+import org.idpf.epubcheck.util.css.CssGrammar.CssSelector;
+import org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration;
+// import org.idpf.epubcheck.util.css.CssExceptions.CssException; // Removed duplicate import
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class CssParser_parse_0_Test {
+
+  static class RecordingContentHandler implements CssContentHandler {
+    List<String> calls = new ArrayList<>();
+    @Override public void startDocument() { calls.add("startDocument"); }
+    @Override public void endDocument() { calls.add("endDocument"); }
+    @Override public void startAtRule(CssAtRule rule) { calls.add("startAtRule(" + rule.getName().get() + ")"); }
+    @Override public void endAtRule(String atRuleName) { calls.add("endAtRule(" + atRuleName + ")"); }
+    @Override public void selectors(List<CssSelector> selectors) { calls.add("selectors"); }
+    @Override public void endSelectors(List<CssSelector> selectors) { calls.add("endSelectors"); }
+    @Override public void declaration(CssDeclaration decl) { calls.add("declaration"); }
+  }
+
+  static class RecordingErrorHandler implements CssErrorHandler {
+    @Override public void error(CssException e) { /* ignore */ }
+  }
+
+  @Test
+  @DisplayName("TC01 parse(reader with no tokens) invokes startDocument then endDocument without iterating")
+  public void test_TC01() throws IOException, CssException {
+    Reader reader = new StringReader("");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc);
+    assertEquals(List.of("startDocument","endDocument"), doc.calls);
+  }
+
+  @Test
+  @DisplayName("TC02 parse(reader with one ATKEYWORD token) handles at-rule once then ends")
+  public void test_TC02() throws IOException, CssException {
+    String css = "@foo;";
+    Reader reader = new StringReader(css);
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc);
+    assertEquals(
+      List.of("startDocument","startAtRule(foo)","endAtRule(foo)","endDocument"),
+      doc.calls
+    );
+  }
+
+  @Test
+  @DisplayName("TC03 parse(reader with one rule-set token) handles rule-set once then ends")
+  public void test_TC03() throws IOException, CssException {
+    String css = "a{}";
+    Reader reader = new StringReader(css);
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc);
+    assertEquals(
+      List.of("startDocument","selectors","endSelectors","endDocument"),
+      doc.calls
+    );
+  }
+
+  @Test
+  @DisplayName("TC04 parse(reader with mixed ATKEYWORD then rule-set tokens) handles both in two iterations")
+  public void test_TC04() throws IOException, CssException {
+    String css = "@foo; a{}";
+    Reader reader = new StringReader(css);
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc);
+    assertEquals(
+      List.of("startDocument",
+              "startAtRule(foo)","endAtRule(foo)",
+              "selectors","endSelectors",
+              "endDocument"),
+      doc.calls
+    );
+  }
+
+  @Test
+  @DisplayName("TC05 parse(reader that scan throws IOException) propagates IOException")
+  public void test_TC05() {
+    Reader reader = new Reader() {
+      @Override public int read(char[] cbuf, int off, int len) throws IOException {
+        throw new IOException("fail");
+      }
+      @Override public void close() throws IOException { }
+    };
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    assertThrows(IOException.class, () -> new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc));
+  }
+
+  @Test
+  @DisplayName("TC06 parse(reader that scan throws CssException) propagates CssException")
+  public void test_TC06() {
+    Reader reader = new StringReader("\u0000");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+    assertThrows(CssException.class, () -> new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc));
+  }
+}

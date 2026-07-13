@@ -1,0 +1,50 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(String,baseUri) with null HTML string throws NullPointerException at StringReader construction")
+    public void test_TC15() {
+        // Given a Parser with HtmlTreeBuilder
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        String html = null;
+        String baseUri = "http://example.com/";
+        // When and Then: invoking parseInput(String, String) should throw NullPointerException
+        // because StringReader constructor does not accept null input (ensures path B0→B2→B3)
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseInput(Reader,baseUri) with stubbed TreeBuilder throwing IllegalStateException propagates exception")
+    public void test_TC16() {
+        // Given a Parser with a StubTreeBuilder that always fails in parse
+        class StubTreeBuilder extends HtmlTreeBuilder {
+            @Override
+            public Document parse(Reader in, String uri, Parser p) {
+                throw new IllegalStateException("fail");
+            }
+        }
+        Parser parser = new Parser(new StubTreeBuilder());
+        Reader input = new StringReader("<p/>");
+        String baseUri = "u";
+        // When and Then: invoking parseInput(Reader, String) should propagate IllegalStateException from StubTreeBuilder
+        // exercising path B0→B2→B4
+        IllegalStateException thrown = assertThrows(
+            IllegalStateException.class,
+            () -> parser.parseInput(input, baseUri)
+        );
+        // Verify that the exception message matches the stubbed failure
+        assert(thrown.getMessage().equals("fail"));
+    }
+}

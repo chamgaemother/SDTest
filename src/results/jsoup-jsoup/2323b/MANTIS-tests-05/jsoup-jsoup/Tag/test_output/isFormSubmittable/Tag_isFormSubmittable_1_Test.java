@@ -1,0 +1,37 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_1_Test {
+
+    @Test
+    @DisplayName("Uppercase known form-submit tag 'INPUT' with preserveTagCase=true triggers clone path and returns true")
+    public void test_TC05() {
+        // GIVEN a known form-submit tag "input" exists in the static registry
+        String inputUpper = "INPUT";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN we request valueOf with uppercase and preserveTagCase=true,
+        // this should follow the path that finds the lowercase tag by normalName
+        // then clone it because original tagName != normalName under preserveTagCase
+        Tag resultTag = Tag.valueOf(inputUpper, Parser.NamespaceHtml, settings);
+        // THEN isFormSubmittable must be true (input is a form-submit control)
+        assertTrue(resultTag.isFormSubmittable(), "Expected INPUT tag to be form-submittable");
+        // AND we must get a distinct instance (clone), not the static registry instance
+        Tag staticTag = Tag.valueOf("input", Parser.NamespaceHtml, ParseSettings.preserveCase);
+        assertNotSame(staticTag, resultTag,
+                "Expected a cloned instance when preserving case with uppercase tag");
+    }
+
+    @Test
+    @DisplayName("Unknown tag 'xyz' setSelfClosing() retains formSubmit=false")
+    public void test_TC06() {
+        // GIVEN an unknown tag "xyz" (not in static Tags map)
+        Tag tag = Tag.valueOf("xyz");
+        // WHEN we mark it self-closing (affects selfClosing but not formSubmit)
+        tag.setSelfClosing();
+        // THEN isFormSubmittable should remain false (only specific tags are submittable)
+        assertFalse(tag.isFormSubmittable(), "Unknown tags should not become form-submittable after setSelfClosing");
+    }
+}

@@ -1,0 +1,250 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty stylesheet triggers zero-iteration loop (hasNext false)",
+      "path": "B0→B1→B8",
+      "precondition": "None; use an empty StringReader",
+      "expectedResult": "CssContentHandler.startDocument() called once; CssContentHandler.endDocument() called once; no errors",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "normal",
+        "overload:Reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty stylesheet",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = stub; CssContentHandler doc = spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify doc.startDocument() once; verify doc.endDocument() once; verifyNoInteractions(err);"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single AT-rule with no block ends loop after first iteration",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Use StringReader with \"@charset \\\"UTF-8\\\";\"; real scan, stub handlers",
+      "expectedResult": "doc.startDocument(), doc.startAtRule(\"charset\"), doc.endAtRule(\"charset\"), doc.endDocument(); no exceptions",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "normal",
+        "overload:Reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single at-rule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@charset \\\"UTF-8\\\";\");",
+        "    CssErrorHandler err = stub; CssContentHandler doc = spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRule(\"charset\") called before doc.endAtRule(\"charset\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single ruleset triggers handleRuleSet path when token type != ATKEYWORD",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Use Reader with \"h1 { color:red; }\"; real scan, stub handlers",
+      "expectedResult": "doc.startDocument(), doc.selectors(list with one selector), doc.declaration(...), doc.endSelectors(...), doc.endDocument(); no errors",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "normal",
+        "overload:Reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color:red; }\");",
+        "    CssErrorHandler err = stub; CssContentHandler doc = spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify doc.selectors(...) called once; verify doc.declaration(...) called at least once;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Two top-level constructs exercises loop of count 2 with ATKEYWORD then RULESET",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader with \"@import url(x.css); h2 {margin:0;}\"; stub handlers",
+      "expectedResult": "doc.startAtRule(\"import\"); doc.endAtRule(\"import\"); then doc.selectors(...); doc.endSelectors(...); endDocument",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "branch-false",
+        "normal",
+        "overload:Reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse mixed at-rule and ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@import url(x.css); h2 {margin:0;}\" );",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify sequence: startAtRule->endAtRule->selectors->endSelectors->endDocument;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "PrematureEOFException in scan propagates IOException path",
+      "path": "B0",
+      "precondition": "Reader stub throws IOException on read(); mocking necessary to simulate IO error",
+      "expectedResult": "IOException is thrown; no calls to doc.startDocument()",
+      "tags": [
+        "exception",
+        "overload:Reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan IOException",
+        "  GIVEN",
+        "    Reader reader = stubReaderThrows(IOException);",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException; verify doc.startDocument() never called;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "CssException in scan propagates CssException path",
+      "path": "B0",
+      "precondition": "Mock CssScanner.scan to throw CssException via stub token consumer; mocking necessary to simulate grammar error early",
+      "expectedResult": "CssException is thrown; no document events",
+      "tags": [
+        "exception",
+        "overload:Reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan CssException",
+        "  GIVEN",
+        "    Reader reader= new StringReader(\"bad\"); mock CssParser.scan to throw CssException;",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssException; verifyNoInteractions(doc);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "PrematureEOF during handleRuleSet breaks loop and ends document",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "Reader with \"h1 { color\" (missing ';' and '}') to trigger NoSuchElementException in handleRuleSet; real scan",
+      "expectedResult": "parse returns normally after break; doc.startDocument(), doc.endDocument(); err.error called once with GRAMMAR_PREMATURE_EOF",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception-path",
+        "overload:Reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse ruleset premature EOF",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1 { color\");",
+        "    CssErrorHandler err=spy; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify err.error(...) called with GRAMMAR_PREMATURE_EOF; verify doc.endDocument() called;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Handle selector-list error path when selectors==null in handleRuleSet",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Inject stub CssSelectorConstructFactory.createSelectorList(...) returns null; mocking necessary to simulate factory failure",
+      "expectedResult": "iter.next(MATCH_CLOSEBRACE) invoked; no doc.selectors or declarations; doc.endDocument() called",
+      "tags": [
+        "branch-false",
+        "error-path",
+        "overload:Reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse selectors null",
+        "  GIVEN",
+        "    Reader reader=new StringReader(\"x{};\"); mock factory.createSelectorList to return null;",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify doc.selectors not called; verify doc.endDocument() called;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Use CssSource overload delegates to Reader overload",
+      "path": "B0→B1→B8",
+      "precondition": "Implement CssSource stub with newReader() returning empty reader and getSystemID=\"sys\"; real parse(reader)",
+      "expectedResult": "Same as empty Reader: startDocument and endDocument only",
+      "tags": [
+        "overload:CssSource",
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parse CssSource overload empty",
+        "  GIVEN",
+        "    CssSource src=stub with newReader()->empty reader, getSystemID()->\"sys\";",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    new CssParser().parse(src, err, doc);",
+        "  THEN",
+        "    verify doc.startDocument() and doc.endDocument();"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Mixed two rulesets exercises multiple branch-false iterations",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader with \"p{a:1;} div{b:2;}\"; stub handlers",
+      "expectedResult": "Two selectors lists and two endSelectors calls; endDocument after both",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "normal",
+        "overload:Reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse two rulesets",
+        "  GIVEN",
+        "    Reader reader=new StringReader(\"p{a:1;} div{b:2;}\");",
+        "    CssErrorHandler err=stub; CssContentHandler doc=spy;",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    verify doc.selectors called twice; verify doc.endSelectors called twice;"
+      ]
+    }
+  ]
+}

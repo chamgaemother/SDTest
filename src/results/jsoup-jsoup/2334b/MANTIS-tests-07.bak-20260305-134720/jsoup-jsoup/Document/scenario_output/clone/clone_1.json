@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "cloning a Document containing a DocumentType child preserves the doctype instance independently",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Document with one DocumentType child",
+      "expectedResult": "clone.documentType() returns a new DocumentType equal in value but not the same instance",
+      "tags": [
+        "positive",
+        "child-loop",
+        "doctype"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone preserves DocumentType",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://example.com\");",
+        "    DocumentType dt = new DocumentType(\"html\", \"\", \"\", orig.baseUri());",
+        "    orig.insertChildren(0, dt);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertNotSame(orig.documentType(), copy.documentType());",
+        "    assertEquals(orig.documentType().name(), copy.documentType().name());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "cloning a Document with multiple children exercises deep-clone loop for several nodes",
+      "path": "B0→B1→B2(loop×2)→B3",
+      "precondition": "Document with two child elements in body",
+      "expectedResult": "clone has two independent children equal in tag and text",
+      "tags": [
+        "positive",
+        "iteration",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone with multiple children",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"base\");",
+        "    orig.body().appendElement(\"p\").text(\"one\");",
+        "    orig.body().appendElement(\"div\").text(\"two\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertEquals(2, copy.body().children().size());",
+        "    assertNotSame(orig.body().child(0), copy.body().child(0));",
+        "    assertEquals(\"one\", copy.body().child(0).text());",
+        "    assertNotSame(orig.body().child(1), copy.body().child(1));",
+        "    assertEquals(\"two\", copy.body().child(1).text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "cloning a Document with a non-default parser preserves parser type and isolates subsequent changes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document with parser set to XML parser",
+      "expectedResult": "clone.parser() is an independent instance of XML parser; modifying orig parser does not affect clone",
+      "tags": [
+        "positive",
+        "parser",
+        "independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone isolates custom parser",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    Parser xmlParser = Parser.xmlParser();",
+        "    orig.parser(xmlParser);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertNotSame(orig.parser(), copy.parser());",
+        "    assertEquals(\"xmlParser\", copy.parser().getName());",
+        "    orig.parser(Parser.htmlParser());",
+        "    assertEquals(\"xmlParser\", copy.parser().getName());",
+        "END"
+      ]
+    }
+  ]
+}

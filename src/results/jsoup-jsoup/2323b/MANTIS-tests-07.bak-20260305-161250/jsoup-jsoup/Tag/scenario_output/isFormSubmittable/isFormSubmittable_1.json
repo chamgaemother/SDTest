@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "valueOf with uppercase known submittable tag and preserveTagCase=true returns a cloned tag preserving formSubmit=true",
+      "path": "B0→B3(lookup null)→B7(lookup normalName hit)→B9(clone branch)→return→isFormSubmittable",
+      "precondition": "Tags initialized; 'input' is registered as formSubmit=true",
+      "expectedResult": "return true (clone retains formSubmit)",
+      "tags": [
+        "positive",
+        "preserve-case",
+        "clone-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 uppercase-input-preserveCase",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "valueOf with known submittable tag but different namespace returns new generic tag with formSubmit=false",
+      "path": "B0→B3(lookup null)→B7(lookup normalName hit but namespace mismatch)→B13(new Tag)→return→isFormSubmittable",
+      "precondition": "Tags initialized; 'input' in NamespaceHtml only",
+      "expectedResult": "return false (generic tag default formSubmit=false)",
+      "tags": [
+        "negative",
+        "namespace-mismatch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 input-different-namespace",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String ns = \"customNS\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "valueOf overload (tagName, ParseSettings) on known form-submittable tag returns static tag with formSubmit=true",
+      "path": "B0→B3(lookup null)→B7(lookup normalName hit)→return static→isFormSubmittable",
+      "precondition": "Tags initialized; 'option' is pre-registered as formSubmit=true",
+      "expectedResult": "return true (static tag formSubmit=true)",
+      "tags": [
+        "positive",
+        "overload",
+        "parseSettings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 overload-ParseSettings-option",
+        "  GIVEN",
+        "    String tagName = \"option\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

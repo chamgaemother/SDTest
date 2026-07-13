@@ -1,0 +1,72 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.XmlDeclaration;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_2_Test {
+
+    @Test
+    @DisplayName("charset(Charset) with updateMetaCharset=false and xml syntax should not add or modify any XmlDeclaration")
+    public void test_TC05() {
+        // GIVEN: a shell document with xml syntax but update disabled
+        Document doc = Document.createShell("http://example.com");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(false);
+        // Precondition ensures xml syntax and updateMetaCharset=false so ensureMetaCharsetElement should skip
+        // WHEN
+        doc.charset(StandardCharsets.UTF_16);
+        // THEN: no XmlDeclaration should be added to the top-level childNodes
+        List<Node> nodes = doc.childNodes();
+        assertTrue(nodes.stream().noneMatch(n -> n instanceof XmlDeclaration),
+                   "Expected no XmlDeclaration nodes when updateMetaCharsetElement is false");
+    }
+
+    @Test
+    @DisplayName("charset(Charset) with updateMetaCharset=true and xml syntax, existing non-xml XmlDeclaration should be replaced by new xml declaration")
+    public void test_TC06() {
+        // GIVEN: a shell document with xml syntax and update enabled, with a dummy non-xml XmlDeclaration prepended
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        XmlDeclaration dummy = new XmlDeclaration("notxml", false).attr("foo", "bar");
+        doc.prependChild(dummy);
+        // Precondition: childNodes().get(0) is dummy with name "notxml"
+        assertEquals("notxml", ((XmlDeclaration) doc.childNodes().get(0)).name());
+        // WHEN
+        doc.charset(StandardCharsets.UTF_8);
+        // THEN: the first node must be a new XmlDeclaration named "xml" with correct encoding and version
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "First node should be an XmlDeclaration after charset()");
+        XmlDeclaration xd = (XmlDeclaration) first;
+        assertEquals("xml", xd.name(), "XmlDeclaration name should be 'xml'");
+        assertEquals(StandardCharsets.UTF_8.displayName(), xd.attr("encoding"), "Encoding attribute should match the charset");
+        assertEquals("1.0", xd.attr("version"), "Version attribute should be set to '1.0'");
+    }
+
+    @Test
+    @DisplayName("charset(Charset) with updateMetaCharset=true and xml syntax, existing xml XmlDeclaration without version should update encoding only and not add version")
+    public void test_TC07() {
+        // GIVEN: a shell document with xml syntax and update enabled, with an existing xml declaration without version
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        XmlDeclaration existing = new XmlDeclaration("xml", false);
+        // Ensure no version present initially
+        assertFalse(existing.hasAttr("version"), "Precondition: existing XmlDeclaration should not have 'version'");
+        doc.prependChild(existing);
+        // WHEN
+        doc.charset(StandardCharsets.US_ASCII);
+        // THEN: same declaration updated encoding only, and still has no version attribute
+        XmlDeclaration xd = (XmlDeclaration) doc.childNodes().get(0);
+        assertEquals("xml", xd.name(), "XmlDeclaration name should remain 'xml'");
+        assertEquals(StandardCharsets.US_ASCII.displayName(), xd.attr("encoding"), "Encoding attribute should be updated to the new charset");
+        assertFalse(xd.hasAttr("version"), "Version attribute should not be added when originally absent");
+    }
+}

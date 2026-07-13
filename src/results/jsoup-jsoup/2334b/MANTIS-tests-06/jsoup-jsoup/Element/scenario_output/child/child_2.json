@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "child(0) on element with only non-Element children throws IndexOutOfBoundsException (childNodeSize>0 but children list empty)",
+      "path": "B0→B3→B5→B6",
+      "precondition": "none",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "filter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child-only-non-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(2) after modifying children invalidates and rebuilds cache (shadowChildrenRef reset branch)",
+      "path": "B0→B3→B4→B8→B3→B5",
+      "precondition": "cache populated then mutated",
+      "expectedResult": "returns newly appended third element",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 child-cache-invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    Element second = parent.appendChild(new Element(\"li\"));",
+        "    // first call to populate shadowChildrenRef",
+        "    parent.child(1);",
+        "    Element third = new Element(\"li\");",
+        "  WHEN",
+        "    parent.appendChild(third);",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assert result == third;",
+        "END"
+      ]
+    }
+  ]
+}

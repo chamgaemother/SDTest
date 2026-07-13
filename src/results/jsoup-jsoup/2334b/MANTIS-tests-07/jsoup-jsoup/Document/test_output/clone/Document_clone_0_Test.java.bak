@@ -1,0 +1,77 @@
+package org.jsoup.nodes;
+
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Document.clone method to ensure deep-copy behavior and independence of clone from original.
+ */
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() produces a new Document with identical state but independent outputSettings and parser")
+    public void test_TC01() {
+        // GIVEN an original Document with default settings
+        Document original = new Document("html", "http://example.com");
+        // WHEN cloning the document (should traverse clone override path B0->B1->B2->B3)
+        Document copy = original.clone();
+        // THEN the clone is a different instance, but has matching baseUri and location
+        assertNotSame(original, copy, "Clone should be a different Document instance");
+        assertEquals(original.baseUri(), copy.baseUri(), "Clone baseUri should match original");
+        assertEquals(original.location(), copy.location(), "Clone location should match original");
+        // AND outputSettings values match but instance is independent
+        Document.OutputSettings originalOs = original.outputSettings();
+        Document.OutputSettings copyOs = copy.outputSettings();
+        // Compare key properties since OutputSettings does not override equals
+        assertEquals(originalOs.charset(), copyOs.charset(), "Charset should be equal on clone");
+        assertEquals(originalOs.syntax(), copyOs.syntax(), "Syntax should be equal on clone");
+        assertEquals(originalOs.indentAmount(), copyOs.indentAmount(), "Indent amount should be equal on clone");
+        assertNotSame(originalOs, copyOs, "OutputSettings instance should be different (deep copy)");
+        // AND parser state matches but is a different instance
+        Parser originalParser = original.parser();
+        Parser copyParser = copy.parser();
+        // Compare a representative setting: preserveCase
+        assertEquals(
+            originalParser.settings().preserveCase(),
+            copyParser.settings().preserveCase(),
+            "Parser settings (preserveCase) should match on clone"
+        );
+        assertNotSame(originalParser, copyParser, "Parser instance should be different (deep copy)");
+    }
+
+    @Test
+    @DisplayName("clone() retains original modifications and ensures subsequent changes to clone do not affect original")
+    public void test_TC02() {
+        // GIVEN an original Document whose outputSettings and parser have been mutated
+        Document original = new Document("html", "http://example.com");
+        // Mutate original outputSettings indentAmount to 5
+        original.outputSettings().indentAmount(5);
+        // Prepare a custom parser with preserveCase = true
+        Parser customParser = original.parser().clone();
+        customParser.settings(new ParseSettings(true));
+        original.parser(customParser);
+
+        // WHEN cloning and then mutating the clone
+        Document copy = original.clone();
+        // Change clone's outputSettings indentAmount to 2 (should not affect original)
+        copy.outputSettings().indentAmount(2);
+        // Change clone's parser preserveCase to false
+        copy.parser().settings(new ParseSettings(false));
+
+        // THEN original settings remain as mutated before clone
+        assertEquals(5, original.outputSettings().indentAmount(),
+            "Original indentAmount should remain at 5 after clone's modification");
+        assertEquals(2, copy.outputSettings().indentAmount(),
+            "Clone indentAmount should reflect its own modification to 2");
+        // AND original parser preserveCase remains true
+        assertTrue(original.parser().settings().preserveCase(),
+            "Original parser preserveCase should remain true after clone's parser modification");
+        // AND clone parser preserveCase reflects false
+        assertFalse(copy.parser().settings().preserveCase(),
+            "Clone parser preserveCase should be false after its own modification");
+    }
+}

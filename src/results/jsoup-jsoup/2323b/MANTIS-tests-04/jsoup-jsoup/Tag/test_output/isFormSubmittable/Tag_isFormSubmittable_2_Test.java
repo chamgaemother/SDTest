@@ -1,0 +1,42 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for org.jsoup.parser.Tag.isFormSubmittable via Tag.valueOf
+ */
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("TC06: Explicit overload returns same static 'input' instance without clone and formSubmit=true")
+    public void test_TC06() {
+        // GIVEN: known tag name "input" in HTML namespace, preserve case settings
+        String name = "input";
+        String ns = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN: valueOf called twice on same inputs (should hit first branch and return static instance)
+        Tag tag1 = Tag.valueOf(name, ns, settings);
+        Tag tag2 = Tag.valueOf(name, ns, settings);
+        // THEN: both references should be identical (no clone) and formSubmit flag true
+        assertSame(tag1, tag2, "Expected identical static instance for known 'input' tag");
+        assertTrue(tag1.isFormSubmittable(), "Expected 'input' tag to be submittable in forms");
+    }
+
+    @Test
+    @DisplayName("TC07: valueOf throws IllegalArgumentException when tagName is null")
+    public void test_TC07() {
+        // GIVEN: null tagName should trigger Validate.notNull and throw IllegalArgumentException
+        String name = null;
+        String ns = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // WHEN / THEN: calling valueOf with null tagName throws IllegalArgumentException before checking formSubmit
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(name, ns, settings);
+        });
+        // No specific message guaranteed, just confirm exception type
+        assertNotNull(ex, "Expected IllegalArgumentException when tagName is null");
+    }
+}

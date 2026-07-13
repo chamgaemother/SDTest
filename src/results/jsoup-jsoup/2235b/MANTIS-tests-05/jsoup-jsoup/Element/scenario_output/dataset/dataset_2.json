@@ -1,0 +1,162 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "dataset() includes an entry for an attribute with key 'data-' resulting in empty property name",
+      "path": "B1→B3→B4→B5→B7",
+      "precondition": "Element e = new Element(\"div\"); e.attr(\"data-\", \"value\");",
+      "expectedResult": "map contains one entry with key \"\" and value \"value\" and underlying attribute remains",
+      "tags": [
+        "boundary",
+        "data-prefix-only",
+        "live-view"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 dataset data-only-prefix",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "    e.attr(\"data-\", \"value\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 1;",
+        "    assert data.containsKey(\"\");",
+        "    assert data.get(\"\").equals(\"value\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset() correctly camel-cases keys with multiple dashes (data-one-two-three → oneTwoThree)",
+      "path": "B1→B3→B4→B5→B7",
+      "precondition": "Element e = new Element(\"p\"); e.attr(\"data-one-two-three\", \"val\");",
+      "expectedResult": "map contains key \"oneTwoThree\" with value \"val\"",
+      "tags": [
+        "positive",
+        "camel-case",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 dataset multi-dash to camelCase",
+        "  GIVEN",
+        "    Element e = new Element(\"p\");",
+        "    e.attr(\"data-one-two-three\", \"val\");",
+        "  WHEN",
+        "    Map<String,String> data = e.dataset();",
+        "  THEN",
+        "    assert data.size() == 1;",
+        "    assert data.containsKey(\"oneTwoThree\");",
+        "    assert data.get(\"oneTwoThree\").equals(\"val\");"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset().clear() removes all data- attributes from the element",
+      "path": "B1→B3→B4→B5→B6",
+      "precondition": "Element e = new Element(\"div\"); e.attr(\"data-a\",\"1\"); e.attr(\"data-b\",\"2\");",
+      "expectedResult": "dataset view is empty after clear and underlying attributes no longer contain data-a or data-b",
+      "tags": [
+        "live-view",
+        "mutation",
+        "clear"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 dataset clear removes attributes",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "    e.attr(\"data-a\",\"1\");",
+        "    e.attr(\"data-b\",\"2\");",
+        "    Map<String,String> data = e.dataset();",
+        "    assert data.size() == 2;",
+        "  WHEN",
+        "    data.clear();",
+        "  THEN",
+        "    assert data.isEmpty();",
+        "    assert !e.attributes().hasKey(\"data-a\");",
+        "    assert !e.attributes().hasKey(\"data-b\");"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "dataset().putAll(...) adds multiple entries and underlying attributes are set accordingly",
+      "path": "B1→B3→B4→B5→B7",
+      "precondition": "Element e = new Element(\"span\"); Map<String,String> newData = Map.of(\"x\",\"X\",\"yZ\",\"yz\");",
+      "expectedResult": "dataset view contains keys x and yZ with correct values and element has data-x and data-y-z attributes",
+      "tags": [
+        "live-view",
+        "bulk-mutation",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 dataset putAll updates underlying",
+        "  GIVEN",
+        "    Element e = new Element(\"span\");",
+        "    Map<String,String> newData = Map.of(\"x\",\"X\",\"yZ\",\"yz\");",
+        "    Map<String,String> data = e.dataset();",
+        "  WHEN",
+        "    data.putAll(newData);",
+        "  THEN",
+        "    assert data.size() == 2;",
+        "    assert data.get(\"x\").equals(\"X\");",
+        "    assert data.get(\"yZ\").equals(\"yz\");",
+        "    assert e.attr(\"data-x\").equals(\"X\");",
+        "    assert e.attr(\"data-y-z\").equals(\"yz\");"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "dataset().put(null, \"v\") throws NullPointerException for null key",
+      "path": "B1→B3→B4→B5→B7→exception",
+      "precondition": "Element e = new Element(\"div\"); Map<String,String> data = e.dataset();",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-key"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 dataset put null-key",
+        "  GIVEN",
+        "    Element e = new Element(\"div\");",
+        "    Map<String,String> data = e.dataset();",
+        "  WHEN",
+        "    call data.put(null, \"v\");",
+        "  THEN",
+        "    throws NullPointerException"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "dataset().put(\"k\", null) throws NullPointerException for null value",
+      "path": "B1→B3→B4→B5→B7→exception",
+      "precondition": "Element e = new Element(\"p\"); Map<String,String> data = e.dataset();",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-value"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 dataset put null-value",
+        "  GIVEN",
+        "    Element e = new Element(\"p\");",
+        "    Map<String,String> data = e.dataset();",
+        "  WHEN",
+        "    call data.put(\"k\", null);",
+        "  THEN",
+        "    throws NullPointerException"
+      ]
+    }
+  ]
+}

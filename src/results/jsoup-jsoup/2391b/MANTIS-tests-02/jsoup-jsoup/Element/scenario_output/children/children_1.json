@@ -1,0 +1,36 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() rebuilds cache when childNodes modified (stale cache path)",
+      "path": "B0→B1(childNodeSize>0)→B2(sync)→B3(cachedChildren returns stale/null due to modCount mismatch)→B4(stashChildren)→exit",
+      "precondition": "Element with one child, already called children() once to stash cache",
+      "expectedResult": "children() returns updated Elements list reflecting new children after modification",
+      "tags": [
+        "cache",
+        "stale",
+        "positive",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children stale-cache rebuild",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = parent.appendElement(\"span\");",
+        "    // first call builds and stashes cache",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    // modify childNodes to invalidate cache",
+        "    Element c2 = parent.appendElement(\"p\");",
+        "    Elements after = parent.children();",
+        "  THEN",
+        "    assert after.size() == 2;",
+        "    assertSame(c1, after.get(0));",
+        "    assertSame(c2, after.get(1));",
+        "END"
+      ]
+    }
+  ]
+}

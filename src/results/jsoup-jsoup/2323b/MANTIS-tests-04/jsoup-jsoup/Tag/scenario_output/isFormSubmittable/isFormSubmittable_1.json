@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Known submittable tag 'option' in default HTML namespace returns true (formSubmit=true branch)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "static tags initialized",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "formSubmit=true",
+        "overload-namespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 known-option-submittable",
+        "  GIVEN",
+        "    // 'option' is in SharedConstants.FormSubmitTags, default namespace",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(\"option\");",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Unknown tag created via explicit namespace and custom ParseSettings returns false (formSubmit=false branch)",
+      "path": "B0→B1→B2→B5→B6",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "negative",
+        "formSubmit=false",
+        "overload-settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 unknown-with-namespace-and-settings",
+        "  GIVEN",
+        "    String ns = \"http://example.com/custom\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(\"myCustomTag\", ns, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Known submittable tag with preserveTagCase true triggers clone path then returns true",
+      "path": "B0→B1→B2→B3→B4→B7→B8",
+      "precondition": "static tags initialized",
+      "expectedResult": "isFormSubmittable() returns true on cloned instance",
+      "tags": [
+        "positive",
+        "clone",
+        "formSubmit=true",
+        "preserve-case"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone-branch-for-preserveCase",
+        "  GIVEN",
+        "    // 'input' lower-case present, request upper-case preserve",
+        "    ParseSettings settings = new ParseSettings(true, false);",
+        "    String ns = Parser.NamespaceHtml;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(\"INPUT\", \"input\", ns, settings);",
+        "  THEN",
+        "    assert tag != Tag.valueOf(\"input\");",
+        "    assert tag.isFormSubmittable() == true;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,134 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parse(String html, String baseUri, Parser parser) with valid HTML and custom parser returns parsed Document with correct syntax and baseUri",
+      "path": "B0→B2→B3→B7→B8",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "Document with xml syntax and baseUri preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "custom-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parse(html,baseUri,parser) with custom XML parser",
+        "  GIVEN",
+        "    String html = \"<node attr='v'>text</node>\";",
+        "    String baseUri = \"http://example.org/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.outputSettings().syntax().equals(\"xml\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.select(\"node\").first().attr(\"attr\").equals(\"v\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parse(String html, String baseUri, Parser parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B2→B3→B6",
+      "precondition": "String html and baseUri non-null",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parse(html,baseUri,parser) null-parser",
+        "  GIVEN",
+        "    String html = \"<p>x</p>\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(String html) with empty html returns empty Document body and empty baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() is empty and baseUri == \"\"",
+      "tags": [
+        "boundary",
+        "overload",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parse(html) empty-html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(URL url, int timeoutMillis) with non-HTTP URL throws MalformedURLException",
+      "path": "B0→B1→B2→B6",
+      "precondition": "URL url = new URL(\"ftp://example.com/\")",
+      "expectedResult": "MalformedURLException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parse(URL,int) malformed-protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com/\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) with empty fragment returns empty body and preserves baseUri",
+      "path": "B0→B2→B5→B6",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() is empty and baseUri equals provided value",
+      "tags": [
+        "boundary",
+        "overload",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseBodyFragment empty-fragment",
+        "  GIVEN",
+        "    String bodyHtml = \"\";",
+        "    String baseUri = \"https://test/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    }
+  ]
+}

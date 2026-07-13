@@ -1,0 +1,111 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader, String) with null baseUri in reader overload throws NullPointerException",
+      "path": "B0→B3→B5→exception",
+      "precondition": "Parser constructed with stub TreeBuilder that throws NPE on null baseUri",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "reader-overload",
+        "null-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput reader null-baseUri",
+        "  GIVEN",
+        "    TreeBuilder stubBuilder := stub that throws NullPointerException if baseUri == null in parse(...)",
+        "    Parser parser := new Parser(stubBuilder)",
+        "    Reader rdr := new StringReader(\"<p>test</p>\")",
+        "    String baseUri := null",
+        "  WHEN",
+        "    call parser.parseInput(rdr, baseUri)",
+        "  THEN",
+        "    throws NullPointerException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(Reader, String) with real HtmlTreeBuilder returns a Document with expected element",
+      "path": "B0→B3→B4→B5",
+      "precondition": "Parser = Parser.htmlParser()",
+      "expectedResult": "Document contains a <span id='foo'> in its body",
+      "tags": [
+        "positive",
+        "reader-overload",
+        "html-real"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseInput reader real-HtmlTreeBuilder",
+        "  GIVEN",
+        "    Parser parser := Parser.htmlParser()",
+        "    Reader rdr := new StringReader(\"<span id='foo'>bar</span>\")",
+        "    String baseUri := \"http://example.com\"",
+        "  WHEN",
+        "    Document doc := parser.parseInput(rdr, baseUri)",
+        "  THEN",
+        "    assert doc.body().select(\"span#foo\").first() != null",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput(String, String) with xmlParser returns Document with root element",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser = Parser.xmlParser()",
+      "expectedResult": "Document.child(0).nodeName() == 'root'",
+      "tags": [
+        "positive",
+        "string-overload",
+        "xml-real"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseInput string real-XmlTreeBuilder",
+        "  GIVEN",
+        "    Parser parser := Parser.xmlParser()",
+        "    String xml := \"<root><leaf/></root>\"",
+        "    String baseUri := \"\"",
+        "  WHEN",
+        "    Document doc := parser.parseInput(xml, baseUri)",
+        "  THEN",
+        "    assert doc.child(0).nodeName().equals(\"root\")",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseInput(String, String) when TreeBuilder.parse returns null propagates null return",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser constructed with stub TreeBuilder that returns null in parse",
+      "expectedResult": "result Document reference is null",
+      "tags": [
+        "positive",
+        "string-overload",
+        "null-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parseInput string stub-null-return",
+        "  GIVEN",
+        "    TreeBuilder stubBuilder := stub that returns null in parse(...)",
+        "    Parser parser := new Parser(stubBuilder)",
+        "    String html := \"<ignored/>\"",
+        "    String baseUri := \"http://x\"",
+        "  WHEN",
+        "    Document result := parser.parseInput(html, baseUri)",
+        "  THEN",
+        "    assert result == null",
+        "END"
+      ]
+    }
+  ]
+}

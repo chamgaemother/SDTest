@@ -1,0 +1,152 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse(reader with no tokens) invokes startDocument then endDocument without iterating (hasNext false)",
+      "path": "B0→B1→B8",
+      "precondition": "Reader supplies empty CSS (e.g., empty StringReader); real CssErrorHandler and CssContentHandler used",
+      "expectedResult": "doc.startDocument() called once; doc.endDocument() called once; no calls to handleAtRule or handleRuleSet",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse zero-tokens",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.invocations == [\"startDocument\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse(reader with one ATKEYWORD token) handles at-rule once then ends (hasNext true, type==ATKEYWORD)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader supplies one @-rule like \"@foo;\"; real factories parse without error; handlers record events",
+      "expectedResult": "doc.startDocument(), doc.startAtRule(\"foo\"), doc.endAtRule(\"foo\"), doc.endDocument() in order",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception-none"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo;\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.invocations == [\"startDocument\",\"startAtRule(foo)\",\"endAtRule(foo)\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse(reader with one rule-set token) handles rule-set once then ends (hasNext true, type!=ATKEYWORD)",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader supplies simple rule-set \"a{}\"; real CssSelectorConstructFactory and handlers used",
+      "expectedResult": "doc.startDocument(), doc.selectors(nonEmptyList), doc.endSelectors(...), doc.endDocument()",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "exception-none"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a{}\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.invocations contains [\"startDocument\",\"selectors\",\"endSelectors\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse(reader with mixed ATKEYWORD then rule-set tokens) handles both in two iterations",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"@foo; a{}\"; real objects",
+      "expectedResult": "Invocations: startDocument, startAtRule(foo), endAtRule(foo), selectors(...), endSelectors(...), endDocument",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse mixed-atrule-and-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo; a{}\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.invocations == [\"startDocument\",\"startAtRule(foo)\",\"endAtRule(foo)\",\"selectors\",\"endSelectors\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parse(reader that scan throws IOException) propagates IOException",
+      "path": "B0",
+      "precondition": "Reader that throws IOException on read; real err and doc",
+      "expectedResult": "throws IOException; doc.startDocument not called",
+      "tags": [
+        "exception",
+        "ioexception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan-ioexception",
+        "  GIVEN",
+        "    Reader reader = new Reader() { public int read(char[] c,int o,int l)throws IOException{throw new IOException(\"fail\");} };",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse(reader that scan throws CssException) propagates CssException",
+      "path": "B0",
+      "precondition": "Use Reader that triggers malformed at-scan CssException (e.g. invalid token sequence); real err and doc",
+      "expectedResult": "throws CssException; doc.startDocument not called",
+      "tags": [
+        "exception",
+        "css-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan-cssexception",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\\u0000\"); // invalid char triggers CssException",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssException"
+      ]
+    }
+  ]
+}

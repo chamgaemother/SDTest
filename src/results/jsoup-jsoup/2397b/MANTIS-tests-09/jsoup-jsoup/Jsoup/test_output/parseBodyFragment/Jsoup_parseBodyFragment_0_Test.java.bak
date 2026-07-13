@@ -1,0 +1,120 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parseBodyFragment_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseBodyFragment(String, String) with simple HTML fragment and non-empty baseUri returns a Document with body children matching fragment")
+    public void test_TC01_O1() {
+        // Given a simple paragraph fragment and a non-empty baseUri to exercise the normal parse path (B0→B1→B2)
+        String fragment = "<p>Test</p>";
+        String baseUri = "http://example.com/";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // Then the body HTML should exactly match the fragment
+        assertEquals("<p>Test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseBodyFragment(String, String) with empty fragment returns empty body")
+    public void test_TC02_O1() {
+        // Given an empty fragment and a valid baseUri, exercising the empty-input boundary on normal path
+        String fragment = "";
+        String baseUri = "http://example.com/";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // Then body should have no children
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseBodyFragment(String, String) with null bodyHtml throws NullPointerException")
+    public void test_TC03_O1() {
+        // Given a null fragment to trigger NPE at entry (B0→B1→B3)
+        String fragment = null;
+        String baseUri = "http://example.com/";
+        // When / Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment(fragment, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseBodyFragment(String, String) with null baseUri throws NullPointerException")
+    public void test_TC04_O1() {
+        // Given a valid fragment but null baseUri should NPE at entry (B0→B1→B3)
+        String fragment = "<div/>";
+        String baseUri = null;
+        // When / Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment(fragment, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseBodyFragment(String) with simple HTML fragment returns a Document with body children matching fragment using empty baseUri")
+    public void test_TC05_O2() {
+        // Given a simple span fragment, using the overload without baseUri to take empty-baseUri path (B0→B1→B2)
+        String fragment = "<span>Hi</span>";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then
+        assertEquals("<span>Hi</span>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseBodyFragment(String) with empty fragment returns empty body using empty baseUri")
+    public void test_TC06_O2() {
+        // Given an empty fragment on the no-baseUri overload to test empty boundary (B0→B1→B2)
+        String fragment = "";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC07_O2: parseBodyFragment(String) with null bodyHtml throws NullPointerException using empty baseUri overload")
+    public void test_TC07_O2() {
+        // Given null fragment in no-baseUri overload should NPE (B0→B1→B3)
+        String fragment = null;
+        // When / Then
+        assertThrows(NullPointerException.class, () -> Jsoup.parseBodyFragment(fragment));
+    }
+
+    @Test
+    @DisplayName("TC08_O1: parseBodyFragment(String, String) with fragment containing multiple sibling elements returns all in body")
+    public void test_TC08_O1() {
+        // Given multiple sibling p elements and empty baseUri to test concatenation in body (B0→B1→B2)
+        String fragment = "<p>A</p><p>B</p><p>C</p>";
+        String baseUri = "";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // Then
+        assertEquals("<p>A</p><p>B</p><p>C</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC09_O2: parseBodyFragment(String) with fragment containing nested elements preserves nesting in body")
+    public void test_TC09_O2() {
+        // Given nested div>ul>li structure to verify nesting is preserved on no-baseUri path (B0→B1→B2)
+        String fragment = "<div><ul><li>Item</li></ul></div>";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then
+        assertEquals("<div><ul><li>Item</li></ul></div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC10_O1: parseBodyFragment(String, String) with fragment containing text only returns text in body")
+    public void test_TC10_O1() {
+        // Given a plain text fragment and non-empty baseUri to validate text-only path (B0→B1→B2)
+        String fragment = "Just text";
+        String baseUri = "unused";
+        // When
+        Document doc = Jsoup.parseBodyFragment(fragment, baseUri);
+        // Then
+        assertEquals("Just text", doc.body().html());
+    }
+}

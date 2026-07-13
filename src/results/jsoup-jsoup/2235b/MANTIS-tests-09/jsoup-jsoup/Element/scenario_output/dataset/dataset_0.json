@@ -1,0 +1,137 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() on new Element with no attributes returns empty map (attributes==null branch, zero data- entries)",
+      "path": "B0→B1→B4",
+      "precondition": "Element el = new Element(\"div\"); // attributes field is null",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P0",
+        "Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "  THEN",
+        "    assert data.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() returns single-entry map for one data- attribute (one iteration)",
+      "path": "B0→B2→B4",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"data-key\",\"value\"); // attributes initialized",
+      "expectedResult": "returned map contains exactly one entry {\"key\"=\"value\"}",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset single",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-key\",\"value\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "  THEN",
+        "    assert data.size() == 1;",
+        "    assert data.get(\"key\").equals(\"value\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() filters only data- attributes among mixed attributes (multiple iterations)",
+      "path": "B0→B2→B4",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-one\",\"1\"); el.attr(\"class\",\"cls\"); el.attr(\"data-two\",\"2\");",
+      "expectedResult": "returned map contains exactly {\"one\"=\"1\",\"two\"=\"2\"}, non-data attribute omitted",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset mixed",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-one\",\"1\");",
+        "    el.attr(\"class\",\"cls\");",
+        "    el.attr(\"data-two\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "  THEN",
+        "    assert data.size() == 2;",
+        "    assert data.containsKey(\"one\") && data.get(\"one\").equals(\"1\");",
+        "    assert data.containsKey(\"two\") && data.get(\"two\").equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() view is live: put into returned map adds attribute to element",
+      "path": "B0→B2→B4",
+      "precondition": "Element el = new Element(\"div\"); // attributes empty",
+      "expectedResult": "after data.put(\"new\",\"v\"), el.attr(\"data-new\")==\"v\"",
+      "tags": [
+        "branch-false",
+        "live-view",
+        "loop-1",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset live-view-put",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> data = el.dataset();",
+        "  WHEN",
+        "    data.put(\"new\",\"v\");",
+        "  THEN",
+        "    assert el.attr(\"data-new\").equals(\"v\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() view is live: remove from returned map deletes attribute on element",
+      "path": "B0→B2→B4",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-rem\",\"x\"); Map<String,String> data = el.dataset();",
+      "expectedResult": "after data.remove(\"rem\"), el.hasAttr(\"data-rem\")==false",
+      "tags": [
+        "branch-false",
+        "live-view",
+        "loop-1",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset live-view-remove",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-rem\",\"x\");",
+        "    Map<String,String> data = el.dataset();",
+        "  WHEN",
+        "    data.remove(\"rem\");",
+        "  THEN",
+        "    assert !el.hasAttr(\"data-rem\");"
+      ]
+    }
+  ]
+}

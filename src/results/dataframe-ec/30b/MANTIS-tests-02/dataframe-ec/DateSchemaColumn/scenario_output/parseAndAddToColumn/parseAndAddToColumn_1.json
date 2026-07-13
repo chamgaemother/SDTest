@@ -1,0 +1,182 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when aString is null",
+      "path": "B0→B1(true)→B6",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu-M-d\"; empty DfDateColumn",
+      "expectedResult": "column.getTypedObject(0) returns null",
+      "tags": [
+        "null-input",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when aString is whitespace-only after trim",
+      "path": "B0→B1(false)→B2→B3(true)→B6",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu-M-d\"; empty DfDateColumn",
+      "expectedResult": "column.getTypedObject(0) returns null",
+      "tags": [
+        "empty-string",
+        "trim",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn whitespace-only",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"   \\t  \";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn parses and adds a valid date string",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu-M-d\"; empty DfDateColumn",
+      "expectedResult": "column.getTypedObject(0) equals LocalDate.of(2023,4,5)",
+      "tags": [
+        "positive",
+        "parse-success"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-date",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"2023-04-05\";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0).equals(LocalDate.of(2023, 4, 5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn throws DateTimeParseException on invalid date format",
+      "path": "B0→B1(false)→B2→B3(false)→B4(exception)",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu-M-d\"; empty DfDateColumn",
+      "expectedResult": "DateTimeParseException is thrown before any addObject call",
+      "tags": [
+        "exception",
+        "invalid-format"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn invalid-format",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"not-a-date\";",
+        "  WHEN",
+        "    call schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "constructor default pattern branch uses \"uuuu-M-d\" when newPattern is null",
+      "path": "ctor→(newPattern==null)→setPattern→formatter-init→B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "DateSchemaColumn instantiated with newPattern=null; empty DfDateColumn",
+      "expectedResult": "column.getTypedObject(0) equals LocalDate.of(2022,12,31)",
+      "tags": [
+        "constructor",
+        "default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 default-pattern in constructor",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", null);",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"2022-12-31\";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0).equals(LocalDate.of(2022, 12, 31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn trims input before parsing with custom pattern",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu/MM/dd\"; empty DfDateColumn",
+      "expectedResult": "column.getTypedObject(0) equals LocalDate.of(2021,7,1)",
+      "tags": [
+        "custom-pattern",
+        "trim",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn with-trim custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu/MM/dd\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \" 2021/07/01 \";",
+        "  WHEN",
+        "    schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    assert column.getTypedObject(0).equals(LocalDate.of(2021, 7, 1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn throws on non-leap-year February 29 with strict resolver",
+      "path": "B0→B1(false)→B2→B3(false)→B4(exception)",
+      "precondition": "DateSchemaColumn instantiated with pattern \"uuuu-M-d\"; empty DfDateColumn",
+      "expectedResult": "DateTimeParseException is thrown",
+      "tags": [
+        "exception",
+        "strict-resolver",
+        "boundary-date"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseAndAddToColumn non-leap-year Feb29",
+        "  GIVEN",
+        "    DateSchemaColumn schema = new DateSchemaColumn(null, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = new ConcreteDfDateColumn();",
+        "    String aString = \"2019-2-29\";",
+        "  WHEN",
+        "    call schema.parseAndAddToColumn(aString, column);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    }
+  ]
+}

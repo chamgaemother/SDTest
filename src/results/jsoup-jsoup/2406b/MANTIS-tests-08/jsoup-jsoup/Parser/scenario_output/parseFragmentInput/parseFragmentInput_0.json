@@ -1,0 +1,195 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String overload: non-empty fragment with non-null context returns expected nodes list",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "Use a stub TreeBuilder whose parseFragment(Reader,Element,String,Parser) returns a List containing two distinct test Nodes; parser constructed with this stub",
+      "expectedResult": "returned List size is 2 and contains exactly the two stub Nodes in order",
+      "tags": [
+        "branch-normal",
+        "overload:String,Element,String",
+        "context-non-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning two nodes; String fragment=\"<a></a><b></b>\"; Element ctx=new Element(\"div\"); baseUri=\"http://test\"",
+        "WHEN calling parser.parseFragmentInput(fragment, ctx, baseUri)",
+        "THEN assert returned list size == 2 and elements match stub nodes"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String overload: non-empty fragment with null context returns expected nodes list",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "Use stub TreeBuilder returning one test Node; context parameter is null",
+      "expectedResult": "returned List size is 1 and contains the stub Node",
+      "tags": [
+        "branch-normal",
+        "overload:String,Element,String",
+        "context-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning one node; String fragment=\"<p/>\"; Element ctx=null; baseUri=\"uri\"",
+        "WHEN calling parser.parseFragmentInput(fragment, ctx, baseUri)",
+        "THEN assert returned list size == 1 and element matches stub node"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "String overload: empty fragment returns empty list",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "Use stub TreeBuilder returning empty list for empty input",
+      "expectedResult": "returned List is empty",
+      "tags": [
+        "boundary",
+        "empty-fragment",
+        "overload:String,Element,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning empty list; String fragment=\"\"; Element ctx=new Element(\"span\"); baseUri=\"u\"",
+        "WHEN calling parser.parseFragmentInput(fragment, ctx, baseUri)",
+        "THEN assert returned list is empty"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "String overload: null baseUri passed to parseFragment",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "Use stub TreeBuilder that records baseUri input; baseUri is null",
+      "expectedResult": "returned List matches stub output and stub recorded baseUri==null",
+      "tags": [
+        "branch-normal",
+        "baseUri-null",
+        "overload:String,Element,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder recording baseUri; String fragment=\"<x/>\"; Element ctx=new Element(\"x\"); baseUri=null",
+        "WHEN calling parser.parseFragmentInput(fragment, ctx, baseUri)",
+        "THEN assert stub received baseUri null and returned list matches stub"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "String overload: underlying Reader throws IOException leading to UncheckedIOException",
+      "path": "B0→B1→B2→B3→B4→B5→exception",
+      "precondition": "Use a custom Reader stub whose read(...) throws IOException on first call; no TreeBuilder stub needed",
+      "expectedResult": "java.io.UncheckedIOException is thrown; no nodes returned",
+      "tags": [
+        "exception",
+        "io-error",
+        "overload:String,Element,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with real HtmlTreeBuilder; override Reader to throw IOException; String fragment=\"x\"; ctx=new Element(\"x\"); baseUri=\"u\"",
+        "WHEN calling parser.parseFragmentInput(fragment, ctx, baseUri)",
+        "THEN assert throws UncheckedIOException"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "Reader overload: non-empty fragment with non-null context returns expected nodes list",
+      "path": "B0→B3→B4→B5→B6",
+      "precondition": "Use Parser with stub TreeBuilder returning a list of three stub Nodes; Reader is StringReader on \"AAA\"",
+      "expectedResult": "returned List size == 3 with stub Nodes in order",
+      "tags": [
+        "branch-normal",
+        "overload:Reader,Element,String",
+        "context-non-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning three nodes; Reader reader=new StringReader(\"AAA\"); ctx=new Element(\"e\"); baseUri=\"b\"",
+        "WHEN calling parser.parseFragmentInput(reader, ctx, baseUri)",
+        "THEN assert returned list size == 3 and contents match stub nodes"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "Reader overload: non-empty fragment with null context returns expected nodes list",
+      "path": "B0→B3→B4→B5→B6",
+      "precondition": "Use Parser with stub TreeBuilder returning zero nodes; context null",
+      "expectedResult": "returned List is empty",
+      "tags": [
+        "branch-normal",
+        "overload:Reader,Element,String",
+        "context-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning empty list; Reader reader=new StringReader(\"<p>\"); ctx=null; baseUri=\"u\"",
+        "WHEN calling parser.parseFragmentInput(reader, ctx, baseUri)",
+        "THEN assert returned list is empty"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "Reader overload: empty fragment returns empty list",
+      "path": "B0→B3→B4→B5→B6",
+      "precondition": "Use stub TreeBuilder returning empty list for any input; Reader=new StringReader(\"\")",
+      "expectedResult": "returned List is empty",
+      "tags": [
+        "boundary",
+        "empty-fragment",
+        "overload:Reader,Element,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder returning empty list; Reader=new StringReader(\"\"); ctx=new Element(\"e\"); baseUri=\"b\"",
+        "WHEN calling parser.parseFragmentInput(reader, ctx, baseUri)",
+        "THEN assert returned list is empty"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "Reader overload: null baseUri passed through to stub",
+      "path": "B0→B3→B4→B5→B6",
+      "precondition": "Use stub TreeBuilder that records baseUri; Reader=new StringReader(\"<x>\"); ctx=new Element(\"x\"); baseUri=null",
+      "expectedResult": "stub recorded baseUri==null and returned list matches stub",
+      "tags": [
+        "branch-normal",
+        "baseUri-null",
+        "overload:Reader,Element,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with stub TreeBuilder; Reader=new StringReader(\"<x>\"); ctx=new Element(\"x\"); baseUri=null",
+        "WHEN calling parser.parseFragmentInput(reader, ctx, baseUri)",
+        "THEN assert stub received baseUri null and returned nodes"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "Reader overload: underlying Reader throws IOException leading to UncheckedIOException",
+      "path": "B0→B3→B4→B5→exception",
+      "precondition": "Use a Reader stub whose read(...) throws IOException immediately; Parser with real TreeBuilder",
+      "expectedResult": "java.io.UncheckedIOException is thrown; no nodes returned",
+      "tags": [
+        "exception",
+        "io-error",
+        "overload:Reader,Element,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a Parser with real XmlTreeBuilder; Reader stub throws IOException on read; ctx=new Element(\"e\"); baseUri=\"b\"",
+        "WHEN calling parser.parseFragmentInput(reader, ctx, baseUri)",
+        "THEN assert throws UncheckedIOException"
+      ]
+    }
+  ]
+}

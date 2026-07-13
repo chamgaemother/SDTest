@@ -1,0 +1,78 @@
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import static org.junit.jupiter.api.Assertions.*;
+import org.davidmoten.text.utils.WordWrap;
+import java.util.List;
+import java.util.function.Function;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("wrap(CharSequence) with custom newLine delimiter covers write(String) overload and use of newLine in wordWrap(Reader,Writer)")
+    void test_TC18() {
+        // custom newline '<NL>' should be used instead of default '\n', triggering write(String) overload in wordWrap
+        String text = "foo bar baz";
+        WordWrap.Builder b = WordWrap.from(text)
+            .newLine("<NL>")  // custom newline delimiter
+            .maxWidth(5);      // enforce wrapping
+        String result = b.wrap();
+        assertNotNull(result);
+        // Expect at least one '<NL>' delimiter between wrapped lines
+        assertTrue(result.contains("<NL>"), "Expected custom newLine '<NL>' in output");
+    }
+
+    @Test
+    @DisplayName("wrap(CharSequence) with only whitespace tests isWhitespace branch and suppresses output of pure-space word")
+    void test_TC19() {
+        // input all spaces should trigger isWhitespace on final word and suppress emission
+        String text = "     ";
+        String result = WordWrap.from(text).wrap();
+        // No non-whitespace, so output should be empty
+        assertEquals("", result, "Expected empty output for whitespace-only input");
+    }
+
+    @Test
+    @DisplayName("wrap(CharSequence) breaks long word without hyphen when insertHyphens=false in writeBrokenWord else-path")
+    void test_TC20() {
+        // a 9-char word with maxWidth=3 should be split across lines; insertHyphens=false means no hyphens in broken parts
+        String text = "ABCDEFGHI";
+        WordWrap.Builder b = WordWrap.from(text)
+            .maxWidth(3)
+            .breakWords(true)      // enable breaking
+            .insertHyphens(false); // disable hyphens on break
+        String result = b.wrap();
+        assertNotNull(result);
+        // Expect first fragment 'ABC' followed by newline
+        assertTrue(result.contains("ABC\n"), "Expected 'ABC' followed by newline");
+        // No hyphens should appear
+        assertFalse(result.contains("-"), "Expected no hyphens in broken word fragments");
+    }
+
+    @Test
+    @DisplayName("wrap(CharSequence) encountering consecutive punctuation covers previousWasPunctuation true branch skipping word append")
+    void test_TC21() {
+        // consecutive commas should be treated as punctuation; previousWasPunctuation branch should handle correctly
+        String text = "a,,b";
+        String result = WordWrap.from(text).wrap();
+        assertNotNull(result);
+        // First characters should be 'a,'
+        assertTrue(result.startsWith("a,"), "Expected output to start with 'a,'");
+        // Should contain ',b' sequence after handling punctuation
+        assertTrue(result.contains(",b"), "Expected ',b' sequence in output");
+    }
+
+    @Test
+    @DisplayName("wrap(CharSequence) with custom stringWidth function triggers tooLong via non-default width logic")
+    void test_TC22() {
+        // custom width function returns half the char count => forces splitting even when string shorter than maxWidth by default
+        String text = "1234567 89";
+        Function<CharSequence, Number> f = s -> s.length() / 2; // custom width smaller
+        WordWrap.Builder b = WordWrap.from(text)
+            .maxWidth(3)
+            .stringWidth(f);
+        List<String> lines = b.wrapToList();
+        assertNotNull(lines);
+        // With restricted width, the input should be split into multiple lines
+        assertTrue(lines.size() > 1, "Expected more than one line with custom width function");
+    }
+}

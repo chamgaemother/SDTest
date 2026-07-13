@@ -1,0 +1,156 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "When aString is null, the method should add null to the column (tests branch aString==null)",
+      "path": "B0→B1(true)→B5",
+      "precondition": "Stub DfColumn captures addObject argument; no mocks otherwise",
+      "expectedResult": "dfColumn.addObject was called exactly once with null",
+      "tags": [
+        "branch-true",
+        "exception:false",
+        "add-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"uuuu-M-d\");",
+        "  WHEN",
+        "    col.parseAndAddToColumn(null, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "When aString is blank after trim, the method should add null to the column (tests trimmed.isEmpty()==true)",
+      "path": "B0→B1(false)→B2→B3(true)→B5",
+      "precondition": "Stub DfColumn captures addObject argument",
+      "expectedResult": "dfColumn.addObject was called exactly once with null",
+      "tags": [
+        "branch-false",
+        "branch-true",
+        "trim-empty"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn blank-string",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"uuuu-M-d\");",
+        "    String input = \"   \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded() == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "When aString is a valid date string matching default pattern, it should parse and add correct LocalDate",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "Stub DfColumn captures addObject argument",
+      "expectedResult": "dfColumn.addObject was called exactly once with LocalDate.of(2021,12,5)",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "valid-default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-default",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"uuuu-M-d\");",
+        "    String input = \"2021-12-5\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2021,12,5));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "When aString has leading/trailing spaces around a valid date, it should parse after trim",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "Stub DfColumn captures addObject argument",
+      "expectedResult": "dfColumn.addObject was called exactly once with LocalDate.of(2021,1,1)",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "trim-space",
+        "valid-default-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn valid-with-spaces",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"uuuu-M-d\");",
+        "    String input = \" 2021-1-1 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2021,1,1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "When aString does not match formatter pattern, a DateTimeParseException should be thrown",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B6",
+      "precondition": "Stub DfColumn unused; exception propagation tested",
+      "expectedResult": "throws DateTimeParseException; no calls to dfColumn.addObject",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "exception",
+        "invalid-format"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn invalid-format",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"uuuu-M-d\");",
+        "    String input = \"12/31/2020\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(input, stubColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "When using custom pattern dd/MM/uuuu and valid input, it should parse according to custom formatter",
+      "path": "B0→B1(false)→B2→B3(false)→B4→B5",
+      "precondition": "Stub DfColumn captures addObject argument; custom pattern set via constructor",
+      "expectedResult": "dfColumn.addObject was called exactly once with LocalDate.of(2020,1,31)",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "valid-custom-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(dummySchema, \"name\", \"dd/MM/uuuu\");",
+        "    String input = \"31/01/2020\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(input, stubColumn);",
+        "  THEN",
+        "    assert stubColumn.getLastAdded().equals(LocalDate.of(2020,1,31));",
+        "END"
+      ]
+    }
+  ]
+}

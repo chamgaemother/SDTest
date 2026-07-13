@@ -1,0 +1,111 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty input yields no iterations so startDocument and endDocument are called without rule handling (iter.hasNext false)",
+      "path": "B0→B1→B8",
+      "precondition": "Use a Reader over empty CSS content so scan(reader,systemID,err) returns iterator with hasNext(false)",
+      "expectedResult": "doc.startDocument() called once; doc.endDocument() called once; no calls to handleAtRule or handleRuleSet",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse empty-input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"test.css\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single at-rule token causes one handleAtRule invocation and then terminates the loop (iter.hasNext true then false, token.type==ATKEYWORD)",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Use a Reader over CSS with one at-rule (e.g. \"@media {};\"), real scan and stub CssContentHandler record calls",
+      "expectedResult": "doc.startDocument() once; handleAtRule invoked once; doc.endDocument() once; doc.startAtRule and doc.endAtRule called with rule name 'media'",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse single-at-rule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media {};\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"test.css\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"media\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single rule-set token triggers handleRuleSet once and then terminates (iter.hasNext true then false, token.type!=ATKEYWORD)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Use a Reader over CSS with one ruleset (e.g. \"h1{}\"), real scan and stub handlers record selectors and declarations",
+      "expectedResult": "doc.startDocument() once; doc.selectors called with selector for 'h1'; doc.endSelectors called once; doc.endDocument() once",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{};\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"test.css\", err, doc);",
+        "  THEN",
+        "    assert doc.selectorLists.get(0).get(0).toString().equals(\"h1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "PrematureEOFException in handleRuleSet breaks the loop and calls endDocument (iter.next throws PrematureEOFException)",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Subclass CssParser overriding scan(...) to return a stub CssTokenIterator that hasNext() returns true then next() throws PrematureEOFException; handlers record calls",
+      "expectedResult": "doc.startDocument() once; no further handler calls; doc.endDocument() once; no exception escapes",
+      "tags": [
+        "exception",
+        "loop-1",
+        "branch-true",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse premature-EOF",
+        "  GIVEN",
+        "    CssParser parser = new TestCssParserStub();",
+        "    // stub scan returns iterator that throws PrematureEOFException on next()",
+        "    Reader reader = new StringReader(\"dummy\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    parser.parse(reader, \"test.css\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1 && doc.endDocumentCount == 1;",
+        "END"
+      ]
+    }
+  ]
+}

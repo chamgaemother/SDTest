@@ -1,0 +1,103 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild on new element with no children triggers ensureChildNodes branch and adds child at index 0",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); // childNodes initially EmptyNodes",
+      "expectedResult": "el.childNodeSize() == 1; el.childNodes.get(0) == child; child.parent() == el; child.siblingIndex() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild on empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); Node child = new TextNode(\"x\");",
+        "  WHEN",
+        "    el.appendChild(child);",
+        "  THEN",
+        "    assert el.childNodeSize() == 1;",
+        "    assert el.childNodes.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild on element with existing children skips ensureChildNodes and adds child at next index",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"span\"); el.appendChild(new TextNode(\"a\")); // childNodes non-empty",
+      "expectedResult": "el.childNodeSize() == 2; el.childNodes.get(1) == child; child.parent() == el; child.siblingIndex() == 1",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild on non-empty",
+        "  GIVEN",
+        "    Element el = new Element(\"span\"); el.appendChild(new TextNode(\"a\")); Node child = new TextNode(\"b\");",
+        "  WHEN",
+        "    el.appendChild(child);",
+        "  THEN",
+        "    assert el.childNodeSize() == 2;",
+        "    assert el.childNodes.get(1) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild reassigns child from old parent to new parent and updates siblingIndex",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element oldParent = new Element(\"p\"); Element newParent = new Element(\"div\"); TextNode child = new TextNode(\"c\"); oldParent.appendChild(child);",
+      "expectedResult": "oldParent.childNodeSize() == 0; newParent.childNodeSize() == 1; newParent.childNodes.get(0) == child; child.parent() == newParent; child.siblingIndex() == 0",
+      "tags": [
+        "branch-true",
+        "reparent",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 reparent child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"p\"); Element newParent = new Element(\"div\"); TextNode child = new TextNode(\"c\"); oldParent.appendChild(child);",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild with null child triggers validation exception",
+      "path": "B0",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 null child",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.appendChild(null);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

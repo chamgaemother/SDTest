@@ -1,0 +1,125 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class RowColumnWiseSorted2dArrayBinarySearch_search_0_Test {
+
+    @Test
+    @DisplayName("TC01: Empty matrix returns not found without entering while loop (loop-0, B1 true)")
+    void test_TC01() {
+        // Given an empty matrix, rowPointer=0 and colPointer=-1 immediately, skipping loop
+        Integer[][] matrix = new Integer[0][];
+        int[] expected = new int[]{-1, -1};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC02: Single-element matrix where target equals the only entry (B2 equal, immediate return)")
+    void test_TC02() {
+        // Given matrix {{5}}, initial compare equals zero at (0,0)
+        Integer[][] matrix = new Integer[][]{{5}};
+        Integer target = 5;
+        int[] expected = new int[]{0, 0};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC03: Single-element matrix where target is greater than element (branch comp>0, loop-1 then exit)")
+    void test_TC03() {
+        // Given matrix {{5}}, compare 7>5 advances rowPointer to 1, then exits loop
+        Integer[][] matrix = new Integer[][]{{5}};
+        Integer target = 7;
+        int[] expected = new int[]{-1, -1};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC04: Single-element matrix where target is less than element (branch comp<0, loop-1 then exit)")
+    void test_TC04() {
+        // Given matrix {{5}}, compare 3<5 decrements colPointer to -1, then exits loop
+        Integer[][] matrix = new Integer[][]{{5}};
+        Integer target = 3;
+        int[] expected = new int[]{-1, -1};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC05: 2×2 matrix immediate match at top-right corner (first comparison equal)")
+    void test_TC05() {
+        // Given matrix {{1,2},{3,4}}, start at (0,1) value=2 equals target
+        Integer[][] matrix = new Integer[][]{{1, 2}, {3, 4}};
+        Integer target = 2;
+        int[] expected = new int[]{0, 1};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC06: 4×4 matrix find target 38 after multiple row/column moves (loop-N, mix of comp<0 and comp>0)")
+    void test_TC06() {
+        // Given 4x4 sorted matrix, traversal: (0,3)->40>38 move left, (0,2)->30<38 move down, (1,2)->35<38 move down, (2,2)->38==38
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+        Integer target = 38;
+        int[] expected = new int[]{2, 2};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC07: 4×4 matrix target missing returns not found after exhausting rows (loop-N, all comp>0 then exit)")
+    void test_TC07() {
+        // Given 4x4 sorted matrix, always compare target 100>current and move down until rowPointer=4 then exit
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+        Integer target = 100;
+        int[] expected = new int[]{-1, -1};
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    @DisplayName("TC08: Null matrix reference causes NullPointerException before loop")
+    void test_TC08() {
+        // Given null matrix reference should throw NullPointerException on length access
+        Integer[][] matrix = null;
+        assertThrows(NullPointerException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 1)
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: Null target causes NullPointerException on compareTo call (B2)")
+    void test_TC09() {
+        // Given matrix {{1}} but target null, compareTo on null target throws NullPointerException
+        Integer[][] matrix = new Integer[][]{{1}};
+        Integer target = null;
+        assertThrows(NullPointerException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target)
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: Non-square matrix with fewer columns than rows causes IndexOutOfBoundsException at access")
+    void test_TC10() {
+        // Given Integer[3][2], initial colPointer=2 but row length=2, accessing matrix[0][2] throws ArrayIndexOutOfBoundsException
+        Integer[][] matrix = new Integer[3][2];
+        Integer target = 5;
+        assertThrows(ArrayIndexOutOfBoundsException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target)
+        );
+    }
+}

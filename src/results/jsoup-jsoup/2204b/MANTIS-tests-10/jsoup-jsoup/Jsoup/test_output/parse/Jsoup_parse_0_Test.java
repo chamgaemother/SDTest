@@ -1,0 +1,109 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.util.zip.GZIPOutputStream;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Jsoup_parse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(String html, String baseUri) with valid HTML and baseUri resolves relative links")
+    public void test_TC01_O1() {
+        // Input has relative link; baseUri provided so absUrl should resolve correctly (branch-default)
+        String html = "<a href=\"foo.html\">link</a>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("http://example.com/foo.html",
+                doc.select("a").first().absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(String html, String baseUri) with null html throws IllegalArgumentException")
+    public void test_TC02_O1() {
+        // Passing null html should trigger argument check (branch-null-html)
+        String html = null;
+        String baseUri = "http://base/";
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC03_O2: parse(String html, Parser parser) with empty baseUri and real Parser parses body")
+    public void test_TC03_O2() {
+        // Using xmlParser with no base URI exercises overload(String,Parser) path
+        String html = "<p>test</p>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        assertEquals("<p>test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parse(String html, String baseUri, Parser parser) with xmlParser preserves case-sensitive tags")
+    public void test_TC04_O2() {
+        // xmlParser preserves tag case (branch-default)
+        String html = "<Tag>Value</Tag>";
+        String baseUri = "";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertEquals("Tag", doc.select("Tag").first().tagName());
+    }
+
+    @Test
+    @DisplayName("TC05_O3: parse(File file, String charsetName) with non-existent file throws IOException")
+    public void test_TC05_O3() {
+        // Non-existent file triggers IO error (branch-file-not-found)
+        File file = new File("missing_nonexistent_file.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(file, "UTF-8"));
+    }
+
+    @Test
+    @DisplayName("TC06_O3: parse(File file, String charsetName) with gzipped file loads content")
+    public void test_TC06_O3() throws Exception {
+        // Create a gzipped temp file containing "<p>hello world</p>" (branch-gzip)
+        File temp = Files.createTempFile("test", ".html.gz").toFile();
+        try (GZIPOutputStream gz = new GZIPOutputStream(new FileOutputStream(temp))) {
+            gz.write("<p>hello world</p>".getBytes("UTF-8"));
+        }
+        Document doc = Jsoup.parse(temp, null);
+        assertEquals("hello world", doc.body().text());
+        temp.delete();
+    }
+
+    @Test
+    @DisplayName("TC07_OURL: parse(URL url, int timeoutMillis) with malformed URL throws MalformedURLException")
+    public void test_TC07_OURL() {
+        // The URL constructor itself throws MalformedURLException for bad protocol (branch-url-invalid)
+        assertThrows(MalformedURLException.class, () -> {
+            URL url = new URL("htp://bad");
+            Jsoup.parse(url, 1000);
+        });
+    }
+
+    @Test
+    @DisplayName("TC08_OURL: parse(URL url, int timeoutMillis) with timeout exceeded throws SocketTimeoutException")
+    public void test_TC08_OURL() throws Exception {
+        // Unresponsive IP and tiny timeout to induce SocketTimeoutException (branch-timeout)
+        URL url = new URL("http://10.255.255.1/"); 
+        assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, 1));
+    }
+
+    @Test
+    @DisplayName("TC09_O1: parse(String html) with simple HTML returns parsed Document")
+    public void test_TC09_O1() {
+        // Default baseUri is empty; simple HTML body parsed (branch-default)
+        String html = "<div>ok</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("<div>ok</div>", doc.body().html());
+    }
+}

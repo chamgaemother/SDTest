@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "isFormSubmittable() returns true for a known form-submittable tag with uppercase name triggering the clone branch",
+      "path": "B0→B2→B5→B6(clone)→B9→B12",
+      "precondition": "Parser.NamespaceHtml tag 'input' is registered with formSubmit=true",
+      "expectedResult": "return value is true and the returned Tag is a clone with tagName 'INPUT'",
+      "tags": [
+        "positive",
+        "clone",
+        "case-sensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 uppercase-input-triggers-clone",
+        "  GIVEN",
+        "    // Arrange: uppercase tagName and preserve-case settings",
+        "    String tagName = \"INPUT\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: clone branch taken and formSubmit=true preserved",
+        "    assert tag != Tag.valueOf(\"input\");",
+        "    assert tag.getName().equals(\"INPUT\");",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "isFormSubmittable() returns false when a known form-submittable tag is requested with a non-matching namespace leading to a new generic tag",
+      "path": "B0→B2(null)→B4→B7→B11(new)→B12",
+      "precondition": "Parser.NamespaceHtml tag 'input' is registered with formSubmit=true",
+      "expectedResult": "return value is false on the newly created Tag with formSubmit=false",
+      "tags": [
+        "negative",
+        "namespace-mismatch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 input-with-wrong-namespace",
+        "  GIVEN",
+        "    // Arrange: correct tagName but wrong namespace",
+        "    String tagName = \"input\";",
+        "    String namespace = \"http://example.com/custom\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: namespace mismatch leads to new generic tag with formSubmit default false",
+        "    assert tag.getName().equals(\"input\");",
+        "    assert tag.namespace().equals(namespace);",
+        "    assert result == false;",
+        "END"
+      ]
+    }
+  ]
+}

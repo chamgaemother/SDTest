@@ -1,0 +1,131 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "element with no childNodes returns an empty Elements list (childNodeSize()==0 branch)",
+      "path": "B0→B1→B2",
+      "precondition": "Element el=new Element(\"div\"); // no children; shadowChildrenRef==null",
+      "expectedResult": "returned Elements is empty (size==0)",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "cache-miss"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children empty-list",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "element with childNodes but no Element instances returns empty list after one filter iteration",
+      "path": "B0→B1→B3→B4(loop×1)→B5",
+      "precondition": "Element el=new Element(\"div\"); el.appendChild(new TextNode(\"text\")); // one TextNode, no shadow cache",
+      "expectedResult": "returned Elements is empty (size==0)",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "cache-miss"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children filter-no-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "element with multiple mixed childNodes filters only Element instances over N iterations",
+      "path": "B0→B1→B3→B4(loop×4)→B5",
+      "precondition": "Element parent=new Element(\"div\"); parent.appendChild(new TextNode(\"t1\")); parent.appendChild(new Element(\"span\")); parent.appendChild(new DataNode(\"d\")); parent.appendChild(new Element(\"p\"));",
+      "expectedResult": "returned Elements contains exactly two Elements in insertion order (span,p)",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "cache-miss"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children mixed-childNodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"t1\"));",
+        "    parent.appendChild(new Element(\"span\"));",
+        "    parent.appendChild(new DataNode(\"d\"));",
+        "    parent.appendChild(new Element(\"p\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2; assert result.get(0).tagName().equals(\"span\"); assert result.get(1).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "consecutive children() call uses cached shadowChildrenRef when available",
+      "path": "B0→B1→B3→B4(loop×2)→B5 then B6→B7",
+      "precondition": "Element el=new Element(\"div\"); el.appendChild(new Element(\"a\")); el.appendChild(new Element(\"b\")); // first call builds cache",
+      "expectedResult": "both calls return equal Elements instances; second call avoids loop filter",
+      "tags": [
+        "cache-hit",
+        "loop-N",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children cache-hit",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first == second;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "after node list change, cache is invalidated and children() rebuilds list (nodelistChanged branch)",
+      "path": "B0→B1→B3→B4(loop×1)→B5→B8→B3→B4(loop×2)→B5",
+      "precondition": "Element el=new Element(\"ul\"); el.appendChild(new Element(\"li\")); el.children(); // build cache; then el.appendChild(new Element(\"li\")) triggers nodelistChanged",
+      "expectedResult": "first children size==1; after append, children size==2",
+      "tags": [
+        "cache-invalidate",
+        "loop-1",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children cache-invalidation",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    Elements before = el.children();",
+        "  WHEN",
+        "    el.appendChild(new Element(\"li\"));",
+        "    Elements after = el.children();",
+        "  THEN",
+        "    assert before.size() == 1; assert after.size() == 2;"
+      ]
+    }
+  ]
+}

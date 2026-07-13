@@ -1,0 +1,104 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) returns a Document for valid HTML and non-null baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returns a non-null Document representing a parsed HTML tree with root element \"html\"",
+      "tags": [
+        "branch-normal",
+        "overload:String,String",
+        "positive",
+        "return"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput(String,String) normal-case",
+        "  GIVEN",
+        "    String html = \"<html><head><title>Hi</title></head><body><p>Test</p></body></html>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.select(\"p\").first().text().equals(\"Test\");"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader, String) returns a Document for valid Reader and non-null baseUri",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "uses real HtmlTreeBuilder to parse from StringReader",
+      "expectedResult": "returns a non-null Document with head and body correctly populated",
+      "tags": [
+        "branch-normal",
+        "overload:Reader,String",
+        "positive",
+        "return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput(Reader,String) normal-case",
+        "  GIVEN",
+        "    Reader input = new StringReader(\"<html><body><div>Content</div></body></html>\");",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(input, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"div\").text().equals(\"Content\");"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader, String) throws UncheckedIOException when Reader.read() fails",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Reader stub throws IOException on first read to simulate I/O error; mocking necessary to produce the IOException in parseInput",
+      "expectedResult": "throws java.io.UncheckedIOException; no Document returned",
+      "tags": [
+        "exception",
+        "overload:Reader,String",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput(Reader,String) io-exception",
+        "  GIVEN",
+        "    Reader input = new Reader() { public int read(char[] cbuf, int off, int len) throws IOException { throw new IOException(\"fail\"); } public void close() {} };",
+        "    String baseUri = \"http://err\";",
+        "  WHEN",
+        "    Parser parser = Parser.htmlParser(); parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws java.io.UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "parseInput(String, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "exception",
+        "overload:String,String",
+        "null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 parseInput(String,String) null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Hi</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Parser parser = Parser.htmlParser(); parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

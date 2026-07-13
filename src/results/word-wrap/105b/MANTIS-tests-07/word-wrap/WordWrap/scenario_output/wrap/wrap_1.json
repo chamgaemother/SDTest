@@ -1,0 +1,128 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "maxWidth(0) throws IllegalArgumentException for invalid width argument",
+      "path": "Builder.maxWidth → Preconditions.checkArgument failure",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "argument-validation",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 maxWidth zero-argument",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"text\");",
+        "    Number invalid = 0;",
+        "  WHEN",
+        "    call b.maxWidth(invalid);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Long word broken with hyphens when insertHyphens=true and breakWords=true",
+      "path": "wordWrap → tooLong(word) → writeBrokenWord.hyphen-branch → out.writeNewLine",
+      "precondition": "none",
+      "expectedResult": "word 'abcdef' is split into 'abcd-' and 'ef'",
+      "tags": [
+        "positive",
+        "hyphenation",
+        "breakWords",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 hyphenated-break of long word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(4);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcd-\\nef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Long word broken without hyphens when insertHyphens=false but breakWords=true",
+      "path": "wordWrap → tooLong(word) → writeBrokenWord.non-hyphen-branch → out.writeNewLine",
+      "precondition": "none",
+      "expectedResult": "word 'abcd' is split into 'abc' and 'd' without hyphen",
+      "tags": [
+        "positive",
+        "breakWords",
+        "no-hyphen",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 breakWords without hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcd\").maxWidth(3).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc\\nd\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Custom newLine string is used when wrapping at spaces",
+      "path": "Builder.newLine → wordWrap → writeLine → out.writeNewLine(custom)",
+      "precondition": "none",
+      "expectedResult": "lines separated by \"<NL>\" for break at space",
+      "tags": [
+        "positive",
+        "custom-newline",
+        "split-on-space"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 custom newline delimiter",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"aa bb cc\").maxWidth(5).newLine(\"<NL>\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"aa bb<NL>cc\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "excludeExtraWordChars('-') treats hyphen as punctuation and breaks word boundary",
+      "path": "Builder.excludeExtraWordChars → wordWrap → punctuation-branch → writeLine",
+      "precondition": "none",
+      "expectedResult": "input \"hello-world\" wraps into [\"hello\",\"-world\"]",
+      "tags": [
+        "positive",
+        "exclude-extra-chars",
+        "punctuation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 exclude hyphen as word char",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello-world\").maxWidth(5).excludeExtraWordChars(\"-\");",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.get(0).equals(\"hello\");",
+        "    assert lines.get(1).equals(\"-world\");",
+        "END"
+      ]
+    }
+  ]
+}

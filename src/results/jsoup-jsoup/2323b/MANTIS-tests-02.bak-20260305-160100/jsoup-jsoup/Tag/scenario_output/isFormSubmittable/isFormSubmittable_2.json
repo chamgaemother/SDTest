@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Uppercase known form-submittable tag with preserveCase=true triggers clone branch and returns submittable",
+      "path": "B0→B1→B2→B3→B5→B6",
+      "precondition": "Parser.NamespaceHtml registered, ParseSettings.preserveCase",
+      "expectedResult": "returned Tag is a clone with tagName 'INPUT' and isFormSubmittable()==true",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "case-preserve"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 preserve-case clone branch",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);",
+        "  THEN",
+        "    assert tag != Tag.valueOf(\"input\");",
+        "    assert tag.getName().equals(\"INPUT\");",
+        "    assert tag.isFormSubmittable();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Null namespace passed to valueOf triggers IllegalArgumentException",
+      "path": "B0→B1→exception",
+      "precondition": "non-null tagName, settings",
+      "expectedResult": "IllegalArgumentException is thrown due to null namespace",
+      "tags": [
+        "negative",
+        "exception",
+        "argument-validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null-namespace exception",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = null;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

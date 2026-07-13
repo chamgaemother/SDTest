@@ -1,0 +1,71 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("tagSet with a non-null set of tags returns the Parser instance")
+    public void test_TC01() throws Exception {
+        // GIVEN: an HTML parser and a non-empty set of tag names
+        Parser parser = Parser.htmlParser();
+        Set<String> tags = new HashSet<>(Arrays.asList("div", "span"));
+        
+        // Use reflection to access the (package-private or private) tagSet method: path B0→B1→B2→B4
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", Set.class);
+        tagSetMethod.setAccessible(true);
+        
+        // WHEN: invoking tagSet with a non-null, non-empty set (branch where tags not empty)
+        Object result = tagSetMethod.invoke(parser, tags);
+
+        // THEN: should return the same Parser instance and internal settings updated
+        assertSame(parser, result, "Expected tagSet to return the same Parser instance for chaining");
+        // The settings().tagNames() should exactly match the provided set
+        assertEquals(tags, parser.settings().tagNames(),
+                "Internal tag names should match the provided non-empty set");
+    }
+
+    @Test
+    @DisplayName("tagSet with an empty tag set disables all tag parsing")
+    public void test_TC02() throws Exception {
+        // GIVEN: an XML parser and an empty set of tag names
+        Parser parser = Parser.xmlParser();
+        Set<String> tags = Collections.emptySet();
+        
+        // Use reflection to access tagSet method: path B0→B1→B3→B4
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", Set.class);
+        tagSetMethod.setAccessible(true);
+        
+        // WHEN: invoking tagSet with an empty set (branch where tags.isEmpty() == true)
+        Object result = tagSetMethod.invoke(parser, tags);
+
+        // THEN: should return the same Parser instance and internal tagNames cleared
+        assertSame(parser, result, "Expected tagSet to return the same Parser instance even for empty set");
+        assertTrue(parser.settings().tagNames().isEmpty(),
+                "Internal tag names should be empty after passing an empty set");
+    }
+
+    @Test
+    @DisplayName("tagSet with null argument throws NullPointerException")
+    public void test_TC03() throws Exception {
+        // GIVEN: an HTML parser
+        Parser parser = Parser.htmlParser();
+        
+        // Use reflection to access tagSet method: path B0→B1→B5
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet", Set.class);
+        tagSetMethod.setAccessible(true);
+        
+        // WHEN & THEN: invoking tagSet with null should throw NullPointerException
+        assertThrows(NullPointerException.class, () -> {
+            tagSetMethod.invoke(parser, new Object[]{null});
+        }, "Expected NullPointerException when passing null to tagSet");
+    }
+}

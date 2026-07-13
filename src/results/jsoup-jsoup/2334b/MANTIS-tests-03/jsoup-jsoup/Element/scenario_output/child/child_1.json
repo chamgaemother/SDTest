@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "child(0) on element with only non-Element child nodes throws IndexOutOfBoundsException",
+      "path": "B0→B3→B5(loop×1)→B8",
+      "precondition": "Element contains a single TextNode child only",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "negative",
+        "mixed-nodes",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child on non-element-only children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendText(\"hello\");",
+        "  WHEN",
+        "    call el.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "child(n) after cache primed then new Element added triggers cache invalidation and returns correct new child",
+      "path": "B0→B3(cache branch)→B0(nodelistChanged)→B3→B5(loop×2)→B6",
+      "precondition": "Element has two children and cache primed by initial child() call",
+      "expectedResult": "child(2) returns newly added third Element after cache invalidation",
+      "tags": [
+        "positive",
+        "cache",
+        "state-change"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 cache invalidation on new child",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendElement(\"li\");",
+        "    el.appendElement(\"li\");",
+        "    // prime cache",
+        "    el.child(1);",
+        "  WHEN",
+        "    el.appendElement(\"li\");",
+        "    Element result = el.child(2);",
+        "  THEN",
+        "    assert result.tagName().equals(\"li\");",
+        "END"
+      ]
+    }
+  ]
+}

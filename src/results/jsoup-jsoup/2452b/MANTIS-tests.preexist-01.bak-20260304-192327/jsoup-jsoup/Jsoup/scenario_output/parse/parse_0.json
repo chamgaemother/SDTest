@@ -1,0 +1,222 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(html non-empty, baseUri non-empty) returns Document with correct baseUri and body content",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document returned such that document.baseUri() equals the given baseUri and document.body().html() contains the input html fragment",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parse(html,baseUri) basic",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"http://example.com\"); assert doc.body().html().contains(\"<p>Hello</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(html empty, baseUri empty) returns empty Document body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document returned such that document.body().html() is empty string and document.baseUri() is empty string",
+      "tags": [
+        "overload:String,String",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parse(emptyHtml,emptyBase)",
+        "  GIVEN",
+        "    String html = \"\"; String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\"); assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parse(html non-empty, baseUri non-empty, custom Parser) invokes parser.parseInput",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Parser stub provided because real Parser.parseInput must be isolated; stub returns Document with stub marker",
+      "expectedResult": "Document returned is the stub Document returned by parser.parseInput",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive",
+        "branch-custom-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O2 parse(html,baseUri,parser) custom",
+        "  GIVEN",
+        "    String html = \"<div>Test</div>\"; String baseUri = \"http://x/\"; Parser parser = stub that returns docStub;",
+        "  WHEN",
+        "    Document result = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert result == docStub;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O3",
+      "description": "parse(html non-empty, custom Parser) with empty baseUri string overload",
+      "path": "B0→B1→B6→B5",
+      "precondition": "Parser stub provided to isolate parseInput",
+      "expectedResult": "Document returned is stub Document from parser.parseInput(html,\"\")",
+      "tags": [
+        "overload:String,Parser",
+        "branch-custom-parser",
+        "baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O3 parse(html,parser) baseUriEmpty",
+        "  GIVEN",
+        "    String html = \"<span>Foo</span>\"; Parser parser = stub that returns docA;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc == docA;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O4",
+      "description": "parse(html empty) returns Document with empty body and empty baseUri",
+      "path": "B0→B1→B7→B3",
+      "precondition": "none",
+      "expectedResult": "Document returned such that document.body().html() is empty and document.baseUri() is empty string",
+      "tags": [
+        "overload:String",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O4 parse(html) empty",
+        "  GIVEN",
+        "    String html = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\"); assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O4",
+      "description": "parse(html with UTF-8 BOM) returns Document preserving content",
+      "path": "B0→B1→B7→B3",
+      "precondition": "none",
+      "expectedResult": "Document returned such that body.html() contains the UTF-8 content excluding BOM",
+      "tags": [
+        "overload:String",
+        "boundary",
+        "utf8-bom"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_O4 parse(htmlWithBOM)",
+        "  GIVEN",
+        "    String html = \"\\uFEFF<p>Bom</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>Bom</p>\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O5",
+      "description": "parse(File,fileName charsetName=null, baseUri) throws IOException when file not found",
+      "path": "B0→B1→B8→B9",
+      "precondition": "File stub pointing to non-existent path; DataUtil.load will throw IOException",
+      "expectedResult": "throws IOException; no document returned",
+      "tags": [
+        "overload:File,String,String",
+        "exception",
+        "file-not-found"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_O5 parse(file,charsetNull,baseUri) missingFile",
+        "  GIVEN",
+        "    File file = new File(\"doesNotExist.html\"); String charset = null; String baseUri = \"http://a/\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O5",
+      "description": "parse(File,charsetName not null, baseUri) returns Document for small file",
+      "path": "B0→B1→B8→B10",
+      "precondition": "temporary File created with UTF-8 content",
+      "expectedResult": "Document returned such that body.html() contains file content and baseUri equals given baseUri",
+      "tags": [
+        "overload:File,String,String",
+        "positive",
+        "file-io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08_O5 parse(file,charset,baseUri) realFile",
+        "  GIVEN",
+        "    File file = tempFile with content \"<b>OK</b>\"; String charset = \"UTF-8\"; String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<b>OK</b>\"); assert doc.baseUri().equals(\"http://x/\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O6",
+      "description": "parse(URL valid http, timeoutMillis positive) returns Document via HTTP GET",
+      "path": "B0→B1→B11→B12→B13",
+      "precondition": "Embedded test HTTP server returns simple HTML on GET; HttpConnection.connect uses real implementation",
+      "expectedResult": "Document returned whose body.html() contains the server response and baseUri equals URL.toExternalForm()",
+      "tags": [
+        "overload:URL,int",
+        "positive",
+        "http",
+        "network"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09_O6 parse(url,timeout) httpFetch",
+        "  GIVEN",
+        "    URL url = server.url(\"/test\"); int timeout = 5000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<html>\"); assert doc.baseUri().equals(url.toExternalForm());",
+        "END"
+      ]
+    }
+  ]
+}

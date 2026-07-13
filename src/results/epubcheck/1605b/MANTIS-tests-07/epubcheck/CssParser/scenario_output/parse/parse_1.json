@@ -1,0 +1,106 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(): iterates twice over two IDENT tokens, calling handleRuleSet each time",
+      "path": "B0→B1(true)→B2(type!=ATKEYWORD)→B3→B5→B7→B1(true)→B2(type!=ATKEYWORD)→B3→B5→B7→B1(false)→B8",
+      "precondition": "FakeIterator with two IDENT tokens, no exception",
+      "expectedResult": "startDocument and endDocument each called once; two rule sets processed",
+      "tags": [
+        "positive",
+        "iteration",
+        "ruleset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse two IDENT tokens",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"\");",
+        "    CssToken t1 = new CssToken(CssToken.Type.IDENT, \"a\", loc1, 0);",
+        "    CssToken t2 = new CssToken(CssToken.Type.IDENT, \"b\", loc2, 1);",
+        "    FakeIterator it = new FakeIterator(new CssToken[]{t1, t2}, null);",
+        "    CssParser p = new CssParser() { override scan(...) { return it; } };",
+        "  WHEN",
+        "    p.parse(r, \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    assert doc.startCount == 1;",
+        "    assert doc.endCount == 1;",
+        "    // verify two handleRuleSet invocations via side-effects or counter if available",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(): next(filter) throws NoSuchElementException on first iteration, triggers catch and exits",
+      "path": "B0→B1(true)→B2 throws NoSuchElementException→B6→B8",
+      "precondition": "FakeIterator.hasNext(true), next(filter) throws NoSuchElementException immediately",
+      "expectedResult": "startDocument and endDocument each called once, no further handling",
+      "tags": [
+        "exception",
+        "branch",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse next throws NSE on first call",
+        "  GIVEN",
+        "    FakeIterator it = new FakeIterator(new CssToken[0], new NoSuchElementException());",
+        "    CssParser p = new CssParser() { override scan(...) { return it; } };",
+        "  WHEN",
+        "    p.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    assert doc.startCount == 1;",
+        "    assert doc.endCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(): scan throws IOException, propagates IOException",
+      "path": "B0(scan) throws IOException",
+      "precondition": "Subclassed CssParser.scan(reader,...) throws IOException",
+      "expectedResult": "IOException is thrown",
+      "tags": [
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse scan throws IOException",
+        "  GIVEN",
+        "    CssParser p = new CssParser() { override scan(r,i,e) throws IOException { throw new IOException(\"io err\"); } };",
+        "  WHEN",
+        "    call p.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    throws IOException with message containing \"io err\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(): scan throws CssException, propagates CssException",
+      "path": "B0(scan) throws CssException",
+      "precondition": "Subclassed CssParser.scan(reader,...) throws CssException",
+      "expectedResult": "CssException is thrown",
+      "tags": [
+        "exception",
+        "css"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse scan throws CssException",
+        "  GIVEN",
+        "    CssParser p = new CssParser() { override scan(r,i,e) throws CssException { throw new CssGrammarException(GRAMMAR_PREMATURE_EOF, loc, Locale.getDefault(),\";\"); } };",
+        "  WHEN",
+        "    call p.parse(new StringReader(\"\"), \"sid\", new StubErrorHandler(), doc);",
+        "  THEN",
+        "    throws CssException of type CssGrammarException;",
+        "END"
+      ]
+    }
+  ]
+}

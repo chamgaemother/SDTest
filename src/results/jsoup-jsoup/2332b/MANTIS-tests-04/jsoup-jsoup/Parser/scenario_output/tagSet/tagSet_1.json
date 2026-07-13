@@ -1,0 +1,154 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "settings(ParseSettings) updates parser settings and returns this for chaining",
+      "path": "B0→B2→B5→B7",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "Parser.settings() returns the newly set ParseSettings instance",
+      "tags": [
+        "positive",
+        "chaining",
+        "settings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 settings chaining",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings newSettings = new ParseSettings(true, false);",
+        "  WHEN",
+        "    Parser returned = parser.settings(newSettings);",
+        "  THEN",
+        "    assert returned == parser;",
+        "    assert parser.settings() == newSettings;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setTrackErrors(5) enables tracking and isTrackErrors() returns true",
+      "path": "B0→B3(>0)→B4→B6",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "parser.getErrors().getMaxSize() == 5 and isTrackErrors() == true",
+      "tags": [
+        "positive",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 enable error tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assert parser.isTrackErrors();",
+        "    assert parser.getErrors().getMaxSize() == 5;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setTrackErrors(0) disables tracking and isTrackErrors() returns false",
+      "path": "B0→B3(=0)→B4→B8",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "parser.isTrackErrors() == false and getErrors().getMaxSize() == 0",
+      "tags": [
+        "negative",
+        "branch",
+        "error-tracking"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 disable error tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assert !parser.isTrackErrors();",
+        "    assert parser.getErrors().getMaxSize() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "setTrackPosition(true) and then isTrackPosition() returns true, chaining preserved",
+      "path": "B0→B9(true)→B10",
+      "precondition": "Parser created via new Parser(new HtmlTreeBuilder())",
+      "expectedResult": "parser.isTrackPosition() == true and returned == parser",
+      "tags": [
+        "positive",
+        "branch",
+        "position-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 enable position tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Parser returned = parser.setTrackPosition(true);",
+        "  THEN",
+        "    assert returned == parser;",
+        "    assert parser.isTrackPosition();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "isContentForTagData delegates to TreeBuilder and returns true for \"script\"",
+      "path": "B0→B11→B12(true)→B13",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "parser.isContentForTagData(\"script\") == true",
+      "tags": [
+        "positive",
+        "delegate",
+        "tag-data"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 content-for-tag-data script",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    // HtmlTreeBuilder returns true for script",
+        "  WHEN",
+        "    boolean result = parser.isContentForTagData(\"script\");",
+        "  THEN",
+        "    assert result;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "defaultNamespace() returns XML namespace for xmlParser",
+      "path": "B0→B14(xml)→B15",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "parser.defaultNamespace() equals Parser.NamespaceXml",
+      "tags": [
+        "positive",
+        "delegate",
+        "namespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 xml default namespace",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    String ns = parser.defaultNamespace();",
+        "  THEN",
+        "    assert ns.equals(Parser.NamespaceXml);",
+        "END"
+      ]
+    }
+  ]
+}

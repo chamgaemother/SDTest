@@ -1,0 +1,272 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap() returns empty string when source text is empty (loop zero iterations)",
+      "path": "B0→B1→B2→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value is \"\"",
+      "tags": [
+        "overload:()",
+        "loop-0",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 wrap empty-input",
+        "  GIVEN",
+        "    String text = \"\";",
+        "    WordWrap.Builder builder = WordWrap.from(text);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap() returns original text when shorter than maxWidth (no wrapping, branch false on tooLong)",
+      "path": "B0→B1→B2(loop×n)→B3(false)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value is \"Hello world\"",
+      "tags": [
+        "overload:()",
+        "loop-N",
+        "branch-false",
+        "no-wrap"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 wrap no-wrap needed",
+        "  GIVEN",
+        "    String text = \"Hello world\";",
+        "    WordWrap.Builder builder = WordWrap.from(text);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"Hello world\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap() splits a single long word longer than maxWidth with hyphens (breakWords true)",
+      "path": "B0→B1→B2(loop)→B3(true)→B4→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value matches pattern \"lo\\w*-\\n\\w*ngword\"",
+      "tags": [
+        "overload:()",
+        "loop-N",
+        "branch-true",
+        "hyphen-split",
+        "breakWords-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 wrap hyphenate long word",
+        "  GIVEN",
+        "    String text = \"longwordlongwordlongword\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(10);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.contains(\"-\");",
+        "    assert result.split(\"\\n\")[0].length() <= 10;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap() does not insert hyphens when breakWords=false (insertHyphens ignored)",
+      "path": "B0→B1→B2(loop)→B3(true)→B6(broken but breakWords false)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value splits word without hyphen: no '-' present",
+      "tags": [
+        "overload:()",
+        "loop-N",
+        "branch-true",
+        "breakWords-false",
+        "hyphen-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 wrap no hyphens when breakWords false",
+        "  GIVEN",
+        "    String text = \"abcdefghijKLMNOP\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(10).breakWords(false);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert !result.contains(\"-\");",
+        "    assert result.split(\"\\n\")[0].length() == 0 || result.split(\"\\n\")[1].length() > 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "wrapToList() returns list of lines for multi-line input (newline branch true)",
+      "path": "B0→B1→B2(loop×n)→B9→B10",
+      "precondition": "none",
+      "expectedResult": "return list [\"a\",\"b\",\"c\"] for input \"a\\nb\\nc\"",
+      "tags": [
+        "overload:wrapToList",
+        "loop-N",
+        "newline-true",
+        "list-output"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 wrapToList newlines",
+        "  GIVEN",
+        "    String text = \"a\\nb\\nc\";",
+        "    WordWrap.Builder builder = WordWrap.from(text);",
+        "  WHEN",
+        "    List<String> lines = builder.wrapToList();",
+        "  THEN",
+        "    assert lines.size() == 3;",
+        "    assert lines.get(0).equals(\"a\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O3",
+      "description": "wrap(Writer) rethrows IORuntimeException when Writer.write throws IOException",
+      "path": "B0→B1→B2→B11→B12",
+      "precondition": "Writer stub throws IOException on write: reason to mock writer",
+      "expectedResult": "throws IORuntimeException; no reader left open",
+      "tags": [
+        "overload:Writer",
+        "exception",
+        "branch-true",
+        "mock-writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O3 wrap writer exception",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"text\");",
+        "    WordWrap.Builder builder = WordWrap.from(reader, true);",
+        "    Writer writer = stub that throws IOException on write;",
+        "  WHEN",
+        "    call builder.wrap(writer);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O4",
+      "description": "wrap(File,Charset) throws IORuntimeException when FileNotFound",
+      "path": "B0→B13→B14",
+      "precondition": "file does not exist",
+      "expectedResult": "throws IORuntimeException caused by FileNotFoundException",
+      "tags": [
+        "overload:File,Charset",
+        "exception",
+        "branch-true",
+        "file-not-found"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O4 wrap file not found",
+        "  GIVEN",
+        "    File file = new File(\"nonexistent.txt\");",
+        "    Charset charset = StandardCharsets.UTF_8;",
+        "  WHEN",
+        "    call WordWrap.from(file, charset);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O5",
+      "description": "wrapUtf8(String) writes wrapped output to file and can be read back",
+      "path": "B0→B15→B16→B17",
+      "precondition": "temp file path ensures no existing file",
+      "expectedResult": "file content equals wrapped text",
+      "tags": [
+        "overload:String",
+        "file-write",
+        "roundtrip",
+        "IO"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O5 wrapUtf8 roundtrip",
+        "  GIVEN",
+        "    String filename = temp file path;",
+        "    String text = \"alpha beta gamma\";",
+        "    WordWrap.Builder builder = WordWrap.from(text);",
+        "  WHEN",
+        "    builder.wrapUtf8(filename);",
+        "  THEN",
+        "    assert readFileUtf8(filename).equals(builder.wrap());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "wrap() uses custom newLine delimiter when provided",
+      "path": "B0→B1→B2(loop×n)→B3(false)→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value contains \"<NL>\" between lines",
+      "tags": [
+        "overload:()",
+        "custom-newLine",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O1 wrap custom newline",
+        "  GIVEN",
+        "    String text = \"x\\ny\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).newLine(\"<NL>\");",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.equals(\"x<NL>y\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "wrap() treats punctuation as word boundary when not in extraWordChars",
+      "path": "B0→B1→B2(loop)→B4→B5→B7→B8",
+      "precondition": "none",
+      "expectedResult": "return value splits at punctuation, ensuring punctuation at line end",
+      "tags": [
+        "overload:()",
+        "punctuation-boundary",
+        "branch-true",
+        "extraWordChars-default"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O1 wrap punctuation boundary",
+        "  GIVEN",
+        "    String text = \"hello,world\";",
+        "    WordWrap.Builder builder = WordWrap.from(text).maxWidth(6);",
+        "  WHEN",
+        "    String result = builder.wrap();",
+        "  THEN",
+        "    assert result.endsWith(\",\");",
+        "    assert result.contains(\"\\n\");",
+        "END"
+      ]
+    }
+  ]
+}

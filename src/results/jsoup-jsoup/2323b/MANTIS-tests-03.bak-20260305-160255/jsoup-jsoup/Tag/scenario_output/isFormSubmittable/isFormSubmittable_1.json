@@ -1,0 +1,103 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "valueOf with PreserveCase settings and mismatched case triggers clone branch and retains formSubmit flag",
+      "path": "B0→B2→B5→B6→B7(clone)→B8→B9",
+      "precondition": "ParseSettings.preserveCase",
+      "expectedResult": "returned Tag has tagName 'INPUT' and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "clone-branch",
+        "formSubmit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN",
+        "  String raw = \"INPUT\";",
+        "  String norm = ParseSettings.normalName(raw);",
+        "  ParseSettings settings = ParseSettings.preserveCase;",
+        "WHEN",
+        "  Tag tag = Tag.valueOf(raw, norm, Parser.NamespaceHtml, settings);",
+        "THEN",
+        "  assert tag.getName().equals(\"INPUT\");",
+        "  assert tag.isFormSubmittable();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "valueOf with existing tag but different namespace returns new generic with formSubmit false",
+      "path": "B0→B2→B3(mismatch)→B11(default-creation)→B12→B13",
+      "precondition": "ParseSettings.preserveCase, namespace = Parser.NamespaceMathml",
+      "expectedResult": "returned Tag.isFormSubmittable() == false",
+      "tags": [
+        "positive",
+        "namespace-mismatch",
+        "default-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN",
+        "  String name = \"input\";",
+        "  String norm = \"input\";",
+        "  String ns = Parser.NamespaceMathml;",
+        "  ParseSettings settings = ParseSettings.preserveCase;",
+        "WHEN",
+        "  Tag tag = Tag.valueOf(name, norm, ns, settings);",
+        "THEN",
+        "  assert !tag.isFormSubmittable();"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "valueOf null tagName triggers Validate.notNull exception",
+      "path": "B0→B1(null-check)→EX",
+      "precondition": "none",
+      "expectedResult": "ValidateException (IllegalArgumentException) is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN",
+        "  String name = null;",
+        "  String norm = \"anything\";",
+        "  ParseSettings settings = ParseSettings.preserveCase;",
+        "WHEN",
+        "  call Tag.valueOf(name, norm, Parser.NamespaceHtml, settings);",
+        "THEN",
+        "  throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "valueOf empty tagName triggers Validate.notEmpty exception",
+      "path": "B0→B1→B2(trim)->B2(empty-check)→EX",
+      "precondition": "none",
+      "expectedResult": "ValidateException (IllegalArgumentException) is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "validation",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN",
+        "  String name = \"   \";",
+        "  String norm = \"\";",
+        "  ParseSettings settings = ParseSettings.preserveCase;",
+        "WHEN",
+        "  call Tag.valueOf(name, norm, Parser.NamespaceHtml, settings);",
+        "THEN",
+        "  throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

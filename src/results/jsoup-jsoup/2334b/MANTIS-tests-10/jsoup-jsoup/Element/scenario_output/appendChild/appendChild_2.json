@@ -1,0 +1,39 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "appendChild(reparentedChild) from parentA with two existing children to parentB with two existing children sets correct siblingIndex on new parent",
+      "path": "B0→B2(true)→B3→B4",
+      "precondition": "parentA has children [c1,c2]; parentB has children [b1,b2]; child c1’s siblingIndex initially 0",
+      "expectedResult": "c1 removed from parentA; added to parentB at siblingIndex 2; appendChild returns parentB",
+      "tags": [
+        "positive",
+        "reparent",
+        "siblingIndex"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 appendChild reparent to non-empty parent",
+        "  GIVEN",
+        "    Element parentA = new Element(\"div\");",
+        "    Element parentB = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\");",
+        "    Element c2 = new Element(\"p\");",
+        "    TextNode b1 = new TextNode(\"x\");",
+        "    TextNode b2 = new TextNode(\"y\");",
+        "    // build initial trees",
+        "    parentA.appendChild(c1).appendChild(c2);",
+        "    parentB.appendChild(b1).appendChild(b2);",
+        "  WHEN",
+        "    Element returned = parentB.appendChild(c1);",
+        "  THEN",
+        "    assert parentA.childNodeSize() == 1;         // c2 left in parentA",
+        "    assert parentB.childNodeSize() == 3;         // b1,b2,c1",
+        "    assert c1.parent() == parentB;               // reparented",
+        "    assert c1.siblingIndex() == 2;               // new index at end",
+        "    assert returned == parentB;                  // chainable return"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "parseFragmentInput(Reader) holds lock during TreeBuilder.parseFragment and releases after successful parse",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser constructed with custom TreeBuilder stub that records lock state",
+      "expectedResult": "lock is held inside parseFragment and released after method returns; returns empty node list",
+      "tags": [
+        "positive",
+        "lock",
+        "stub",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseFragmentInput lock retention on success",
+        "  GIVEN",
+        "    AtomicBoolean heldDuring = new AtomicBoolean(false);",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      override parse(Reader in, String uri, Parser p) { return null; }",
+        "      override parseFragment(Reader in, Element ctx, String uri, Parser p) {",
+        "        Field lockField = Parser.class.getDeclaredField(\"lock\");",
+        "        lockField.setAccessible(true);",
+        "        ReentrantLock lock = (ReentrantLock) lockField.get(p);",
+        "        heldDuring.set(lock.isHeldByCurrentThread());",
+        "        return Collections.emptyList();",
+        "      }",
+        "      override process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<x/>\");",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, new Element(\"div\"), \"uri\");",
+        "  THEN",
+        "    assert heldDuring.get() == true;",
+        "    Field lf = Parser.class.getDeclaredField(\"lock\");",
+        "    lf.setAccessible(true);",
+        "    assert ((ReentrantLock)lf.get(parser)).isLocked() == false;",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseFragmentInput(Reader) releases lock when TreeBuilder.parseFragment throws RuntimeException",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Parser constructed with custom TreeBuilder stub that throws in parseFragment",
+      "expectedResult": "RuntimeException propagates and lock is released",
+      "tags": [
+        "negative",
+        "exception",
+        "lock",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parseFragmentInput lock release on exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      override parse(Reader in, String uri, Parser p) { return null; }",
+        "      override parseFragment(Reader in, Element ctx, String uri, Parser p) {",
+        "        throw new RuntimeException(\"parse failure\");",
+        "      }",
+        "      override process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"data\");",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, null, \"base\");",
+        "  THEN",
+        "    throws RuntimeException with message \"parse failure\";",
+        "    Field lf = Parser.class.getDeclaredField(\"lock\");",
+        "    lf.setAccessible(true);",
+        "    assert ((ReentrantLock)lf.get(parser)).isLocked() == false;",
+        "END"
+      ]
+    }
+  ]
+}

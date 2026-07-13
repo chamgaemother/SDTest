@@ -1,0 +1,130 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "Input containing carriage return characters is ignored and not output",
+      "path": "B0→B3(loop with ch=='\\r')→B26(end-of-loop)→B37(final branch line empty)",
+      "precondition": "none",
+      "expectedResult": "return value is \"ab\" for input \"a\\r b\"",
+      "tags": [
+        "positive",
+        "carriage-return",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 carriage-return ignored",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a\\r b\");",
+        "    WordWrap.Builder b = WordWrap.from(reader).maxWidth(10);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"ab\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Long word broken without hyphens when insertHyphens=false and breakWords=true",
+      "path": "B0→B3(loop broken word branch false insertHyphens)→writeBrokenWord path→B26",
+      "precondition": "none",
+      "expectedResult": "word \"abcdef\" with maxWidth 3 produces \"ab\\ncd\\nef\"",
+      "tags": [
+        "positive",
+        "broken-word",
+        "no-hyphens"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 breakWords true insertHyphens false",
+        "  GIVEN",
+        "    WordWrap.Builder b = WordWrap.from(new StringReader(\"abcdef\")).maxWidth(3).insertHyphens(false).breakWords(true);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"ab\\ncd\\nef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap(File,Charset) writes wrapped content to file and reader is closed afterwards",
+      "path": "B0→Builder.wrap(File,Charset)→try–with–resources then wrap(writer)→close(reader)",
+      "precondition": "temporary file writable",
+      "expectedResult": "file contains wrapped lines for \"one two\" with maxWidth 3",
+      "tags": [
+        "positive",
+        "file-output",
+        "resource-management"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 wrap-to-file success",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"wrap\",\".txt\");",
+        "    WordWrap.Builder b = WordWrap.from(new StringReader(\"one two\")).maxWidth(3);",
+        "  WHEN",
+        "    b.wrap(temp, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    String content = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);",
+        "    assert content.equals(\"one\\ntwo\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "IOException in Reader.close() is wrapped into IORuntimeException",
+      "path": "B0→Builder.wrap()→finally→close(reader)→catch(IOException)→throw IORuntimeException",
+      "precondition": "none",
+      "expectedResult": "throws IORuntimeException",
+      "tags": [
+        "negative",
+        "exception",
+        "close"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 close throws IORuntimeException",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"x\") {",
+        "      @Override public void close() throws IOException { throw new IOException(\"close failure\"); }",
+        "    };",
+        "    WordWrap.Builder b = WordWrap.from(reader, true);",
+        "  WHEN",
+        "    call b.wrap();",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "fromClasspathUtf8 with non-existent resource leads to NullPointerException",
+      "path": "B0→WordWrap.class.getResourceAsStream returns null→new InputStreamReader(null) NPE",
+      "precondition": "resource name does not exist",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "classpath"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 missing classpath resource",
+        "  GIVEN",
+        "    String resource = \"no-such-resource.txt\";",
+        "  WHEN",
+        "    call WordWrap.fromClasspathUtf8(resource);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

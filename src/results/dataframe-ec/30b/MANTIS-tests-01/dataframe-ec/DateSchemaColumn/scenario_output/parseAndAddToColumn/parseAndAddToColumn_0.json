@@ -1,0 +1,139 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn(null, dfColumn) covers aString == null branch, adding null",
+      "path": "B0→B1→B6",
+      "precondition": "DfDateColumn dfColumn is a real instance with empty internal list; no mocks",
+      "expectedResult": "dfColumn.getObjectList().last() is null",
+      "tags": [
+        "branch-true:aString==null",
+        "branch-false:trimEmpty",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new DfDateColumn();",
+        "    String aString = null;",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size()-1) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn(\"   \", dfColumn) covers trimmed.isEmpty() == true branch, adding null",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "DfDateColumn dfColumn is a real instance; no mocks",
+      "expectedResult": "dfColumn.getObjectList().last() is null",
+      "tags": [
+        "branch-false:aString!=null",
+        "branch-true:trimmedEmpty",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn blank-string",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new DfDateColumn();",
+        "    String aString = \"   \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size()-1) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn(\"2020-2-29\", dfColumn) covers valid leap-date parsing branch",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "DfDateColumn dfColumn is real; no mocks",
+      "expectedResult": "dfColumn.getObjectList().last() equals LocalDate.of(2020,2,29)",
+      "tags": [
+        "branch-false:aString!=null",
+        "branch-false:trimmedEmpty",
+        "branch-false:parseException",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-leap-day",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new DfDateColumn();",
+        "    String aString = \"2020-2-29\";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size()-1).equals(LocalDate.of(2020,2,29));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn(\"  1999-12-31 \", dfColumn) covers trimming before parse and correct date boundary",
+      "path": "B0→B1→B2→B3→B4→B5→B6",
+      "precondition": "DfDateColumn dfColumn is real; no mocks",
+      "expectedResult": "dfColumn.getObjectList().last() equals LocalDate.of(1999,12,31)",
+      "tags": [
+        "branch-false:aString!=null",
+        "branch-false:trimmedEmpty",
+        "branch-false:parseException",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn trimmed-valid-date",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new DfDateColumn();",
+        "    String aString = \"  1999-12-31 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getObjectList().get(dfColumn.size()-1).equals(LocalDate.of(1999,12,31));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn(\"invalid-date\", dfColumn) covers parse exception branch",
+      "path": "B0→B1→B2→B3→B4→EX1",
+      "precondition": "DfDateColumn dfColumn is real; no mocks; invalid input to trigger exception",
+      "expectedResult": "throws DateTimeParseException; dfColumn.size() unchanged",
+      "tags": [
+        "branch-false:aString!=null",
+        "branch-false:trimmedEmpty",
+        "exception:DateTimeParseException"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn invalid-format",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"uuuu-M-d\");",
+        "    DfDateColumn dfColumn = new DfDateColumn();",
+        "    String aString = \"invalid-date\";",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException; assert dfColumn.size() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

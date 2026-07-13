@@ -1,0 +1,61 @@
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("connection() returns a new Jsoup Connection when no connection field is set (null branch)")
+    public void test_TC06() {
+        // Given: a fresh Document with no explicit connection set -> connection field is null
+        Document doc = Document.createShell("http://example.com");
+        // When: calling connection() twice to trigger the null branch each time
+        Connection c1 = doc.connection();
+        Connection c2 = doc.connection();
+        // Then: ensure both are non-null and distinct instances
+        assertNotNull(c1, "First connection() call should return a non-null Connection");
+        assertNotNull(c2, "Second connection() call should return a non-null Connection");
+        assertNotSame(c1, c2, "Each connection() call on null field should provide a new session instance");
+    }
+
+    @Test
+    @DisplayName("clone() preserves an explicitly set Connection (non-null branch of connection())")
+    public void test_TC07() {
+        // Given: a Document with a custom Connection set (connection field != null)
+        Document doc = Document.createShell("http://example.com");
+        Connection custom = Jsoup.connect("http://foo");
+        doc.connection(custom); // sets the private connection field via public setter
+        // When: cloning the document, then calling connection() on the clone
+        Document cloned = doc.clone();
+        Connection c = cloned.connection();
+        // Then: the clone should have the same connection instance preserved (non-null branch)
+        assertSame(custom, c, "clone() should preserve the explicitly set Connection instance");
+    }
+
+    @Test
+    @DisplayName("clone() on a Document with a custom Parser preserves and isolates tracked error settings")
+    public void test_TC08() {
+        // Given: a Document with a Parser configured to track 5 errors
+        Document doc = Document.createShell("http://example.com");
+        Parser custom = Parser.htmlParser().setTrackErrors(5);
+        doc.parser(custom); // sets the parser field to custom
+        // When: cloning the document
+        Document cloned = doc.clone();
+        // Then: the parser should be cloned (distinct instance) and preserve the error tracking count
+        assertNotSame(doc.parser(), cloned.parser(),
+                "clone() should deep-copy the parser field, not reuse the same instance");
+        assertEquals(5, cloned.parser().getErrorsTracked(),
+                "The cloned parser should retain the original trackErrors count");
+
+        // When: modifying the clone's parser error count
+        cloned.parser().setTrackErrors(0);
+        // Then: original parser's error count remains unaffected, proving isolation
+        assertNotEquals(doc.parser().getErrorsTracked(), cloned.parser().getErrorsTracked(),
+                "Modifying the clone's parser errors should not affect the original parser");
+    }
+}

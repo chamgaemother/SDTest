@@ -1,0 +1,92 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(String, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B2→B6",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "null-baseUri",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput(String,String) null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new org.jsoup.parser.HtmlTreeBuilder());",
+        "    String html = \"<p>test</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(String, String) returns null Document when TreeBuilder.parse returns null",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "stub TreeBuilder that returns null Document",
+      "expectedResult": "return value is null",
+      "tags": [
+        "negative",
+        "null-return",
+        "normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseInput stub-builder returns null",
+        "  GIVEN",
+        "    Document toReturn = null;",
+        "    TreeBuilder stub = new org.jsoup.parser.Parser_parseInput_0_Test.StubTreeBuilder(toReturn);",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<tag/>\";",
+        "    String baseUri = \"http://test/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput(String, String) unlocks lock after normal return",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "stub TreeBuilder that sleeps before returning then returns a Document",
+      "expectedResult": "lock is unlocked after parse and valid Document is returned",
+      "tags": [
+        "positive",
+        "lock",
+        "concurrency"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseInput releases lock on normal return",
+        "  GIVEN",
+        "    Document dummy = Document.createShell(\"http://x/\");",
+        "    TreeBuilder slowStub = new org.jsoup.parser.Parser_parseInput_0_Test.StubTreeBuilder(dummy) {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) {",
+        "        try { Thread.sleep(50); } catch (InterruptedException e) {}",
+        "        return super.parse(in, uri, p);",
+        "      }",
+        "    };",
+        "    Parser parser = new Parser(slowStub);",
+        "    String html = \"<p>OK</p>\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == dummy;",
+        "    assertFalse(extractLock(parser).isLocked());",
+        "END"
+      ]
+    }
+  ]
+}

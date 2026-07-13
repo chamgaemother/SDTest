@@ -1,0 +1,121 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("clone() on an empty Document creates a new Document instance with same baseUri and independent OutputSettings and Parser")
+    public void test_TC01() {
+        // GIVEN an empty Document
+        Document doc = new Document("http://example.com");
+
+        // WHEN cloning the document
+        Document clone = doc.clone();
+
+        // THEN the clone is a different instance but has same baseUri
+        assertNotSame(doc, clone, "Clone should not be the same instance as original"); // B0→B1 ensures new object
+        assertEquals(doc.baseUri(), clone.baseUri(), "Base URI should be preserved in clone"); // same baseUri
+        // AND outputSettings and parser are deep-cloned
+        assertNotSame(doc.outputSettings(), clone.outputSettings(), "OutputSettings should be a distinct object"); // independent settings
+        assertEquals(doc.outputSettings().charset(), clone.outputSettings().charset(), "Charset setting preserved");
+        assertNotSame(doc.parser(), clone.parser(), "Parser should be a distinct object"); // independent parser
+        assertEquals(doc.parser().getTrackErrors(), clone.parser().getTrackErrors(), "Parser trackErrors preserved");
+    }
+
+    @Test
+    @DisplayName("clone() preserves custom OutputSettings modifications in the clone without linking to original")
+    public void test_TC02() {
+        // GIVEN a Document with modified outputSettings (prettyPrint=false, indentAmount=5)
+        Document doc = Document.createShell("http://a");
+        doc.outputSettings().prettyPrint(false).indentAmount(5);
+
+        // WHEN cloning
+        Document clone = doc.clone();
+
+        // THEN clone keeps modified outputSettings values
+        assertFalse(clone.outputSettings().prettyPrint(), "Clone should preserve prettyPrint=false"); // B2 branch
+        assertEquals(5, clone.outputSettings().indentAmount(), "Clone should preserve indentAmount=5");
+
+        // AND modifications to clone do not affect original (mutability isolation)
+        clone.outputSettings().prettyPrint(true);
+        assertFalse(doc.outputSettings().prettyPrint(), "Original prettyPrint should remain false after modifying clone");
+    }
+
+    @Test
+    @DisplayName("clone() preserves custom Parser settings in the clone without linking to original")
+    public void test_TC03() {
+        // GIVEN a Document with a custom Parser tracking 10 errors
+        Parser p = Parser.xmlParser().setTrackErrors(10);
+        Document doc = new Document("http://b").parser(p);
+
+        // WHEN cloning
+        Document clone = doc.clone();
+
+        // THEN clone's parser has trackErrors=10
+        assertEquals(10, clone.parser().getTrackErrors(), "Clone parser should preserve trackErrors=10"); // B3 path
+        // AND mutating clone's parser does not affect original
+        clone.parser().setTrackErrors(0);
+        assertEquals(10, doc.parser().getTrackErrors(), "Original parser trackErrors should remain 10 after modifying clone");
+    }
+
+    @Test
+    @DisplayName("clone() duplicates child nodes so modifications to clone children do not affect original children")
+    public void test_TC04() {
+        // GIVEN a Document with a <p>hello</p> in its body
+        Document doc = Document.createShell("u");
+        doc.body().appendElement("p").text("hello"); // ensures a child node to clone
+
+        // WHEN cloning
+        Document clone = doc.clone();
+
+        // THEN cloned body still has the <p>hello</p>
+        assertEquals("hello", clone.body().select("p").text(), "Clone should copy child <p> text"); // branch of child duplication
+        // AND removing clone child does not remove original
+        clone.body().child(0).remove();
+        assertEquals(1, doc.body().select("p").size(), "Original body child should remain after removing clone's child");
+    }
+
+    @Test
+    @DisplayName("clone() copies quirksMode value from original and remains independent on change")
+    public void test_TC05() {
+        // GIVEN a Document with limitedQuirks mode
+        Document doc = new Document("x").quirksMode(Document.QuirksMode.limitedQuirks);
+
+        // WHEN cloning
+        Document clone = doc.clone();
+
+        // THEN clone has same quirksMode
+        assertEquals(Document.QuirksMode.limitedQuirks, clone.quirksMode(), "Clone should preserve quirksMode=limitedQuirks"); // branch for quirksMode
+        // AND mutating clone does not affect original
+        clone.quirksMode(Document.QuirksMode.quirks);
+        assertEquals(Document.QuirksMode.limitedQuirks, doc.quirksMode(), "Original quirksMode should remain limitedQuirks after clone mutation");
+    }
+
+    @Test
+    @DisplayName("clone() duplicates connection session so original connection remains unaffected when modifying clone only")
+    public void test_TC06() {
+        // GIVEN a Document with a real Connection session
+        Connection c = Jsoup.connect("http://c");
+        Document doc = new Document("c").connection(c);
+
+        // WHEN cloning
+        Document clone = doc.clone();
+
+        // THEN clone.connection() is non-null and initially same settings
+        Connection origConn = doc.connection();
+        Connection cloneConn = clone.connection();
+        assertNotNull(cloneConn, "Clone connection should not be null"); // ensures session copied
+        // Change clone's timeout does not affect original
+        cloneConn.timeout(1000);
+        assertNotEquals(1000, origConn.timeout(), "Original connection timeout should not change when clone's timeout is modified");
+    }
+}

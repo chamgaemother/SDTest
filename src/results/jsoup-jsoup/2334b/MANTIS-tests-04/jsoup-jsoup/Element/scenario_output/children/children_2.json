@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "children() returns cached Elements list on second call when multiple Element children exist",
+      "path": "B0→B1(false)→B3(true)→B4",
+      "precondition": "Element has three appended Element children; shadowChildrenRef populated by first children() call",
+      "expectedResult": "second children() call returns same Elements instance with size 3 without rebuilding",
+      "tags": [
+        "cache-hit",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 children cache-hit on multiple children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"a\");",
+        "    el.appendElement(\"b\");",
+        "    el.appendElement(\"c\");",
+        "    Elements first = el.children();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert second.size() == 3;",
+        "    assert second == first;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() rebuilds and returns empty Elements after all children removed and cache invalidated",
+      "path": "B0→B1(false)→B2(loop0 build)→ret→B0→B1(false)→B2(loop0 rebuild)→ret",
+      "precondition": "Element had one child appended and children() called to populate cache",
+      "expectedResult": "after el.empty(), children() returns size 0, showing cache invalidation and rebuild",
+      "tags": [
+        "cache-invalidation",
+        "empty",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 children rebuild after removal",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    Elements first = el.children();",
+        "    el.empty();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert second.size() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

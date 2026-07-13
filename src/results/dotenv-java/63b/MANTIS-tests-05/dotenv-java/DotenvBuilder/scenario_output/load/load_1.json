@@ -1,0 +1,109 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "load() with empty .env file and default flags (systemProperties=false, throwIfMissing=false path, loop-zero entries)",
+      "path": "B0→B1→B2",
+      "precondition": "empty .env file exists in directory",
+      "expectedResult": "returns DotenvImpl containing only system environment entries; no exception",
+      "tags": [
+        "positive",
+        "boundary",
+        "iteration-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 load empty file defaults",
+        "  GIVEN",
+        "    // Arrange empty .env",
+        "    create file .env with zero lines",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(path).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.entries().equals(system env entries);",
+        "    assert result.entries(entry -> true).isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "load() with one valid entry and default flags (systemProperties=false, loop-one entry)",
+      "path": "B0→B1(loop×1)→B2",
+      "precondition": "single KEY=VALUE line in .env file",
+      "expectedResult": "returns DotenvImpl containing one file entry plus system env; get(\"KEY\") == \"VALUE\"",
+      "tags": [
+        "positive",
+        "iteration-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 load single entry defaults",
+        "  GIVEN",
+        "    write \"A=1\" to .env file",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(path).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"A\").equals(\"1\");",
+        "    assert result.entries(entry -> true).contains(new DotenvEntry(\"A\",\"1\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "load() with two valid entries and default flags (systemProperties=false, loop-two entries)",
+      "path": "B0→B1(loop×2)→B2",
+      "precondition": "two lines KEY1=V1 and KEY2=V2 in .env",
+      "expectedResult": "returns DotenvImpl containing both file entries plus system env; get returns correct values",
+      "tags": [
+        "positive",
+        "iteration-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 load two entries defaults",
+        "  GIVEN",
+        "    write \"X=Y\" and \"Z=W\" to .env file",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(path).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"X\").equals(\"Y\");",
+        "    assert result.get(\"Z\").equals(\"W\");",
+        "    assert result.entries(entry -> true).size() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "load() ignores malformed lines when ignoreIfMalformed() is set (throwIfMalformed=false branch)",
+      "path": "B0→B1(loop×1)→B2",
+      "precondition": ".env file contains one good line and one malformed line, builder.ignoreIfMalformed()",
+      "expectedResult": "no exception; only valid entries loaded; malformed ignored",
+      "tags": [
+        "positive",
+        "exception-path",
+        "ignoreIfMalformed"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 ignore malformed line",
+        "  GIVEN",
+        "    write \"GOOD=V\" and \"BADLINE\" to .env file",
+        "    DotenvBuilder builder = new DotenvBuilder().directory(path).filename(\".env\").ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv result = builder.load();",
+        "  THEN",
+        "    assert result.get(\"GOOD\").equals(\"V\");",
+        "    assert result.entries(entry -> true).size() == 1;",
+        "    assert result.entries(entry -> true).contains(new DotenvEntry(\"GOOD\",\"V\"));",
+        "END"
+      ]
+    }
+  ]
+}

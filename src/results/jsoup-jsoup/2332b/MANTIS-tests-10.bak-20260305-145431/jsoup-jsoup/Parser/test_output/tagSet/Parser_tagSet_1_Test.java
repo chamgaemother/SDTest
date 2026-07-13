@@ -1,0 +1,60 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("TC04: htmlParser().tagSet() returns a non-empty lower-case tag set (preserveCase=false branch)")
+    public void test_TC04() {
+        // GIVEN: htmlParser uses default ParseSettings with preserveCase=false to trigger lower-case branch
+        Parser parser = org.jsoup.parser.Parser.htmlParser();
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: should contain a common HTML tag in lower-case and not upper-case
+        assertTrue(tags.contains("html"), "Expected tag set to contain 'html' in lower-case");
+        assertFalse(tags.contains("HTML"), "Expected tag set not to contain 'HTML' in upper-case");
+    }
+
+    @Test
+    @DisplayName("TC05: xmlParser().tagSet() returns empty or minimal set (XML branch with no predefined tags)")
+    public void test_TC05() {
+        // GIVEN: xmlParser yields XML branch where no predefined HTML tags exist
+        Parser parser = org.jsoup.parser.Parser.xmlParser();
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: XML parser should have empty or minimal tag set (e.g., only '?xml')
+        assertTrue(tags.isEmpty() || tags.contains("?xml"),
+                "Expected XML tag set to be empty or contain only default XML tags like '?xml'");
+    }
+
+    @Test
+    @DisplayName("TC06: Parser with custom ParseSettings(preserveCase=true) yields mixed-case tag names (preserveCase=true branch)")
+    public void test_TC06() {
+        // GIVEN: htmlParser with ParseSettings(true) to enable preserve-case branch
+        Parser parser = org.jsoup.parser.Parser.htmlParser().settings(ParseSettings.preserveCase(true));
+        // WHEN
+        Set<String> tags = parser.tagSet();
+        // THEN: should include 'HTML' in original upper case form
+        assertTrue(tags.contains("HTML"), "Expected tag set to preserve case and include 'HTML'");
+    }
+
+    @Test
+    @DisplayName("TC07: Calling tagSet on a parser with null settings triggers NullPointerException path")
+    public void test_TC07() throws Exception {
+        // GIVEN: htmlParser but force settings to null via reflection to hit NullPointerException branch
+        Parser parser = org.jsoup.parser.Parser.htmlParser();
+        Field settingsField = org.jsoup.parser.Parser.class.getDeclaredField("settings");
+        settingsField.setAccessible(true);
+        settingsField.set(parser, null);
+        // WHEN & THEN: calling tagSet should throw NPE due to null settings
+        assertThrows(NullPointerException.class, () -> parser.tagSet(),
+                "Expected NullPointerException when settings field is null");
+    }
+}

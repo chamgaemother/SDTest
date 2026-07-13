@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14",
+      "description": "parseInput(Reader, String) with null baseUri should default baseUri to empty string and succeed",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instance from htmlParser()",
+      "expectedResult": "returns a Document with baseUri \"\" and correct parsing of Reader content",
+      "tags": [
+        "positive",
+        "overload",
+        "delegation",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseInput Reader-null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader input = new StringReader(\"<span>hello</span>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    Document doc = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assertEquals(\"\", doc.baseUri());",
+        "    assertEquals(1, doc.select(\"span\").size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "xmlParser.parseInput(Reader, String) correctly parses case-sensitive XML from Reader overload",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instance from xmlParser()",
+      "expectedResult": "returns a Document containing only exact-case elements (<Item> but not <item>)",
+      "tags": [
+        "positive",
+        "overload",
+        "xml",
+        "case-sensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 xmlParser Reader-overload",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Reader input = new StringReader(\"<root><Item/></root>\");",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assertEquals(1, doc.getElementsByTag(\"Item\").size());",
+        "    assertNull(doc.getElementsByTag(\"item\").first());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseInput(String, String) returns null when custom TreeBuilder.parse returns null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser constructed with stub TreeBuilder that returns null Document",
+      "expectedResult": "parseInput returns null without throwing",
+      "tags": [
+        "negative",
+        "stub",
+        "delegation",
+        "null-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 parseInput String stub-null-return",
+        "  GIVEN",
+        "    Document stubResult = null;",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(false,false); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { return stubResult; }",
+        "      @Override public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }",
+        "      @Override protected void process(Token token) {}",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    String html = \"<p/>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assertNull(result);",
+        "END"
+      ]
+    }
+  ]
+}

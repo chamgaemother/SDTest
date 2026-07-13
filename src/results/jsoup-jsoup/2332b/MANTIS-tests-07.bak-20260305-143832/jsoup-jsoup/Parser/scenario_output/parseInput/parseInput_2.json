@@ -1,0 +1,170 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseInput(html, baseUri) returns a Document for valid HTML and baseUri (delegates to TreeBuilder.parse)",
+      "path": "B0→B1→B2",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "returned Document has correct baseUri and contains parsed elements",
+      "tags": [
+        "positive",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseInput(String, String) normal-case",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<span>jsoup</span>\";",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.select(\"span\").first().text().equals(\"jsoup\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseInput(html, baseUri) throws NullPointerException when html is null",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "string-overload",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseInput(String, String) null-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseInput(html, baseUri) throws IllegalArgumentException when baseUri is null",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "string-overload",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parseInput(String, String) null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>x</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseInput(reader, baseUri) returns a Document when given a valid Reader and baseUri",
+      "path": "B0→B1→B2",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "returned Document has correct baseUri and parsed structure",
+      "tags": [
+        "positive",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseInput(Reader, String) normal-case",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<ul><li>a</li><li>b</li></ul>\");",
+        "    String baseUri = \"http://site\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri);",
+        "    assert doc.select(\"li\").size() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(reader, baseUri) throws NullPointerException when reader is null",
+      "path": "B0→B1→B3",
+      "precondition": "Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "reader-overload",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput(Reader, String) null-reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(reader, baseUri) propagates RuntimeException thrown by TreeBuilder.parse",
+      "path": "B0→B1→B4",
+      "precondition": "Parser configured with stub TreeBuilder that throws RuntimeException(IOException)",
+      "expectedResult": "RuntimeException with cause IOException is thrown",
+      "tags": [
+        "negative",
+        "reader-overload",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput(Reader, String) stub-exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser p) {",
+        "        throw new RuntimeException(new IOException(\"err\"));",
+        "      }",
+        "      @Override public TreeBuilder newInstance() { return defaultStub(); }",
+        "      @Override public ParseSettings defaultSettings() { return new ParseSettings(); }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"x\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    RuntimeException ex = thrown;",
+        "    assert ex.getCause() instanceof IOException;",
+        "    assert ex.getCause().getMessage().equals(\"err\");",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "childElementsList returns cached list on second call when shadowChildrenRef is non-null",
+      "path": "B0→B3→B4(true)→B5",
+      "precondition": "Element with two element children, first childElementsList called once",
+      "expectedResult": "second call to childElementsList returns same list instance without rebuilding",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 cached-child-elements-list",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element a = el.appendElement(\"a\");",
+        "    Element b = el.appendElement(\"b\");",
+        "    List<Element> firstList = el.childElementsList();",
+        "  WHEN",
+        "    List<Element> secondList = el.childElementsList();",
+        "  THEN",
+        "    assert secondList == firstList;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "childElementsList rebuilds list after mutation invalidates shadowChildrenRef",
+      "path": "B0→B3→B4(false)→loop→B5",
+      "precondition": "Element with one child element, childElementsList called to cache, then appendElement invoked",
+      "expectedResult": "subsequent childElementsList returns new list including the new child",
+      "tags": [
+        "positive",
+        "mutation",
+        "cache-invalidation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 rebuild-after-mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendElement(\"span\");",
+        "    List<Element> original = el.childElementsList();",
+        "    el.appendElement(\"p\");",
+        "  WHEN",
+        "    List<Element> rebuilt = el.childElementsList();",
+        "  THEN",
+        "    assert rebuilt.size() == 2;",
+        "    assert rebuilt.get(1).tagName().equals(\"p\");",
+        "END"
+      ]
+    }
+  ]
+}

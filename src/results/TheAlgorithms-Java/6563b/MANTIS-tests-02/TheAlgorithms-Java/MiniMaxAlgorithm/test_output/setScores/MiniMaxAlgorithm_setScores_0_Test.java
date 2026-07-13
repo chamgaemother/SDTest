@@ -1,0 +1,74 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class MiniMaxAlgorithm_setScores_0_Test {
+
+    @Test
+    @DisplayName("TC01: setScores accepts a valid power-of-2 length (4) and updates scores and height")
+    void test_TC01() {
+        // GIVEN a new algorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = new int[]{10, 20, 30, 40};
+        // WHEN setting scores of length 4 (power of 2) -> branch B0->B1
+        alg.setScores(newScores);
+        // THEN scores and height should update: height = log2(4) = 2
+        assertArrayEquals(new int[]{10, 20, 30, 40}, alg.getScores(),
+                "Scores should be updated to the new array of length 4");
+        assertEquals(2, alg.getHeight(),
+                "Height should be set to 2 for an array of length 4");
+    }
+
+    @Test
+    @DisplayName("TC02: setScores rejects a non-power-of-2 length (3) and preserves existing scores and height")
+    void test_TC02() {
+        // GIVEN a new algorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] originalScores = alg.getScores().clone();
+        int originalHeight = alg.getHeight();
+        // Prepare to capture System.out output when invalid length triggers print -> branch B0->B2
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+
+        try {
+            // WHEN calling setScores with length 3 (not a power of 2)
+            int[] badScores = new int[]{1, 2, 3};
+            alg.setScores(badScores);
+        } finally {
+            // Restore original System.out
+            System.setOut(originalOut);
+        }
+
+        // THEN scores and height remain unchanged
+        assertArrayEquals(originalScores, alg.getScores(),
+                "Scores should remain unchanged when given invalid length");
+        assertEquals(originalHeight, alg.getHeight(),
+                "Height should remain unchanged when given invalid length");
+        // AND output should contain the specific error message
+        String output = outContent.toString();
+        assertTrue(output.contains("The number of scores must be a power of 2."),
+                "Should print power-of-2 requirement message");
+    }
+
+    @Test
+    @DisplayName("TC03: setScores accepts the minimal power-of-2 length (1) and updates scores and height to zero")
+    void test_TC03() {
+        // GIVEN a new algorithm instance
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] single = new int[]{99};
+        // WHEN setting scores of length 1 (power of 2 minimal case) -> branch B0->B1
+        alg.setScores(single);
+        // THEN scores updated and height = log2(1) = 0
+        assertArrayEquals(new int[]{99}, alg.getScores(),
+                "Scores should update to single element array");
+        assertEquals(0, alg.getHeight(),
+                "Height should be 0 for an array of length 1");
+    }
+}

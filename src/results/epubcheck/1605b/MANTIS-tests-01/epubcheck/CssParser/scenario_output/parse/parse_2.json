@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "scan(...) throws PrematureEOFException → propagate as CssException",
+      "path": "B0→scan→throw→[EXIT]",
+      "precondition": "parser.scan stubbed to throw PrematureEOFException",
+      "expectedResult": "PrematureEOFException is propagated to caller",
+      "tags": [
+        "exception",
+        "scan",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 scan throws premature-EOF",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    stub parser.scan(...) to throw new PrematureEOFException();",
+        "  WHEN",
+        "    call parser.parse(reader, systemID, errHandler, contentHandler);",
+        "  THEN",
+        "    throws PrematureEOFException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "iterator.next(predicate) throws NoSuchElementException → propagate unchecked",
+      "path": "B0→B1→B2→next(predicate)→throw→[EXIT]",
+      "precondition": "parser.scan returns fake iterator where hasNext(predicate)==true but next(predicate) throws NoSuchElementException",
+      "expectedResult": "NoSuchElementException is propagated to caller",
+      "tags": [
+        "exception",
+        "iteration",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 next(predicate) throws NoSuchElementException",
+        "  GIVEN",
+        "    CssParser parser = spy(new CssParser(Locale.ENGLISH));",
+        "    CssTokenIterator iter = mock iterator;",
+        "    when iter.hasNext(anyPredicate) return true;",
+        "    when iter.next(anyPredicate) throw new NoSuchElementException();",
+        "    stub parser.scan(...) to return iter;",
+        "  WHEN",
+        "    call parser.parse(reader, systemID, errHandler, contentHandler);",
+        "  THEN",
+        "    throws NoSuchElementException;",
+        "END"
+      ]
+    }
+  ]
+}

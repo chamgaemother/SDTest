@@ -1,0 +1,63 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("Parser.xmlParser.parseInput correctly parses XML with case-sensitive tags")
+    public void test_TC11() {
+        // Use XML parser to ensure case sensitivity branch in TreeBuilder
+        Parser parser = Parser.xmlParser();
+        String xml = "<root><Child/></root>";
+        String baseUri = "http://example.com";
+        // When parsing XML, TreeBuilder should treat tags case-sensitively
+        Document doc = parser.parseInput(xml, baseUri);
+        // Then: only uppercase "Child" exists, lowercase "child" should not
+        assertEquals(1, doc.getElementsByTag("Child").size(), 
+                     "Expected one <Child> element in XML parse");
+        assertNull(doc.getElementsByTag("child").first(), 
+                   "Lowercase <child> should not match any element in case-sensitive XML parse");
+    }
+
+    @Test
+    @DisplayName("Parser.htmlParser.parseInput with null baseUri yields empty baseUri without exception")
+    public void test_TC12() {
+        // Use HTML parser; null baseUri should default to empty string branch
+        Parser parser = Parser.htmlParser();
+        String html = "<p>test</p>";
+        // Passing null to parseInput to ensure no NullPointer and baseUri==""
+        Document doc = parser.parseInput(html, null);
+        // Then: baseUri should be empty and parsing still works
+        assertEquals("", doc.baseUri(), 
+                     "Expected empty baseUri when null is passed");
+        assertEquals(1, doc.select("p").size(), 
+                     "Expected one <p> element parsed from HTML");
+    }
+
+    @Test
+    @DisplayName("parseInput on a cloned Parser instance uses deep-copied TreeBuilder and preserves trackPosition flag")
+    public void test_TC13() {
+        // Enable trackPosition on original to test clone copies this flag
+        Parser original = Parser.htmlParser().setTrackPosition(true);
+        // Clone via newInstance to cover deep copy constructor branch
+        Parser clone = original.newInstance();
+        String html = "<div id=xyz></div>";
+        String baseUri = "u";
+        // When parsing with clone, should use its own TreeBuilder and trackPosition
+        Document doc = clone.parseInput(html, baseUri);
+        // Then: clone retains trackPosition flag and parsing works independently
+        assertTrue(clone.isTrackPosition(), 
+                   "Cloned parser should retain trackPosition=true");
+        assertEquals(1, doc.select("div#xyz").size(), 
+                     "Expected one <div id=xyz> element parsed by cloned parser");
+    }
+}

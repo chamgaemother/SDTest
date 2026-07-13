@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Known form-submittable tag 'select' returns true",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns true",
+      "tags": [
+        "positive",
+        "form-submit",
+        "known-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 known form-submittable select",
+        "  GIVEN",
+        "    // Arrange: a predefined HTML select tag",
+        "    Tag tag = Tag.valueOf(\"select\");",
+        "  WHEN",
+        "    // Act: check submittability",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: select is submittable",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Known form-submittable tag 'input' in wrong namespace returns false",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "negative",
+        "namespace",
+        "form-submit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 input in SVG namespace not submittable",
+        "  GIVEN",
+        "    // Arrange: HTML 'input' but request SVG namespace",
+        "    String ns = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "    Tag tag = Tag.valueOf(\"input\", ns, settings);",
+        "  WHEN",
+        "    // Act: check submittability",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: wrong namespace makes generic tag",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Unknown tag with whitespace trimmed returns false",
+      "path": "B0→B1(trim)→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "isFormSubmittable() returns false",
+      "tags": [
+        "negative",
+        "unknown-tag",
+        "trim",
+        "form-submit"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 whitespace around customUnknown",
+        "  GIVEN",
+        "    // Arrange: tagName with leading/trailing spaces",
+        "    Tag tag = Tag.valueOf(\"  myCustom  \", Parser.NamespaceHtml, ParseSettings.preserveCase);",
+        "  WHEN",
+        "    // Act: check submittability",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert: unknown tags default to not submittable",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Null tagName input throws IllegalArgumentException in construction",
+      "path": "B0→exception",
+      "precondition": "none",
+      "expectedResult": "Validate.notNull(tagName) throws IllegalArgumentException",
+      "tags": [
+        "negative",
+        "exception",
+        "validate"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 null tagName throws",
+        "  GIVEN",
+        "    String tagName = null;",
+        "  WHEN",
+        "    // Act & Assert: constructing Tag with null should fail",
+        "    call Tag.valueOf(tagName, Parser.NamespaceHtml, ParseSettings.preserveCase);",
+        "  THEN",
+        "    // Assert: IllegalArgumentException is thrown",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

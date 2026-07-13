@@ -1,0 +1,78 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("TC10: HTML doc with existing <meta charset> and obsolete <meta name=charset> updates meta[charset] and removes obsolete")
+    public void test_TC10() {
+        // GIVEN: a shell HTML document with both a valid meta[charset] and an obsolete meta[name=charset]
+        Document doc = Document.createShell("http://example");
+        doc.outputSettings().updateMetaCharsetElement(true);
+        // existing meta[charset]
+        doc.head().appendElement("meta").attr("charset", "ISO-8859-1");
+        // obsolete meta[name=charset]
+        doc.head().appendElement("meta").attr("name", "charset");
+
+        // WHEN: setting a new charset should update the existing meta[charset] and remove obsolete
+        doc.charset(Charset.forName("US-ASCII"));
+
+        // THEN: the existing <meta charset> is updated
+        Element updated = doc.selectFirst("meta[charset]");
+        assertNotNull(updated, "Expected a <meta charset> element to exist");
+        assertEquals("US-ASCII", updated.attr("charset"));
+        // THEN: the obsolete <meta name=charset> is gone
+        assertNull(doc.selectFirst("meta[name=charset]"));
+    }
+
+    @Test
+    @DisplayName("TC11: XML doc with existing XmlDeclaration name=\"xml\" lacking version attr adds encoding but leaves version absent")
+    public void test_TC11() {
+        // GIVEN: a shell document, switch output syntax to XML, and prepend an XmlDeclaration without version attr
+        Document doc = Document.createShell("u");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // prepend XML declaration node without version attribute
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        // ensure no version attr
+        decl.removeAttr("version");
+        doc.prependChild(decl);
+
+        // WHEN: setting a charset triggers ensureMetaCharsetElement for XML branch
+        doc.charset(Charset.forName("UTF-8"));
+
+        // THEN: the first child is an XmlDeclaration with encoding set
+        assertFalse(doc.childNodes().isEmpty(), "Document should have child nodes");
+        XmlDeclaration first = (XmlDeclaration) doc.childNodes().get(0);
+        assertEquals("UTF-8", first.attr("encoding"));
+        // version attribute should remain absent (not auto-added)
+        assertFalse(first.hasAttr("version"), "Version attribute should not be added when initially absent");
+    }
+
+    @Test
+    @DisplayName("TC12: HTML doc with only obsolete <meta name=charset> appends new meta[charset] and removes the obsolete element")
+    public void test_TC12() {
+        // GIVEN: a shell HTML document with only an obsolete meta[name=charset]
+        Document doc = Document.createShell("http://obs");
+        doc.outputSettings().updateMetaCharsetElement(true);
+        doc.head().appendElement("meta").attr("name", "charset");
+
+        // WHEN: setting charset should append a new meta[charset] and remove the obsolete one
+        doc.charset(Charset.forName("UTF-16"));
+
+        // THEN: new <meta charset> exists with correct value
+        Element metaNew = doc.selectFirst("meta[charset]");
+        assertNotNull(metaNew, "Expected a new <meta charset> element to be appended");
+        assertEquals("UTF-16", metaNew.attr("charset"));
+        // THEN: obsolete <meta name=charset> removed
+        assertNull(doc.selectFirst("meta[name=charset]"));
+    }
+}

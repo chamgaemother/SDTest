@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "traverse(elements) throws IllegalArgumentException when elements is null",
+      "path": "B0→Validate.notNull(elements)→Exception",
+      "precondition": "visitor non-null",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "parameter-validation",
+        "elements-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 traverse elements null-elements",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d) -> {};",
+        "    Elements elems = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elems);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "traverse(elements) throws IllegalArgumentException when visitor is null",
+      "path": "B0→Validate.notNull(visitor)→Exception",
+      "precondition": "elements non-null, empty or non-empty",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "parameter-validation",
+        "elements-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 traverse elements null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null;",
+        "    Elements elems = new Elements(new Element(\"p\"));",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elems);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "deep single-child chain triggers multiple ascend-loop iterations (depth>1) in traverse(NodeVisitor,Node)",
+      "path": "B0→B5→B11(child)→…→leaf→B16→B20(loop ascend×3)→B22→B24",
+      "precondition": "none",
+      "expectedResult": "head and tail called at depths 0,1,2,3 and then tails ascend back through depths 3→0",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-loop",
+        "depth-boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 traverse deep chain ascend-loop",
+        "  GIVEN",
+        "    // Build a chain div->a->b->c (depth 0→3)",
+        "    Element div = new Element(\"div\");",
+        "    Element a = new Element(\"a\"); div.appendChild(a);",
+        "    Element b = new Element(\"b\"); a.appendChild(b);",
+        "    Element c = new Element(\"c\"); b.appendChild(c);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n,int d){calls.add(\"h:\"+n.nodeName()+\":\"+d);} ",
+        "      public void tail(Node n,int d){calls.add(\"t:\"+n.nodeName()+\":\"+d);} ",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) div);",
+        "  THEN",
+        "    // heads at depths 0,1,2,3",
+        "    assertEquals(List.of(\"h:div:0\",\"h:a:1\",\"h:b:2\",\"h:c:3\",\"t:c:3\",\"t:b:2\",\"t:a:1\",\"t:div:0\"), calls);",
+        "END"
+      ]
+    }
+  ]
+}

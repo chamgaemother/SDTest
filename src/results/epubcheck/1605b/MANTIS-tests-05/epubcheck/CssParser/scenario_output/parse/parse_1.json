@@ -1,0 +1,95 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parse handles at-rule without block (MATCH_SEMI_OPENBRACE with ';' only)",
+      "path": "B0→B1→B2→B4→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "doc.startAtRule and doc.endAtRule called once with atRule.hasBlock=false, no selectors or rules",
+      "tags": [
+        "positive",
+        "atrule",
+        "no-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse import at-rule without block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@import url('x.css');\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"import.css\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1;",
+        "    assert doc.startAtRuleCount == 1;",
+        "    assert doc.lastAtRuleName.equals(\"import\");",
+        "    assert doc.endAtRuleCount == 1;",
+        "    assert doc.endDocumentCount == 1;",
+        "    assert err.errorCount == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse handles invalid selector group yielding selectors==null path in handleRuleSet",
+      "path": "B0→B1→B2→B3→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "error reported for missing selector, no doc.selectors or doc.endSelectors calls",
+      "tags": [
+        "negative",
+        "ruleset",
+        "invalid-selector"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse invalid selector returns null selectors",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"{};\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"invalid.css\", err, doc);",
+        "  THEN",
+        "    assert err.errorCount >= 1;  // grammar error reported",
+        "    assert doc.selectorsCount == 0;",
+        "    assert doc.endSelectorsCount == 0;",
+        "    assert doc.startDocumentCount == 1;",
+        "    assert doc.endDocumentCount == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse handles unexpected closing parenthesis branch in handleRuleSet (MATCH_CLOSEPAREN applies)",
+      "path": "B0→B1→B2→B3→B7→B1→B8",
+      "precondition": "none",
+      "expectedResult": "CssGrammarException for unexpected ')' is sent to err, no selectors emitted",
+      "tags": [
+        "negative",
+        "ruleset",
+        "unexpected-token"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse ruleset with unexpected ')' token",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1){};\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"paren.css\", err, doc);",
+        "  THEN",
+        "    assert err.errorCount >= 1;  // unexpected token ')' error",
+        "    assert doc.selectorsCount == 0;",
+        "    assert doc.endSelectorsCount == 0;",
+        "    assert doc.startDocumentCount == 1;",
+        "    assert doc.endDocumentCount == 1;",
+        "END"
+      ]
+    }
+  ]
+}

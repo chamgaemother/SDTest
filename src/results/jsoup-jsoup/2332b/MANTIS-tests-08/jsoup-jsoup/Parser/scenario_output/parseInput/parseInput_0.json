@@ -1,0 +1,259 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseInput(String, String) delegates to treeBuilder.parse and returns the Document when html and baseUri are non-null",
+      "path": "B0→B1→B2",
+      "precondition": "Use a stub TreeBuilder whose parse(input, baseUri, parser) returns a dummy Document instance; real Parser initialized with stub builder",
+      "expectedResult": "the same dummy Document instance returned by the stub TreeBuilder.parse",
+      "tags": [
+        "branch-true",
+        "overload:String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseInput over String overload normal",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(returning dummyDoc));",
+        "    String html = \"<p>ok</p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == dummyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseInput(Reader, String) delegates to treeBuilder.parse and returns the Document when reader and baseUri are non-null",
+      "path": "B0→B1→B2",
+      "precondition": "Use a stub TreeBuilder whose parse(reader, baseUri, parser) returns a dummyDoc; real StringReader wraps input",
+      "expectedResult": "the same dummyDoc returned by the stub TreeBuilder.parse",
+      "tags": [
+        "branch-true",
+        "overload:Reader",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseInput over Reader overload normal",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(returning dummyDoc));",
+        "    Reader input = new StringReader(\"<div/>\"); String baseUri = \"base\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert result == dummyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseInput(String, String) with null html should throw NullPointerException at StringReader construction",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no treeBuilder.parse called",
+      "tags": [
+        "exception",
+        "branch-false",
+        "overload:String",
+        "negative",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parseInput null-html throws NPE",
+        "  GIVEN",
+        "    Parser parser = new Parser(realHtmlTreeBuilder());",
+        "    String html = null; String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseInput(String, String) with null baseUri should cause treeBuilder.parse to throw IllegalArgumentException",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Use stub TreeBuilder that throws IllegalArgumentException if baseUri is null; document stub not used",
+      "expectedResult": "throws IllegalArgumentException; no Document returned",
+      "tags": [
+        "exception",
+        "branch-false",
+        "overload:String",
+        "null-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseInput null-baseUri throws IAE",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(throw IAE if baseUri null));",
+        "    String html = \"<a/>\"; String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader, String) with null Reader should throw NullPointerException from treeBuilder.parse stub",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Use stub TreeBuilder that throws NullPointerException when reader is null",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "exception",
+        "branch-false",
+        "overload:Reader",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput null-Reader throws NPE",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(throw NPE if reader null));",
+        "    Reader input = null; String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(Reader, String) when treeBuilder.parse throws custom RuntimeException propagates the exception",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Use stub TreeBuilder that throws new IllegalStateException(\"err\") unconditionally",
+      "expectedResult": "throws IllegalStateException with message \"err\"",
+      "tags": [
+        "exception",
+        "overload:Reader",
+        "runtime-exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput Reader overload propagates runtime-exception",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(throw IllegalStateException(\"err\")));",
+        "    Reader input = new StringReader(\"x\"); String baseUri = \"b\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"err\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(String, String) with empty html string returns a Document (empty-parsed) from stub",
+      "path": "B0→B1→B2",
+      "precondition": "Use stub TreeBuilder that returns emptyDoc when html is empty string",
+      "expectedResult": "return value is emptyDoc",
+      "tags": [
+        "boundary",
+        "empty-input",
+        "overload:String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseInput empty-html returns emptyDoc",
+        "  GIVEN",
+        "    Parser parser = new Parser(stubBuilder(returning emptyDoc on empty input));",
+        "    String html = \"\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == emptyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String, String) with large html string is passed through to treeBuilder.parse once",
+      "path": "B0→B1→B2",
+      "precondition": "Use a real HtmlTreeBuilder to parse a long repeated fragment deterministically",
+      "expectedResult": "returned Document.body().childNodeSize() equals N where N matches number of top-level elements",
+      "tags": [
+        "loop-N",
+        "overload:String",
+        "large-input"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput large-html real parsing",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<p>1</p>\".repeat(10); String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 10;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseInput(String, String) with html containing script tag ensures treeBuilder.parse recognizes script content",
+      "path": "B0→B1→B2",
+      "precondition": "Use real HtmlTreeBuilder; parser.trackPosition=false",
+      "expectedResult": "returned Document.select(\"script\").text() equals \"alert(1)\"",
+      "tags": [
+        "branch-true",
+        "overload:String",
+        "script-content"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput html-with-script real parsing",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"<script>alert(1)</script>\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"script\").first().data().equals(\"alert(1)\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) with position tracking enabled does not affect returned Document structure",
+      "path": "B0→B1→B2",
+      "precondition": "Use real HtmlTreeBuilder; call parser.setTrackPosition(true) before parsing",
+      "expectedResult": "Document structure identical to non-tracked parsing (body().childNodeSize()>0 for input)",
+      "tags": [
+        "branch-true",
+        "overload:String",
+        "track-position"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput with position tracking enabled",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true);",
+        "    String html = \"<div id=1></div>\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().childNodeSize() == 1",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() builds and returns all element children when only element nodes present (build branch)",
+      "path": "B0→childNodeSize()>0→shadowNull→buildLoop→return",
+      "precondition": "none",
+      "expectedResult": "Elements list containing all appended Element children",
+      "tags": [
+        "positive",
+        "build-branch",
+        "multiple-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children build all-elements",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"a\"));",
+        "    el.appendChild(new Element(\"b\"));",
+        "    el.appendChild(new Element(\"c\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.get(0).tagName().equals(\"a\");",
+        "    assert result.get(1).tagName().equals(\"b\");",
+        "    assert result.get(2).tagName().equals(\"c\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() reuses cached shadowChildrenRef list instance on second call (cache-hit branch)",
+      "path": "B0→childNodeSize()>0→shadowNull→buildLoop→return→shadowNotNull→refGetNonNull→return",
+      "precondition": "none",
+      "expectedResult": "Second call returns same List instance as first (cache hit)",
+      "tags": [
+        "positive",
+        "cache-hit",
+        "reuse"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache hit reuse",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.getRawList() == second.getRawList();",
+        "    assert first.size() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds list after manual nodelistChanged clears cache (cache-miss after clear)",
+      "path": "B0→childNodeSize()>0→shadowNull→buildLoop→return→nodelistChanged→shadowNull→buildLoop→return",
+      "precondition": "none",
+      "expectedResult": "After clear, second children() returns new list instance including new child",
+      "tags": [
+        "positive",
+        "cache-clear",
+        "rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children rebuild after clear cache",
+        "  GIVEN",
+        "    Element el = new Element(\"section\");",
+        "    el.appendChild(new Element(\"div\"));",
+        "    Elements list1 = el.children();",
+        "    // simulate structural change clearing cache",
+        "    el.nodelistChanged();",
+        "    el.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    Elements list2 = el.children();",
+        "  THEN",
+        "    assert list1 != list2;",
+        "    assert list2.size() == 2;",
+        "    assert list2.get(1).tagName().equals(\"span\");",
+        "END"
+      ]
+    }
+  ]
+}

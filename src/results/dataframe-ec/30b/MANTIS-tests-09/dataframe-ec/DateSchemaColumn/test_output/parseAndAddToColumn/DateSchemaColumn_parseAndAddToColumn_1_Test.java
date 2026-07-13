@@ -1,0 +1,79 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import static org.junit.jupiter.api.Assertions.*;
+
+// Concrete implementation of DfDateColumn for testing purposes
+public class DateSchemaColumn_parseAndAddToColumn_1_Test extends DfDateColumn {
+    @Override
+    public void addObject(LocalDate date) {
+        // Implementation for adding the date
+    }
+
+    @Override
+    public LocalDate getObject(int index) {
+        return LocalDate.of(2021, 12, 31); // Example return value
+    }
+}
+
+public class DateSchemaColumn_parseAndAddToColumn_1_Test {
+
+    @Test
+    @DisplayName("Constructor with null pattern uses default 'uuuu-M-d' and parseAndAddToColumn(null) calls addObject(null)")
+    public void test_TC07() {
+        // GIVEN a CsvSchema and DateSchemaColumn constructed with null pattern -> uses default 'uuuu-M-d'
+        CsvSchema schema = new CsvSchema();
+        DateSchemaColumn dsc = new DateSchemaColumn(schema, "col", null);
+        // DfDateColumn will collect added values
+        DfDateColumn column = new ConcreteDfDateColumn();
+
+        // WHEN parsing null input (aString == null branch P2 true -> returns null)
+        dsc.parseAndAddToColumn(null, column);
+
+        // THEN addObject(null) should have been called once, so the stored object at index 0 is null
+        assertNull(column.getObject(0), "Expected null object added for null input using default pattern");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn(\"2019-02-29\", column) with strict resolver throws DateTimeParseException on invalid leap date")
+    public void test_TC08() {
+        // GIVEN a DateSchemaColumn with strict default pattern 'uuuu-M-d' and a mocked column
+        CsvSchema schema = new CsvSchema();
+        DateSchemaColumn dsc = new DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = new ConcreteDfDateColumn(); // Use concrete implementation for testing
+
+        // WHEN parsing invalid leap date string -> should take non-null branch, trimmed non-empty -> delegate to LocalDate.parse -> strict resolver causes exception
+        DateTimeParseException thrown = assertThrows(
+            DateTimeParseException.class,
+            () -> dsc.parseAndAddToColumn("2019-02-29", column),
+            "Expected DateTimeParseException for invalid leap date with strict resolver"
+        );
+
+        // THEN column.addObject(...) must never have been called
+        // No verification needed as column is not a mock
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn(\"31/12/2021\", column) parses correctly with custom pattern 'dd/MM/uuuu'")
+    public void test_TC09() {
+        // GIVEN a DateSchemaColumn with custom pattern 'dd/MM/uuuu'
+        CsvSchema schema = new CsvSchema();
+        DateSchemaColumn dsc = new DateSchemaColumn(schema, "col", "dd/MM/uuuu");
+        // Real DfDateColumn to capture values
+        DfDateColumn column = new ConcreteDfDateColumn(); // Use concrete implementation for testing
+
+        // WHEN parsing a valid date string matching custom pattern -> trimmed non-empty -> LocalDate.parse yields 2021-12-31
+        dsc.parseAndAddToColumn("31/12/2021", column);
+
+        // THEN the column should contain exactly LocalDate.of(2021, 12, 31) at index 0
+        assertEquals(
+            LocalDate.of(2021, 12, 31),
+            column.getObject(0),
+            "Expected parsed LocalDate.of(2021,12,31) for input '31/12/2021' with custom pattern"
+        );
+    }
+}

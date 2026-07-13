@@ -1,0 +1,158 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+class RowColumnWiseSorted2dArrayBinarySearch_search_Test {
+
+    @Test
+    @DisplayName("TC01: Empty matrix returns [-1,-1] via immediate rowPointer>=length check (loop-0)")
+    void test_TC01() {
+        // GIVEN an empty matrix (matrix.length == 0) triggers exit at B9→B8 without entering loop
+        Integer[][] matrix = new Integer[0][0];
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+
+        // THEN
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC02: Single-element matrix equal target returns [0,0] (loop-1, comp==0)")
+    void test_TC02() {
+        // GIVEN a 1×1 matrix with element 7, target equal to matrix[0][0] triggers comp==0 at B2→B3
+        Integer[][] matrix = new Integer[][]{{7}};
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 7);
+
+        // THEN
+        assertArrayEquals(new int[]{0, 0}, result);
+    }
+
+    @Test
+    @DisplayName("TC03: Single-element matrix target greater triggers rowPointer++ then exit returns [-1,-1] (loop-1, comp>0)")
+    void test_TC03() {
+        // GIVEN a 1×1 matrix with element 3, target 5 > 3 so comp>0 at B2→B4→B5, rowPointer becomes 1 and exits with B8
+        Integer[][] matrix = new Integer[][]{{3}};
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+
+        // THEN
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC04: Single-element matrix target lesser triggers colPointer-- then exit returns [-1,-1] (loop-1, comp<0)")
+    void test_TC04() {
+        // GIVEN a 1×1 matrix with element 10, target 5 < 10 so comp<0 at B2→B4→B6, colPointer becomes -1 and exits at B1→B8
+        Integer[][] matrix = new Integer[][]{{10}};
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+
+        // THEN
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC05: 4x4 matrix find 35 via comp<0 then comp>0 then comp==0 (loop-N mixed)")
+    void test_TC05() {
+        // GIVEN a sorted 4×4 matrix; search 35:
+        // First compare 35 to matrix[0][3]=40 ⇒ comp<0 B2→B4→B6
+        // Then compare 35 to matrix[0][2]=30 ⇒ comp>0 B2→B4→B5
+        // Then compare 35 to matrix[1][2]=35 ⇒ comp==0 B2→B3
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 35);
+
+        // THEN
+        assertArrayEquals(new int[]{1, 2}, result);
+    }
+
+    @Test
+    @DisplayName("TC06: 4x4 matrix target > all triggers repeated rowPointer++ until exit returns [-1,-1] (loop-N, comp>0)")
+    void test_TC06() {
+        // GIVEN sorted 4×4 matrix; target 100 > all elements:
+        // each iteration comp>0 B2→B4→B5 increments rowPointer until rowPointer==4 at B9, then exit B8
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 100);
+
+        // THEN
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC07: 4x4 matrix target < all triggers repeated colPointer-- until exit returns [-1,-1] (loop-N, comp<0)")
+    void test_TC07() {
+        // GIVEN sorted 4×4 matrix; target 5 < all elements:
+        // each iteration comp<0 B2→B4→B6 decrements colPointer until colPointer==-1 at B1, then exit B8
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+
+        // THEN
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("TC08: Null matrix parameter throws NullPointerException at entry")
+    void test_TC08() {
+        // GIVEN a null matrix reference leads to NPE before any compare
+        Integer[][] matrix = null;
+
+        // WHEN & THEN
+        assertThrows(NullPointerException.class, () -> 
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 1)
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: Null target throws NullPointerException during compareTo")
+    void test_TC09() {
+        // GIVEN a 1×1 matrix with value 1 and null target triggers NPE in compareTo at B2
+        Integer[][] matrix = new Integer[][]{{1}};
+        Integer target = null;
+
+        // WHEN & THEN
+        assertThrows(NullPointerException.class, () -> 
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target)
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: Matrix with null element throws NullPointerException during compareTo")
+    void test_TC10() {
+        // GIVEN a 1×1 matrix with null element and non-null target triggers NPE in compareTo at B2
+        Integer[][] matrix = new Integer[][]{{null}};
+        Integer target = 5;
+
+        // WHEN & THEN
+        assertThrows(NullPointerException.class, () -> 
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target)
+        );
+    }
+}

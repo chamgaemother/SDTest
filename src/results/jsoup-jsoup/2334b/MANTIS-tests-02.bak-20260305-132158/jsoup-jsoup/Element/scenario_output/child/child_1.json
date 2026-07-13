@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "child(0) on element with only non-Element children throws IndexOutOfBoundsException",
+      "path": "B0→B1→B3→B5",
+      "precondition": "parent has two TextNode children and one DataNode child",
+      "expectedResult": "IndexOutOfBoundsException is thrown because no Element nodes exist",
+      "tags": [
+        "negative",
+        "no-element",
+        "exception",
+        "filter"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 child only-nonElement-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"text1\");",
+        "    parent.appendText(\"text2\");",
+        "    parent.append(\"<script>data</script>\");",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "second call to child(1) uses cached shadowChildrenRef path, returns correct Element",
+      "path": "B0→B1→B3→B4→B3→B4→B5",
+      "precondition": "parent has two Element children",
+      "expectedResult": "returns the second element both times, exercising cache reuse",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child cache-reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    Element second = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    Element result1 = parent.child(1);",
+        "    Element result2 = parent.child(1);",
+        "  THEN",
+        "    assert result1 == second;",
+        "    assert result2 == second;",
+        "END"
+      ]
+    }
+  ]
+}

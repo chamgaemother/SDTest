@@ -1,0 +1,58 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a new Document with identical structure but distinct outputSettings and parser instances",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document is equal in baseUri, location, and node structure to original; clone != original; clone.outputSettings != original.outputSettings; clone.parser != original.parser",
+      "tags": [
+        "positive",
+        "distinct-instances"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 clone produces distinct deep copy",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assert copy != original;",
+        "    assert copy.baseUri().equals(original.baseUri());",
+        "    assert copy.location().equals(original.location());",
+        "    assert copy.outputSettings() != original.outputSettings();",
+        "    assert copy.parser() != original.parser();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Modifying original after clone does not affect the clone (deep isolation)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "changes to original outputSettings and parser do not reflect in clone",
+      "tags": [
+        "positive",
+        "deep-isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 clone deep isolation on mutation",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://test\");",
+        "    Document copy = original.clone();",
+        "  WHEN",
+        "    original.charset(Charset.forName(\"ISO-8859-1\"));",
+        "    original.parser(Parser.xmlParser());",
+        "  THEN",
+        "    assert copy.charset().name().equals(\"UTF-8\");",
+        "    assert copy.parser().getClass() != original.parser().getClass();",
+        "END"
+      ]
+    }
+  ]
+}

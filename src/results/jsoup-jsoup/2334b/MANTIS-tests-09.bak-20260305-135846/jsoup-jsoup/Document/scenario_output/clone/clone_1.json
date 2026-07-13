@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "clone() deep copies element attributes and modifications to clone do not affect original",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Document has a custom attribute on root element",
+      "expectedResult": "Clone has same attribute value; changing clone attribute does not change original",
+      "tags": [
+        "positive",
+        "attribute",
+        "isolation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone preserves and isolates attributes",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://test\");",
+        "    doc.attr(\"data-key\", \"value1\");",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "    copy.attr(\"data-key\", \"value2\");",
+        "  THEN",
+        "    assertEquals(\"value1\", doc.attr(\"data-key\"));",
+        "    assertEquals(\"value2\", copy.attr(\"data-key\"));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() does not copy a non-null connection; clone.connection() returns new session independent of original",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Document has an explicit Connection set",
+      "expectedResult": "Original connection preserved; clone.connection() returns a new session instance",
+      "tags": [
+        "positive",
+        "connection",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone resets connection field",
+        "  GIVEN",
+        "    Connection conn = Jsoup.connect(\"http://orig\");",
+        "    Document doc = new Document(\"http://orig\").connection(conn);",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "    Connection copyConn = copy.connection();",
+        "  THEN",
+        "    assertSame(conn, doc.connection());",
+        "    assertNotSame(conn, copyConn);",
+        "    assertNotNull(copyConn);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() copies and isolates quirksMode; changing clone quirksMode does not affect original",
+      "path": "B0→B1→B2→B7",
+      "precondition": "Document quirksMode set to quirks",
+      "expectedResult": "Clone has same quirksMode initially; modifying clone's quirksMode does not change original",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "isolation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone copies and isolates quirksMode",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://q\").quirksMode(Document.QuirksMode.quirks);",
+        "  WHEN",
+        "    Document copy = doc.clone();",
+        "    copy.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.quirks, doc.quirksMode());",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, copy.quirksMode());"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+  "method": "charset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "charset(html, meta[charset] absent) creates new <meta charset> element (syntax=html, metaCharset==null)",
+      "path": "B0→B1→B2→B3→B4(html branch)→B5(metaCharset==null)→B6→B7",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true); // no existing <meta charset> or <meta name=charset>",
+      "expectedResult": "doc.selectFirst(\"meta[charset]\").attr(\"charset\") == Charset.forName(\"UTF-8\").displayName()",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "syntax:html",
+        "meta-absent",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 charset html create-meta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(\"UTF-8\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "charset(html, meta[charset] present) updates existing <meta charset> element (syntax=html, metaCharset!=null)",
+      "path": "B0→B1→B2→B3→B4(html branch)→B5(metaCharset!=null)→B6→B7",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.head().appendElement(\"meta\").attr(\"charset\",\"ISO-8859-1\");",
+      "expectedResult": "doc.selectFirst(\"meta[charset]\").attr(\"charset\") == Charset.forName(\"UTF-16\").displayName()",
+      "tags": [
+        "branch-true",
+        "syntax:html",
+        "meta-present",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 charset html update-meta",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"charset\",\"ISO-8859-1\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    assert doc.selectFirst(\"meta[charset]\").attr(\"charset\").equals(\"UTF-16\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "charset(html removes obsolete <meta name=charset>) removes <meta name=charset> when present",
+      "path": "B0→B1→B2→B3→B4(html branch)→B5(metaCharset==null)→B6(remove name=charset)→B7",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+      "expectedResult": "doc.select(\"meta[name=charset]\").isEmpty() == true",
+      "tags": [
+        "branch-true",
+        "syntax:html",
+        "meta-name-charset",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 charset html remove-obsolete",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.head().appendElement(\"meta\").attr(\"name\",\"charset\");",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"US-ASCII\"));",
+        "  THEN",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "charset(xml, first child is XmlDeclaration without version) adds declaration with version and encoding (syntax=xml, node instanceof XmlDeclaration, !hasAttr(version))",
+      "path": "B0→B1→B2→B3→B8(xml branch)→B9(instance)→B10(!hasVersion)→B11→B7",
+      "precondition": "Document doc = new Document(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.outputSettings().syntax(OutputSettings.Syntax.xml); XmlDeclaration decl = new XmlDeclaration(\"xml\", false); doc.prependChild(decl);",
+      "expectedResult": "Node n = doc.childNodes().get(0); assert n instanceof XmlDeclaration; XmlDeclaration xd = (XmlDeclaration)n; assert xd.attr(\"encoding\").equals(\"UTF-8\"); assert xd.attr(\"version\").equals(\"1.0\");",
+      "tags": [
+        "branch-true",
+        "syntax:xml",
+        "xml-existing-decl",
+        "version-absent",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 charset xml add-version",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    Node n = doc.childNodes().get(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    XmlDeclaration xd = (XmlDeclaration)n;",
+        "    assert xd.attr(\"encoding\").equals(\"UTF-8\");",
+        "    assert xd.attr(\"version\").equals(\"1.0\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "charset(xml, existing XmlDeclaration with version) updates only encoding (syntax=xml, node instanceof XmlDeclaration, hasAttr(version))",
+      "path": "B0→B1→B2→B3→B8(xml branch)→B9(instance)→B10(hasVersion)→B11→B7",
+      "precondition": "Document doc = new Document(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.outputSettings().syntax(OutputSettings.Syntax.xml); XmlDeclaration decl = new XmlDeclaration(\"xml\", false); decl.attr(\"version\",\"1.0\"); doc.prependChild(decl);",
+      "expectedResult": "XmlDeclaration xd = (XmlDeclaration)doc.childNodes().get(0); assert xd.attr(\"encoding\").equals(\"UTF-16\"); assert xd.attr(\"version\").equals(\"1.0\");",
+      "tags": [
+        "branch-true",
+        "syntax:xml",
+        "xml-existing-decl",
+        "version-present",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 charset xml update-encoding",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    decl.attr(\"version\",\"1.0\");",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-16\"));",
+        "  THEN",
+        "    XmlDeclaration xd = (XmlDeclaration)doc.childNodes().get(0);",
+        "    assert xd.attr(\"encoding\").equals(\"UTF-16\");",
+        "    assert xd.attr(\"version\").equals(\"1.0\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "charset(xml, first child not XmlDeclaration) prepends new xml declaration (syntax=xml, node !instanceof XmlDeclaration)",
+      "path": "B0→B1→B2→B3→B8(xml branch)→B9(not instance)→B12→B7",
+      "precondition": "Document doc = new Document(\"http://example.com\"); doc.updateMetaCharsetElement(true); doc.outputSettings().syntax(OutputSettings.Syntax.xml); // no XmlDeclaration child",
+      "expectedResult": "Node n = doc.childNodes().get(0); assert n instanceof XmlDeclaration; XmlDeclaration xd = (XmlDeclaration)n; assert xd.attr(\"encoding\").equals(\"UTF-8\"); assert xd.attr(\"version\").equals(\"1.0\");",
+      "tags": [
+        "branch-true",
+        "syntax:xml",
+        "xml-no-decl",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 charset xml prepend-decl",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    doc.charset(Charset.forName(\"UTF-8\"));",
+        "  THEN",
+        "    Node n = doc.childNodes().get(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    XmlDeclaration xd = (XmlDeclaration)n;",
+        "    assert xd.attr(\"encoding\").equals(\"UTF-8\");",
+        "    assert xd.attr(\"version\").equals(\"1.0\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "charset(null) throws NullPointerException when charset is null",
+      "path": "B0→B1→B2(outputSettings.charset)→B3→ensureMetaCharsetElement→NPE",
+      "precondition": "Document doc = Document.createShell(\"http://example.com\"); doc.updateMetaCharsetElement(true);",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 charset null-exception",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "  WHEN",
+        "    call doc.charset(null);",
+        "  THEN",
+        "    throws NullPointerException"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Calling isFormSubmittable() on a cloned known form-submittable tag (uppercase OUTPUT with preserve-case) returns true",
+      "path": "B0→B1(tag from first map null)→B3(tag from normalName map)→B5(clone path)→B8(return true)",
+      "precondition": "ParseSettings.preserveCase = true; Tags contains 'output' with formSubmit=true",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "clone-path",
+        "case-sensitive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 uppercase-known-tag-clone",
+        "  GIVEN",
+        "    String tagName = \"OUTPUT\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase; // preserveTagCase = true",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert clone path taken and formSubmit true",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Calling isFormSubmittable() on a known form-submittable tag via normalName lookup (uppercase OPTION with lower-case settings) returns true",
+      "path": "B0→B1(tag from first map null)→B3(tag from normalName map)→B4(no clone)→B8(return true)",
+      "precondition": "ParseSettings(preserveTagCase=false); Tags contains 'option' with formSubmit=true",
+      "expectedResult": "return value is true",
+      "tags": [
+        "positive",
+        "direct-normalName",
+        "settings-variation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 uppercase-known-tag-no-clone",
+        "  GIVEN",
+        "    String tagName = \"OPTION\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = new ParseSettings(false); // preserveTagCase = false",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    // Assert normalName lookup path taken and formSubmit true",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

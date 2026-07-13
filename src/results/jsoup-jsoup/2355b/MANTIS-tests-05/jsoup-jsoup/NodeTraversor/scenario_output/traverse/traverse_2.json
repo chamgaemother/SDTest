@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "two-child root without removals triggers early return via sibling-stop path (B16→B17→B18→B20→B21)",
+      "path": "B0→B1→B2→B5→B11→B13→B16→B17→B18→B20→B21→B24",
+      "precondition": "root element with exactly two direct children, no mutations in head/tail",
+      "expectedResult": "only head/tail invoked for root and first child, traversal stops without visiting second child",
+      "tags": [
+        "positive",
+        "sibling-stop",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 sibling-stop early-return",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    root.appendChild(new Element(\"li1\"));",
+        "    root.appendChild(new Element(\"li2\"));",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = (node, depth) -> calls.add(node.nodeName() + \":\" + depth);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.contains(\"ul:0\");",
+        "    assert calls.contains(\"li1:1\");",
+        "    assertFalse(calls.contains(\"li2:1\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "deep chain depth=2 without siblings exercises multi-level ascend loop (B12→B23→B1→...→B16→B20→B22→B23)",
+      "path": "B0→B1→B2→B5→B11→B12(loop×2)→B23→B1→B5→B11→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "root element with one child, which itself has one child, no mutations",
+      "expectedResult": "head/tail invoked in correct depth-first order: div→span→i→i→span→div",
+      "tags": [
+        "positive",
+        "depth",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 nested-depth-two",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    Element grand = new Element(\"i\");",
+        "    child.appendChild(grand);",
+        "    root.appendChild(child);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { calls.add(\"head:\" + n.nodeName() + \":\" + d); }",
+        "      public void tail(Node n, int d) { calls.add(\"tail:\" + n.nodeName() + \":\" + d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(",
+        "      \"head:div:0\",\"head:span:1\",\"head:i:2\",",
+        "      \"tail:i:2\",\"tail:span:1\",\"tail:div:0\"",
+        "    ), calls);",
+        "END"
+      ]
+    }
+  ]
+}

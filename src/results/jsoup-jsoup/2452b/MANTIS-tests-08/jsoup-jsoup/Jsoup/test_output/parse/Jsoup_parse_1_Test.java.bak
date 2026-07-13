@@ -1,0 +1,76 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(String) with simple HTML and default baseUri resolves without error")
+    public void test_TC01() {
+        // Path B0→B1→B3→B5: default parse(html) overload chosen, baseUri is empty string
+        String html = "<p>Hello</p>";
+        Document doc = Jsoup.parse(html);
+        // Expect the body HTML to contain the original <p>Hello</p> fragment
+        assertEquals("<p>Hello</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(String, String) with non-empty baseUri and relative link resolved")
+    public void test_TC02() {
+        // Path B0→B1→B2→B5: parse(html, baseUri) chosen, resolving relative URLs
+        String html = "<a href=\"/path\">link</a>";
+        String baseUri = "http://example.com/dir/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // The absUrl should resolve "/path" against the baseUri to "http://example.com/path"
+        String absHref = doc.select("a").first().absUrl("href");
+        assertEquals("http://example.com/path", absHref);
+    }
+
+    @Test
+    @DisplayName("parse(String, Parser) overload with custom xmlParser and empty baseUri")
+    public void test_TC03() {
+        // Path B0→B4→B6→B8: parse(html, parser) overload chosen, passes empty baseUri to parser
+        String html = "<Tag>value</Tag>";
+        Parser xmlParser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, xmlParser);
+        // Expect xmlParser to preserve tag case, so tag names remain "Tag"
+        assertEquals("Tag", doc.select("Tag").first().tagName());
+    }
+
+    @Test
+    @DisplayName("parse(String, String, Parser) overload with xmlParser, non-empty baseUri")
+    public void test_TC04() {
+        // Path B0→B4→B7→B9: parse(html, baseUri, parser) overload chosen, resolves relative URLs via parser
+        String html = "<img src=\"img.png\"/>";
+        String baseUri = "https://site.com/assets/";
+        Parser xmlParser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, xmlParser);
+        // The src attribute should resolve against baseUri to full URL
+        String absSrc = doc.select("img").first().absUrl("src");
+        assertEquals("https://site.com/assets/img.png", absSrc);
+    }
+
+    @Test
+    @DisplayName("parse(String, String) throws NullPointerException when html is null")
+    public void test_TC05() {
+        // Path B0→B1→B10: input html is null, expect NullPointerException before parsing
+        String html = null;
+        String baseUri = "http://example.com";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("parse(String, String, Parser) throws NullPointerException when parser is null")
+    public void test_TC06() {
+        // Path B0→B4→B10: parser argument is null, expect NullPointerException
+        String html = "<p>test</p>";
+        String baseUri = "";
+        Parser parser = null;
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri, parser));
+    }
+}

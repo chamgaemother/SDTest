@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn trims input and correctly parses a valid date with surrounding whitespace",
+      "path": "B0→B1(false)→B2(false)→B4→B5",
+      "precondition": "DateSchemaColumn created with default pattern",
+      "expectedResult": "adds LocalDate parsed from trimmed string",
+      "tags": [
+        "positive",
+        "trim",
+        "whitespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn trims and parses valid date",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \" 2020-1-1 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    assert dfColumn.getCountAdded() == 1;",
+        "    assert dfColumn.getLastAdded().equals(LocalDate.of(2020, 1, 1));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn throws DateTimeParseException for invalid date under custom pattern",
+      "path": "B0→B1(false)→B2(false)→B4→exception",
+      "precondition": "DateSchemaColumn created with pattern 'dd/MM/uuuu'",
+      "expectedResult": "DateTimeParseException is thrown; no addObject invocation",
+      "tags": [
+        "negative",
+        "exception",
+        "custom-pattern"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseAndAddToColumn invalid under custom pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"dd/MM/uuuu\");",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"2020-31-12\"; // invalid format for dd/MM/uuuu",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert dfColumn.getCountAdded() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn throws DateTimeParseException for non-existent leap-day under strict default pattern",
+      "path": "B0→B1(false)→B2(false)→B4→exception",
+      "precondition": "DateSchemaColumn created with default pattern",
+      "expectedResult": "DateTimeParseException is thrown; no addObject invocation",
+      "tags": [
+        "negative",
+        "exception",
+        "strict-resolver"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseAndAddToColumn detects invalid leap-day",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null);",
+        "    StubDfColumn dfColumn = new StubDfColumn();",
+        "    String aString = \"2019-02-29\"; // invalid leap-day",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, dfColumn);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    assert dfColumn.getCountAdded() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

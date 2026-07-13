@@ -1,0 +1,135 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) delegates to parseInput(Reader, String) and returns Document when treeBuilder.parse succeeds",
+      "path": "B1→B2→B3",
+      "precondition": "Parser constructed with a fake TreeBuilder stub whose parse(Reader, String, Parser) returns a placeholder Document; stubbing to isolate Parser behavior",
+      "expectedResult": "returned Document is the placeholder Document instance provided by the stub",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-parse-success",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput String overload success",
+        "  GIVEN",
+        "    Parser p = new Parser(fakeTreeBuilderStubReturningDoc);",
+        "    String html = \"<p>ok</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document result = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assertSame(placeholderDoc, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) throws RuntimeException when treeBuilder.parse throws",
+      "path": "B1→B2→B3",
+      "precondition": "Parser constructed with a fake TreeBuilder stub whose parse(Reader, String, Parser) throws RuntimeException(\"fail\"); stubbing to simulate underlying parse failure",
+      "expectedResult": "throws RuntimeException with message \"fail\"",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-parse-exception",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput String overload exception",
+        "  GIVEN",
+        "    Parser p = new Parser(fakeTreeBuilderStubThrowing);",
+        "    String html = \"<bad\";",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    call p.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws RuntimeException(\"fail\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader, String) returns Document when treeBuilder.parse succeeds",
+      "path": "B4→B5",
+      "precondition": "Parser constructed with a fake TreeBuilder stub whose parse(Reader, String, Parser) returns a placeholder Document; stubbing to isolate Parser behavior",
+      "expectedResult": "returned Document is the placeholder Document instance provided by the stub",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-parse-success",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput Reader overload success",
+        "  GIVEN",
+        "    Parser p = new Parser(fakeTreeBuilderStubReturningDoc);",
+        "    Reader reader = new StringReader(\"<html></html>\");",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    Document result = p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assertSame(placeholderDoc, result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) throws IllegalArgumentException when given a null Reader",
+      "path": "B4",
+      "precondition": "Parser with real TreeBuilder, passing null Reader to simulate invalid input causing immediate NPE",
+      "expectedResult": "throws IllegalArgumentException; no state mutated",
+      "tags": [
+        "overload:Reader,baseUri",
+        "branch-null-reader",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput Reader overload null-reader",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseInput(String, String) throws IllegalArgumentException for a null html argument",
+      "path": "B1",
+      "precondition": "Parser with real HtmlTreeBuilder; passing null html to delegate method should be validated",
+      "expectedResult": "throws IllegalArgumentException; no underlying parse is invoked",
+      "tags": [
+        "overload:String,baseUri",
+        "branch-null-html",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O1 parseInput String overload null-html",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    call p.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

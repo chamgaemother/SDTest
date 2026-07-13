@@ -1,0 +1,81 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+/**
+ * JUnit 5 tests for Element.children() cache invalidation scenarios (TC11, TC12).
+ */
+public class Element_children_2_Test {
+
+    @Test
+    @DisplayName("TC11: children() invalidates when cached list exists but stored modCount mismatches actual modCount")
+    public void test_TC11() throws Exception {
+        // GIVEN a parent with two children and a populated cache
+        Element parent = new Element("div");
+        Element c1 = new Element("span");
+        Element c2 = new Element("p");
+        parent.appendChild(c1);
+        parent.appendChild(c2);
+        // First call populates the cache (hasUserData=true, proper modCount)
+        Elements first = parent.children();
+        // Reflectively fetch the userData keys
+        Field keyField = Element.class.getDeclaredField("childElsKey");
+        keyField.setAccessible(true);
+        String childElsKey = (String) keyField.get(null);
+        Field modField = Element.class.getDeclaredField("childElsMod");
+        modField.setAccessible(true);
+        String childElsMod = (String) modField.get(null);
+        // Tamper the modCount to an incorrect value to simulate stale cache
+        Map<String, Object> userData = parent.attributes().userData();
+        userData.put(childElsMod, Integer.valueOf(-1)); // wrong modCount triggers invalidation
+
+        // WHEN children() is called again after cache is stale
+        Elements updated = parent.children();
+
+        // THEN should not return the same cached instance and must reflect two children
+        assertNotSame(first, updated, "Expected a new Elements instance when modCount mismatches");
+        assertEquals(2, updated.size(), "Updated elements list must contain both child elements");
+    }
+
+    @Test
+    @DisplayName("TC12: children() recreates cache when cached WeakReference has been cleared")
+    public void test_TC12() throws Exception {
+        // GIVEN a parent with one child and a populated cache
+        Element parent = new Element("ul");
+        Element c1 = new Element("li");
+        parent.appendChild(c1);
+        Elements first = parent.children(); // populates cache
+        // Reflectively fetch the userData keys
+        Field keyField = Element.class.getDeclaredField("childElsKey");
+        keyField.setAccessible(true);
+        String childElsKey = (String) keyField.get(null);
+        Field modField = Element.class.getDeclaredField("childElsMod");
+        modField.setAccessible(true);
+        String childElsMod = (String) modField.get(null);
+        // Obtain the current modCount so we leave it unchanged
+        Map<String, Object> userData = parent.attributes().userData();
+        Object currentMod = userData.get(childElsMod);
+        // Replace the WeakReference so that ref.get()==null but modCount matches
+        userData.put(childElsKey, new WeakReference<List<Element>>(null));
+        userData.put(childElsMod, currentMod);
+
+        // WHEN children() is called again with cleared reference
+        Elements second = parent.children();
+
+        // THEN cache should be recreated, different instance, same single child, and correct ordering
+        assertNotSame(first, second, "Expected a new Elements instance when WeakReference referent is cleared");
+        assertEquals(1, second.size(), "Recreated elements list must contain the single child element");
+        assertSame(c1, second.get(0), "Child element in the recreated list must be the original child");
+    }
+}

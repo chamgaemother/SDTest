@@ -1,0 +1,31 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Range.AttributeRange;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("sourceRange calls parent.sourceRange when parent is non-null (branch parent!=null)")
+    public void test_TC02() {
+        // Arrange: Create a stub Attributes where parent is non-null and overrides sourceRange
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // Return a known range to verify delegation
+                return new AttributeRange(5, 10);
+            }
+        };
+        // Create attribute with non-null parent to satisfy parent != null branch (B0->B2)
+        Attribute attr = new Attribute("key", "value", stubParent);
+
+        // Act: Invoke sourceRange, expecting it to delegate to stubParent.sourceRange
+        Range.AttributeRange result = attr.sourceRange();
+
+        // Assert: The returned AttributeRange should match the stubbed values
+        assertEquals(5, result.getStart(), "Expected start to be 5 as stubbed");
+        assertEquals(10, result.getEnd(), "Expected end to be 10 as stubbed");
+    }
+}

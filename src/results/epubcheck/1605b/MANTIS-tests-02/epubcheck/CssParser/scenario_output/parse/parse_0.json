@@ -1,0 +1,121 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty stream results in no rules processed and immediate endDocument (loop-0)",
+      "path": "B0→B1→B8",
+      "precondition": "Reader over empty CSS input; real CssErrorHandler and CssContentHandler implementations",
+      "expectedResult": "contentHandler.startDocument() invoked once; contentHandler.endDocument() invoked; no selector or at-rule callbacks",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-input",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errorHandler, contentHandler);",
+        "  THEN",
+        "    verify(contentHandler.startDocument());",
+        "    verify(contentHandler.endDocument());"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single at-rule without block parsed (one iteration, branch-true ATKEYWORD)",
+      "path": "B0→B1→B2→B4→B5→B1→B8",
+      "precondition": "Reader over \"@charset \\\"UTF-8\\\";\"; real handlers",
+      "expectedResult": "startDocument(); errorHandler not called; contentHandler.startAtRule(\"charset\"); contentHandler.endAtRule(\"charset\"); endDocument()",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "overload:Reader,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-atrule",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@charset \\\"UTF-8\\\";\");",
+        "  WHEN",
+        "    parser.parse(reader, \"sys\", errorHandler, contentHandler);",
+        "  THEN",
+        "    assert no errors; verifyAtRule(\"charset\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single rule-set without declarations parsed (one iteration, branch-false ATKEYWORD)",
+      "path": "B0→B1→B2→B3→B5→B1→B8",
+      "precondition": "Reader over \"body{}\"; real handlers",
+      "expectedResult": "startDocument(); contentHandler.selectors(list of one selector matching \"body\"); contentHandler.endSelectors(...); endDocument()",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "overload:Reader,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"body{}\");",
+        "  WHEN",
+        "    parser.parse(reader, \"url\", errorHandler, contentHandler);",
+        "  THEN",
+        "    verifySelectors(\"body\"); verify no declarations"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Multiple rule-sets parsed sequentially (loop-N for N=2)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader over \"h1{}h2{}\"; real handlers",
+      "expectedResult": "startDocument(); two selector callbacks for \"h1\" and \"h2\"; endDocument()",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "overload:Reader,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse two-rulesets",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{}h2{}\");",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", errorHandler, contentHandler);",
+        "  THEN",
+        "    verifySelectors(\"h1\",\"h2\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Premature EOF inside a rule-set triggers error and breaks loop (exception path)",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "Reader over incomplete CSS \"p{\" missing '}', real handlers",
+      "expectedResult": "errorHandler.error(GRAMMAR_PREMATURE_EOF); contentHandler.startDocument(); contentHandler.endDocument()",
+      "tags": [
+        "exception",
+        "loop-1",
+        "branch-false",
+        "overload:Reader,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse incomplete-ruleset-throws",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"p{\");",
+        "  WHEN",
+        "    parser.parse(reader, \"sys\", errorHandler, contentHandler);",
+        "  THEN",
+        "    assert errorHandler.received(PrematureEOFException)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "parseInput(Reader, baseUri) propagates runtime exception from custom TreeBuilder.parse and unlocks for subsequent calls",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown on each call, and lock is not held between calls",
+      "tags": [
+        "exception",
+        "unlock",
+        "custom-builder"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseInput reader-exception-unlock",
+        "  GIVEN",
+        "    // Arrange stub TreeBuilder that always throws",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }",
+        "      public TreeBuilder newInstance() { return this; }",
+        "      public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"boom\"); }",
+        "      public List<Node> parseFragment(Reader in, Element c, String u, Parser p) { return null; }",
+        "      public void process(Token t) {}",
+        "      public TagSet defaultTagSet() { return TagSet.Html(); }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader r1 = new StringReader(\"<x/>\");",
+        "  WHEN",
+        "    // Act & Assert first call",
+        "    call parser.parseInput(r1, \"uri\");",
+        "  THEN",
+        "    // Assert exception",
+        "    throws IllegalStateException with message \"boom\";",
+        "  WHEN",
+        "    // Act second call to confirm unlock",
+        "    Reader r2 = new StringReader(\"<x/>\");",
+        "    call parser.parseInput(r2, \"uri\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"boom\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(String, baseUri) propagates runtime exception from stub HtmlTreeBuilder.parse and unlocks for subsequent calls",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "Parser constructed with stub HtmlTreeBuilder whose parse(...) throws IllegalArgumentException",
+      "expectedResult": "IllegalArgumentException is thrown on each call, lock is released between calls",
+      "tags": [
+        "exception",
+        "unlock",
+        "string-overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseInput string-exception-unlock",
+        "  GIVEN",
+        "    // Arrange stub HtmlTreeBuilder that always throws",
+        "    HtmlTreeBuilder stub = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalArgumentException(\"fail\"); }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public void process(Token t) {}",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<div/>\";",
+        "    String base = \"u\";",
+        "  WHEN",
+        "    // Act & Assert first call",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws IllegalArgumentException with message \"fail\";",
+        "  WHEN",
+        "    // Act second call to confirm unlock",
+        "    call parser.parseInput(html, base);",
+        "  THEN",
+        "    throws IllegalArgumentException with message \"fail\";",
+        "END"
+      ]
+    }
+  ]
+}

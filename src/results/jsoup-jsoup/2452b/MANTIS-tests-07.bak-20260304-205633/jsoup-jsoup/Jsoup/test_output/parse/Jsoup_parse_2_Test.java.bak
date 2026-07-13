@@ -1,0 +1,53 @@
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC18: parse(String) with null HTML input throws IllegalArgumentException")
+    public void test_TC18() {
+        // Design: calling parse(html) with html==null should hit the null check in Parser.parse and throw IllegalArgumentException
+        String html = null;
+        assertThrows(IllegalArgumentException.class, () -> {
+            Jsoup.parse(html);
+        });
+    }
+
+    @Test
+    @DisplayName("TC19: parse(String, Parser) with null HTML input throws IllegalArgumentException")
+    public void test_TC19() {
+        // Design: calling parse(html, parser) with html==null but parser non-null should validate html first, throwing IllegalArgumentException
+        String html = null;
+        Parser parser = Parser.htmlParser();
+        assertThrows(IllegalArgumentException.class, () -> {
+            Jsoup.parse(html, parser);
+        });
+    }
+
+    @Test
+    @DisplayName("TC20: parse(String, Parser) with null Parser throws NullPointerException")
+    public void test_TC20() {
+        // Design: calling parse(html, parser) with parser==null should immediately cause NPE on parser.parseInput invocation
+        String html = "<p>test</p>";
+        Parser parser = null;
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parse(html, parser);
+        });
+    }
+
+    @Test
+    @DisplayName("TC21: parse(String, String, Parser) with null Parser throws NullPointerException")
+    public void test_TC21() {
+        // Design: calling parse(html, baseUri, parser) with parser==null should NPE on parser.parseInput call in overloaded method
+        String html = "<div>OK</div>";
+        String baseUri = "http://x/";
+        Parser parser = null;
+        assertThrows(NullPointerException.class, () -> {
+            Jsoup.parse(html, baseUri, parser);
+        });
+    }
+}

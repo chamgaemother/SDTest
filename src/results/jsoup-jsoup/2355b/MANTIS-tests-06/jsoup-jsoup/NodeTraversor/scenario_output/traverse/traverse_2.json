@@ -1,0 +1,103 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "remove first of two siblings in head: triggers non-last-sibling removal branch (origSize > childSize) and continues traversal on next sibling without tail for removed node",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B9→B10→B1",
+      "precondition": "root with two TextNode children a and b",
+      "expectedResult": "head called for b after a removal; root retains single child b",
+      "tags": [
+        "positive",
+        "branch",
+        "removal",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 remove-first-sibling",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    TextNode a = new TextNode(\"a\");",
+        "    TextNode b = new TextNode(\"b\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "        head(Node n,int d){ events.add(n.outerHtml()); if(n==a) n.remove(); },",
+        "        tail(Node n,int d){}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root.childNode(0));",
+        "  THEN",
+        "    assertTrue(events.contains(\"b\"));",
+        "    assertEquals(1, root.childNodeSize());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "deep tree with nested single child triggers ancestor-tail loop branch (node.nextSibling null && depth>0) at depth>1",
+      "path": "B0→B1→B2→B3(loop→descend×2)→B11→B12→...→B23→(loop ascend tail) B16→B17→B19",
+      "precondition": "nested tree <a><b><c/></b></a>",
+      "expectedResult": "head0,head1,head2,tail2,tail1,tail0 in order",
+      "tags": [
+        "positive",
+        "branch",
+        "iteration",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 deep-single-child-ascend-loop",
+        "  GIVEN",
+        "    Node root = Parser.parseFragment(\"<a><b><c/></b></a>\", new Parser.Settings()).get(0);",
+        "    List<String> records = new ArrayList<>();",
+        "    NodeVisitor visitor = NodeVisitor.headTailRecorder(records);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"head0\",\"head1\",\"head2\",\"tail2\",\"tail1\",\"tail0\"), records);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "visitor replaces then removal of a replaced node: triggers replace branch (origSize==childSize) then removal on next sibling",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→...→descend→...→B6(on replaced)→B7→B9→B1",
+      "precondition": "root with two TextNode children a and b",
+      "expectedResult": "first node replaced by x then x removed, traversal continues to b",
+      "tags": [
+        "positive",
+        "branch",
+        "replace",
+        "removal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 replace-then-remove",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    TextNode a = new TextNode(\"orig\");",
+        "    TextNode b = new TextNode(\"next\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      head(Node n,int d){",
+        "        if(n==a) n.replaceWith(new TextNode(\"x\"));",
+        "        else if(n.outerHtml().equals(\"x\")) n.remove();",
+        "        events.add(n.outerHtml());",
+        "      },",
+        "      tail(Node n,int d){}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root.childNode(0));",
+        "  THEN",
+        "    assertTrue(events.contains(\"next\"));",
+        "    assertEquals(1, root.childNodeSize());",
+        "END"
+      ]
+    }
+  ]
+}

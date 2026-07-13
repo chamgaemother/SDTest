@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "charset(xml) updates encoding but does not add version when existing XmlDeclaration 'xml' lacks version attr",
+      "path": "B0→B1→B2→B3→B4(xml)→B5(inst XmlDeclaration)→B6(name=='xml')→B8(!has version)→B10(end)",
+      "precondition": "Document with xml syntax, updateMetaCharsetElement set true, first child is XmlDeclaration named 'xml' without version attribute",
+      "expectedResult": "XmlDeclaration has encoding updated, and no version attribute present",
+      "tags": [
+        "positive",
+        "xml",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 xml-decl-no-version-skips-version",
+        "  GIVEN",
+        "    Document doc = new Document(\"/\");",
+        "    doc.outputSettings().syntax(OutputSettings.Syntax.xml);",
+        "    doc.updateMetaCharsetElement(true);",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    // do not set version attr",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.ISO_8859_1);",
+        "  THEN",
+        "    XmlDeclaration first = (XmlDeclaration) doc.childNodes().get(0);",
+        "    assert first.attr(\"encoding\").equals(StandardCharsets.ISO_8859_1.displayName());",
+        "    assert !first.hasAttr(\"version\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "charset(html) with only obsolete <meta name=charset> appends new meta[charset] and removes the obsolete",
+      "path": "B0→B1→B2(html)→B7(metaCharset null)→B9(appendElement)→B11(remove obsolete)→B12(end)",
+      "precondition": "Document.createShell(\"http://exa\") and head has one <meta name=charset> only",
+      "expectedResult": "New meta[charset] is added and the single obsolete meta[name=charset] is removed",
+      "tags": [
+        "positive",
+        "html",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 html-only-obsolete-removal",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://exa\");",
+        "    doc.head().appendElement(\"meta\").attr(\"name\", \"charset\");",
+        "  WHEN",
+        "    doc.charset(StandardCharsets.UTF_8);",
+        "  THEN",
+        "    Element metaCharset = doc.head().selectFirst(\"meta[charset]\");",
+        "    assert metaCharset != null && metaCharset.attr(\"charset\").equals(StandardCharsets.UTF_8.displayName());",
+        "    assert doc.select(\"meta[name=charset]\").isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

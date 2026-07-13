@@ -1,0 +1,9 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.DisplayName;
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_tagSet_0_Test {
+    // No scenarios provided for method 'tagSet'.
+    // Please provide test scenarios to generate test methods.
+}

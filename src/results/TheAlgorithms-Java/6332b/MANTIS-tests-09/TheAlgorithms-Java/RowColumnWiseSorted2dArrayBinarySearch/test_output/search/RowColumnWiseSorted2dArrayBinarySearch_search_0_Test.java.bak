@@ -1,0 +1,101 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class RowColumnWiseSorted2dArrayBinarySearch_search_Test {
+
+    @Test
+    @DisplayName("empty matrix returns [-1,-1] covering loop-0 (rowPointer>=length at first check)")
+    void test_TC01() {
+        // GIVEN an empty matrix, matrix.length == 0 so rowPointer >= length immediately (B0->B9->B8)
+        Integer[][] matrix = new Integer[0][];
+        Integer target = 5;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        // THEN should return [-1, -1]
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("single-element matrix match returns [0,0] covering one iteration and comp==0")
+    void test_TC02() {
+        // GIVEN a 1x1 matrix with element 5; at first iteration comp == 0 (B1 false, B2->B3)
+        Integer[][] matrix = new Integer[][]{{5}};
+        Integer target = 5;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        // THEN should return [0, 0]
+        assertArrayEquals(new int[]{0, 0}, result);
+    }
+
+    @Test
+    @DisplayName("single-element matrix non-match lesser returns [-1,-1] covering one iteration comp<0")
+    void test_TC03() {
+        // GIVEN a 1x1 matrix with element 5 and target 3; comp < 0 so colPointer-- and exit (B2->B4->B6->...->B8)
+        Integer[][] matrix = new Integer[][]{{5}};
+        Integer target = 3;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        // THEN should return [-1, -1]
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("4×4 matrix multiple iterations find target covering comp<0 then comp>0 then comp==0")
+    void test_TC04() {
+        // GIVEN a sorted 4x4 matrix and target 38:
+        //  Step1: compare 38 with matrix[0][3]=40 => comp<0 (colPointer--)
+        //  Step2: compare 38 with matrix[0][2]=30 => comp>0 (rowPointer++)
+        //  Step3: compare 38 with matrix[1][2]=35 => comp>0 (rowPointer++)
+        //  Step4: compare 38 with matrix[2][2]=38 => comp==0 => found
+        Integer[][] matrix = new Integer[][]{
+            {10, 20, 30, 40},
+            {15, 25, 35, 45},
+            {18, 28, 38, 48},
+            {21, 31, 41, 51}
+        };
+        Integer target = 38;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        // THEN should return [2, 2]
+        assertArrayEquals(new int[]{2, 2}, result);
+    }
+
+    @Test
+    @DisplayName("4×4 matrix multiple iterations non-found greater path returns [-1,-1] covering comp>0 loop till rowPointer>=length")
+    void test_TC05() {
+        // GIVEN a 2x2 matrix and target 99, always comp>0 so rowPointer increments until out of bounds
+        Integer[][] matrix = new Integer[][]{{1, 2}, {3, 4}};
+        Integer target = 99;
+        // WHEN
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        // THEN should return [-1, -1]
+        assertArrayEquals(new int[]{-1, -1}, result);
+    }
+
+    @Test
+    @DisplayName("null matrix throws NullPointerException at matrix.length check")
+    void test_TC06() {
+        // GIVEN matrix = null
+        Integer[][] matrix = null;
+        Integer target = 10;
+        // WHEN & THEN NPE due to matrix.length (B0)
+        assertThrows(NullPointerException.class, () -> {
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        });
+    }
+
+    @Test
+    @DisplayName("non-null matrix with null key throws NullPointerException on compareTo")
+    void test_TC07() {
+        // GIVEN a 1x1 matrix with element 1 and target = null; at first compareTo => NPE (B2)
+        Integer[][] matrix = new Integer[][]{{1}};
+        Integer target = null;
+        // WHEN & THEN NPE when target.compareTo is called
+        assertThrows(NullPointerException.class, () -> {
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target);
+        });
+    }
+}

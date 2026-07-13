@@ -1,0 +1,40 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.QuirksMode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_2_Test {
+
+    @Test
+    @DisplayName("clone() deep-copies element attributes so further mutations of original attributes do not affect the clone")
+    public void test_TC08() {
+        // GIVEN a document with one attribute on its root element
+        Document original = Document.createShell("http://attr");
+        original.attr("data-test", "value1");
+        // WHEN cloning the document and then mutating the original attribute
+        Document copy = original.clone();
+        original.attr("data-test", "value2"); // change original after clone
+        // THEN the clone should retain the old attribute value, and original reflect the new
+        assertEquals("value1", copy.attr("data-test"),
+                "Clone should have retained the original attribute value (deep copy)"); // verifies deep copy branch
+        assertEquals("value2", original.attr("data-test"),
+                "Original should reflect the updated attribute value");
+    }
+
+    @Test
+    @DisplayName("clone() copies quirksMode by value so modifying original's quirksMode post-clone does not affect clone")
+    public void test_TC09() {
+        // GIVEN a document with quirksMode set to limitedQuirks
+        Document original = new Document("http://q").quirksMode(QuirksMode.limitedQuirks);
+        // WHEN cloning and then changing the original's quirksMode
+        Document copy = original.clone();
+        original.quirksMode(QuirksMode.quirks); // mutate original after clone
+        // THEN the clone should retain its original quirksMode, and original should reflect its new state
+        assertEquals(QuirksMode.limitedQuirks, copy.quirksMode(),
+                "Clone should preserve the quirksMode that original had at clone-time"); // verifies branch B5
+        assertEquals(QuirksMode.quirks, original.quirksMode(),
+                "Original should reflect the newly set quirksMode");
+    }
+}

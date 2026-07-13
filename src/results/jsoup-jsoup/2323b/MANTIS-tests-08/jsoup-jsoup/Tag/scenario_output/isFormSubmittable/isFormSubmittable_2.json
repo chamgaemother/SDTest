@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "valueOf(String, String, settings) with uppercase tag and lower-case settings returns static tag (no clone) and isFormSubmittable stays true",
+      "path": "B0→B3→B7→B8→B9→B10→B12",
+      "precondition": "ParseSettings with preserveTagCase() == false (lower-case mode)",
+      "expectedResult": "returned Tag == static Tag.valueOf(\"input\") and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "namespace",
+        "no-clone",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 valueOf uppercase INPUT with lower-case settings",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    String normalName = ParseSettings.normalName(tagName);",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.lowerCase; // preserveTagCase() == false",
+        "  WHEN",
+        "    Tag tag1 = Tag.valueOf(tagName, normalName, namespace, settings);",
+        "    Tag tag2 = Tag.valueOf(\"input\", namespace, settings);",
+        "  THEN",
+        "    assert tag1 == tag2;                   // no clone branch",
+        "    assertTrue(tag1.isFormSubmittable());  // flag from static registry",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "valueOf(String, ParseSettings) overload for known form-submittable tag 'option' returns correct instance with isFormSubmittable true",
+      "path": "B0→B3→B6→B8→B9",
+      "precondition": "none",
+      "expectedResult": "return Tag(\"option\") and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "overload",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 valueOf overload for 'option'",
+        "  GIVEN",
+        "    String tagName = \"option\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assertEquals(\"option\", tag.getName());",
+        "    assertTrue(tag.isFormSubmittable());",
+        "END"
+      ]
+    }
+  ]
+}

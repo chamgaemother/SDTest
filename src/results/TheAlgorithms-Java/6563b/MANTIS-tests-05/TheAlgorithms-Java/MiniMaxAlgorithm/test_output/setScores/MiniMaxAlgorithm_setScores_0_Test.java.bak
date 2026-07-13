@@ -1,0 +1,72 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MiniMaxAlgorithm_setScores_Test {
+
+    @Test
+    @DisplayName("Valid power-of-two length array sets scores and computes correct height (length=8)")
+    void test_TC01() {
+        // GIVEN a MiniMaxAlgorithm instance with initial scores from constructor
+        MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();
+        // newScores length is 8, which is a power of two, so B0→B1 branch (scores.length % 1 == 0)
+        int[] newScores = {1, 2, 3, 4, 5, 6, 7, 8};
+
+        // WHEN setting scores to a valid power-of-two length array
+        miniMax.setScores(newScores);
+
+        // THEN the scores field should be replaced and height recalculated to log2(8) = 3
+        assertAll(
+            () -> assertArrayEquals(newScores, miniMax.getScores(), "Scores should match the provided array"),
+            () -> assertEquals(3, miniMax.getHeight(), "Height should be log2(8) = 3")
+        );
+    }
+
+    @Test
+    @DisplayName("Invalid non-power-of-two length array prints warning and retains original state (length=3)")
+    void test_TC02() {
+        // GIVEN a MiniMaxAlgorithm instance and its original state captured
+        MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();
+        int[] originalScores = miniMax.getScores().clone();
+        int originalHeight = miniMax.getHeight();
+        // newScores length is 3, not a power of two, so (%1 != 0) triggers B0→B2
+        int[] newScores = {1, 2, 3};
+
+        // Capture System.out
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+        try {
+            // WHEN attempting to set invalid scores
+            miniMax.setScores(newScores);
+        } finally {
+            // Restore original System.out
+            System.setOut(originalOut);
+        }
+
+        // THEN a warning is printed and state remains unchanged
+        String stdOut = outContent.toString();
+        assertTrue(stdOut.contains("The number of scores must be a power of 2."),
+            "Expected warning about power-of-two requirement");
+        assertArrayEquals(originalScores, miniMax.getScores(), "Scores should remain unchanged on invalid input");
+        assertEquals(originalHeight, miniMax.getHeight(), "Height should remain unchanged on invalid input");
+    }
+
+    @Test
+    @DisplayName("Null input throws NullPointerException before validation")
+    void test_TC03() {
+        // GIVEN a MiniMaxAlgorithm instance
+        MiniMaxAlgorithm miniMax = new MiniMaxAlgorithm();
+        // WHEN setting scores to null, it should immediately throw NullPointerException at access scores.length
+        assertThrows(NullPointerException.class, () -> {
+            miniMax.setScores(null);
+        }, "Setting null scores should throw NullPointerException");
+    }
+}

@@ -1,0 +1,47 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_appendChild_1_Test {
+
+    @Test
+    @DisplayName("appendChild(node) reparenting moves child from previous parent to new parent and updates sibling indices")
+    public void test_TC05() throws Exception {
+        // Setup: oldParent has three children [sib1, child, sib2]
+        Element oldParent = new Element("div");
+        Element newParent = new Element("section");
+        TextNode sib1 = new TextNode("a");
+        TextNode child = new TextNode("c");
+        TextNode sib2 = new TextNode("b");
+        // Append in order to oldParent: ensures child is in middle branch
+        oldParent.appendChild(sib1)  // B0->B3: first append
+                 .appendChild(child) // B4: child appended
+                 .appendChild(sib2); // B4: third append
+
+        assertEquals(3, oldParent.childNodeSize(), "precondition: oldParent should have 3 children");
+
+        // WHEN: reparent child to newParent (triggers reparenting path)
+        newParent.appendChild(child);
+
+        // THEN: oldParent lost child, retaining only sib1 and sib2
+        assertEquals(2, oldParent.childNodeSize(), "old parent should have 2 children after reparenting");
+        assertSame(sib1, oldParent.childNode(0), "first child of oldParent should remain sib1");
+        assertSame(sib2, oldParent.childNode(1), "second child of oldParent should become sib2");
+
+        // newParent gained child as only child
+        assertEquals(1, newParent.childNodeSize(), "new parent should have exactly one child");
+        assertSame(child, newParent.childNode(0), "the child should now belong to newParent");
+
+        // siblingIndex updated to 0 for reparented child -- use reflection to read private field
+        Field idxField = child.getClass().getSuperclass().getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int siblingIndex = idxField.getInt(child);
+        assertEquals(0, siblingIndex, "siblingIndex of reparented child should be reset to 0 in the new parent");
+    }
+}

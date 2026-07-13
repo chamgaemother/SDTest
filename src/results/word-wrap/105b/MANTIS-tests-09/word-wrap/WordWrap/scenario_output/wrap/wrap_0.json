@@ -1,0 +1,239 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap(Writer) with single short word writes the word without line breaks (loop-1, branch-false)",
+      "path": "B0→B1(loop×1)→B35→B36",
+      "precondition": "Builder created via WordWrap.from(\"hello\") with default settings; uses real StringWriter",
+      "expectedResult": "writer.toString() equals \"hello\"",
+      "tags": [
+        "overload:Writer",
+        "loop-1",
+        "branch-false",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 wrap writes single word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\"); StringWriter writer = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(writer);",
+        "  THEN",
+        "    assert writer.toString().equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap(Writer) with empty input does not write anything (loop-0)",
+      "path": "B0→B1(loop×0)→B34",
+      "precondition": "Builder created via WordWrap.from(\"\") ; uses real StringWriter",
+      "expectedResult": "writer.toString() is empty string",
+      "tags": [
+        "overload:Writer",
+        "loop-0",
+        "boundary",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 wrap empty input",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\"); StringWriter writer = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(writer);",
+        "  THEN",
+        "    assert writer.toString().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap(Writer) with newline in input forces writeNewLine branch on '\\n' (branch-true)",
+      "path": "B0→B1(loop×2)→B8→B9→B12",
+      "precondition": "Builder from(CharSequence) with \"a\\nb\"; uses in-memory StringWriter",
+      "expectedResult": "writer.toString() equals \"a\\n b\"",
+      "tags": [
+        "overload:Writer",
+        "loop-N",
+        "branch-true",
+        "newline"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 wrap handles newline",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a\\nb\"); StringWriter writer = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(writer);",
+        "  THEN",
+        "    assert writer.toString().equals(\"a\\n b\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap(Writer) breaks long word exceeding maxWidth with hyphens (breakWords=true)",
+      "path": "B0→B1(loop×long)→B15→B17→B19→B20",
+      "precondition": "Builder from(\"abcdefghij\").maxWidth(3); uses real StringWriter",
+      "expectedResult": "writer.toString() equals \"ab-\\ncd-\\nef-\\ngh-\\nij\"",
+      "tags": [
+        "overload:Writer",
+        "loop-N",
+        "breakWords-true",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 wrap hyphenate long word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdefghij\").maxWidth(3); StringWriter writer = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(writer);",
+        "  THEN",
+        "    assert writer.toString().equals(\"ab-\\ncd-\\nef-\\ngh-\\nij\");"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "wrap(Writer) does not break long word when breakWords=false (branch-false)",
+      "path": "B0→B1(loop×long)→B15→B17→B18",
+      "precondition": "Builder from(\"abcdef\").maxWidth(2).breakWords(false); uses real StringWriter",
+      "expectedResult": "writer.toString() equals \"abcdef\"",
+      "tags": [
+        "overload:Writer",
+        "loop-N",
+        "breakWords-false",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 wrap without breaking words",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(2).breakWords(false); StringWriter writer = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(writer);",
+        "  THEN",
+        "    assert writer.toString().equals(\"abcdef\");"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "wrapToList collects wrapped lines into list (loop-N)",
+      "path": "B0→B1(loop×3)→B35→B36",
+      "precondition": "Builder from(\"a b c\").maxWidth(1); uses real in-memory LineConsumer",
+      "expectedResult": "returned list equals [\"a\",\"b\",\"c\"]",
+      "tags": [
+        "overload:List",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 wrapToList returns lines",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a b c\").maxWidth(1);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"a\",\"b\",\"c\"));"
+      ]
+    },
+    {
+      "id": "TC07_O3",
+      "description": "wrap(LineConsumer) propagates I/O exception as IORuntimeException",
+      "path": "B0→B1(loop×1)→B35→exception",
+      "precondition": "Builder from(\"x\"); consumer stub throws IOException on write",
+      "expectedResult": "throws IORuntimeException; no file written",
+      "tags": [
+        "overload:LineConsumer",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O3 wrap propagates IOException",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"x\"); LineConsumer consumer = stub that throws IOException;",
+        "  WHEN",
+        "    call b.wrap(consumer);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    },
+    {
+      "id": "TC08_O4",
+      "description": "wrap(File,Charset) writes output file and reads back content",
+      "path": "B0→B1(loop×1)→B35→B36",
+      "precondition": "Builder from(\"hi\"); temp File f; uses real filesystem",
+      "expectedResult": "file content equals \"hi\"",
+      "tags": [
+        "overload:File,Charset",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O4 wrap writes to file",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hi\"); File f = temp file;",
+        "  WHEN",
+        "    b.wrap(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    assert new String(Files.readAllBytes(f.toPath()), UTF_8).equals(\"hi\");"
+      ]
+    },
+    {
+      "id": "TC09_O5",
+      "description": "wrapUtf8(String) writes to filename with UTF-8 encoding",
+      "path": "B0→B1(loop×1)→B35→B36",
+      "precondition": "Builder from(\"ok\"); unique temp filename",
+      "expectedResult": "file content equals \"ok\"",
+      "tags": [
+        "overload:String,Charset",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O5 wrapUtf8 filename",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"ok\"); String filename = temp path",
+        "  WHEN",
+        "    b.wrapUtf8(filename);",
+        "  THEN",
+        "    assert new String(Files.readAllBytes(Paths.get(filename)), UTF_8).equals(\"ok\");"
+      ]
+    },
+    {
+      "id": "TC10_O6",
+      "description": "wrap() returns wrapped text as String",
+      "path": "B0→B1(loop×1)→B35→B36",
+      "precondition": "Builder from(\"bye\")",
+      "expectedResult": "return value is \"bye\"",
+      "tags": [
+        "overload:NoArgs-returnString",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O6 wrap returns string",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"bye\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"bye\");"
+      ]
+    }
+  ]
+}

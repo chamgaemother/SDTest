@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild accepts a TextNode and sets its siblingIndex correctly",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "parent has no children (childNodes == EmptyNodes)",
+      "expectedResult": "parent.childNodeSize() == 1 and appended TextNode.siblingIndex() == 0",
+      "tags": [
+        "positive",
+        "node-type",
+        "textnode"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 appendChild TextNode",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode txt = new TextNode(\"hello\");",
+        "  WHEN",
+        "    parent.appendChild(txt);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert parent.childNodes.get(0) == txt;",
+        "    assert txt.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild moves a TextNode from one parent to another and updates both parents and siblingIndex",
+      "path": "B0→B2(reparent)→B3→B4→B5",
+      "precondition": "oldParent has one TextNode child; newParent has none",
+      "expectedResult": "oldParent.childNodeSize() == 0, newParent.childNodeSize() == 1, moved TextNode.parent() == newParent, siblingIndex == 0",
+      "tags": [
+        "positive",
+        "reparent",
+        "textnode"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 reparent TextNode",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"div\");",
+        "    TextNode txt = new TextNode(\"world\");",
+        "    oldParent.appendChild(txt);",
+        "    assert oldParent.childNodeSize() == 1;",
+        "  WHEN",
+        "    newParent.appendChild(txt);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert txt.parent() == newParent;",
+        "    assert txt.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

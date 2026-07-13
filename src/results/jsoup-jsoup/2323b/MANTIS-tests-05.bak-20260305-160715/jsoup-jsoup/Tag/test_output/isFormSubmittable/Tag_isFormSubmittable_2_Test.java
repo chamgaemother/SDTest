@@ -1,0 +1,70 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("valueOf known tag 'input' with wrong namespace returns a new Tag instance that is not submittable")
+    public void test_TC07() {
+        // Scenario TC07: using a known tag 'input', but supply a namespace different from Parser.NamespaceHtml
+        String tagName = "input";
+        String wrongNamespace = "http://example.com/other";
+        // Use ParseSettings that preserves tag case to hit the preserveTagCase branch
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // WHEN: get a tag with mismatched namespace
+        Tag tag = Tag.valueOf(tagName, wrongNamespace, settings);
+
+        // THEN: must not be the static instance
+        assertNotSame(Tag.valueOf("input"), tag, "Expected a new Tag object, not the static one when namespace mismatches");
+        // Should not be form-submittable for a generic tag
+        assertFalse(tag.isFormSubmittable(), "Generic tags should not be form submittable");
+        // According to scenario expected behavior: generic tags should be considered block-level
+        assertFalse(tag.isInline(), "Generic tags (namespace-mismatch) expected to be non-inline (block-level)");
+    }
+
+    @Test
+    @DisplayName("valueOf with different case and preserveTagCase false returns static tag with normalized name")
+    public void test_TC08() {
+        // Scenario TC08: supply tag 'DiV' and a ParseSettings that does not preserve case
+        String inputName = "DiV";
+        String htmlNs = Parser.NamespaceHtml;
+        // Create a settings instance with preserveTagCase=false (using anonymous subclass to invert)
+        ParseSettings settings = new ParseSettings(false, false) {
+            @Override public boolean preserveTagCase() { return false; }
+        };
+
+        // WHEN: get tag with case-variation and no preserve
+        Tag tag = Tag.valueOf(inputName, htmlNs, settings);
+
+        // THEN: must return the static registered tag for 'div'
+        Tag staticDiv = Tag.valueOf("div", htmlNs, ParseSettings.preserveCase);
+        assertSame(staticDiv, tag, "Expected to get the shared static Tag instance for 'div'");
+        // Name should be normalized to lower-case
+        assertEquals("div", tag.getName(), "Tag name should be normalized when preserveTagCase is false");
+        // Static div should not be form-submittable by default
+        assertFalse(tag.isFormSubmittable(), "Known div tag should not be form submittable");
+    }
+
+    @Test
+    @DisplayName("valueOf(String, ParseSettings) overload returns static tag for known 'textarea' and preserves formSubmit")
+    public void test_TC09() {
+        // Scenario TC09: use overload with default namespace = Parser.NamespaceHtml
+        String tagName = "textarea";
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // WHEN: get tag via overload
+        Tag tagViaOverload = Tag.valueOf(tagName, settings);
+        // Direct lookup should yield the same static instance
+        Tag direct = Tag.valueOf("textarea", Parser.NamespaceHtml, settings);
+
+        // THEN: both references must be identical (static)
+        assertSame(direct, tagViaOverload, "Overload should return the same static Tag instance for 'textarea'");
+        // 'textarea' is not form submittable by default
+        assertFalse(tagViaOverload.isFormSubmittable(), "Textarea should not be form submittable unless explicitly marked");
+        // But it should preserve whitespace as per its configuration
+        assertTrue(tagViaOverload.preserveWhitespace(), "Textarea elements should preserve whitespace in their content");
+    }
+}

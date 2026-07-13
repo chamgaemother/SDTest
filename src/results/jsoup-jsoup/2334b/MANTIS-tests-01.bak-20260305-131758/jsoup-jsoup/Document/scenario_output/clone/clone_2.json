@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "clone() on default Document returns new session on connection() null branch",
+      "path": "B0→B1→B2→B3→B4→C1→C1.1",
+      "precondition": "none",
+      "expectedResult": "clone() yields a Document whose connection() returns a fresh Jsoup.Connection (not null) and original and clone sessions are distinct",
+      "tags": [
+        "positive",
+        "connection",
+        "branch-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone default-connection null",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://ex\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    Connection c1 = orig.connection();",
+        "    Connection c2 = copy.connection();",
+        "  THEN",
+        "    assertNotNull(c1);",
+        "    assertNotNull(c2);",
+        "    assertNotSame(c1, c2);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() preserves non-null Connection field branch in connection()",
+      "path": "B0→B1→B2→B3→B4→C2→C2.1",
+      "precondition": "none",
+      "expectedResult": "clone() yields a Document whose connection() returns the same instance set on original before clone",
+      "tags": [
+        "positive",
+        "connection",
+        "branch-non-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone preserved custom connection",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://ex\");",
+        "    Connection custom = Jsoup.newSession();",
+        "    orig.connection(custom);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    Connection c = copy.connection();",
+        "  THEN",
+        "    assertSame(custom, c);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() copies non-default QuirksMode branch",
+      "path": "B0→B1→B2→B3→B4→Q1",
+      "precondition": "none",
+      "expectedResult": "clone() yields a Document with the same quirksMode set on original (limitedQuirks)",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 clone customized quirksMode",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://ex\");",
+        "    orig.quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, copy.quirksMode());",
+        "    assertNotSame(orig, copy);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "clone() deep-clones nested element tree without shared mutability",
+      "path": "B0→B1→B2→B3→B4→D1→D2",
+      "precondition": "none",
+      "expectedResult": "clone() yields a Document whose nested child elements are distinct instances and independent after mutation",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone deep nested elements",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://ex\");",
+        "    Element nested = orig.body().appendElement(\"div\").appendElement(\"span\");",
+        "    nested.text(\"hello\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    // mutate original nested text",
+        "    orig.body().selectFirst(\"div > span\").text(\"changed\");",
+        "  THEN",
+        "    String copyText = copy.body().selectFirst(\"div > span\").text();",
+        "    assertEquals(\"hello\", copyText, \"Cloned nested span text should remain unchanged\");",
+        "END"
+      ]
+    }
+  ]
+}

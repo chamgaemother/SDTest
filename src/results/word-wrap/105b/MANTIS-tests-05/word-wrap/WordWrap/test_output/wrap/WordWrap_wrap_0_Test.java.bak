@@ -1,0 +1,144 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.Preconditions;
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("TC01: wrap(Writer) with empty input produces no output and does not write any characters (loop-0, branch-false)")
+    public void test_TC01() throws Exception {
+        // empty input means reader.read() returns -1 immediately → no write calls
+        WordWrap.Builder b = WordWrap.from(new java.io.BufferedReader(new StringReader("")));
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    @DisplayName("TC02: wrap(Writer) with single short word under maxWidth writes the word without newline (loop-N, branch-false)")
+    public void test_TC02() throws Exception {
+        // "abc" length 3 < default maxWidth(80) → never triggers wrap branches
+        WordWrap.Builder b = WordWrap.from("abc");
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("abc", out.toString());
+    }
+
+    @Test
+    @DisplayName("TC03: wrap(Writer) with embedded newline resets line on '\\n' and writes newline (branch-true, loop-N)")
+    public void test_TC03() throws Exception {
+        // newline char causes branch for ch=='\n'
+        WordWrap.Builder b = WordWrap.from("hi\nthere");
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("hi\nthere", out.toString());
+    }
+
+    @Test
+    @DisplayName("TC04: wrap(Writer) breaks long word when breakWords=true and insertHyphens=false (branch-true, word-break)")
+    public void test_TC04() throws Exception {
+        // word length 10 > maxWidth 3, breakWords true, insertHyphens false triggers broken-word branch without hyphens
+        WordWrap.Builder b = WordWrap.from("abcdefghij")
+            .maxWidth(3)
+            .insertHyphens(false)
+            .breakWords(true);
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("abc\ndef\nghi\nj", out.toString());
+    }
+
+    @Test
+    @DisplayName("TC05: wrap(Writer) does not break word when breakWords=false causing hyphenation flag only (branch-true, no break)")
+    public void test_TC05() throws Exception {
+        // word longer than maxWidth but breakWords false → should not break → full word
+        WordWrap.Builder b = WordWrap.from("abcdefghij")
+            .maxWidth(3)
+            .breakWords(false);
+        StringWriter out = new StringWriter();
+        b.wrap(out);
+        assertEquals("abcdefghij", out.toString());
+    }
+
+    @Test
+    @DisplayName("TC06: wrapToList returns list of lines for input with spaces and newlines (loop-N, list-overload)")
+    public void test_TC06() throws Exception {
+        // wrapToList uses LineConsumer overload, single line with spaces but no newline
+        WordWrap.Builder b = WordWrap.from("a b c");
+        List<String> lines = b.wrapToList();
+        assertEquals(Arrays.asList("a b c"), lines);
+    }
+
+    @Test
+    @DisplayName("TC07: wrap(File,Charset) throws IORuntimeException on non-existent file (exception)")
+    public void test_TC07() {
+        // from(File,Charset) should catch FileNotFoundException and wrap in IORuntimeException
+        File f = new File("doesNotExist.txt");
+        assertThrows(RuntimeException.class, () -> {
+            // builder creation itself should throw IORuntimeException
+            WordWrap.from(f, StandardCharsets.UTF_8);
+        });
+    }
+
+    @Test
+    @DisplayName("TC08: wrapUtf8(String) writes to UTF-8 file and reads back correct content (file-io)")
+    public void test_TC08() throws Exception {
+        // wrapUtf8 writes "xyz" to temp file; reading should produce the same line
+        String text = "xyz";
+        File temp = File.createTempFile("test", ".txt");
+        temp.deleteOnExit();
+        WordWrap.Builder b = WordWrap.from(text);
+        b.wrapUtf8(temp.getAbsolutePath());
+        List<String> read = Files.readAllLines(Paths.get(temp.getAbsolutePath()));
+        assertEquals(Arrays.asList("xyz"), read);
+    }
+
+    @Test
+    @DisplayName("TC09: wrap() returns wrapped text string (overload:no-args returns String, branch-false)")
+    public void test_TC09() throws Exception {
+        // wrap() should return same single line when under maxWidth
+        WordWrap.Builder b = WordWrap.from("one two three");
+        String result = b.wrap();
+        assertEquals("one two three", result);
+    }
+
+    @Test
+    @DisplayName("TC10: wrap(Writer) propagates IOException from Writer as IORuntimeException (exception)")
+    public void test_TC10() {
+        // custom Writer that throws IOException on write triggers IOException in wrap → IORuntimeException
+        WordWrap.Builder b = WordWrap.from("x");
+        Writer w = new Writer() {
+            @Override
+            public void write(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("write failed");
+            }
+            @Override
+            public void flush() throws IOException {
+                throw new IOException("flush failed");
+            }
+            @Override
+            public void close() throws IOException {
+                // no-op
+            }
+        };
+        assertThrows(RuntimeException.class, () -> b.wrap(w));
+    }
+}

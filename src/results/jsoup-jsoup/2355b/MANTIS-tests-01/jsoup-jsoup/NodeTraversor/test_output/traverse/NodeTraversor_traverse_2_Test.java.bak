@@ -1,0 +1,77 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit5 tests for org.jsoup.select.NodeTraversor.traverse methods,
+ * covering scenarios TC11 and TC12.
+ */
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("TC11 - tree with one child triggers assertion‐error branch at B14→B15 when assertions are disabled")
+    public void test_TC11() {
+        // GIVEN a root Element with one TextNode child (childNodeSize > 0 to hit B11→B13)
+        Element root = new Element("div");
+        root.appendChild(new TextNode("c"));
+        // Visitor does nothing, so traversal reaches the non-leaf assertion branch
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) { /* no-op */ }
+            @Override
+            public void tail(Node n, int depth) { /* no-op */ }
+        };
+        // WHEN & THEN: expect AssertionError thrown at the code path that enforces non-null during tail phase
+        assertThrows(AssertionError.class, () -> {
+            NodeTraversor.traverse(visitor, root);
+        });
+    }
+
+    @Test
+    @DisplayName("TC12 - traverse(visitor, Elements) with non-empty Elements delegates to node branch for each element")
+    public void test_TC12() {
+        // GIVEN two Elements each with one TextNode child.
+        // Each should produce head/text,tail/text calls at depth 0 in order.
+        Element e1 = new Element("p");
+        e1.appendChild(new TextNode("a"));
+        Element e2 = new Element("p");
+        e2.appendChild(new TextNode("b"));
+        Elements els = new Elements(e1, e2);
+
+        List<String> calls = new ArrayList<>();
+        // Visitor records head and tail calls for each TextNode
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node n, int depth) {
+                // depth==0 and node is TextNode ensures correct branch of traverse per element
+                calls.add("head(" + ((TextNode) n).text() + "," + depth + ")");
+            }
+            @Override
+            public void tail(Node n, int depth) {
+                calls.add("tail(" + ((TextNode) n).text() + "," + depth + ")");
+            }
+        };
+
+        // WHEN
+        NodeTraversor.traverse(visitor, els);
+
+        // THEN calls recorded for each element's single child in sequence
+        List<String> expected = List.of(
+            "head(a,0)", "tail(a,0)",
+            "head(b,0)", "tail(b,0)"
+        );
+        assertEquals(expected, calls, "Expected head/tail calls for each element's text node at depth 0");
+    }
+}

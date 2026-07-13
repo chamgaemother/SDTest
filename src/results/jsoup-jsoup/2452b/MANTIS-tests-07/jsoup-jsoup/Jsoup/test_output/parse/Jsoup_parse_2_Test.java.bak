@@ -1,0 +1,212 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(File, null charsetName, explicit baseUri) loads HTML and sets baseUri")
+    public void test_TC21() throws Exception {
+        // B0→B1→B4→B5: file overload with explicit baseUri branch
+        File file = File.createTempFile("tc21", ".html");
+        file.deleteOnExit();
+        String html = "<p>F</p>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        String baseUri = "http://file/";
+
+        Document doc = Jsoup.parse(file, null, baseUri);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName) uses file absolute path as baseUri")
+    public void test_TC22() throws Exception {
+        // B0→B2→B5: file overload sans baseUri uses file path branch
+        File file = File.createTempFile("tc22", ".html");
+        file.deleteOnExit();
+        String html = "<h2>H</h2>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        String charset = "UTF-8";
+
+        Document doc = Jsoup.parse(file, charset);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(file.getAbsolutePath(), doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File) loads HTML with default charset and uses file path as baseUri")
+    public void test_TC23() throws Exception {
+        // B0→B2→B5: file overload default charset branch
+        File file = File.createTempFile("tc23", ".html");
+        file.deleteOnExit();
+        String html = "<div>D</div>";
+        Files.write(file.toPath(), html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+
+        Document doc = Jsoup.parse(file);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(file.getAbsolutePath(), doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(File, charsetName, baseUri, parser) delegates to custom parser override")
+    public void test_TC24() throws Exception {
+        // B0→B3: custom parser branch for file overload
+        File file = File.createTempFile("tc24", ".html");
+        file.deleteOnExit();
+        Files.write(file.toPath(), "<span>S</span>".getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        String charset = "UTF-8";
+        String baseUri = "http://stub/";
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(InputStream in, String uri) {
+                // stub returns empty shell with baseUri
+                return Document.createShell(uri);
+            }
+        };
+
+        Document doc = Jsoup.parse(file, charset, baseUri, stub);
+
+        assertEquals(baseUri, doc.getBaseUri());
+        assertEquals("", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(Path, null charsetName, baseUri) loads HTML and sets provided baseUri")
+    public void test_TC25() throws Exception {
+        // B0→B4→B5: path overload with explicit baseUri branch
+        Path path = Files.createTempFile("tc25", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<p>P</p>";
+        Files.write(path, html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        String baseUri = path.toAbsolutePath().toString() + "/b";
+
+        Document doc = Jsoup.parse(path, null, baseUri);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName) uses path absolute path as baseUri")
+    public void test_TC26() throws Exception {
+        // B0→B5: path overload sans baseUri branch
+        Path path = Files.createTempFile("tc26", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<li>L</li>";
+        Files.write(path, html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        String charset = "UTF-8";
+
+        Document doc = Jsoup.parse(path, charset);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(path.toAbsolutePath().toString(), doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path) loads HTML with default charset and uses path absolute path as baseUri")
+    public void test_TC27() throws Exception {
+        // B0→B5: path overload default charset branch
+        Path path = Files.createTempFile("tc27", ".html");
+        path.toFile().deleteOnExit();
+        String html = "<h3>H3</h3>";
+        Files.write(path, html.getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+
+        Document doc = Jsoup.parse(path);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(path.toAbsolutePath().toString(), doc.getBaseUri());
+    }
+
+    @Test
+    @DisplayName("parse(Path, charsetName, baseUri, parser) delegates to custom parser for Path overload")
+    public void test_TC28() throws Exception {
+        // B0→B3: custom parser branch for path overload
+        Path path = Files.createTempFile("tc28", ".html");
+        path.toFile().deleteOnExit();
+        Files.write(path, "<x/>".getBytes("UTF-8"), StandardOpenOption.TRUNCATE_EXISTING);
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(InputStream in, String uri) {
+                return Document.createShell(uri);
+            }
+        };
+        String baseUri = "http://p/";
+
+        Document doc = Jsoup.parse(path, null, baseUri, stub);
+
+        assertEquals(baseUri, doc.getBaseUri());
+        assertTrue(doc.body().html().isEmpty());
+    }
+
+    private static class TrackCloseStream extends FilterInputStream {
+        boolean closed = false;
+        protected TrackCloseStream(InputStream in) {
+            super(in);
+        }
+        @Override public void close() throws IOException {
+            closed = true;
+            super.close();
+        }
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri) loads HTML, closes stream, and sets baseUri")
+    public void test_TC29() throws Exception {
+        // B0→B6→B7: stream overload with close branch
+        String html = "<h3>S</h3>";
+        ByteArrayInputStream raw = new ByteArrayInputStream(html.getBytes("UTF-8"));
+        TrackCloseStream in = new TrackCloseStream(raw);
+        String baseUri = "http://in/";
+
+        Document doc = Jsoup.parse(in, null, baseUri);
+
+        assertTrue(doc.body().html().contains(html));
+        assertEquals(baseUri, doc.getBaseUri());
+        assertTrue(in.closed);
+    }
+
+    @Test
+    @DisplayName("parse(InputStream, charsetName, baseUri, parser) delegates to custom parser for stream overload")
+    public void test_TC30() throws Exception {
+        // B0→B8: custom parser branch for stream overload
+        ByteArrayInputStream raw = new ByteArrayInputStream("<x/>".getBytes("UTF-8"));
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(InputStream in, String uri) {
+                return Document.createShell(uri);
+            }
+        };
+        String charset = "UTF-8";
+        String baseUri = "http://s/";
+
+        Document doc = Jsoup.parse(raw, charset, baseUri, stub);
+
+        assertEquals(baseUri, doc.getBaseUri());
+        assertTrue(doc.body().html().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parse(URL, timeoutMillis) with extremely low timeout throws SocketTimeoutException")
+    public void test_TC31() throws Exception {
+        // B0→B9→Exception: URL overload exception branch
+        URL url = new URL("http://example.com/");
+        int timeout = 1; // immediate timeout triggered
+        assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, timeout));
+    }
+}

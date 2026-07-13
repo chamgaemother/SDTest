@@ -1,0 +1,55 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() returns a distinct Document instance with cloned outputSettings and parser",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returned Document is not same instance as original; returned.outputSettings != original.outputSettings and returned.parser != original.parser; all other fields (location, quirksMode, childNodes, attributes) are equal in value",
+      "tags": [
+        "branch-normal",
+        "priority-P0",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone deep-copy",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "  THEN",
+        "    assert cloned != doc;",
+        "    assert cloned.outputSettings() != doc.outputSettings();",
+        "    assert cloned.parser() != doc.parser();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "modifying the clone's outputSettings does not affect original Document",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "after clone, changing cloned.outputSettings.prettyPrint(false) leaves original.outputSettings.prettyPrint() == true",
+      "tags": [
+        "branch-normal",
+        "isolation",
+        "side-effect-verification"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone independent-settings",
+        "  GIVEN",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "  WHEN",
+        "    Document cloned = doc.clone();",
+        "    cloned.outputSettings().prettyPrint(false);",
+        "  THEN",
+        "    assert doc.outputSettings().prettyPrint() == true;",
+        "    assert cloned.outputSettings().prettyPrint() == false;"
+      ]
+    }
+  ]
+}

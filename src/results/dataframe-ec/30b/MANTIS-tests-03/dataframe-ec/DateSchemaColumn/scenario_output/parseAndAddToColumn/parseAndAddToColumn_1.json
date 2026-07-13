@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn trims whitespace and adds LocalDate for valid default-pattern date string",
+      "path": "B0→B3→B4→B5",
+      "precondition": "DateSchemaColumn constructed with default pattern (newPattern=null), stub DfColumn ready",
+      "expectedResult": "lastAdded is LocalDate.of(2020,2,29)",
+      "tags": [
+        "positive",
+        "trim",
+        "boundary",
+        "leap-year"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn valid-leap-year-with-whitespace",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"date\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String aString = \" 2020-02-29 \";",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub);",
+        "  THEN",
+        "    assertEquals(LocalDate.of(2020,2,29), stub.lastAdded);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseAndAddToColumn throws DateTimeParseException for invalid leap-day under strict resolver style",
+      "path": "B0→B3→B4→B6",
+      "precondition": "DateSchemaColumn with default pattern, stub DfColumn present",
+      "expectedResult": "DateTimeParseException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "strict-resolver",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseAndAddToColumn invalid-leap-day",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"date\", null);",
+        "    StubDfColumn stub = new StubDfColumn();",
+        "    String aString = \"2021-02-29\";",
+        "  WHEN/THEN",
+        "    assertThrows(DateTimeParseException.class, () -> col.parseAndAddToColumn(aString, stub));",
+        "END"
+      ]
+    }
+  ]
+}

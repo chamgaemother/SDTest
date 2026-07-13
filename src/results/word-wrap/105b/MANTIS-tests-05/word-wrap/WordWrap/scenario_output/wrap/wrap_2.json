@@ -1,0 +1,134 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "maxWidth(0) triggers IllegalArgumentException in Builder.maxWidth",
+      "path": "B0→Builder.maxWidth→Preconditions.checkArgument→throw",
+      "precondition": "Builder created from simple text reader",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "argument-validation",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 invalid-maxWidth",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"text\");",
+        "  WHEN",
+        "    call b.maxWidth(0);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "fromClasspath with missing resource yields NullPointerException when wrapping",
+      "path": "B0→fromClasspath→InputStreamReader(null)→wrap→in.read() NPE",
+      "precondition": "no such classpath resource 'no-such.txt'",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "classpath",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 missing-classpath-resource",
+        "  GIVEN",
+        "    Builder b = WordWrap.fromClasspath(\"/no-such.txt\", StandardCharsets.UTF_8);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    call b.wrap(out);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "wrap(LineConsumer) overload writes lines via direct LineConsumer API",
+      "path": "B0→Builder.wrap(LineConsumer)→wordWrap(in,consumer,...)→write→writeNewLine→end",
+      "precondition": "none",
+      "expectedResult": "LineConsumer receives proper write and writeNewLine calls",
+      "tags": [
+        "positive",
+        "overload",
+        "LineConsumer"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 wrap-with-LineConsumer",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"A B\");",
+        "    List<String> captured = new ArrayList<>();",
+        "    WordWrap.LineConsumer lc = new LineConsumer() {",
+        "      StringBuilder sb = new StringBuilder();",
+        "      @Override public void write(char[] c, int off, int len) throws IOException { sb.append(c, off, len); }",
+        "      @Override public void writeNewLine() throws IOException { captured.add(sb.toString()); sb.setLength(0); }",
+        "    };",
+        "  WHEN",
+        "    b.wrap(lc);",
+        "  THEN",
+        "    assert captured equals [\"A B\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "wrap(File, Charset) writes wrapped content to file correctly",
+      "path": "B0→Builder.wrap(File,Charset)→OutputStreamWriter→wrap(Writer)→write→close",
+      "precondition": "temporary file does not exist initially",
+      "expectedResult": "file contains wrapped text lines",
+      "tags": [
+        "positive",
+        "file-io",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 wrap-to-file-with-charset",
+        "  GIVEN",
+        "    File temp = new File(tmpFilename);",
+        "    Builder b = WordWrap.from(\"one two\").maxWidth(3);",
+        "  WHEN",
+        "    b.wrap(temp, StandardCharsets.US_ASCII);",
+        "    List<String> lines = Files.readAllLines(temp.toPath(), StandardCharsets.US_ASCII);",
+        "  THEN",
+        "    assert lines equals [\"one\",\"two\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "insertHyphens(true) but breakWords(false) does not insert hyphens or split word",
+      "path": "B0→wordWrap→isWordCharacter→tooLong→breakWords false→broken flag→end",
+      "precondition": "text contains word longer than maxWidth",
+      "expectedResult": "entire word remains intact without hyphens",
+      "tags": [
+        "boundary",
+        "hyphenation",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 no-split-with-hyphens-disabled",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"LONGWORD\").maxWidth(4).insertHyphens(true).breakWords(false);",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(out);",
+        "  THEN",
+        "    assert out.toString() == \"LONGWORD\";",
+        "END"
+      ]
+    }
+  ]
+}

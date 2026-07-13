@@ -1,0 +1,113 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+import org.jsoup.nodes.Document;
+import java.net.URL;
+import java.net.InetSocketAddress;
+import java.net.SocketTimeoutException;
+import java.io.IOException;
+import java.util.concurrent.Executors;
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC19: clean(String, String, Safelist) sets baseUri to DummyUri when baseUri is empty and safelist.preserveRelativeLinks() is true")
+    public void test_TC19() {
+        // inline: use empty baseUri so safelist.preserveRelativeLinks is true triggers DummyUri branch (B1 true)
+        String html = "<a href=\"/foo\">link</a>";
+        Safelist safelist = Safelist.relaxed();
+        safelist.preserveRelativeLinks(true);
+        String result = Jsoup.clean(html, "", safelist);
+        // Expect the relative link to be preserved unchanged because DummyUri placeholder allowed resolution
+        assertTrue(result.contains("<a href=\"/foo\">link</a>"),
+            "Relative link should be preserved when baseUri empty and preserveRelativeLinks true");
+    }
+
+    @Test
+    @DisplayName("TC20: clean(String, String, Safelist) skips DummyUri branch when baseUri is non-empty")
+    public void test_TC20() {
+        // inline: non-empty baseUri so safelist.preserveRelativeLinks not used (B1 false)
+        String html = "<b>bold</b>";
+        Safelist safelist = Safelist.simpleText();
+        String baseUri = "http://example.com/";
+        String result = Jsoup.clean(html, baseUri, safelist);
+        // Expect simpleText safelist to allow <b> and no DummyUri insertion
+        assertEquals("<b>bold</b>", result, "Cleaned HTML should retain <b>bold</b> with non-empty baseUri");
+    }
+
+    @Test
+    @DisplayName("TC21: clean(String, String, Safelist, OutputSettings) applies supplied output settings")
+    public void test_TC21() {
+        // inline: using OutputSettings prettyPrint(false) to ensure no extra formatting (B6→B7→B8 path)
+        String html = "<p>one<em>two</em>three</p>";
+        Safelist safelist = Safelist.none();
+        Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);
+        String result = Jsoup.clean(html, "", safelist, os);
+        // Expect no pretty-print line breaks or indent, raw fragment retained
+        assertTrue(result.contains("one<em>two</em>three"),
+            "OutputSettings with prettyPrint(false) should produce unformatted inline HTML");
+    }
+
+    @Test
+    @DisplayName("TC22: isValid(String, Safelist) returns true when input matches safelist exactly")
+    public void test_TC22() {
+        // inline: <p> is allowed in relaxed() so isValidBodyHtml returns true (B1 valid path)
+        String html = "<p>ok</p>";
+        Safelist safelist = Safelist.relaxed();
+        boolean valid = Jsoup.isValid(html, safelist);
+        assertTrue(valid, "isValid should return true for allowed <p> tag with relaxed safelist");
+    }
+
+    @Test
+    @DisplayName("TC23: isValid(String, Safelist) returns false when input contains disallowed tags")
+    public void test_TC23() {
+        // inline: <script> not allowed in simpleText() so isValidBodyHtml returns false (B1 invalid path)
+        String html = "<script>alert(1)</script>";
+        Safelist safelist = Safelist.simpleText();
+        boolean valid = Jsoup.isValid(html, safelist);
+        assertFalse(valid, "isValid should return false for disallowed <script> tag with simpleText safelist");
+    }
+
+    @Test
+    @DisplayName("TC24: parse(URL, int) throws SocketTimeoutException when server delays beyond timeoutMillis")
+    public void test_TC24() throws Exception {
+        // inline: start test HTTP server that delays 500ms before response, call with timeout 100ms to trigger SocketTimeoutException
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new DelayedHandler(500));
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        try {
+            URL url = new URL("http://localhost:" + server.getAddress().getPort() + "/");
+            int timeoutMillis = 100;
+            // Expect a SocketTimeoutException due to server delay longer than timeoutMillis
+            assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, timeoutMillis),
+                "Should throw SocketTimeoutException when server response delayed beyond timeout");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    // Helper handler that sleeps for a given delay before responding
+    private static class DelayedHandler implements HttpHandler {
+        private final int delayMillis;
+        DelayedHandler(int delayMillis) {
+            this.delayMillis = delayMillis;
+        }
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            try {
+                Thread.sleep(delayMillis);
+            } catch (InterruptedException ignored) {}
+            String response = "<html></html>";
+            exchange.sendResponseHeaders(200, response.length());
+            exchange.getResponseBody().write(response.getBytes());
+            exchange.close();
+        }
+    }
+}

@@ -1,0 +1,135 @@
+package com.thealgorithms.searches;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class RowColumnWiseSorted2dArrayBinarySearch_search_0_Test {
+
+    @Test
+    @DisplayName("TC01: Empty matrix returns [-1,-1] without iterations (loop-0)")
+    void test_TC01() {
+        // GIVEN an empty matrix of length 0
+        Integer[][] matrix = new Integer[0][];
+        // WHEN search is invoked
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+        // THEN it should immediately return [-1, -1] (no loop iterations)
+        assertEquals(-1, result[0]);
+        assertEquals(-1, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC02: 1x1 matrix, target equals element (comp==0 branch-true)")
+    void test_TC02() {
+        // GIVEN a single-element matrix where element equals target
+        Integer[][] matrix = new Integer[][]{{42}};
+        // WHEN search is invoked with key = 42
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 42);
+        // THEN it should find at position [0,0] in first comparison
+        assertEquals(0, result[0]);
+        assertEquals(0, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC03: 1x1 matrix, target less than element (comp<0 path)")
+    void test_TC03() {
+        // GIVEN a single-element matrix with element 10
+        Integer[][] matrix = new Integer[][]{{10}};
+        // WHEN search is invoked with smaller key = 5 → compareTo yields negative
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5);
+        // THEN it should move left once and exit, returning [-1, -1]
+        assertEquals(-1, result[0]);
+        assertEquals(-1, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC04: 1x1 matrix, target greater than element (comp>0 path)")
+    void test_TC04() {
+        // GIVEN a single-element matrix with element 10
+        Integer[][] matrix = new Integer[][]{{10}};
+        // WHEN search is invoked with larger key = 20 → compareTo yields positive
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 20);
+        // THEN it should move down once and exit, returning [-1, -1]
+        assertEquals(-1, result[0]);
+        assertEquals(-1, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC05: 3x3 matrix find target after multiple row and column moves")
+    void test_TC05() {
+        // GIVEN a 3x3 sorted matrix
+        Integer[][] matrix = new Integer[][]{
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 9}
+        };
+        // WHEN search is invoked with key = 7
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 7);
+        // THEN it should traverse down and left appropriately, finding at [2,0]
+        assertEquals(2, result[0]);
+        assertEquals(0, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC06: 3x3 matrix return [-1,-1] when target not present after full search")
+    void test_TC06() {
+        // GIVEN a 3x3 sorted matrix
+        Integer[][] matrix = new Integer[][]{
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 9}
+        };
+        // WHEN search is invoked with non-existent key = 10
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 10);
+        // THEN after full traversal it should return [-1, -1]
+        assertEquals(-1, result[0]);
+        assertEquals(-1, result[1]);
+    }
+
+    @Test
+    @DisplayName("TC07: matrix is null should throw NullPointerException at start")
+    void test_TC07() {
+        // GIVEN a null matrix reference
+        Integer[][] matrix = null;
+        // WHEN/THEN search should immediately throw NullPointerException
+        assertThrows(NullPointerException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)
+        );
+    }
+
+    @Test
+    @DisplayName("TC08: row sub-array is null should throw NullPointerException when accessing element")
+    void test_TC08() {
+        // GIVEN a matrix whose first row is null
+        Integer[][] matrix = new Integer[1][];
+        matrix[0] = null;
+        // WHEN/THEN search should throw NullPointerException upon accessing matrix[0][last]
+        assertThrows(NullPointerException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: target is null should throw NullPointerException in compareTo")
+    void test_TC09() {
+        // GIVEN a valid 1x2 matrix but null target
+        Integer[][] matrix = new Integer[][]{{1, 2}};
+        Integer target = null;
+        // WHEN/THEN compareTo(null) should throw NullPointerException
+        assertThrows(NullPointerException.class, () ->
+            RowColumnWiseSorted2dArrayBinarySearch.search(matrix, target)
+        );
+    }
+
+    @Test
+    @DisplayName("TC10: 1x3 row matrix find element at middle column after one left move")
+    void test_TC10() {
+        // GIVEN a single-row matrix with elements [5,10,15]
+        Integer[][] matrix = new Integer[][]{{5, 10, 15}};
+        // WHEN search is invoked with key = 10 → first compare is 15, then move left once
+        int[] result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 10);
+        // THEN it should find the target at [0,1]
+        assertEquals(0, result[0]);
+        assertEquals(1, result[1]);
+    }
+}

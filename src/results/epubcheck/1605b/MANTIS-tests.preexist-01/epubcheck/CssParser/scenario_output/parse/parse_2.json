@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parse at-rule with block containing a property declaration exercises hasBlock=true and handleDeclarationBlock path in handleAtRule",
+      "path": "B0→B1→B2→B4→…→handleAtRule entry→hasBlock=true→hasRuleSet=false→handleDeclarationBlock→B8",
+      "precondition": "none",
+      "expectedResult": "contentHandler.startAtRule and .declaration called for the property, then endAtRule and endDocument",
+      "tags": [
+        "positive",
+        "at-rule",
+        "declaration",
+        "block",
+        "hasBlock",
+        "declaration-block"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse at-rule with declaration in block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo{color:red;}\\n\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.calls == List.of(",
+        "      \"startDocument\",",
+        "      \"startAtRule(foo)\",",
+        "      \"declaration\",",
+        "      \"endAtRule(foo)\",",
+        "      \"endDocument\"",
+        "    );",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parse ruleset where selector list factory returns null triggers early return path in handleRuleSet",
+      "path": "B0→B1→B2→B3→handleRuleSet entry→selectors==null→iter.next(MATCH_CLOSEBRACE)→return→B8",
+      "precondition": "inject a stub CssSelectorConstructFactory that returns null for createSelectorList via reflection on CssParser instance",
+      "expectedResult": "contentHandler.startDocument and endDocument only, no selectors or declarations",
+      "tags": [
+        "negative",
+        "ruleset",
+        "selector-error",
+        "null-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse ruleset with null selectors",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a{}\\n\");",
+        "    CssParser parser = new CssParser(Locale.ENGLISH);",
+        "    // Use reflection to replace parser.cssSelectorFactory with a stub whose createSelectorList returns null",
+        "  WHEN",
+        "    parser.parse(reader, \"id\", new RecordingErrorHandler(), new RecordingContentHandler());",
+        "  THEN",
+        "    assert doc.calls == List.of(\"startDocument\",\"endDocument\");",
+        "END"
+      ]
+    }
+  ]
+}

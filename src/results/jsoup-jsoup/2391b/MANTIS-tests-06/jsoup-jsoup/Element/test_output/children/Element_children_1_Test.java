@@ -1,0 +1,29 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("children() returns cached Elements list when attributes userData cache is present")
+    public void test_TC06() {
+        // Arrange: create a parent element and ensure attributes and userData exist for caching
+        Element parent = new Element("div");
+        // Calling attributes() populates the attributes and allows userData storage
+        parent.attributes(); // ensures hasAttributes() == true, userData map initialized
+        // Arrange: append one child Element to trigger childElementsList population
+        Element child = parent.appendElement("span");
+        // Act: first children() call populates the cache via stashChildren(path B0->B1->B2->B3)
+        Elements first = parent.children();
+        // Act: second children() call should hit the cached branch (path B0->B1->B2(cached)->B4)
+        Elements second = parent.children();
+
+        // Assert: both calls return size 1, demonstrating both population and subsequent cache-hit
+        assertAll(
+            () -> assertEquals(1, first.size(), "First children() should have exactly one Element child"),
+            () -> assertEquals(1, second.size(), "Second children() should have exactly one Element child from cache")
+        );
+    }
+}

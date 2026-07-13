@@ -1,0 +1,108 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn;
+import io.github.vmzakharov.ecdataframe.dataset.CsvSchema;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*; // Ensure Mockito is included in the project dependencies.
+public class DateSchemaColumn_parseAndAddToColumn_0_Test {
+
+    @Test
+    @DisplayName("TC01: parseAndAddToColumn(null, column) calls addObject(null) when input string is null")
+    public void test_TC01() {
+        // GIVEN a DateSchemaColumn with strict yyyy-M-d pattern and a mocked DfDateColumn
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing null (B2(true) triggers null-input branch)
+        dsc.parseAndAddToColumn(null, column);
+        
+        // THEN verify addObject was called exactly once with null
+        verify(column, times(1)).addObject(null);
+    }
+
+    @Test
+    @DisplayName("TC02: parseAndAddToColumn(\"\", column) calls addObject(null) when trimmed string is empty")
+    public void test_TC02() {
+        // GIVEN a DateSchemaColumn and a mocked DfDateColumn
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing empty string (B2(false)-> trimmed.isEmpty() true triggers nested empty-input branch)
+        dsc.parseAndAddToColumn("", column);
+        
+        // THEN verify addObject was called exactly once with null
+        verify(column, times(1)).addObject(null);
+    }
+
+    @Test
+    @DisplayName("TC03: parseAndAddToColumn(   , column) calls addObject(null) when trimmed whitespace is empty")
+    public void test_TC03() {
+        // GIVEN a DateSchemaColumn and a mocked DfDateColumn
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing whitespace-only string (B2(false)-> trimmed.isEmpty() true triggers whitespace-input branch)
+        dsc.parseAndAddToColumn("   ", column);
+        
+        // THEN verify addObject was called exactly once with null
+        verify(column, times(1)).addObject(null);
+    }
+
+    @Test
+    @DisplayName("TC04: parseAndAddToColumn(valid date string, column) calls addObject with correct LocalDate")
+    public void test_TC04() {
+        // GIVEN a DateSchemaColumn and a mocked DfDateColumn
+        // Valid date string "2021-12-31" should be parsed to LocalDate.of(2021,12,31)
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing a well-formed date (B2(false)-> trimmed.isEmpty() false triggers valid-input branch)
+        dsc.parseAndAddToColumn("2021-12-31", column);
+        
+        // THEN verify addObject was called exactly once with expected LocalDate
+        verify(column, times(1)).addObject(java.time.LocalDate.of(2021, 12, 31));
+    }
+
+    @Test
+    @DisplayName("TC05: parseAndAddToColumn( 2021-01-01 , column) trims input before parsing")
+    public void test_TC05() {
+        // GIVEN a DateSchemaColumn and a mocked DfDateColumn
+        // Input has surrounding whitespace but resolves to LocalDate.of(2021,1,1)
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing trimmed-valid-date (B2(false)-> trimmed.isEmpty() false, then valid date)
+        dsc.parseAndAddToColumn(" 2021-01-01 ", column);
+        
+        // THEN verify addObject was called exactly once with the trimmed LocalDate
+        verify(column, times(1)).addObject(java.time.LocalDate.of(2021, 1, 1));
+    }
+
+    @Test
+    @DisplayName("TC06: parseAndAddToColumn(invalid format, column) throws DateTimeParseException for unparsable string")
+    public void test_TC06() {
+        // GIVEN a DateSchemaColumn and a mocked DfDateColumn
+        CsvSchema schema = Mockito.mock(io.github.vmzakharov.ecdataframe.dataset.CsvSchema.class);
+        DateSchemaColumn dsc = new io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn(schema, "col", "uuuu-M-d");
+        DfDateColumn column = Mockito.mock(io.github.vmzakharov.ecdataframe.dataframe.DfDateColumn.class);
+        
+        // WHEN passing an invalid date string (B2(false)-> trimmed.isEmpty() false-> parsing fails)
+        DateTimeParseException ex = assertThrows(
+            DateTimeParseException.class,
+            () -> dsc.parseAndAddToColumn("bad-date", column)
+        );
+        
+        // THEN parsing exception is thrown and addObject is never called
+        verify(column, never()).addObject(org.mockito.Mockito.any());
+    }
+}

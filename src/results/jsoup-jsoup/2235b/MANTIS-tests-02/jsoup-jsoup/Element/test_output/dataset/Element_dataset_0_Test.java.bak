@@ -1,0 +1,93 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC01: dataset() on new element with no attributes returns empty map (attributes null branch)")
+    public void test_TC01() {
+        // GIVEN: new Element with no attributes, attributes field is null
+        Element el = new Element("div");
+        // WHEN: dataset view is retrieved
+        Map<String, String> ds = el.dataset();
+        // THEN: no data- attributes to filter, view must be empty (loop zero iterations)
+        assertTrue(ds.isEmpty(), "Expected empty dataset for element with no attributes");
+    }
+
+    @Test
+    @DisplayName("TC02: dataset() with non-data attribute only returns empty map (filter excludes non-data keys)")
+    public void test_TC02() {
+        // GIVEN: element with only non-data attribute (id)
+        Element el = new Element("span");
+        el.attr("id", "header");
+        // WHEN: dataset view is retrieved
+        Map<String, String> ds = el.dataset();
+        // THEN: id is not a data-* key, so view must be empty
+        assertTrue(ds.isEmpty(), "Expected empty dataset for element with only non-data attributes");
+    }
+
+    @Test
+    @DisplayName("TC03: dataset() with one data attribute returns single entry (loop-1)")
+    public void test_TC03() {
+        // GIVEN: element with one data-* attribute, so branch true for data key and one iteration
+        Element el = new Element("p");
+        el.attr("data-user", "alice");
+        // WHEN: dataset view is retrieved
+        Map<String, String> ds = el.dataset();
+        // THEN: exactly one entry 'user'->'alice'
+        assertEquals(1, ds.size(), "Expected single entry for one data-* attribute");
+        assertEquals("alice", ds.get("user"), "Expected dataset key 'user' maps to 'alice'");
+    }
+
+    @Test
+    @DisplayName("TC04: dataset() with multiple data and non-data attributes returns only data entries (loop-N)")
+    public void test_TC04() {
+        // GIVEN: element with two data-* attributes and one non-data, so two valid entries
+        Element el = new Element("div");
+        el.attr("data-one", "1");
+        el.attr("class", "c");
+        el.attr("data-two", "2");
+        // WHEN: dataset view is retrieved
+        Map<String, String> ds = el.dataset();
+        // THEN: only 'one' and 'two' present
+        assertEquals(2, ds.size(), "Expected two data entries");
+        assertTrue(ds.containsKey("one"), "Dataset should contain key 'one'");
+        assertTrue(ds.containsKey("two"), "Dataset should contain key 'two'");
+        assertEquals("1", ds.get("one"));
+        assertEquals("2", ds.get("two"));
+    }
+
+    @Test
+    @DisplayName("TC05: dataset() view put adds corresponding data- attribute to element (side-effect view put)")
+    public void test_TC05() {
+        // GIVEN: empty dataset view on new element
+        Element el = new Element("a");
+        Map<String, String> ds = el.dataset();
+        // WHEN: put new entry into dataset view
+        ds.put("x", "y");
+        // THEN: element should now have attribute data-x = y, and view reflects it
+        assertEquals("y", el.attr("data-x"), "Element attribute data-x should be set to 'y'");
+        assertEquals("y", ds.get("x"), "Dataset view should return 'y' for key 'x'");
+    }
+
+    @Test
+    @DisplayName("TC06: dataset() view remove removes corresponding data- attribute from element (side-effect view remove)")
+    public void test_TC06() {
+        // GIVEN: element with a data-remove attribute, dataset view contains one entry
+        Element el = new Element("img");
+        el.attr("data-remove", "v");
+        Map<String, String> ds = el.dataset();
+        assertTrue(ds.containsKey("remove"), "Precondition: dataset must contain 'remove'");
+        // WHEN: remove entry from dataset view
+        ds.remove("remove");
+        // THEN: element should no longer have data-remove attribute, and view excludes it
+        assertFalse(el.hasAttr("data-remove"), "Element should no longer have 'data-remove' attribute");
+        assertFalse(ds.containsKey("remove"), "Dataset view should no longer contain key 'remove'");
+    }
+}

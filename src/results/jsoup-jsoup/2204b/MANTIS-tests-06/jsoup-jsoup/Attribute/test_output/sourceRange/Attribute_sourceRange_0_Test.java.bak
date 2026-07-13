@@ -1,0 +1,43 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.jsoup.nodes.Range.AttributeRange;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("TC01: sourceRange returns UntrackedAttr when parent is null (parent == null branch)")
+    public void test_TC01() {
+        // GIVEN an Attribute with a null parent, so parent == null triggers the B0→B1 branch
+        Attribute attr = new Attribute("key", "value", null);
+        // WHEN sourceRange() is called
+        AttributeRange result = attr.sourceRange();
+        // THEN it should return the special UntrackedAttr constant
+        assertEquals(Range.AttributeRange.UntrackedAttr, result,
+            "Expected UntrackedAttr when parent is null");
+    }
+
+    @Test
+    @DisplayName("TC02: sourceRange delegates to parent.sourceRange when parent is non-null (parent != null branch)")
+    public void test_TC02() {
+        // GIVEN a stubbed Attributes that returns a custom AttributeRange for the given key
+        Attributes stubParent = new Attributes() {
+            @Override
+            public AttributeRange sourceRange(String key) {
+                // Return a known custom range to verify delegation
+                return new AttributeRange(1, 2, 3, 4);
+            }
+        };
+        // AND an Attribute whose parent is the stub, so parent != null triggers the B0→B2 branch
+        Attribute attr = new Attribute("data-test", null, stubParent);
+        // WHEN sourceRange() is called
+        AttributeRange result = attr.sourceRange();
+        // THEN it should return exactly the stubbed AttributeRange instance
+        assertEquals(new AttributeRange(1, 2, 3, 4), result,
+            "Expected the stubbed AttributeRange from parent.sourceRange");
+    }
+}

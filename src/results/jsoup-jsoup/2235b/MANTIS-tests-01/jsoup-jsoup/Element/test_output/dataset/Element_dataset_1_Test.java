@@ -1,0 +1,55 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_1_Test {
+
+    @Test
+    @DisplayName("TC05: dataset remove operation updates underlying attributes (live-view remove branch)")
+    public void test_TC05() {
+        // GIVEN an Element with two data- attributes
+        Element el = new Element("div");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        // WHEN we obtain the live-view dataset and remove key "a"
+        Map<String, String> ds = el.dataset();
+        // Removal branch: remove a key from live view should propagate to attributes
+        ds.remove("a");
+        // THEN subsequent dataset().containsKey("a") is false and attr returns null
+        assertFalse(el.dataset().containsKey("a"), "After removal, dataset should not contain key 'a'");
+        assertNull(el.attr("data-a"), "Underlying attribute 'data-a' should be removed");
+    }
+
+    @Test
+    @DisplayName("TC06: dataset hyphenated key is normalized to camelCase (hyphen-split mapping branch)")
+    public void test_TC06() {
+        // GIVEN an Element with one hyphenated data- attribute
+        Element el = new Element("span");
+        el.attr("data-user-name", "jsmith");
+        // WHEN we obtain the dataset, it should normalize hyphens to camelCase
+        Map<String, String> ds = el.dataset();
+        // Iteration branch: loop through one hyphen split to build "userName"
+        assertEquals(1, ds.size(), "Dataset size should be 1 for one data- attribute");
+        assertTrue(ds.containsKey("userName"), "Key should be normalized to camelCase 'userName'");
+        assertEquals("jsmith", ds.get("userName"), "Value for 'userName' should match attribute value");
+    }
+
+    @Test
+    @DisplayName("TC07: dataset preserves empty key for attribute 'data-' (edge-case empty name branch)")
+    public void test_TC07() {
+        // GIVEN an Element with the edge-case attribute key exactly "data-"
+        Element el = new Element("p");
+        el.attr("data-", "empty");
+        // WHEN we obtain the dataset, it should include an entry with empty key
+        Map<String, String> ds = el.dataset();
+        // Loop branch: one iteration yields empty string key
+        assertEquals(1, ds.size(), "Dataset size should be 1 even for empty key");
+        assertTrue(ds.containsKey(""), "Dataset should contain an empty-string key for 'data-'");
+        assertEquals("empty", ds.get(""), "Value for empty key should be 'empty'");
+    }
+}

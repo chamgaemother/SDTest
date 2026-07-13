@@ -1,0 +1,195 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Implicit multiplication between two parenthesized groups when allowed inserts '*' (BRACE_CLOSE→BRACE_OPEN)",
+      "path": "B0→B6(loop×1: parseBraceOpen→parseDecimal→parseBraceClose)→B2(true)→B3(false)→B4→B6→B1→B6(loop×1)→B1→B7→B9→B11",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() = true, operatorDictionary.hasInfixOperator(\"*\") = true",
+      "expectedResult": "tokens: '(', '1', ')', '*', '(', '2', ')'",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "parentheses"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC11 implicit-mult parenthesis",
+        "  GIVEN",
+        "    String expr = \"(1)(2)\";",
+        "    ExpressionConfiguration config allowing implicit multiplication and '*' operator;",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens sequence is ['(', '1', ')', '*', '(', '2', ')'];"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Implicit multiplication between number and '(' when disabled throws \"Missing operator\" (NUMBER_LITERAL→BRACE_OPEN)",
+      "path": "B0→B6(parseNumberLiteral)→B2(true)→B3(true)→B5",
+      "precondition": "configuration.isImplicitMultiplicationAllowed() = false",
+      "expectedResult": "ParseException with message 'Missing operator'",
+      "tags": [
+        "negative",
+        "implicit-multiplication",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC12 implicit-mult disabled number-brace",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "    ExpressionConfiguration config with implicit multiplication disabled;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().equals(\"Missing operator\") );"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Hexadecimal number literal '0x1A3F' is parsed as NUMBER_LITERAL via parseHexNumberLiteral",
+      "path": "B0→B6(parseNumberLiteral→parseHexNumberLiteral)→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "single NUMBER_LITERAL token '0x1A3F'",
+      "tags": [
+        "positive",
+        "hexadecimal",
+        "number-literal"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC13 hex-number literal",
+        "  GIVEN",
+        "    String expr = \"0x1A3F\";",
+        "    default ExpressionConfiguration;",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getToken().equals(\"0x1A3F\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Decimal literal with two dots '1.2.3' throws ParseException \"Number contains more than one decimal point\"",
+      "path": "B0→B6(parseDecimalNumberLiteral loop until second dot)→exception",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Number contains more than one decimal point'",
+      "tags": [
+        "negative",
+        "number-literal",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC14 multiple decimal points",
+        "  GIVEN",
+        "    String expr = \"1.2.3\";",
+        "    default ExpressionConfiguration;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().equals(\"Number contains more than one decimal point\") );"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Scientific notation without mantissa '2e' throws ParseException \"Illegal scientific format\"",
+      "path": "B0→B6(parseDecimalNumberLiteral until 'e')→exception",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Illegal scientific format'",
+      "tags": [
+        "negative",
+        "number-literal",
+        "exception",
+        "scientific"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC15 illegal-scientific-format",
+        "  GIVEN",
+        "    String expr = \"2e\";",
+        "    default ExpressionConfiguration;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().equals(\"Illegal scientific format\") );"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Undefined function name 'foo(' throws ParseException \"Undefined function 'foo'\"",
+      "path": "B0→B6(parseIdentifier→skipBlanks→isAtString? no→peek '(')→exception",
+      "precondition": "functionDictionary.hasFunction(\"foo\") = false",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": [
+        "negative",
+        "identifier",
+        "function",
+        "exception"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC16 undefined-function",
+        "  GIVEN",
+        "    String expr = \"foo(\";",
+        "    ExpressionConfiguration config with no foo function;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().equals(\"Undefined function 'foo'\") );"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Unclosed string literal throws ParseException \"Closing quote not found\"",
+      "path": "B0→B6(parseStringLiteral loop until EOF)→exception",
+      "precondition": "configuration.isSingleQuoteStringLiteralsAllowed() = true",
+      "expectedResult": "ParseException with message 'Closing quote not found'",
+      "tags": [
+        "negative",
+        "string-literal",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC17 unclosed-string-literal",
+        "  GIVEN",
+        "    String expr = \"\\\"abc\";  // no closing quote",
+        "    config allowing single-quote and double-quote literals;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().equals(\"Closing quote not found\") );"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Unknown escape sequence '\\\\q' in string literal throws ParseException \"Unknown escape character\"",
+      "path": "B0→B6(parseStringLiteral→escapeCharacter default)→exception",
+      "precondition": "configuration.isSingleQuoteStringLiteralsAllowed() = true",
+      "expectedResult": "ParseException with message \"Unknown escape character\"",
+      "tags": [
+        "negative",
+        "string-literal",
+        "exception",
+        "escape"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC18 unknown-escape",
+        "  GIVEN",
+        "    String expr = \"\\\"\\q\\\"\";  // includes \\q",
+        "    config allowing escape sequences;",
+        "  WHEN/THEN",
+        "    assertThrows(ParseException.class, () -> new Tokenizer(expr, config).parse(),",
+        "      ex -> assert ex.getMessage().contains(\"Unknown escape character\") );"
+      ]
+    }
+  ]
+}

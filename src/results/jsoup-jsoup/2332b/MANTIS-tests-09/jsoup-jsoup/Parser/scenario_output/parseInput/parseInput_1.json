@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "parseInput(String,\"base\") with empty HTML delegates to Reader overload and returns empty body",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document with empty body text",
+      "tags": [
+        "positive",
+        "boundary",
+        "String-overload",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseInput empty-string",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = \"\";",
+        "    String base = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, base);",
+        "  THEN",
+        "    assert doc.body().text().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader,base) propagates exception thrown by TreeBuilder.parse",
+      "path": "B2→exception",
+      "precondition": "Stub TreeBuilder whose parse(...) throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown with original message",
+      "tags": [
+        "negative",
+        "exception",
+        "Reader-overload",
+        "propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput propagates TreeBuilder exception",
+        "  GIVEN",
+        "    class StubBuilder extends TreeBuilder {",
+        "      public StubBuilder(){ super(new Settings()); }",
+        "      @Override public Document parse(Reader in,String baseUri,Parser parser){ throw new IllegalStateException(\"fail\"); }",
+        "      @Override protected void process(Token token) {}",
+        "    }",
+        "    Parser parser = new Parser(new StubBuilder());",
+        "    Reader rdr = new StringReader(\"<p>x</p>\");",
+        "    String base = \"test\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, base);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\""
+      ]
+    }
+  ]
+}

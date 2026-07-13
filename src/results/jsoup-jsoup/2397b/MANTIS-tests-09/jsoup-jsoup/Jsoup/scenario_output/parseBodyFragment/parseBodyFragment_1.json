@@ -1,0 +1,55 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseBodyFragment(String, String) applies <base> tag to override provided baseUri and resolves relative links accordingly",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document body HTML preserves relative href without resolving to original baseUri; <base> tag governs resolution",
+      "tags": [
+        "positive",
+        "base-tag",
+        "relative-link"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment base-tag overrides",
+        "  GIVEN",
+        "    String fragment = \"<base href=\\\"http://foo.com/\\\"/><a href=\\\"bar.html\\\">link</a>\";",
+        "    String baseUri = \"http://original.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    // The <base> tag in the fragment should override the provided baseUri",
+        "    assert doc.body().select(\"a\").first().attr(\"href\").equals(\"bar.html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseBodyFragment(String) auto-balances unclosed tags in HTML fragment (tag-soup correction)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Parser auto-closes missing tags, yielding a well-formed nested structure in the body",
+      "tags": [
+        "positive",
+        "auto-correction",
+        "unclosed-tag"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseBodyFragment unclosed-tags correction",
+        "  GIVEN",
+        "    String fragment = \"<div><p>Test\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    // The parser should close <p> and <div> automatically",
+        "    assert doc.body().html().equals(\"<div><p>Test</p></div>\");",
+        "END"
+      ]
+    }
+  ]
+}

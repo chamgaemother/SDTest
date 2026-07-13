@@ -1,0 +1,149 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.ref.WeakReference;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("child(0) on element with no child nodes throws IndexOutOfBoundsException (childNodeSize()==0)")
+    public void test_TC01() {
+        // Given: a new element with no children, so childNodeSize()==0
+        Element parent = new Element("div");
+        // When & Then: calling child(0) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0));
+    }
+
+    @Test
+    @DisplayName("child(1) on element with no child nodes throws IndexOutOfBoundsException (childNodeSize()==0)")
+    public void test_TC02() {
+        // Given: a new element with no children
+        Element parent = new Element("div");
+        // When & Then: calling child(1) out of bounds throws
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(1));
+    }
+
+    @Test
+    @DisplayName("child(0) on element with only non-element child nodes throws IndexOutOfBoundsException after filtering (no Element instances)")
+    public void test_TC03() {
+        // Given: element has one text node only -> childElementsList will be empty
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("text"));
+        assertEquals(1, parent.childNodeSize(), "precondition: one child node present");
+        // When & Then: child(0) should throw since no Element children
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0));
+        // ensure no mutation: still one child node
+        assertEquals(1, parent.childNodeSize());
+    }
+
+    @Test
+    @DisplayName("child(0) returns the single Element child (childNodeSize()>0, one element, index at lower bound)")
+    public void test_TC04() {
+        // Given: element has exactly one Element child
+        Element parent = new Element("ul");
+        Element li = new Element("li");
+        parent.appendChild(li);
+        // When: retrieve child 0
+        Element result = parent.child(0);
+        // Then: should return the exact same child
+        assertSame(li, result);
+    }
+
+    @Test
+    @DisplayName("child(0) filters out non-elements and returns first Element when mixed nodes exist")
+    public void test_TC05() {
+        // Given: mixed nodes (TextNode, Element, Comment)
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("x")); // non-element
+        Element span = new Element("span"); // first element
+        parent.appendChild(span);
+        parent.appendChild(new Comment("c")); // non-element
+        // When: child(0) should skip non-elements and return span
+        Element result = parent.child(0);
+        // Then: returned element is the span
+        assertEquals("span", result.tagName());
+        assertSame(span, result);
+    }
+
+    @Test
+    @DisplayName("child(1) returns second Element among multiple element children")
+    public void test_TC06() {
+        // Given: two element children in order
+        Element parent = new Element("div");
+        Element e1 = new Element("p");
+        Element e2 = new Element("a");
+        parent.appendChild(e1);
+        parent.appendChild(e2);
+        // When: child(1) should return second element
+        Element result = parent.child(1);
+        // Then: result is e2
+        assertSame(e2, result);
+    }
+
+    @Test
+    @DisplayName("child(2) on element with two children throws IndexOutOfBoundsException (index too large)")
+    public void test_TC07() {
+        // Given: two element children, valid indices are 0 and 1
+        Element parent = new Element("div");
+        parent.appendChild(new Element("p"));
+        parent.appendChild(new Element("span"));
+        // When & Then: child(2) out of bounds should throw
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(2));
+    }
+
+    @Test
+    @DisplayName("child(-1) on element with one child throws IndexOutOfBoundsException (negative index)")
+    public void test_TC08() {
+        // Given: only one child element -> valid index 0
+        Element parent = new Element("div");
+        parent.appendChild(new Element("span"));
+        // When & Then: negative index should throw
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(-1));
+    }
+
+    @Test
+    @DisplayName("child(0) builds element list with caching reference set to non-null after first call")
+    public void test_TC09() throws Exception {
+        // Given: one element child, cache initially empty (shadowChildrenRef null)
+        Element parent = new Element("div");
+        Element img = new Element("img");
+        parent.appendChild(img);
+        // Reflectively access private cache field before call
+        Field cacheField = Element.class.getDeclaredField("shadowChildrenRef");
+        cacheField.setAccessible(true);
+        assertNull(cacheField.get(parent), "initial cache should be null");
+        // When: call child(0) triggers building of element list and setting cache
+        Element result = parent.child(0);
+        // Then: correct element returned and cache is non-null
+        assertSame(img, result);
+        Object cacheObj = cacheField.get(parent);
+        assertNotNull(cacheObj, "shadowChildrenRef should be set after child()");
+        @SuppressWarnings("unchecked")
+        WeakReference<?> ref = (WeakReference<?>) cacheObj;
+        assertNotNull(ref.get(), "WeakReference should refer to non-null element list");
+        assertFalse(((java.util.List<?>) ref.get()).isEmpty(), "cached element list should not be empty");
+    }
+
+    @Test
+    @DisplayName("child(1) after adding new element invalidates previous empty cache and returns new element")
+    public void test_TC10() {
+        // Given: one child, build initial cache, then append second child to trigger invalidation
+        Element parent = new Element("div");
+        Element p = new Element("p");
+        parent.appendChild(p);
+        // initial build of cache
+        parent.childElementsList();
+        // Now append new element which should invalidate cache via nodelistChanged()
+        Element span = new Element("span");
+        parent.appendChild(span);
+        // When: call child(1)
+        Element result = parent.child(1);
+        // Then: returned element is span and childrenSize (backed by cache refreshed) is 2
+        assertSame(span, result);
+        assertEquals(2, parent.childrenSize(), "cache should refresh to include two children");
+    }
+}

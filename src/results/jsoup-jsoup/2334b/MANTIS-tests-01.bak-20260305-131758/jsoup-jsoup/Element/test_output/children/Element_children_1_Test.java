@@ -1,0 +1,56 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("TC05: children() on element with only non-Element childNodes goes through build path and returns empty list")
+    public void test_TC05() {
+        // GIVEN an Element with exactly one TextNode child (no Element children → triggers loop with zero matches)
+        Element el = new Element("div");
+        el.appendChild(new TextNode("text"));
+        // WHEN children() is called
+        Elements result = el.children();
+        // THEN result must be empty (no element children found)
+        assertTrue(result.isEmpty(), "Expected no element children but got some");
+    }
+
+    @Test
+    @DisplayName("TC06: children() with multiple Element childNodes iterates loop more than once and returns all children")
+    public void test_TC06() {
+        // GIVEN an Element with two Element children (loop should match twice)
+        Element ul = new Element("ul");
+        Element li1 = new Element("li");
+        Element li2 = new Element("li");
+        ul.appendChild(li1);
+        ul.appendChild(li2);
+        // WHEN children() is called
+        Elements result = ul.children();
+        // THEN size must be 2 and maintain insertion order
+        assertAll("Check both children present and correct order",
+            () -> assertEquals(2, result.size(), "Expected two element children"),
+            () -> assertSame(li1, result.get(0), "First child should be li1"),
+            () -> assertSame(li2, result.get(1), "Second child should be li2")
+        );
+    }
+
+    @Test
+    @DisplayName("TC07: children() second call returns cached list via shadowChildrenRef without rebuilding")
+    public void test_TC07() {
+        // GIVEN an Element with one Element child and children() called once before (cache created)
+        Element el = new Element("div");
+        Element child = new Element("span");
+        el.appendChild(child);
+        Elements first = el.children(); // builds and caches internal element list
+        // WHEN children() is called a second time (cache hit path)
+        Elements second = el.children();
+        // THEN second should be the same instance as first (cache should return same Elements)
+        assertSame(first, second, "Expected children() to return the same cached Elements instance on second call");
+        assertEquals(1, second.size(), "Cached result should still contain exactly one child");
+    }
+}

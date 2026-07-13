@@ -1,0 +1,255 @@
+{
+  "scenarios": [
+    {
+      "id": "TC23",
+      "description": "Implicit multiplication between number and opening brace inserts '*' when allowed (NUMBER_LITERAL→BRACE_OPEN)",
+      "path": "B0→B1→B2→B4→B6→B1→B2→B4→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with implicit multiplication allowed",
+      "expectedResult": "tokens sequence: [NUMBER_LITERAL '2', '*', BRACE_OPEN '(', NUMBER_LITERAL '3', BRACE_CLOSE ')']",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 implicit-mul number-brace allowed",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.builder()",
+        "        .setImplicitMultiplicationAllowed(true)",
+        "        .build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(1).getTokenString().equals(\"*\");",
+        "    assert tokens.get(2).getType() == BRACE_OPEN;",
+        "    assert tokens.get(3).getTokenString().equals(\"3\");",
+        "    assert tokens.get(4).getType() == BRACE_CLOSE;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "Missing operator exception for disallowed implicit multiplication between number and brace (NUMBER_LITERAL→BRACE_OPEN)",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "ExpressionConfiguration with implicit multiplication disabled",
+      "expectedResult": "ParseException with message 'Missing operator'",
+      "tags": [
+        "negative",
+        "implicit-multiplication",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 implicit-mul number-brace disallowed",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.builder()",
+        "        .setImplicitMultiplicationAllowed(false)",
+        "        .build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Missing operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "Decimal number starting with dot is parsed as NUMBER_LITERAL ('.5')",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "single NUMBER_LITERAL token with tokenString '.5'",
+      "tags": [
+        "positive",
+        "number-literal",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 decimal-literal-dot-start",
+        "  GIVEN",
+        "    String expr = \".5\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getTokenString().equals(\".5\");",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "Undefined operator throws exception when parsing unrecognized symbol '@'",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "ParseException with message \"Undefined operator '@'\"",
+      "tags": [
+        "negative",
+        "operator",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 undefined-operator",
+        "  GIVEN",
+        "    String expr = \"@\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing \"Undefined operator '@'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "Valid hexadecimal literal is parsed as NUMBER_LITERAL ('0xAB')",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "single NUMBER_LITERAL token with tokenString '0xAB'",
+      "tags": [
+        "positive",
+        "hex-literal",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 hex-literal-parse",
+        "  GIVEN",
+        "    String expr = \"0xAB\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getTokenString().equals(\"0xAB\");",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "Valid scientific notation number is parsed as NUMBER_LITERAL ('1.2e+3')",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "single NUMBER_LITERAL token with tokenString '1.2e+3'",
+      "tags": [
+        "positive",
+        "scientific-notation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC28 valid-scientific-notation",
+        "  GIVEN",
+        "    String expr = \"1.2e+3\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getTokenString().equals(\"1.2e+3\");",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC29",
+      "description": "Unexpected token after infix operator throws exception on '1++2'",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B2→B3→B6",
+      "precondition": "default ExpressionConfiguration",
+      "expectedResult": "ParseException with message 'Unexpected token after infix operator'",
+      "tags": [
+        "negative",
+        "infix",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC29 unexpected-token-after-infix",
+        "  GIVEN",
+        "    String expr = \"1++2\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.defaultConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected token after infix operator';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC30",
+      "description": "Unexpected closing array after valid array throws 'Unexpected closing array' ('[1]]')",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B2→B6→B1→B7→B9→B10",
+      "precondition": "ExpressionConfiguration with arrays allowed",
+      "expectedResult": "ParseException with message 'Unexpected closing array'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC30 unexpected-closing-array",
+        "  GIVEN",
+        "    String expr = \"[1]]\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.builder()",
+        "        .setArraysAllowed(true)",
+        "        .build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected closing array';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC31",
+      "description": "Array open not allowed at start throws 'Array open not allowed here' ('[')",
+      "path": "B0→B1→B2→B6→B1→B2→B6→B1→B2→B6→B1→B2→B6→B1→B2→B3→B5",
+      "precondition": "ExpressionConfiguration with arrays allowed",
+      "expectedResult": "ParseException with message 'Array open not allowed here'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC31 array-open-not-allowed",
+        "  GIVEN",
+        "    String expr = \"[\";",
+        "    ExpressionConfiguration cfg = ExpressionConfiguration.builder()",
+        "        .setArraysAllowed(true)",
+        "        .build();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, cfg);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Array open not allowed here';",
+        "END"
+      ]
+    }
+  ]
+}

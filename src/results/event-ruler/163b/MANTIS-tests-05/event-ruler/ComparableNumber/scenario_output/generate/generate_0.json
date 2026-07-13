@@ -1,0 +1,152 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "generate(f < -5e9) throws IllegalArgumentException for value below minimum",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"; no string returned",
+      "tags": [
+        "exception",
+        "branch-true",
+        "lower-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate below-minimum",
+        "  GIVEN",
+        "    double f = -5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "generate(f > 5e9) throws IllegalArgumentException for value above maximum",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"; no string returned",
+      "tags": [
+        "exception",
+        "branch-false",
+        "branch-true",
+        "upper-bound-violation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate above-maximum",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "generate(f = -5e9) returns all-zero hex string at lower boundary",
+      "path": "B0→B1→B2→B3→B5(loop-N)",
+      "precondition": "none",
+      "expectedResult": "return value equals \"00000000000000\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "branch-false",
+        "loop-N",
+        "lower-bound"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate at-lower-boundary",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String s = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert s.equals(\"00000000000000\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "generate(f = 5e9) returns hex string for max value at upper boundary",
+      "path": "B0→B1→B2→B3→B5(loop-N)",
+      "precondition": "none",
+      "expectedResult": "return value equals hex of (1e16) skipping first byte; i.e. new String({\"23\",\"86\",\"F2\",\"6F\",\"C1\",\"00\",\"00\"}) = \"2386F26FC10000\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "branch-false",
+        "loop-N",
+        "upper-bound"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate at-upper-boundary",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String s = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert s.equals(\"2386F26FC10000\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "generate(f = 0.0) returns mid-range hex string",
+      "path": "B0→B1→B2→B3→B5(loop-N)",
+      "precondition": "none",
+      "expectedResult": "return value equals hex of (5e15) skipping first byte; i.e. new String({\"11\",\"92\",\"D0\",\"2C\",\"68\",\"00\",\"00\"}) = \"1192D02C680000\"",
+      "tags": [
+        "normal",
+        "branch-false",
+        "branch-false",
+        "loop-N",
+        "zero"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate zero-value",
+        "  GIVEN",
+        "    double f = 0.0;",
+        "  WHEN",
+        "    String s = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert s.equals(\"1192D02C680000\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "generate(f = -5e9 + 1e-6) returns smallest non-zero hex string",
+      "path": "B0→B1→B2→B3→B5(loop-N)",
+      "precondition": "none",
+      "expectedResult": "return value equals \"00000000000001\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "branch-false",
+        "loop-N",
+        "fractional-min"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 generate fractional-minimum",
+        "  GIVEN",
+        "    double f = -4999999999.999999;",
+        "  WHEN",
+        "    String s = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert s.equals(\"00000000000001\");"
+      ]
+    }
+  ]
+}

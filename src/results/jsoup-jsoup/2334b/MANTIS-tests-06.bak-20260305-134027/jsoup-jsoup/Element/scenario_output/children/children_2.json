@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "children() caches empty element list when only non-Element child nodes and reuses cache on second call",
+      "path": "B0→B1(childNodeSize>0)→B2(shadowChildrenRef null)→B3(build empty list)→B4(return)→B1→B5(shadowChildrenRef non-null & get() non-null)→B4(return)",
+      "precondition": "Element with only TextNode and Comment children",
+      "expectedResult": "First call returns empty Elements and second call returns same Elements instance",
+      "tags": [
+        "cache-empty",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 children empty-cache-hit",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"t1\"));",
+        "    el.appendChild(new Comment(\"c1\"));",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.isEmpty();",
+        "    assertSame(first, second);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() rebuilds shadow list when WeakReference referent cleared (cache-miss on null get)",
+      "path": "B0→B1(childNodeSize>0)→B2(shadowChildrenRef null)→B3(build list)→B4(return)→clear referent→B1→B2(shadowChildrenRef non-null & get() null)→B3(rebuild list)→B4(return)",
+      "precondition": "Element with two Element children, reflection allowed",
+      "expectedResult": "After clearing referent, second call rebuilds new list instance",
+      "tags": [
+        "cache-miss",
+        "weakref",
+        "reflection",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 children weakref-cache-miss",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "    Elements first = el.children();",
+        "    // reflectively clear the referent list",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<List<Element>> wref = (WeakReference<List<Element>>) refField.get(el);",
+        "    wref.clear();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertEquals(2, first.size());",
+        "    assertEquals(2, second.size());",
+        "    assertNotSame(first, second);",
+        "END"
+      ]
+    }
+  ]
+}

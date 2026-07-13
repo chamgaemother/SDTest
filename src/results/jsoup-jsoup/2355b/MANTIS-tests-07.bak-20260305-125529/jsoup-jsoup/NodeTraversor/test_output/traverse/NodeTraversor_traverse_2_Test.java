@@ -1,0 +1,70 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class NodeTraversor_traverse_2_Test {
+
+    @Test
+    @DisplayName("replace first of two children in head triggers replacement branch B7→B9→B10 with depth decrement")
+    public void test_TC16() {
+        // GIVEN: a root with two children to trigger replacement in head
+        Element root = new Element("ul");
+        Element li1 = new Element("li1");
+        Element li2 = new Element("li2");
+        root.appendChild(li1);
+        root.appendChild(li2);
+        // Visitor replaces the first child node in head, triggering B7->B9->B10
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                if (node == li1) {
+                    node.replaceWith(new Element("x"));
+                }
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                // no-op tail
+            }
+        };
+
+        // WHEN: traverse is invoked on root
+        NodeTraversor.traverse(visitor, root);
+
+        // THEN: first child is replaced by element named "x"
+        assertEquals("x", root.childNode(0).nodeName(),
+                "Expected the first child to be replaced with a new Element named 'x' after head");
+        // And ensure the second child remains and keeps its original name, verifying traversal continued
+        assertEquals("li2", root.childNode(1).nodeName(),
+                "Expected the second child to remain and be visited at depth 1 after replacement");
+    }
+
+    @Test
+    @DisplayName("visitor.head throwing RuntimeException stops traverse via B1→B24 exceptional exit")
+    public void test_TC17() {
+        // GIVEN: a simple root, and a visitor that throws on head to trigger immediate abort
+        Element root = new Element("div");
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                throw new IllegalStateException("fail on head");
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                // no-op
+            }
+        };
+
+        // WHEN/THEN: expect IllegalStateException with specific message propagates
+        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> {
+            NodeTraversor.traverse(visitor, root);
+        });
+        assertEquals("fail on head", ex.getMessage(),
+                "Expected IllegalStateException with message 'fail on head' to be thrown and propagated immediately");
+    }
+}

@@ -1,0 +1,224 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "clone() produces a deep copy: independent trackPosition and settings",
+      "path": "B0→B1→B2(clone)→B3→B4",
+      "precondition": "Parser p = Parser.htmlParser(); p.setTrackPosition(true).settings(new ParseSettings(true,true));",
+      "expectedResult": "cloned trackPosition==true and settings equal original at clone time; modifications to clone do not affect original",
+      "tags": [
+        "clone",
+        "deep-copy",
+        "independence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 clone deep-copy independence",
+        "  GIVEN",
+        "    Parser original = Parser.htmlParser().setTrackPosition(true).settings(new ParseSettings(true,true));",
+        "  WHEN",
+        "    Parser copy = original.clone();",
+        "    copy.setTrackPosition(false).settings(new ParseSettings(false,false));",
+        "  THEN",
+        "    assertTrue(original.isTrackPosition());",
+        "    assertNotSame(original.settings(), copy.settings());",
+        "    assertEquals(true, copy.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "setTreeBuilder() updates builder and sets builder.parser back-reference",
+      "path": "B0→B1→B2(setTreeBuilder)→B3→B4",
+      "precondition": "Parser p = Parser.htmlParser(); TreeBuilder tb = new XmlTreeBuilder();",
+      "expectedResult": "p.getTreeBuilder()==tb and tb.parser==p",
+      "tags": [
+        "setter",
+        "back-reference",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 setTreeBuilder back-reference",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "    XmlTreeBuilder tb = new XmlTreeBuilder();",
+        "  WHEN",
+        "    Parser returned = p.setTreeBuilder(tb);",
+        "  THEN",
+        "    assertSame(p, returned);",
+        "    assertSame(tb, p.getTreeBuilder());",
+        "    assertSame(p, tb.parser);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseInput(String,baseUri) returns Document with correct body content",
+      "path": "B0→B1→B2(parseInput→StringReader overload)→B3",
+      "precondition": "none",
+      "expectedResult": "Document contains <p>hello</p> in body",
+      "tags": [
+        "parse",
+        "overload",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput string overload",
+        "  GIVEN",
+        "    String html = \"<p>hello</p>\";",
+        "    String uri = \"base\";",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = p.parseInput(html, uri);",
+        "  THEN",
+        "    assertEquals(\"hello\", doc.body().selectFirst(\"p\").text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseFragmentInput(String,null,baseUri) handles null context returning nodes list",
+      "path": "B0→B1→B2(parseFragmentInput→StringReader overload)→B3",
+      "precondition": "none",
+      "expectedResult": "List with one <span> node and no exception",
+      "tags": [
+        "fragment",
+        "overload",
+        "null-context",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseFragmentInput string overload null context",
+        "  GIVEN",
+        "    String frag = \"<span>t</span>\";",
+        "    String uri = \"u\";",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> nodes = p.parseFragmentInput(frag, null, uri);",
+        "  THEN",
+        "    assertEquals(1, nodes.size());",
+        "    assertTrue(nodes.get(0) instanceof Element);",
+        "    assertEquals(\"span\", ((Element)nodes.get(0)).tagName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseFragmentInput(Reader,Element,baseUri) Reader overload with non-null context",
+      "path": "B0→B1→B2(parseFragmentInput→Reader overload)→B3",
+      "precondition": "Element ctx = new Element(Tag.valueOf(\"div\"), \"\");",
+      "expectedResult": "List with one <em> text node under context",
+      "tags": [
+        "fragment",
+        "overload",
+        "reader",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parseFragmentInput reader overload",
+        "  GIVEN",
+        "    String frag = \"<em>x</em>\";",
+        "    String uri = \"u\";",
+        "    Element ctx = new Element(Tag.valueOf(\"div\"), uri);",
+        "    Parser p = Parser.htmlParser();",
+        "    Reader r = new StringReader(frag);",
+        "  WHEN",
+        "    List<Node> out = p.parseFragmentInput(r, ctx, uri);",
+        "  THEN",
+        "    assertEquals(1, out.size());",
+        "    assertEquals(\"em\", ((Element)out.get(0)).tagName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "xmlParser().parseXmlFragment produces nodes for simple XML fragment",
+      "path": "B0→B1→B2(parseXmlFragment)→B3",
+      "precondition": "none",
+      "expectedResult": "List with one Element <item> and text '1'",
+      "tags": [
+        "xml",
+        "fragment",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 xmlParser parseXmlFragment",
+        "  GIVEN",
+        "    String xml = \"<item>1</item>\";",
+        "    String uri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, uri);",
+        "  THEN",
+        "    assertEquals(1, nodes.size());",
+        "    Element it = (Element)nodes.get(0);",
+        "    assertEquals(\"item\", it.tagName());",
+        "    assertEquals(\"1\", it.text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "static parse(String,baseUri) creates HTML Document via htmlParser path",
+      "path": "B0→B1(htmlParser)→B2(parse)→B3",
+      "precondition": "none",
+      "expectedResult": "Document title and html structure present",
+      "tags": [
+        "static",
+        "parse",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 static parse html content",
+        "  GIVEN",
+        "    String html = \"<html><head><title>T</title></head><body/></html>\";",
+        "    String uri = \"u\";",
+        "  WHEN",
+        "    Document doc = Parser.parse(html, uri);",
+        "  THEN",
+        "    assertEquals(\"T\", doc.title());",
+        "    assertNotNull(doc.body());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseFragment(String,null,baseUri) static overload with null context throws exception",
+      "path": "B0→B1(static parseFragment)→B2(context null)→B3(exception)",
+      "precondition": "none",
+      "expectedResult": "NullPointerException thrown",
+      "tags": [
+        "fragment",
+        "static",
+        "null-context",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 static parseFragment null context exception",
+        "  GIVEN",
+        "    String frag = \"<b>x</b>\";",
+        "    String uri = \"u\";",
+        "    Element ctx = null;",
+        "  WHEN",
+        "    call Parser.parseFragment(frag, ctx, uri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

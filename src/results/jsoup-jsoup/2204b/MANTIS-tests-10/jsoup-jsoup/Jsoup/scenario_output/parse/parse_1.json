@@ -1,0 +1,193 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parse(File, charsetName, baseUri) reads UTF-8 file and resolves relative URL in HTML",
+      "path": "B0→B1→DataUtil.load→Parser.parse→return",
+      "precondition": "temp HTML file exists with '<a href=\"foo.html\">x</a>' content",
+      "expectedResult": "Document resolves absUrl('href') to baseUri + 'foo.html'",
+      "tags": [
+        "positive",
+        "file",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parse file with explicit charset and baseUri",
+        "  GIVEN",
+        "    File file = create temp file containing '<a href=\"foo.html\">link</a>';",
+        "    String charset = 'UTF-8';",
+        "    String baseUri = 'http://host/' ;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.select('a').first().absUrl('href').equals('http://host/foo.html');",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName, baseUri, Parser) uses xmlParser to preserve tag case from file",
+      "path": "B0→B1→DataUtil.load→parser.parseInput→return",
+      "precondition": "temp HTML file exists with '<Tag>V</Tag>' content",
+      "expectedResult": "Document has tag name 'Tag' in body",
+      "tags": [
+        "positive",
+        "file",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse file with explicit parser",
+        "  GIVEN",
+        "    File file = create temp file containing '<Tag>Value</Tag>';",
+        "    String charset = 'UTF-8';",
+        "    String baseUri = '';",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains('<Tag>Value</Tag>');",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(Path, charsetName, baseUri) reads XML content via Path and resolves baseUri",
+      "path": "B0→B1→DataUtil.load→Parser.parse→return",
+      "precondition": "temp Path file exists with '<img src=\"i.png\"/>'",
+      "expectedResult": "Document resolves absUrl('src') to baseUri + 'i.png'",
+      "tags": [
+        "positive",
+        "path",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse Path overload",
+        "  GIVEN",
+        "    Path path = Files.createTempFile('t','.html');",
+        "    write '<img src=\"i.png\"/>' to path using UTF-8",
+        "    String charset = 'UTF-8';",
+        "    String baseUri = 'https://x.com/';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri);",
+        "  THEN",
+        "    assert doc.select('img').first().absUrl('src').equals('https://x.com/i.png');",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path, charsetName) reads HTML and uses file absolute path as baseUri",
+      "path": "B0→B1→DataUtil.load→Parser.parse→return",
+      "precondition": "temp Path file exists with '<div>OK</div>'",
+      "expectedResult": "Document.body.html == '<div>OK</div>'",
+      "tags": [
+        "positive",
+        "path",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse Path with charset only",
+        "  GIVEN",
+        "    Path path = Files.createTempFile('t','.html');",
+        "    write '<div>OK</div>' into path",
+        "    String charset = 'UTF-8';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals('<div>OK</div>');",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path) reads HTML, auto-detects charset and uses absolute path as baseUri",
+      "path": "B0→B1→DataUtil.load→Parser.parse→return",
+      "precondition": "temp Path file exists with '<span>v</span>'",
+      "expectedResult": "Document.body.html == '<span>v</span>'",
+      "tags": [
+        "positive",
+        "path",
+        "overload",
+        "bom"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse Path default overload",
+        "  GIVEN",
+        "    Path path = Files.createTempFile('t','.html');",
+        "    write '<span>v</span>' to path",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path);",
+        "  THEN",
+        "    assert doc.body().html().equals('<span>v</span>');",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(InputStream, charsetName, baseUri) reads stream and resolves relative link",
+      "path": "B0→B1→DataUtil.load→Parser.parse→return",
+      "precondition": "InputStream over '<a href=\"r.html\">r</a>' available",
+      "expectedResult": "Document.absUrl('href') == baseUri + 'r.html'",
+      "tags": [
+        "positive",
+        "stream",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse InputStream overload",
+        "  GIVEN",
+        "    InputStream in = toInputStream '<a href=\"r.html\">r</a>'",
+        "    String charset = 'UTF-8';",
+        "    String baseUri = 'ftp://ignore/';",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.select('a').first().absUrl('href').equals('ftp://ignore/r.html');",
+        "    in is closed",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) uses xmlParser on stream",
+      "path": "B0→B1→DataUtil.load→parser.parseInput→return",
+      "precondition": "InputStream over '<X>1</X>'",
+      "expectedResult": "Document.body.html == '<X>1</X>'",
+      "tags": [
+        "positive",
+        "stream",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse InputStream with parser",
+        "  GIVEN",
+        "    InputStream in = toInputStream '<X>1</X>'",
+        "    String charset = 'UTF-8';",
+        "    String baseUri = '';",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().equals('<X>1</X>');",
+        "    in is closed",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "clone() on document with HTML outputSettings retains html syntax and independent deep copy of settings",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Document with outputSettings.syntax(html) and prettyPrint disabled on original",
+      "expectedResult": "Clone has syntax html, prettyPrint=false; modifying clone.settings.syntax(xml) does not affect original",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "outputSettings",
+        "branch-syntax-html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 clone retains html syntax and deep copy",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://example.com\");",
+        "    orig.outputSettings().syntax(Document.OutputSettings.Syntax.html).prettyPrint(false);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.outputSettings().syntax() == Document.OutputSettings.Syntax.html;",
+        "    assert !copy.outputSettings().prettyPrint();",
+        "    // modify clone",
+        "    copy.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    // original unaffected",
+        "    assert orig.outputSettings().syntax() == Document.OutputSettings.Syntax.html;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() preserves null connection field so connection() returns a new session each time",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Document created without setting connection (null default)",
+      "expectedResult": "orig.connection() and clone.connection() both return non-null distinct Connection sessions",
+      "tags": [
+        "positive",
+        "connection",
+        "branch-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 clone null-connection branch",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://example.org\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    Connection origConn = orig.connection();",
+        "    Connection copyConn = copy.connection();",
+        "  THEN",
+        "    assertNotNull(origConn);",
+        "    assertNotNull(copyConn);",
+        "    assertNotSame(origConn, copyConn);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() produces independent DOM: adding child to clone does not affect original childNodes",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Document with one body element and no custom children under body",
+      "expectedResult": "Clone has its own childNodes: adding an element to clone.body() increases clone size only",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "dom-structure"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 clone independent DOM structure",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://test.com\");",
+        "    int origCount = orig.body().children().size();",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "    copy.body().appendElement(\"div\");",
+        "  THEN",
+        "    assertEquals(origCount, orig.body().children().size());",
+        "    assertEquals(origCount + 1, copy.body().children().size());",
+        "END"
+      ]
+    }
+  ]
+}

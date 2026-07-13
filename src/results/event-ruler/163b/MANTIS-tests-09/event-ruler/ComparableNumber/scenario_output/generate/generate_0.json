@@ -1,0 +1,147 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "generate throws IllegalArgumentException when f < -5e9 (lower bound violation)",
+      "path": "B0→B1[true]→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message containing \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "exception",
+        "branch-true",
+        "lower-bound",
+        "overload:double"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 generate lower-bound-exception",
+        "  GIVEN",
+        "    double f = -5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "generate throws IllegalArgumentException when f > 5e9 (upper bound violation)",
+      "path": "B0→B1[true]→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message containing \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "exception",
+        "branch-true",
+        "upper-bound",
+        "overload:double"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 generate upper-bound-exception",
+        "  GIVEN",
+        "    double f = 5000000000.1;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "generate returns correct hex string at lower bound f = -5e9",
+      "path": "B0→B1[false]→B3",
+      "precondition": "none",
+      "expectedResult": "return value equals toHexStringSkippingFirstByte((long)(1e6*(5000000000.0 + -5000000000.0))) which is \"00000000000000\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "lower-bound",
+        "overload:double"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 generate lower-bound-valid",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00000000000000\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "generate returns correct hex string at upper bound f = 5e9",
+      "path": "B0→B1[false]→B3",
+      "precondition": "none",
+      "expectedResult": "return value equals toHexStringSkippingFirstByte((long)(1e6*(5000000000.0 + 5000000000.0))) which is \"1fffffffffffff\"",
+      "tags": [
+        "boundary",
+        "branch-false",
+        "upper-bound",
+        "overload:double"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 generate upper-bound-valid",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"1fffffffffffff\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "generate returns correct hex string for typical positive fractional f = 123.456",
+      "path": "B0→B1[false]→B3",
+      "precondition": "none",
+      "expectedResult": "return value equals toHexStringSkippingFirstByte((long)(1e6*(5000000000.0 + 123.456))) which is \"12b1e0c9c0\" padded to 14 chars as \"00012b1e0c9c0\"",
+      "tags": [
+        "branch-false",
+        "typical",
+        "overload:double"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 generate typical-positive",
+        "  GIVEN",
+        "    double f = 123.456;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00012b1e0c9c0\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "generate returns correct hex string for typical negative fractional f = -123.456",
+      "path": "B0→B1[false]→B3",
+      "precondition": "none",
+      "expectedResult": "return value equals toHexStringSkippingFirstByte((long)(1e6*(5000000000.0 + -123.456))) which is \"12aff1f37c0\" padded to 14 chars as \"00012aff1f37c0\"",
+      "tags": [
+        "branch-false",
+        "typical",
+        "overload:double"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 generate typical-negative",
+        "  GIVEN",
+        "    double f = -123.456;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00012aff1f37c0\");"
+      ]
+    }
+  ]
+}

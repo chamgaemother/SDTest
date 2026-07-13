@@ -1,0 +1,209 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search on term not in index returns empty list (branch B0 false)",
+      "path": "B0→B1",
+      "precondition": "BM25InvertedIndex instance with no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "empty-index",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search term-absent returns empty",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    String term = \"ghost\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search on term mapped to empty doc map returns empty list (loop-0, branch-true)",
+      "path": "B0→B2→B7→B6",
+      "precondition": "idx.index modified via reflection to contain term->emptyMap; no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "empty-termDocs",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search term-empty-docs returns empty",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    // stub index internally",
+        "    Field f = BM25InvertedIndex.class.getDeclaredField(\"index\");",
+        "    f.setAccessible(true);",
+        "    ((Map<String,Map<Integer,Integer>>)f.get(idx)).put(\"x\", new HashMap<>());",
+        "    String term = \"x\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search with one doc entry but movie missing skips entry (loop-1 skip, branch-true, branch-false B3)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "idx.index stubbed via reflection to term->map(docId=99->freq1); movies map empty",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "skip-missing-movie",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search skip-missing-movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    // stub single entry",
+        "    Field idxMap = BM25InvertedIndex.class.getDeclaredField(\"index\");",
+        "    idxMap.setAccessible(true);",
+        "    Map<Integer,Integer> m = new HashMap<>(); m.put(99,1);",
+        "    ((Map<String,Map<Integer,Integer>>)idxMap.get(idx)).put(\"term\", m);",
+        "    String term = \"term\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search with one matching movie returns single result (loop-1 include, branch-true B3 true)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "idx.addMovie(1,\"A\",\"rating irrelevant\",\"2020\",\"one two three\") adds one movie containing term \"two\"",
+      "expectedResult": "returned list contains one SearchResult with docId=1 and relevanceScore computed as computeIDF(1)*((freq*(K+1))/(freq+K*(1-B+ B*(docLen/avgLen))))",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "single-result",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search single-match returns score",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"A\", 5.0, 2020, \"one two three\");",
+        "    String term = \"two\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search with two matching movies returns sorted results (loop-N=2 include all)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "idx.addMovie(1,\"M1\",0,2000,\"t t t\"); idx.addMovie(2,\"M2\",0,2001,\"t x t\"); both contain \"t\"",
+      "expectedResult": "returned list size=2 sorted by descending relevanceScore",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "multiple-results",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search multi-match sorted",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"M1\", 0.0, 2000, \"t t t\");",
+        "    idx.addMovie(2, \"M2\", 0.0, 2001, \"t x t\");",
+        "    String term = \"t\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 2;",
+        "    assert results.get(0).getRelevanceScore() >= results.get(1).getRelevanceScore();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "search is case-insensitive: uppercase term matches lowercase index (branch B0 true)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "idx.addMovie(3,\"Name\",\"rating\",2021,\"Hello World\"); contains \"hello\" lowercase",
+      "expectedResult": "returned list contains one SearchResult with docId=3",
+      "tags": [
+        "branch-true",
+        "case-insensitive",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 search uppercase-term matches",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(3, \"Name\", 7.0, 2021, \"Hello World\");",
+        "    String term = \"HELLO\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "search with mixed missing and present movies returns only present (loop-N skip and include)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B4→B7→B6",
+      "precondition": "idx.addMovie(4,\"X\",0,2000,\"y z\"); // contains y; stub index to also include docId 99 mapping",
+      "expectedResult": "returned list contains only SearchResult for docId=4",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "skip-missing",
+        "include-present",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 search skip-and-include mixed",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(4, \"X\", 1.0, 2000, \"y z\");",
+        "    // stub extra entry",
+        "    Field idxMap = BM25InvertedIndex.class.getDeclaredField(\"index\");",
+        "    idxMap.setAccessible(true);",
+        "    ((Map<String,Map<Integer,Integer>>)idxMap.get(idx)).get(\"y\").put(99,1);",
+        "    String term = \"y\";",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(term);",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "    assert results.get(0).getDocId() == 4;",
+        "END"
+      ]
+    }
+  ]
+}

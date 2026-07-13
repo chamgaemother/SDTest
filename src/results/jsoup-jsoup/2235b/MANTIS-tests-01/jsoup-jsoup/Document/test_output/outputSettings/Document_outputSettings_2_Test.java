@@ -1,0 +1,42 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document.OutputSettings.Syntax;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_outputSettings_2_Test {
+
+    @Test
+    @DisplayName("TC04: Setter chaining: applying XML syntax updates escapeMode to XHTML")
+    public void test_TC04() {
+        // GIVEN a fresh Document and a fresh OutputSettings
+        Document doc = new Document("http://example.com");
+        OutputSettings custom = new OutputSettings();
+        // WHEN we set the syntax to XML on the custom settings
+        //   This triggers the branch in OutputSettings.syntax() where syntax==Syntax.xml,
+        //   so escapeMode should be updated to XHTML
+        OutputSettings returnedSettings = custom.syntax(Syntax.xml);
+        // THEN the fluent call returns the same settings instance
+        assertSame(custom, returnedSettings,
+                   "syntax(xml) should return the same OutputSettings instance for chaining");
+        // AND syntax() getter should reflect XML
+        assertEquals(Syntax.xml, custom.syntax(),
+                     "After syntax(xml), the syntax() getter should report xml");
+        // AND escapeMode() getter should have been updated to XHTML
+        assertEquals(Entities.EscapeMode.xhtml, custom.escapeMode(),
+                     "When syntax is set to xml, escapeMode must switch to xhtml");
+
+        // WHEN we apply these custom settings to the Document via outputSettings(...)
+        Document returnedDoc = doc.outputSettings(custom);
+        // THEN outputSettings(...) should return the same Document instance for chaining
+        assertSame(doc, returnedDoc,
+                   "outputSettings(custom) should return the same Document instance for chaining");
+        // AND the document's internal settings reference should be the custom one
+        assertSame(custom, doc.outputSettings(),
+                   "The Document's outputSettings() should return the custom settings instance");
+    }
+}

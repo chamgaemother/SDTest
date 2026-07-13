@@ -1,0 +1,106 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty Elements when no child nodes exist (childNodeSize()==0)")
+    public void test_TC01() {
+        // GIVEN: an element with no children, so childNodeSize()==0 triggers short-circuit B1 true
+        Element e = new Element("div");
+        // WHEN
+        Elements result = e.children();
+        // THEN: size should be 0
+        assertEquals(0, result.size(), "Expected no child elements when none were added");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns empty Elements when childNodeSize()>0 but no children are Element instances (only TextNode)")
+    public void test_TC02() {
+        // GIVEN: element has childNodeSize>0 but all nodes are TextNode -> loop over nodes yields no Element matches
+        Element e = new Element("p");
+        e.appendText("one");
+        e.appendText("two");
+        assertTrue(e.childNodeSize() > 0, "Precondition: childNodeSize()>0");
+        // WHEN
+        Elements result = e.children();
+        // THEN: still no Element children
+        assertEquals(0, result.size(), "Expected no Element children when only text nodes present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() returns single-element when exactly one Element child exists (one iteration yields match)")
+    public void test_TC03() {
+        // GIVEN: element parent has one Element child -> loop finds one match
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // WHEN
+        Elements result = parent.children();
+        // THEN: exactly that child should be present
+        assertAll(
+            () -> assertEquals(1, result.size(), "Expected one child element"),
+            () -> assertSame(child, result.get(0), "Expected the exact child instance at index 0")
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns multiple Elements preserving insertion order for mixed-node list")
+    public void test_TC04() {
+        // GIVEN: parent has mixed nodes: text, Element li1, text, Element li2 -> loop picks li1 then li2 in order
+        Element parent = new Element("ul");
+        parent.appendText("ignore");
+        Element li1 = new Element("li");
+        Element li2 = new Element("li");
+        parent.appendChild(li1);
+        parent.appendText("skip");
+        parent.appendChild(li2);
+        // WHEN
+        Elements result = parent.children();
+        // THEN: two element children in insertion order li1 then li2
+        assertAll(
+            () -> assertEquals(2, result.size(), "Expected two child elements"),
+            () -> assertSame(li1, result.get(0), "First element should be li1"),
+            () -> assertSame(li2, result.get(1), "Second element should be li2")
+        );
+    }
+
+    @Test
+    @DisplayName("TC05: children() uses cachedChildren() on second call to avoid re-filtering")
+    public void test_TC05() {
+        // GIVEN: parent has one Element child; first call populates cache
+        Element parent = new Element("div");
+        Element child = new Element("b");
+        parent.appendChild(child);
+        Elements first = parent.children();
+        assertEquals(1, first.size(), "Precondition: first call should return one child");
+        // WHEN: second call should hit cache
+        Elements second = parent.children();
+        // THEN: still returns same content (size 1, same instance in content)
+        assertAll(
+            () -> assertEquals(1, second.size(), "Expected one child element from cache"),
+            () -> assertSame(child, second.get(0), "Expected cached child instance")
+        );
+    }
+
+    @Test
+    @DisplayName("TC06: children() reflects removal of Element children between calls (cache invalidated when structure changes)")
+    public void test_TC06() {
+        // GIVEN: parent has one Element child; first call populates cache, then parent.empty() removes all child nodes
+        Element parent = new Element("section");
+        Element child = new Element("p");
+        parent.appendChild(child);
+        Elements first = parent.children();
+        assertEquals(1, first.size(), "Precondition: first call should return one child");
+        parent.empty(); // this removes children and should invalidate cache via modCount mismatch
+        assertEquals(0, parent.childNodeSize(), "After empty(), no child nodes should remain");
+        // WHEN
+        Elements afterRemoval = parent.children();
+        // THEN: cache invalidated, children() sees no child elements
+        assertEquals(0, afterRemoval.size(), "Expected no children after removal invalidates cache");
+    }
+}

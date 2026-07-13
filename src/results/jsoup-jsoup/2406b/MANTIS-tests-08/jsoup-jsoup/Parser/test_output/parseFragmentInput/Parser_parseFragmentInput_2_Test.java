@@ -1,0 +1,90 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_2_Test {
+
+    @Test
+    @DisplayName("String overload with real htmlParser and null context returns parsed nodes at fragment root")
+    public void test_TC14() {
+        // Use HTML parser to cover B0→B3→B5→B7→B8 path where context is null
+        Parser parser = Parser.htmlParser();
+        String fragment = "<a></a><b></b>";
+        Element ctx = null;
+        String baseUri = "http://x";
+        // When: parsing fragment with null context
+        List<Node> result = parser.parseFragmentInput(fragment, ctx, baseUri);
+        // Then: two elements 'a' and 'b' at root
+        assertEquals(2, result.size(), "Expected two nodes parsed");
+        assertTrue(result.get(0) instanceof Element, "First node should be an Element");
+        assertTrue(result.get(1) instanceof Element, "Second node should be an Element");
+        assertEquals("a", ((Element) result.get(0)).tagName(), "First element tag name");
+        assertEquals("b", ((Element) result.get(1)).tagName(), "Second element tag name");
+    }
+
+    @Test
+    @DisplayName("String overload with real xmlParser and non-null context ignores context and returns XML nodes")
+    public void test_TC15() {
+        // Use XML parser to cover B0→B3→B5→B7→B8 path where context is provided but ignored
+        Parser parser = Parser.xmlParser();
+        String xml = "<item id=\"1\">X</item>";
+        Element ctx = new Element("ignore");
+        String baseUri = "";
+        // When: parsing XML fragment with non-null context (should be ignored)
+        List<Node> result = parser.parseFragmentInput(xml, ctx, baseUri);
+        // Then: one <item> element with attribute id="1"
+        assertEquals(1, result.size(), "Expected one node parsed");
+        assertTrue(result.get(0) instanceof Element, "Parsed node should be an Element");
+        Element item = (Element) result.get(0);
+        assertEquals("item", item.tagName(), "Element tag name should be 'item'");
+        assertEquals("1", item.attr("id"), "Attribute 'id' should be '1'");
+    }
+
+    @Test
+    @DisplayName("Reader overload when TreeBuilder.parseFragment throws runtime exception ensures lock is released")
+    public void test_TC16() throws Exception {
+        // Stub TreeBuilder that throws exception in parseFragment to exercise exception path and finally unlock
+        TreeBuilder stub = new TreeBuilder() {
+            @Override public List<Node> parseFragment(Reader r, Element c, String b, Parser p) {
+                throw new IllegalStateException("fail");
+            }
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(true, true); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader i, String u, Parser p) { throw new UnsupportedOperationException(); }
+            @Override public TagSet defaultTagSet() { return new TagSet(); }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public void initialiseParse(Reader r, String u, Parser p) { }
+            @Override public void process(org.jsoup.parser.Token t) { /* No operation */ } // Implemented as required
+        };
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<x>");
+        Element ctx = new Element("x");
+        String baseUri = "u";
+        // Before invocation, ensure lock is not held
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lockObj = (ReentrantLock) lockField.get(parser);
+        assertFalse(lockObj.isLocked(), "Lock should initially be unlocked");
+        // When: calling parseFragmentInput expecting IllegalStateException
+        IllegalStateException ex = assertThrows(
+            IllegalStateException.class,
+            () -> parser.parseFragmentInput(reader, ctx, baseUri),
+            "Expected IllegalStateException to be thrown"
+        );
+        assertEquals("fail", ex.getMessage(), "Exception message should be 'fail'");
+        // Then: after exception, lock must be released
+        assertFalse(lockObj.isLocked(), "Lock should be released after exception");
+    }
+}

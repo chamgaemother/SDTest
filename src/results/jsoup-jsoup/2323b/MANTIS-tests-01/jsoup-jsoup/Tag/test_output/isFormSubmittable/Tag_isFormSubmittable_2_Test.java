@@ -1,0 +1,103 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Added import for ParseSettings to resolve compilation error
+import org.jsoup.parser.ParseSettings;
+// Added import for Parser to resolve compilation error
+import org.jsoup.parser.Parser;
+
+public class Tag_isFormSubmittable_2_Test {
+
+    @Test
+    @DisplayName("TC06: valueOf with null tagName throws NullPointerException on Validate.notNull")
+    public void test_TC06() throws Exception {
+        // Use reflection to access package-private valueOf(String, String, String, ParseSettings)
+        Method m = Tag.class.getDeclaredMethod("valueOf",
+                String.class, String.class, String.class, ParseSettings.class);
+        m.setAccessible(true);
+
+        String tagName = null;
+        String normalName = "irrelevant";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // The Validate.notNull should throw NullPointerException wrapped in InvocationTargetException
+        InvocationTargetException thrown = assertThrows(InvocationTargetException.class, () -> {
+            m.invoke(null, tagName, normalName, namespace, settings);
+        }, "Expected InvocationTargetException due to NullPointerException cause");
+        // Ensure the root cause is NullPointerException
+        assertTrue(thrown.getCause() instanceof NullPointerException,
+                "Expected cause to be NullPointerException");
+    }
+
+    @Test
+    @DisplayName("TC07: valueOf with empty tagName throws IllegalArgumentException on Validate.notEmpty")
+    public void test_TC07() throws Exception {
+        // Access package-private 4-arg valueOf via reflection
+        Method m = Tag.class.getDeclaredMethod("valueOf",
+                String.class, String.class, String.class, ParseSettings.class);
+        m.setAccessible(true);
+
+        String tagName = "   "; // trims to empty, triggers notEmpty
+        String normalName = "";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // Expect IllegalArgumentException wrapped in InvocationTargetException
+        InvocationTargetException thrown = assertThrows(InvocationTargetException.class, () -> {
+            m.invoke(null, tagName, normalName, namespace, settings);
+        }, "Expected InvocationTargetException due to IllegalArgumentException cause");
+        // Verify the underlying cause is IllegalArgumentException
+        assertTrue(thrown.getCause() instanceof IllegalArgumentException,
+                "Expected cause to be IllegalArgumentException");
+    }
+
+    @Test
+    @DisplayName("TC08: Public valueOf with preserveTagCase=false returns known 'pre' tag and isFormSubmittable()==false")
+    public void test_TC08() {
+        // Using public overloaded valueOf(tagName, ParseSettings) with preserveLowerCase
+        String tagName = "PRE";
+        ParseSettings settings = ParseSettings.preserveLowerCase;
+        // 'pre' is a known tag that is not form-submittable
+        Tag t = Tag.valueOf(tagName, settings);
+
+        assertAll("Verify normalization and form-submittable flag",
+            () -> assertEquals("pre", t.getName(),
+                    "Expected getName() to return lowercased 'pre'"),
+            () -> assertFalse(t.isFormSubmittable(),
+                    "Known 'pre' should not be submittable with forms")
+        );
+    }
+
+    @Test
+    @DisplayName("TC09: Clone branch with preserveTagCase=true on known form-submittable tag yields isFormSubmittable=true")
+    public void test_TC09() throws Exception {
+        // Access the package-private 4-arg valueOf to force preserveTagCase branch and clone
+        Method m = Tag.class.getDeclaredMethod("valueOf",
+                String.class, String.class, String.class, ParseSettings.class);
+        m.setAccessible(true);
+
+        String tagName = "INPUT"; // uppercase to trigger preserveTagCase
+        String normalName = "input";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        // Invoke and get the cloned Tag instance
+        Tag t = (Tag) m.invoke(null, tagName, normalName, namespace, settings);
+
+        // Ensure that case is preserved and formSubmit flag is true for <input>
+        assertAll("Verify cloned tag preserves case and is form-submittable",
+            () -> assertEquals("INPUT", t.getName(),
+                    "Expected getName() to preserve original case 'INPUT'"),
+            () -> assertTrue(t.isFormSubmittable(),
+                    "Known 'input' should be form-submittable")
+        );
+    }
+}

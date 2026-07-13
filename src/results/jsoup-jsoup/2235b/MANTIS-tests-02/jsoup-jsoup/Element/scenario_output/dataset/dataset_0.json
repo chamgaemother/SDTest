@@ -1,0 +1,158 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() on new element with no attributes returns empty map (attributes null branch)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); // attributes==null",
+      "expectedResult": "returned map is empty (size 0)",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty-no-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() with non-data attribute only returns empty map (filter excludes non-data keys)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"id\",\"header\");",
+      "expectedResult": "returned map is empty (size 0)",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset non-data-only",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"id\",\"header\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() with one data attribute returns single entry (loop-1)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-user\",\"alice\");",
+      "expectedResult": "returned map contains exactly one entry 'user'->'alice'",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset single-data",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-user\",\"alice\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.get(\"user\").equals(\"alice\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() with multiple data and non-data attributes returns only data entries (loop-N)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-one\",\"1\"); el.attr(\"class\",\"c\"); el.attr(\"data-two\",\"2\");",
+      "expectedResult": "returned map contains exactly entries 'one'->'1' and 'two'->'2', no other keys",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset multiple-data",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-one\",\"1\");",
+        "    el.attr(\"class\",\"c\");",
+        "    el.attr(\"data-two\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2;",
+        "    assert ds.containsKey(\"one\");",
+        "    assert ds.containsKey(\"two\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() view put adds corresponding data- attribute to element (side-effect view put)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"a\"); Map<String,String> ds = el.dataset(); // empty view",
+      "expectedResult": "after ds.put(\"x\",\"y\"), element has attribute 'data-x'=='y' and ds.get('x')=='y'",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "view-modify",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset view-put-side-effect",
+        "  GIVEN",
+        "    Element el = new Element(\"a\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"x\",\"y\");",
+        "  THEN",
+        "    assert el.attr(\"data-x\").equals(\"y\");",
+        "    assert ds.get(\"x\").equals(\"y\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "dataset() view remove removes corresponding data- attribute from element (side-effect view remove)",
+      "path": "B1→B2→B3",
+      "precondition": "Element el = new Element(\"img\"); el.attr(\"data-remove\",\"v\"); Map<String,String> ds = el.dataset();",
+      "expectedResult": "after ds.remove(\"remove\"), element.hasAttr('data-remove')==false and ds.containsKey('remove')==false",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "view-modify",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset view-remove-side-effect",
+        "  GIVEN",
+        "    Element el = new Element(\"img\");",
+        "    el.attr(\"data-remove\",\"v\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.remove(\"remove\");",
+        "  THEN",
+        "    assert !el.hasAttr(\"data-remove\");",
+        "    assert !ds.containsKey(\"remove\");"
+      ]
+    }
+  ]
+}

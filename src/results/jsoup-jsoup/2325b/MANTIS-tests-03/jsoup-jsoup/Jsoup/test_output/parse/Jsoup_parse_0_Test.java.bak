@@ -1,0 +1,181 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.Connection;
+import org.jsoup.HttpStatusException;
+import org.jsoup.UnsupportedMimeTypeException;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpExchange;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.net.SocketTimeoutException;
+import java.nio.file.Files;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(String, String) with non-empty html and baseUri delegates to Parser.parse")
+    public void test_TC01_O1() {
+        // Input HTML fragment triggers B1 and B2 branch of static parse(html, baseUri)
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Delegate should produce a Document whose body contains the original HTML
+        assertEquals("<p>Test</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(String, String, Parser) with custom parser parses via parser.parseInput")
+    public void test_TC02_O2() {
+        // Using xmlParser() triggers branch B3 in overload parse(html,baseUri,parser)
+        String html = "<root><a/></root>";
+        String baseUri = "";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        // xmlParser sets contentType to text/xml
+        assertEquals("text/xml", doc.contentType());
+    }
+
+    @Test
+    @DisplayName("parse(String, Parser) with empty html delegates to parser.parseInput and uses \"\" baseUri")
+    public void test_TC03_O3() {
+        // Empty html string triggers branch B4 in overload parse(html,parser)
+        String html = "";
+        Parser parser = Parser.htmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        // Body should be empty because no content
+        assertTrue(doc.body().html().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parse(String) uses Parser.parse(html, \"\") to parse simple body")
+    public void test_TC04_O4() {
+        // Single-arg parse delegates to Parser.parse(html, "")
+        String html = "<div>Hi</div>";
+        Document doc = Jsoup.parse(html);
+        // Body should contain the single div
+        assertEquals("<div>Hi</div>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("parse(File, String, String) with existing file returns parsed Document")
+    public void test_TC05_O5() throws IOException {
+        // Reads a real temp file => branch B6 in parse(File,charset,baseUri)
+        Path tmp = Files.createTempFile("test", ".html");
+        Files.write(tmp, "<h1>Hdr</h1>".getBytes(StandardCharsets.UTF_8));
+        File file = tmp.toFile();
+        String charset = "UTF-8";
+        String baseUri = "http://x/";
+        Document doc = Jsoup.parse(file, charset, baseUri);
+        assertEquals("<h1>Hdr</h1>", doc.body().html());
+        tmp.toFile().delete();
+    }
+
+    @Test
+    @DisplayName("parse(File, String) with null charsetName falls back to BOM/meta or UTF-8")
+    public void test_TC06_O6() throws IOException {
+        // Null charsetName and BOM present triggers fallback B6 path
+        Path tmp = Files.createTempFile("utf", ".html");
+        byte[] bom = {(byte)0xEF,(byte)0xBB,(byte)0xBF};
+        byte[] content = "<p>UTF</p>".getBytes(StandardCharsets.UTF_8);
+        Files.write(tmp, concat(bom, content));
+        File file = tmp.toFile();
+        Document doc = Jsoup.parse(file, null);
+        assertEquals("<p>UTF</p>", doc.body().html());
+        tmp.toFile().delete();
+    }
+
+    @Test
+    @DisplayName("parse(File) with missing file throws IOException")
+    public void test_TC07_O7() {
+        // Non-existent file triggers IOException in DataUtil.load => branch B7
+        File file = new File("does-not-exist.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(file));
+    }
+
+    @Test
+    @DisplayName("parse(URL, int) with valid HTTP URL returns Document")
+    public void test_TC08_O8() throws Exception {
+        // HTTP GET with small server returns 200 OK => branches B9 and B10
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/", new HttpHandler() {
+            public void handle(HttpExchange exchange) throws IOException {
+                byte[] resp = "<p>OK</p>".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            URL url = new URL("http://localhost:" + port + "/");
+            Document doc = Jsoup.parse(url, 1000);
+            assertEquals("<p>OK</p>", doc.body().html());
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    @Test
+    @DisplayName("parse(URL, int) with non-http URL throws MalformedURLException")
+    public void test_TC09_O8() throws Exception {
+        // ftp protocol unsupported => branch B11 before connect
+        URL url = new URL("ftp://example.com/");
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, 1000));
+    }
+
+    @Test
+    @DisplayName("parse(URL, int) that times out throws SocketTimeoutException")
+    public void test_TC10_O8() throws Exception {
+        // Slow handler delays beyond timeout => branches B9 then B12
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/slow", new HttpHandler() {
+            public void handle(HttpExchange exchange) throws IOException {
+                try {
+                    Thread.sleep(200);
+                } catch (InterruptedException e) { }
+                byte[] resp = "<p>Slow</p>".getBytes(StandardCharsets.UTF_8);
+                exchange.sendResponseHeaders(200, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+            }
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        try {
+            int port = server.getAddress().getPort();
+            URL url = new URL("http://localhost:" + port + "/slow");
+            assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, 10));
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    // helper to combine BOM and content
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] r = new byte[a.length + b.length];
+        System.arraycopy(a, 0, r, 0, a.length);
+        System.arraycopy(b, 0, r, a.length, b.length);
+        return r;
+    }
+}

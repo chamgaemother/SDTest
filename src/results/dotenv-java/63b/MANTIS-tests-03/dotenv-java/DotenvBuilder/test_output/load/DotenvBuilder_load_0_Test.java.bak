@@ -1,0 +1,125 @@
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DotenvBuilder_load_Test {
+
+    @Test
+    @DisplayName("TC01: Throws DotenvException when .env file is missing and throwIfMissing=true (branch-false on systemProperties)")
+    void test_TC01() throws IOException {
+        // design: no .env file in temp dir so parser should throw and throwIfMissing is true by default
+        Path tempDir = Files.createTempDirectory("tc01");
+        DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString());
+        assertThrows(DotenvException.class, builder::load);
+    }
+
+    @Test
+    @DisplayName("TC02: Returns empty Dotenv when .env is missing but ignoreIfMissing() is set (branch-false on systemProperties)")
+    void test_TC02() throws IOException {
+        // design: missing .env but ignoreIfMissing suppresses exception, branch-false for systemProperties by default
+        Path tempDir = Files.createTempDirectory("tc02");
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .ignoreIfMissing();
+        Dotenv result = assertDoesNotThrow(builder::load);
+        // no custom entries, ensure none with a dummy key "KEY"
+        assertTrue(result.entries().stream().noneMatch(e -> "KEY".equals(e.getKey())));
+    }
+
+    @Test
+    @DisplayName("TC03: Returns Dotenv with single entry from file when systemProperties=false (branch-false)")
+    void test_TC03() throws IOException {
+        // design: one key/value in .env, systemProperties off by default => branch-false
+        Path tempDir = Files.createTempDirectory("tc03");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "ONE_KEY=ONE_VAL\n".getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString());
+        Dotenv result = assertDoesNotThrow(builder::load);
+        assertEquals("ONE_VAL", result.get("ONE_KEY"));
+        assertTrue(
+            result.entries().stream()
+                .anyMatch(e -> "ONE_KEY".equals(e.getKey()) && "ONE_VAL".equals(e.getValue()))
+        );
+    }
+
+    @Test
+    @DisplayName("TC04: Sets system properties for zero entries when systemProperties=true (branch-true, loop-0)")
+    void test_TC04() throws IOException {
+        // design: empty .env file, systemProperties true triggers branch-true, no entries to loop over
+        Path tempDir = Files.createTempDirectory("tc04");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "".getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties();
+        Dotenv result = assertDoesNotThrow(builder::load);
+        // all system envs should be present in entries
+        for (Map.Entry<String,String> e : System.getenv().entrySet()) {
+            assertTrue(
+                result.entries().stream()
+                    .anyMatch(de -> de.getKey().equals(e.getKey()) && de.getValue().equals(e.getValue())),
+                "Expected system env " + e.getKey() + " in result.entries()"
+            );
+        }
+    }
+
+    @Test
+    @DisplayName("TC05: Sets a single system property when systemProperties=true and file has one entry (branch-true, loop-1)")
+    void test_TC05() throws IOException {
+        // design: one entry in .env, systemProperties true => branch-true and one iteration
+        Path tempDir = Files.createTempDirectory("tc05");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "KEY1=VAL1\n".getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties();
+        Dotenv result = assertDoesNotThrow(builder::load);
+        assertEquals("VAL1", System.getProperty("KEY1"));
+        assertEquals("VAL1", result.get("KEY1"));
+    }
+
+    @Test
+    @DisplayName("TC06: Sets multiple system properties when systemProperties=true and file has multiple entries (branch-true, loop-N)")
+    void test_TC06() throws IOException {
+        // design: multiple lines in .env, systemProperties true triggers branch-true and multiple loops
+        Path tempDir = Files.createTempDirectory("tc06");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, String.join("\n","K1=V1","K2=V2","K3=V3").getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .systemProperties();
+        Dotenv result = assertDoesNotThrow(builder::load);
+        assertEquals("V1", System.getProperty("K1"));
+        assertEquals("V2", System.getProperty("K2"));
+        assertEquals("V3", System.getProperty("K3"));
+        // verify entries contain all keys
+        for (String k : new String[]{"K1","K2","K3"}) {
+            assertTrue(
+                result.entries().stream().anyMatch(e -> k.equals(e.getKey())),
+                "Expected entry for " + k
+            );
+        }
+    }
+
+    @Test
+    @DisplayName("TC07: Throws DotenvException when .env file is malformed and throwIfMalformed=true")
+    void test_TC07() throws IOException {
+        // design: malformed line without '=' should cause parse exception, throwIfMalformed true by default
+        Path tempDir = Files.createTempDirectory("tc07");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "BAD LINE\n".getBytes());
+        DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString());
+        assertThrows(DotenvException.class, builder::load);
+    }
+}

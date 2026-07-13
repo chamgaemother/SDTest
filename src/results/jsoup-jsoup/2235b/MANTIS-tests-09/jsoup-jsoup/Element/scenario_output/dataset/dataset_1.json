@@ -1,0 +1,116 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "dataset() when attributes exist but no data- entries returns empty map (attributes != null, zero data entries)",
+      "path": "B0→attributes()→dataset()→loop(0)→return",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"other\", \"v\");",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "positive",
+        "no-data",
+        "attributes-not-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 dataset no data entries but attributes non-null",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"other\", \"v\"); // non-data attribute",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "  THEN",
+        "    assert data.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "dataset() view clear() deletes all data- attributes from element (live view clear branch)",
+      "path": "B0→attributes()→dataset()→clear()→remove-entry-loop→return",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\");",
+      "expectedResult": "both data-a and data-b attributes removed from element",
+      "tags": [
+        "positive",
+        "view-live",
+        "clear",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 dataset clear removes all data- attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"1\");",
+        "    el.attr(\"data-b\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "    data.clear();",
+        "  THEN",
+        "    assertFalse(el.hasAttr(\"data-a\"));",
+        "    assertFalse(el.hasAttr(\"data-b\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "dataset() view putAll() adds multiple data- attributes at once (live view putAll branch)",
+      "path": "B0→attributes()→dataset()→putAll()→put-entry-loop→return",
+      "precondition": "Element el = new Element(\"p\");",
+      "expectedResult": "element has attributes data-x=1 and data-y=2",
+      "tags": [
+        "positive",
+        "view-live",
+        "putAll",
+        "mutation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset putAll adds multiple entries",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    Map<String,String> additions = new HashMap<>();",
+        "    additions.put(\"x\",\"1\"); additions.put(\"y\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "    data.putAll(additions);",
+        "  THEN",
+        "    assertEquals(\"1\", el.attr(\"data-x\"));",
+        "    assertEquals(\"2\", el.attr(\"data-y\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "dataset() includes attribute with empty key when attribute name is exactly 'data-' (boundary data- prefix only)",
+      "path": "B0→attributes()→dataset()→loop(1 with key=\"\")→return",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-\",\"val\");",
+      "expectedResult": "returned map contains entry key \"\" with value \"val\"",
+      "tags": [
+        "boundary",
+        "data-prefix",
+        "positive",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 dataset include empty key from 'data-' attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-\",\"val\"); // key part is empty string",
+        "  WHEN",
+        "    Map<String,String> data = el.dataset();",
+        "  THEN",
+        "    assertEquals(1, data.size());",
+        "    assertTrue(data.containsKey(\"\"));",
+        "    assertEquals(\"val\", data.get(\"\"));",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_1_Test {
+
+    @Test
+    @DisplayName("valueOf(null, namespace, settings) throws IllegalArgumentException for null tagName")
+    public void test_TC03() {
+        // Given a null tagName to drive the Validate.notNull check (path B0→B1→B2)
+        String tagName = null;
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When/Then: calling valueOf should throw IllegalArgumentException due to null tagName
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(tagName, namespace, settings);
+        });
+    }
+
+    @Test
+    @DisplayName("valueOf(trimmed-empty, namespace, settings) throws IllegalArgumentException for empty tagName")
+    public void test_TC04() {
+        // Given a whitespace-only tagName to drive the Validate.notEmpty check after trim (path B0→B1→B3)
+        String tagName = "   "; // whitespace only
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // When/Then: calling valueOf should throw IllegalArgumentException due to empty tagName
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(tagName, namespace, settings);
+        });
+    }
+
+    @Test
+    @DisplayName("valueOf(nonexistent, custom namespace, preserve case) returns new tag with formSubmit=false")
+    public void test_TC05() {
+        // Given a tagName not in predefined Tags map and custom namespace; settings preserve case false to reach creation branch (path B0→B1→B4→B5→B6)
+        String tagName = "myCustom";
+        // normalName lower-case form of tagName
+        String normalName = ParseSettings.normalName(tagName);
+        String namespace = "http://example.com/ns";
+        // settings that do not preserve tag case and not default
+        ParseSettings settings = new ParseSettings(false, false);
+        // When: valueOf with 4 args should create a new Tag instance for unknown tag
+        Tag tag = Tag.valueOf(tagName, normalName, namespace, settings);
+        // Then: the new tag should not be form-submittable by default
+        assertFalse(tag.isFormSubmittable(), "Expected unknown tag to have formSubmit=false");
+    }
+}

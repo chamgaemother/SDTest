@@ -1,0 +1,81 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "parseBodyFragment with empty HTML string and non-empty baseUri yields empty body and correct baseUri",
+      "path": "B0→B1→B3→B4→B6",
+      "precondition": "none",
+      "expectedResult": "body HTML is empty string and document.baseUri equals provided baseUri",
+      "tags": [
+        "boundary",
+        "empty-input",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseBodyFragment empty-html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assertEquals(\"\", doc.body().html());",
+        "    assertEquals(baseUri, doc.baseUri());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseBodyFragment throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseBodyFragment null-baseUri",
+        "  GIVEN",
+        "    String html = \"Hello\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseBodyFragment preserves HTML comments within the body fragment",
+      "path": "B0→B1→B3→B4→B6",
+      "precondition": "none",
+      "expectedResult": "body HTML contains the comment node exactly",
+      "tags": [
+        "positive",
+        "comment-node",
+        "fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseBodyFragment comment-preservation",
+        "  GIVEN",
+        "    String html = \"<p>One</p><!-- note --><p>Two</p>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    // The HTML comment should be present in the serialized body",
+        "    assertTrue(doc.body().html().contains(\"<!-- note -->\"));",
+        "END"
+      ]
+    }
+  ]
+}

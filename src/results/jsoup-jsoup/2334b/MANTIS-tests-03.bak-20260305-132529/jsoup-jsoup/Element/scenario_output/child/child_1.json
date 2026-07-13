@@ -1,0 +1,54 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "child(0) on element with only non-Element child nodes throws IndexOutOfBoundsException (childNodeSize()>0, filtered list empty branch)",
+      "path": "B0→B3→B4(loop×1 skip non-Element)→B8",
+      "precondition": "parent has one TextNode child only",
+      "expectedResult": "IndexOutOfBoundsException thrown",
+      "tags": [
+        "negative",
+        "filter",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 child on non-element-only children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendText(\"text\");",
+        "  WHEN",
+        "    call parent.child(0);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "child(1) uses cached shadowChildrenRef on second invocation without rebuilding list (shadowChildrenRef branch)",
+      "path": "B0→B3→B4(loop×2 add Elements)→B7(cache set)→child(1)→shadow non-null→return cached",
+      "precondition": "parent has two Element children and shadowChildrenRef cleared before second call",
+      "expectedResult": "returns second appended Element instance",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 child uses cached shadow list",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element first = parent.appendElement(\"li\");",
+        "    Element second = parent.appendElement(\"li\");",
+        "  WHEN",
+        "    parent.child(0);",
+        "    Element result = parent.child(1);",
+        "  THEN",
+        "    assertSame(second, result);"
+      ]
+    }
+  ]
+}

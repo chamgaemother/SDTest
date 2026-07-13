@@ -1,0 +1,190 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parse(File, null charsetName, baseUri, parser) uses Parser overload with null charset branch",
+      "path": "B0→BFileParserOverload→BDataUtil.load(File,charsetName,baseUri,parser)→BReturn",
+      "precondition": "existing HTML file created on disk",
+      "expectedResult": "Document returned with baseUri and parsed by provided parser",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "file"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse file with parser and null charset",
+        "  GIVEN",
+        "    File f = create temp .xml file with '<root><x/></root>'",
+        "    Parser xmlParser = Parser.xmlParser()",
+        "    String baseUri = 'http://base/'",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(f, null, baseUri, xmlParser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri)",
+        "    assert doc.select('x').size() == 1"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(InputStream, null charsetName, baseUri, parser) uses InputStream parser overload with null charset branch",
+      "path": "B0→BStreamParserOverload→BDataUtil.load(InputStream,charsetName,baseUri,parser)→BReturn",
+      "precondition": "InputStream over XML content",
+      "expectedResult": "Document returned with baseUri and parsed by provided parser",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse stream with parser and null charset",
+        "  GIVEN",
+        "    InputStream in = ByteArrayInputStream('<root><y/></root>'.getBytes('UTF-8'))",
+        "    Parser xmlParser = Parser.xmlParser()",
+        "    String baseUri = 'http://stream/'",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, null, baseUri, xmlParser);",
+        "  THEN",
+        "    assert doc.baseUri().equals(baseUri)",
+        "    assert doc.select('y').size() == 1"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(File, bad charsetName, baseUri) throws IOException for invalid charset",
+      "path": "B0→BFileCharsetBranch→BDataUtil.load→BException",
+      "precondition": "nonexistent or real file exists",
+      "expectedResult": "IOException is thrown due to unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse file with invalid charset",
+        "  GIVEN",
+        "    File f = create temp .html file with '<p>hi</p>'",
+        "    String badCharset = 'INVALID-CHARSET'",
+        "    String baseUri = 'http://x/'",
+        "  WHEN",
+        "    call Jsoup.parse(f, badCharset, baseUri)",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(Path, bad charsetName, baseUri) throws IOException for invalid charset",
+      "path": "B0→BPathCharsetBranch→BDataUtil.load→BException",
+      "precondition": "temporary file at Path exists",
+      "expectedResult": "IOException is thrown due to unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "path",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse path with invalid charset",
+        "  GIVEN",
+        "    Path p = write '<div>ok</div>' to temp file",
+        "    String badCharset = 'NO-SUCH-CHARSET'",
+        "    String baseUri = 'https://y/'",
+        "  WHEN",
+        "    call Jsoup.parse(p, badCharset, baseUri)",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(InputStream, bad charsetName, baseUri) throws IOException for invalid charset",
+      "path": "B0→BStreamCharsetBranch→BDataUtil.load→BException",
+      "precondition": "InputStream with HTML content",
+      "expectedResult": "IOException is thrown due to unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "stream",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse stream with invalid charset",
+        "  GIVEN",
+        "    InputStream in = ByteArrayInputStream('<p>z</p>'.getBytes('UTF-8'))",
+        "    String badCharset = 'XYZ-123'",
+        "    String baseUri = 'http://z/'",
+        "  WHEN",
+        "    call Jsoup.parse(in, badCharset, baseUri)",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(URL, timeoutMillis) propagates HttpStatusException when GET returns non-OK status",
+      "path": "B0→BHttpConnect→BTimeout→BGet→BException",
+      "precondition": "HttpConnection.connect(url) is stubbed to return stub connection",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "url",
+        "httpstatus"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse URL raises HttpStatusException",
+        "  GIVEN",
+        "    URL url = new URL('http://example.com/')",
+        "    stub Connection conn where conn.timeout(1000) returns conn",
+        "    stub conn.get() throws HttpStatusException",
+        "    mock HttpConnection.connect(url) to return conn",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000)",
+        "  THEN",
+        "    throws HttpStatusException"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "parse(URL, timeoutMillis) propagates UnsupportedMimeTypeException when GET returns unsupported mime",
+      "path": "B0→BHttpConnect→BTimeout→BGet→BException",
+      "precondition": "HttpConnection.connect(url) is stubbed to return stub connection",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "url",
+        "mime"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 parse URL raises UnsupportedMimeTypeException",
+        "  GIVEN",
+        "    URL url = new URL('http://example.com/')",
+        "    stub Connection conn where conn.timeout(2000) returns conn",
+        "    stub conn.get() throws UnsupportedMimeTypeException",
+        "    mock HttpConnection.connect(url) to return conn",
+        "  WHEN",
+        "    call Jsoup.parse(url, 2000)",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException"
+      ]
+    }
+  ]
+}

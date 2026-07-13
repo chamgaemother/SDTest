@@ -1,0 +1,58 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.lang.reflect.Method;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.annotations.VisibleForTesting;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("TC17: rightTrim() removes trailing whitespace from end of CharSequence")
+    public void test_TC17() throws Exception {
+        // GIVEN a CharSequence with trailing spaces
+        CharSequence input = "abc   ";
+        // Use reflection to access package-private static method rightTrim
+        Method rightTrim = WordWrap.class.getDeclaredMethod("rightTrim", CharSequence.class);
+        rightTrim.setAccessible(true);
+        // WHEN invoking rightTrim
+        CharSequence result = (CharSequence) rightTrim.invoke(null, input);
+        // THEN trailing whitespace is removed, leaving only "abc"
+        assertEquals("abc", result.toString());
+    }
+
+    @Test
+    @DisplayName("TC18: wrap() breaks 2-char word into lines without hyphens when maxWidth=1")
+    public void test_TC18() {
+        // GIVEN a two-character string and maxWidth set to 1, forcing breakWords path
+        String text = "AB";
+        // Ensure breakWords=true and insertHyphens=true by default, but word length=2 triggers else branch of writeBrokenWord
+        String result = WordWrap
+                .from(text)
+                .maxWidth(1)  // each character exceeds width of prior content
+                .wrap();
+        // THEN the output should be "A\nB"
+        assertEquals("A\nB", result);
+    }
+
+    @Test
+    @DisplayName("TC19: wrap() treats '?' as word character when included via includeExtraWordChars")
+    public void test_TC19() {
+        // GIVEN text with punctuation '?', includeExtraWordChars makes it part of words
+        String text = "a?b";
+        WordWrap.Builder builder = WordWrap
+                .from(text)
+                .maxWidth(1) // width 1 would normally split at punctuation, but '?' is now a word character
+                .includeExtraWordChars("?");
+        // WHEN wrapping to list of lines
+        List<String> lines = builder.wrapToList();
+        // THEN the line should not split at '?' and entire "a?b" remains on one line
+        assertEquals(1, lines.size());
+        assertEquals("a?b", lines.get(0));
+    }
+}

@@ -1,0 +1,151 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search('unknown') returns empty list when term not in index (B0 false)",
+      "path": "B0→B1",
+      "precondition": "A fresh BM25InvertedIndex with no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "no-documents"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 search term-not-in-index",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"unknown\");",
+        "  THEN",
+        "    assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search(null) throws NullPointerException during normalization",
+      "path": "B0",
+      "precondition": "A fresh BM25InvertedIndex; term argument is null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 search null-term",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "  WHEN",
+        "    call idx.search(null);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search('term') returns one result when exactly one movie contains the term (B0 true, loop-1, branch-true)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "idx.addMovie(1, 'Term Movie', 8.0, 2020, 'term appears here');",
+      "expectedResult": "returned list size is 1 and result.get(0).getDocId() == 1",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "single-result"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 search single-containing-movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Term Movie\", 8.0, 2020, \"term appears here\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"term\");",
+        "  THEN",
+        "    assert results.size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search('a') returns two results sorted by descending score (loop-N with N=2)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "idx.addMovie(1, 'A a a', 7.0, 2019, 'a'); idx.addMovie(2, 'A', 9.0, 2021, 'a a');",
+      "expectedResult": "returned list size is 2; first docId == 2 and second docId == 1",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "sorting"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 search multi-result-sorting",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"A a a\", 7.0, 2019, \"a\");",
+        "    idx.addMovie(2, \"A\", 9.0, 2021, \"a a\");",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"a\");",
+        "  THEN",
+        "    assert results.get(0).getDocId() == 2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search('term') skips entries when movie is missing (branch-false in B3, loop-1 yields empty)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "idx.addMovie(1, 'Term', 8.5, 2018, 'term'); reflectively remove idx.movies entry for docId=1 to simulate missing Movie",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "skip-null-movie"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 search skip-missing-movie",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.addMovie(1, \"Term\", 8.5, 2018, \"term\");",
+        "    // Remove movie to simulate missing",
+        "    idx.movies.remove(1);",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"term\");",
+        "  THEN",
+        "    assert results.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "search('empty') returns empty when index contains term but no docs (loop-0 after B0 true)",
+      "path": "B0→B2→B7→B6",
+      "precondition": "Use reflection to put empty map: idx.index.put(\"empty\", new HashMap<>());",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "empty-doc-list"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 search term-with-empty-doc-list",
+        "  GIVEN",
+        "    BM25InvertedIndex idx = new BM25InvertedIndex();",
+        "    idx.index.put(\"empty\", new HashMap<>());",
+        "  WHEN",
+        "    List<SearchResult> results = idx.search(\"empty\");",
+        "  THEN",
+        "    assert results.isEmpty();"
+      ]
+    }
+  ]
+}

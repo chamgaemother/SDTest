@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "setScores(null) throws NullPointerException when passed a null array",
+      "path": "B0→⨯",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 setScores null-input",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] scores = null;",
+        "  WHEN",
+        "    call alg.setScores(scores);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "setScores with artificially stubbed length%1 non-zero prints error and preserves state",
+      "path": "B0→B2→B3",
+      "precondition": "use reflection or bytecode stub to override scores.length % 1 != 0",
+      "expectedResult": "prints power-of-2 requirement message; scores and height unchanged",
+      "tags": [
+        "negative",
+        "branch-B2",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 stub-length-mod-1-nonzero",
+        "  GIVEN",
+        "    // Arrange a stub int[] whose length %1 != 0 via proxy or bytecode",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] stubScores = createStubArrayWithCustomLength(5);",
+        "    int[] origScores = alg.getScores().clone();",
+        "    int origHeight = alg.getHeight();",
+        "    ByteArrayOutputStream out = new ByteArrayOutputStream();",
+        "    System.setOut(new PrintStream(out));",
+        "  WHEN",
+        "    alg.setScores(stubScores);",
+        "  THEN",
+        "    restore System.out;",
+        "    assertArrayEquals(origScores, alg.getScores());",
+        "    assertEquals(origHeight, alg.getHeight());",
+        "    assertTrue(out.toString().contains(\"The number of scores must be a power of 2.\"));",
+        "END"
+      ]
+    }
+  ]
+}

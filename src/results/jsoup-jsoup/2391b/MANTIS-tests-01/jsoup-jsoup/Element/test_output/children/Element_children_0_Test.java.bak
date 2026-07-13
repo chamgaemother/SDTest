@@ -1,0 +1,71 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+/**
+ * JUnit 5 tests for the Element.children() method covering various scenarios.
+ */
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty Elements when element has no child nodes (childNodeSize == 0)")
+    public void test_TC01() {
+        // GIVEN an element with no children: branch B1 true (childNodeSize == 0)
+        Element el = new Element("div");
+        // WHEN children() is called
+        Elements result = el.children();
+        // THEN expect an empty list (loop not entered)
+        assertEquals(0, result.size(), "Expected no children for an element with no child nodes");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns empty Elements when only non-element child nodes exist (filterNodes finds zero Element instances)")
+    public void test_TC02() {
+        // GIVEN an element with one TextNode child: branch B1 false but B3 true (childNodeSize > 0), and filter finds none
+        Element el = new Element("div");
+        el.appendText("text"); // adds a TextNode, not an Element
+        // WHEN children() is called
+        Elements result = el.children();
+        // THEN expect an empty list since no Element instances among child nodes
+        assertEquals(0, result.size(), "Expected no element children when only non-element nodes present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() returns single-element list when exactly one Element child exists")
+    public void test_TC03() {
+        // GIVEN a parent with one Element child: branch B3 true, loop executes once yielding one element
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // WHEN children() is called
+        Elements result = parent.children();
+        // THEN expect exactly one element, the same as appended
+        assertEquals(1, result.size(), "Expected one element child");
+        assertEquals(child, result.get(0), "Expected the child element to be returned in the list");
+    }
+
+    @Test
+    @DisplayName("TC04: children() returns multiple elements in correct order when mixed children exist")
+    public void test_TC04() {
+        // GIVEN a parent with mixed children: two Element nodes and one TextNode in between
+        // branch B3 true, loop iterates over all child nodes filtering out non-elements
+        Element parent = new Element("ul");
+        Element li1 = new Element("li");
+        Element li2 = new Element("li");
+        TextNode t = new TextNode("x");
+        parent.appendChild(li1);
+        parent.appendChild(t);
+        parent.appendChild(li2);
+        // WHEN children() is called
+        Elements result = parent.children();
+        // THEN expect size 2 and correct order [li1, li2]
+        assertEquals(2, result.size(), "Expected two element children filtering out the text node");
+        assertEquals(li1, result.get(0), "First element child should be li1");
+        assertEquals(li2, result.get(1), "Second element child should be li2");
+    }
+}

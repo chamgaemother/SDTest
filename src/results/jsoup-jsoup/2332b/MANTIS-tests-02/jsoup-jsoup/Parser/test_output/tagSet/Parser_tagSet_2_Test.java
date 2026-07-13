@@ -1,0 +1,101 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.jsoup.parser.XmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_tagSet_2_Test {
+
+    @Test
+    @DisplayName("TC10: parseInput(String, String) with null baseUri throws NullPointerException")
+    public void test_TC10() {
+        // design: passing null baseUri should trigger NPE before parse
+        String html = "<p>test</p>";
+        String baseUri = null;
+        Parser parser = Parser.htmlParser();
+        assertThrows(NullPointerException.class,
+            () -> parser.parseInput(html, baseUri)
+        );
+    }
+
+    @Test
+    @DisplayName("TC11: parseXmlFragment(String, String) returns a list containing a self-closed XML element")
+    public void test_TC11() {
+        // design: simple self-closing <a/> should produce one Element node tagged 'a'
+        String xml = "<a/>";
+        String baseUri = "http://test";
+        List<Node> nodes = Parser.parseXmlFragment(xml, baseUri);
+        assertEquals(1, nodes.size(), "Expected exactly one node in the fragment");
+        assertTrue(nodes.get(0) instanceof Element, "Node should be an Element");
+        Element el = (Element) nodes.get(0);
+        assertEquals("a", el.tagName(), "Element tag name should be 'a'");
+    }
+
+    @Test
+    @DisplayName("TC12: static parseFragment with provided ParseErrorList records parse errors on bad HTML")
+    public void test_TC12() {
+        // design: malformed fragment "<div><unclosed>" should produce parse errors and still return recovered nodes
+        String frag = "<div><unclosed>";
+        Element ctx = new Element("body");
+        ParseErrorList errors = ParseErrorList.tracking(5);
+        List<Node> out = Parser.parseFragment(frag, ctx, "", errors);
+        assertTrue(errors.size() > 0, "Expected parse errors to be recorded");
+        assertTrue(out.size() >= 1, "Expected recovered nodes to be returned even with errors");
+    }
+
+    @Test
+    @DisplayName("TC13: setTreeBuilder replaces builder and links new builder.parser back to this parser")
+    public void test_TC13() throws Exception {
+        // design: after setTreeBuilder, parser.getTreeBuilder()==tb and tb.parser reference is set
+        Parser parser = Parser.htmlParser();
+        HtmlTreeBuilder tb = new HtmlTreeBuilder();
+        parser.setTreeBuilder(tb);
+        assertSame(tb, parser.getTreeBuilder(), "TreeBuilder should be replaced by tb");
+        // reflect into tb.parser field to verify it points back to parser
+        Field parserField = TreeBuilder.class.getDeclaredField("parser");
+        parserField.setAccessible(true);
+        Object linked = parserField.get(tb);
+        assertSame(parser, linked, "New builder.parser should reference the parser instance");
+    }
+
+    @Test
+    @DisplayName("TC14: settings(ParseSettings) and settings() reflect a custom case-sensitive configuration")
+    public void test_TC14() {
+        // design: calling settings(custom) should update and return that custom settings
+        Parser parser = Parser.htmlParser();
+        // use the built-in preserveCase settings
+        org.jsoup.parser.ParseSettings custom = org.jsoup.parser.ParseSettings.preserveCase;
+        Parser returned = parser.settings(custom);
+        // the method should return the parser itself for chaining
+        assertSame(parser, returned, "settings() should return the same parser instance");
+        assertSame(custom, parser.settings(), "settings() should return the custom settings object");
+    }
+
+    @Test
+    @DisplayName("TC15: parseFragmentInput(Reader, Element, String) with a non-null context nests output under context")
+    public void test_TC15() {
+        // design: fragment "<span>x</span>" parsed with context should return span node but not attach to context yet
+        String frag = "<span>x</span>";
+        Element context = new Element("div");
+        String base = "";
+        List<Node> out = Parser.htmlParser().parseFragmentInput(new StringReader(frag), context, base);
+        assertEquals(1, out.size(), "Expected exactly one node parsed from fragment");
+        assertTrue(out.get(0) instanceof Element, "Parsed node should be an Element");
+        Element span = (Element) out.get(0);
+        assertEquals("span", span.tagName(), "Parsed element should have tag 'span'");
+        assertFalse(context.childNodes().contains(span), "Context should not yet have the fragment node as a child");
+    }
+}

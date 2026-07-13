@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "Custom TreeBuilder stub’s tag set is returned by tagSet() (delegation branch)",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "Parser with a stub TreeBuilder that defines its own tags",
+      "expectedResult": "tagSet() returns exactly the stub’s defined tags",
+      "tags": [
+        "delegate",
+        "positive",
+        "custom-builder"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 tagSet delegates to custom TreeBuilder",
+        "  GIVEN",
+        "    // Arrange: create stub TreeBuilder that returns Set.of(\"X\",\"Y\",\"Z\") in its tagSet method",
+        "    StubTreeBuilder stub = new StubTreeBuilder(Set.of(\"X\",\"Y\",\"Z\"));",
+        "    Parser parser = new Parser(stub);",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.equals(Set.of(\"X\",\"Y\",\"Z\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "tagSet() reflects preserveCase change applied after first call (settings mutation branch)",
+      "path": "B0→B1→B2(first call)→B6→B2(second call)→B7",
+      "precondition": "htmlParser with default settings, then settings changed to preserve case",
+      "expectedResult": "first call returns lower-case tags; second call returns mixed-case tags",
+      "tags": [
+        "iteration",
+        "stateful",
+        "preserveCase"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC09 tagSet reflects dynamic settings change",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> first = parser.tagSet();",
+        "    parser.settings(ParseSettings.preserveCase(true));",
+        "    Set<String> second = parser.tagSet();",
+        "  THEN",
+        "    assert first.contains(\"html\") && !first.contains(\"HTML\");",
+        "    assert second.contains(\"HTML\") && !second.contains(\"html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Modifying returned Set from tagSet() does not affect subsequent calls (defensive-copy branch)",
+      "path": "B0→B1→B2(first call)→B8→B2(second call)→B9",
+      "precondition": "Parser.htmlParser() with default settings and lower-case tags",
+      "expectedResult": "mutation on returned Set does not change internal or future returned sets",
+      "tags": [
+        "defensive-copy",
+        "side-effect",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC10 tagSet returns defensive copy",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> tags1 = parser.tagSet();",
+        "    tags1.clear();",
+        "    Set<String> tags2 = parser.tagSet();",
+        "  THEN",
+        "    assert tags1.isEmpty();",
+        "    assert !tags2.isEmpty();",
+        "    assert tags2.contains(\"html\");",
+        "END"
+      ]
+    }
+  ]
+}

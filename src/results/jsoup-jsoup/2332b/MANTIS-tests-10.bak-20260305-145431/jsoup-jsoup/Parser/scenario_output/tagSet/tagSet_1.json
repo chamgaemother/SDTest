@@ -1,0 +1,94 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "htmlParser().tagSet() returns a non-empty lower-case tag set (preserveCase=false branch)",
+      "path": "B0→B1→B2→B5",
+      "precondition": "none",
+      "expectedResult": "Set<String> contains common HTML tags in lower-case",
+      "tags": [
+        "positive",
+        "branch-preserveCase-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 htmlParser default tagSet lower-case",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.contains(\"html\");",
+        "    assert !tags.contains(\"HTML\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "xmlParser().tagSet() returns empty or minimal set (XML branch with no predefined tags)",
+      "path": "B0→B1→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Set<String> is empty or contains only XML default tags",
+      "tags": [
+        "positive",
+        "branch-XML"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 xmlParser tagSet minimal",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.isEmpty() || tags.contains(\"?xml\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Parser with custom ParseSettings(preserveCase=true) yields mixed-case tag names (preserveCase=true branch)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Set<String> contains tags in original case",
+      "tags": [
+        "positive",
+        "branch-preserveCase-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 custom settings preserve-case",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().settings(new ParseSettings(true));",
+        "  WHEN",
+        "    Set<String> tags = parser.tagSet();",
+        "  THEN",
+        "    assert tags.contains(\"HTML\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Calling tagSet on a parser with null settings triggers NullPointerException path",
+      "path": "B0→B1→B6",
+      "precondition": "parser.settings is null via reflection",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 tagSet null-settings exception",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    // via reflection set parser.settings = null",
+        "  WHEN",
+        "    call parser.tagSet();",
+        "  THEN",
+        "    throws NullPointerException"
+      ]
+    }
+  ]
+}

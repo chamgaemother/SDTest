@@ -1,0 +1,41 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "visitor.head removes the only child at depth=1 (nextSibling null) triggers remove-without-sibling branch B9→B10",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B10→B1→B11→B12→B23→B1→B11→B12→B23→B1→B24",
+      "precondition": "Element root has exactly one child; visitor removes child when depth==1",
+      "expectedResult": "child removed, only root tail at depth 0 is invoked, no child tail",
+      "tags": [
+        "negative",
+        "remove",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 remove-only-child nextSibling-null",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"p\");",
+        "    root.appendChild(child);",
+        "    class Remover implements NodeVisitor {",
+        "      int headCount, tailCount;",
+        "      @Override head(Node node,int depth) {",
+        "        headCount++;",
+        "        if (depth==1) node.remove();",
+        "      }",
+        "      @Override tail(Node node,int depth) { tailCount++; }",
+        "    }",
+        "    Remover vis = new Remover();",
+        "  WHEN",
+        "    NodeTraversor.traverse(vis, root);",
+        "  THEN",
+        "    assert root.childNodeSize()==0;",
+        "    assert vis.headCount==2; // root and child",
+        "    assert vis.tailCount==1; // only root",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,178 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseFragmentInput(String, null context, valid baseUri) returns empty list when TreeBuilder produces no nodes (normal branch)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser constructed with a stub TreeBuilder whose parseFragment(reader, context, baseUri, parser) returns an empty List; stub avoids mocking framework",
+      "expectedResult": "returned List<Node> is empty",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-null",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput empty-result",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningEmpty());",
+        "    String fragment = \"\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseFragmentInput(String, non-null context, valid baseUri) returns list with one node when TreeBuilder produces single node",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser constructed with a stub TreeBuilder whose parseFragment returns a singleton List<Node>; stub avoids mocking framework",
+      "expectedResult": "returned List<Node> has size 1 and contains the stub Node instance",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-non-null",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput single-node",
+        "  GIVEN",
+        "    StubNode node = new StubNode();",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningList(node));",
+        "    String fragment = \"<p>text</p>\";",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == node;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseFragmentInput(String, context, baseUri) propagates UncheckedIOException when Reader creation fails due to invalid fragment decoding (exception branch)",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "none; StringReader construction will not throw, so simulate by using a Reader-overload stub instead",
+      "expectedResult": "throws UncheckedIOException; no list returned",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "UncheckedIOException"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC03_O1 parseFragmentInput string-overload-io-exception",
+        "  GIVEN",
+        "    Parser parser = new Parser(new FailingTreeBuilder());",
+        "    String fragment = \"<tag>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseFragmentInput(Reader, null context, valid baseUri) returns multiple nodes when TreeBuilder produces multiple nodes (loop-N)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser constructed with a real implementation stub of TreeBuilder that returns a list of 3 stub nodes; avoids mocking framework",
+      "expectedResult": "returned List<Node> has size 3 and contains the sequence of stub nodes",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "context-null",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC04_O2 parseFragmentInput reader-overload-multiple-nodes",
+        "  GIVEN",
+        "    List<Node> nodes = List.of(new StubNode(), new StubNode(), new StubNode());",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningList(nodes));",
+        "    Reader reader = new StringReader(\"<a/><b/><c/>\");",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.equals(nodes);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseFragmentInput(Reader, non-null context, valid baseUri) propagates UncheckedIOException when Reader.read throws IOException",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "Parser uses real HtmlTreeBuilder; provide Reader stub whose read() throws IOException to trigger UncheckedIOException",
+      "expectedResult": "throws UncheckedIOException; no list returned",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "UncheckedIOException",
+        "context-non-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC05_O2 parseFragmentInput reader-io-exception",
+        "  GIVEN",
+        "    Reader failingReader = new Reader(){ public int read(char[] cbuf, int off, int len) throws IOException { throw new IOException(\"fail\"); } public void close(){} };",
+        "    Parser parser = Parser.htmlParser();",
+        "    Element context = new Element(\"span\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(failingReader, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "parseFragmentInput(String, non-null context, empty baseUri) returns list when baseUri is empty string (boundary baseUri)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser with stub TreeBuilder returning single stub node",
+      "expectedResult": "returned List<Node> has size 1 and contains the stub Node instance",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "baseUri-empty",
+        "context-non-null"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC06_O1 parseFragmentInput empty-baseUri",
+        "  GIVEN",
+        "    StubNode node = new StubNode();",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningList(node));",
+        "    String fragment = \"<div/>\";",
+        "    Element context = new Element(\"p\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == node;",
+        "END"
+      ]
+    }
+  ]
+}

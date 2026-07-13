@@ -1,0 +1,77 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_parseFragmentInput_2_Test {
+
+    @Test
+    @DisplayName("TC08: String overload with null fragment throws NullPointerException before parse")
+    public void test_TC08() {
+        // GIVEN a null fragment string and a valid context and baseUri
+        String fragment = null;
+        Element context = Document.createShell("http://x").body();
+        // WHEN & THEN: constructing StringReader on null should throw NPE at overload entry
+        assertThrows(NullPointerException.class, () -> {
+            Parser.htmlParser().parseFragmentInput(fragment, context, "http://x");
+        });
+    }
+
+    @Test
+    @DisplayName("TC09: Reader overload with null Reader throws NullPointerException inside parseFragmentInput")
+    public void test_TC09() {
+        // GIVEN a null Reader and null context
+        Reader fragment = null;
+        Element context = null;
+        // WHEN & THEN: passing null Reader should lead to NPE during parseFragmentInput
+        assertThrows(NullPointerException.class, () -> {
+            Parser.htmlParser().parseFragmentInput(fragment, context, "base");
+        });
+    }
+
+    @Test
+    @DisplayName("TC10: XML parser Reader overload returns nested elements according to XML rules")
+    public void test_TC10() {
+        // GIVEN a well-formed XML fragment '<a><b/></a>' and no context
+        Reader fragment = new StringReader("<a><b/></a>");
+        Element context = null;
+        // WHEN parsing with xmlParser, should produce a single root 'a' containing child 'b'
+        List<Node> result = Parser.xmlParser().parseFragmentInput(fragment, context, "urn:xml");
+        // THEN exactly one root element 'a'
+        assertEquals(1, result.size(), "Expected one root element for XML fragment");
+        Node node = result.get(0);
+        assertTrue(node instanceof Element, "Root node should be an Element");
+        Element root = (Element) node;
+        assertEquals("a", root.tagName(), "Root element tag name should be 'a'");
+        // THEN the root should have one child element 'b'
+        assertEquals(1, root.children().size(), "Root should have one child");
+        Element child = root.child(0);
+        assertEquals("b", child.tagName(), "Child element tag name should be 'b'");
+    }
+
+    @Test
+    @DisplayName("TC11: XML parser String overload with mixed text and tags returns text node before element")
+    public void test_TC11() {
+        // GIVEN a mixed-content fragment 'hi<br/>' and a body context
+        String fragment = "hi<br/>";
+        Element context = Document.createShell("u").body();
+        // WHEN parsing with xmlParser via String overload, should preserve text then element
+        List<Node> result = Parser.xmlParser().parseFragmentInput(fragment, context, "u");
+        // THEN two nodes: first a TextNode 'hi', second an Element 'br'
+        assertEquals(2, result.size(), "Expected two nodes: text then element");
+        Node first = result.get(0);
+        assertEquals("hi", first.toString(), "First node should be text 'hi'");
+        Node second = result.get(1);
+        assertTrue(second instanceof Element, "Second node should be an Element");
+        Element el = (Element) second;
+        assertEquals("br", el.tagName(), "Second node element tag name should be 'br'");
+    }
+}

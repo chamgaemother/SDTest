@@ -1,0 +1,40 @@
+{
+  "scenarios": [
+    {
+      "id": "TC02",
+      "description": "sourceRange delegates to parent.sourceRange when parent is non-null (branch B0→B2)",
+      "path": "B0→B2",
+      "precondition": "Attributes stubParent overrides sourceRange(String) to return a fixed AttributeRange",
+      "expectedResult": "returns the AttributeRange instance provided by stubParent",
+      "tags": [
+        "branch",
+        "delegation",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange delegates when parent non-null",
+        "  GIVEN",
+        "    // Arrange",
+        "    Attributes stubParent = new Attributes() {",
+        "      @Override",
+        "      public Range.AttributeRange sourceRange(String k) {",
+        "        return new Range.AttributeRange(5, 6, 7, 8);",
+        "      }",
+        "    };",
+        "    Attribute attr = new Attribute(\"attrKey\", \"val\", stubParent);",
+        "  WHEN",
+        "    // Act",
+        "    Range.AttributeRange result = attr.sourceRange();",
+        "  THEN",
+        "    // Assert",
+        "    assert result.startTagStart() == 5;",
+        "    assert result.startTagEnd()   == 6;",
+        "    assert result.endTagStart()   == 7;",
+        "    assert result.endTagEnd()     == 8;",
+        "END"
+      ]
+    }
+  ]
+}

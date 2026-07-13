@@ -1,0 +1,86 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String, String) with valid HTML and baseUri returns non-null Document")
+    void test_TC01_O1() {
+        // Using HTML overload; html non-null (branch false for null check), baseUri non-null -> normal parsing path
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com/";
+        Parser parser = Parser.htmlParser();
+        Document doc = parser.parseInput(html, baseUri);
+        // Verify document created correctly
+        assertNotNull(doc, "Expected non-null Document");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match input");
+        assertTrue(doc.body().html().contains("<p>Hello</p>"), "Body HTML should contain the paragraph");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseInput(String, String) with html null throws NullPointerException")
+    void test_TC02_O1() {
+        // html null triggers NullPointerException before parse logic (branch true for null html)
+        String html = null;
+        String baseUri = "http://example.com/";
+        Parser parser = Parser.htmlParser();
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseInput(String, String) with baseUri null throws IllegalArgumentException")
+    void test_TC03_O1() {
+        // baseUri null is invalid argument (branch false for html null, but later parse should reject null baseUri)
+        String html = "<p>Test</p>";
+        String baseUri = null;
+        Parser parser = Parser.htmlParser();
+        assertThrows(IllegalArgumentException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseInput(Reader, String) with valid Reader and baseUri returns Document")
+    void test_TC04_O2() {
+        // Reader overload; reader non-null (branch false for reader null), baseUri non-null -> normal parse path
+        Reader reader = new StringReader("<div>OK</div>");
+        String baseUri = "http://site/";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        Document doc = parser.parseInput(reader, baseUri);
+        assertNotNull(doc, "Expected non-null Document");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match input");
+        assertTrue(doc.body().html().contains("<div>OK</div>"), "Body HTML should contain the div");
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseInput(Reader, String) with reader null throws NullPointerException")
+    void test_TC05_O2() {
+        // Reader overload; reader null triggers NPE at method entry (branch true for reader null)
+        Reader reader = null;
+        String baseUri = "http://site/";
+        Parser parser = new Parser(new XmlTreeBuilder());
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseInput(Reader, String) with baseUri empty string returns Document")
+    void test_TC06_O2() {
+        // Reader overload; reader non-null, baseUri empty (branch false for reader null, edge boundary for empty baseUri)
+        Reader reader = new StringReader("<span/>");
+        String baseUri = "";
+        Parser parser = new Parser(new HtmlTreeBuilder());
+        Document doc = parser.parseInput(reader, baseUri);
+        assertNotNull(doc, "Expected non-null Document even with empty baseUri");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be empty string");
+        assertTrue(doc.body().html().contains("<span/>"), "Body HTML should contain the span element");
+    }
+}

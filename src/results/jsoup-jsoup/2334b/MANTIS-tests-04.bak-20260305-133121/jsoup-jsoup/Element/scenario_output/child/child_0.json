@@ -1,0 +1,136 @@
+{
+  "method": "child",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "child(0) on element with no children throws IndexOutOfBoundsException (childNodeSize==0 branch)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element parent = new Element(\"div\"); // no children",
+      "expectedResult": "throws IndexOutOfBoundsException; no child list modified",
+      "tags": [
+        "exception",
+        "branch-true",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 child empty-children",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    int index = 0;",
+        "  WHEN",
+        "    parent.child(index);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "child(0) returns only child when one Element child present (childNodeSize>0, first iteration builds cache)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Element parent = new Element(\"ul\"); parent.appendElement(\"li\");",
+      "expectedResult": "return value is the single <li> element",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 child single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = parent.appendElement(\"li\");",
+        "    int index = 0;",
+        "  WHEN",
+        "    Element result = parent.child(index);",
+        "  THEN",
+        "    assert result == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "child(1) returns second element among mixed TextNode and Element children (filters non-Element)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Element parent = new Element(\"p\"); parent.appendText(\"text\"); parent.appendElement(\"span\"); parent.appendElement(\"a\");",
+      "expectedResult": "return value is the second Element child (<a>)",
+      "tags": [
+        "branch-false",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 child mixed-nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    parent.appendText(\"text\");",
+        "    parent.appendElement(\"span\");",
+        "    Element second = parent.appendElement(\"a\");",
+        "    int index = 1;",
+        "  WHEN",
+        "    Element result = parent.child(index);",
+        "  THEN",
+        "    assert result == second;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "child(-1) with negative index throws IndexOutOfBoundsException (invalid index <0)",
+      "path": "B0→B1→B4→B6",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"span\");",
+      "expectedResult": "throws IndexOutOfBoundsException; no cache altered",
+      "tags": [
+        "exception",
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 child negative-index",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"span\");",
+        "    int index = -1;",
+        "  WHEN",
+        "    parent.child(index);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "child(1) after caching returns correct element without rebuilding cache (shadowChildrenRef!=null branch)",
+      "path": "B0→B1→B4→B5 then B0→B1→B7",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendElement(\"x\"); parent.appendElement(\"y\"); parent.child(0); // cache built",
+      "expectedResult": "return value is second <y> element",
+      "tags": [
+        "branch-false",
+        "cache-hit",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 child cache-reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"x\");",
+        "    Element y = parent.appendElement(\"y\");",
+        "    parent.child(0);  // build cache",
+        "    int index = 1;",
+        "  WHEN",
+        "    Element result = parent.child(index);",
+        "  THEN",
+        "    assert result == y;",
+        "END"
+      ]
+    }
+  ]
+}

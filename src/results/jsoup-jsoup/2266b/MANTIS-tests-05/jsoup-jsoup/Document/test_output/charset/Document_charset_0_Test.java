@@ -1,0 +1,118 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.XmlDeclaration;
+import java.nio.charset.Charset;
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_0_Test {
+
+    @Test
+    @DisplayName("TC01: charset(Charset.UTF_16) on HTML doc with no existing <meta charset> appends a new <meta> and removes no obsolete elements")
+    public void test_TC01() {
+        // GIVEN: an HTML shell with no meta charset element -> triggers append path
+        Document doc = Document.createShell("http://example.com");
+        // WHEN: setting UTF-16 charset
+        doc.outputSettings().charset(Charset.forName("UTF-16"));
+        // THEN: outputSettings updated
+        assertEquals(Charset.forName("UTF-16"), doc.outputSettings().charset(),
+                "Expected document charset to be set to UTF-16");
+        // A new <meta charset> should be appended
+        Element meta = doc.selectFirst("head meta[charset]");
+        assertNotNull(meta, "Expected a meta[charset] element to be present");
+        assertEquals("UTF-16", meta.attr("charset"),
+                "Expected the meta element's charset attribute to equal UTF-16");
+        // No obsolete <meta name=charset> elements should exist
+        assertTrue(doc.selectFirst("head meta[name=charset]") == null,
+                "Expected no obsolete meta[name=charset] elements");
+    }
+
+    @Test
+    @DisplayName("TC02: charset(Charset.US_ASCII) on HTML doc with existing <meta charset> updates its charset attribute and removes an obsolete <meta name=charset>")
+    public void test_TC02() {
+        // GIVEN: an HTML shell, existing <meta charset> and one obsolete <meta name=charset>
+        Document doc = Document.createShell("base");
+        doc.head().appendElement("meta").attr("charset", "ISO-8859-1");
+        doc.head().appendElement("meta").attr("name", "charset");
+        // WHEN: setting US-ASCII charset -> selects existing meta[charset] path
+        doc.outputSettings().charset(Charset.US_ASCII);
+        // THEN: outputSettings updated
+        assertEquals(Charset.US_ASCII, doc.outputSettings().charset(),
+                "Expected document charset to be set to US-ASCII");
+        // Existing <meta charset> updated
+        Element updated = doc.selectFirst("head meta[charset]");
+        assertNotNull(updated, "Expected existing meta[charset] to remain");
+        assertEquals("US-ASCII", updated.attr("charset"),
+                "Expected updated charset attribute to equal US-ASCII");
+        // Obsolete <meta name=charset> removed
+        assertTrue(doc.selectFirst("head meta[name=charset]") == null,
+                "Expected obsolete meta[name=charset] to be removed");
+    }
+
+    @Test
+    @DisplayName("TC03: charset(Charset.UTF_8) on doc with syntax set to XML and no existing XmlDeclaration prepends a new <?xml encoding?>")
+    public void test_TC03() {
+        // GIVEN: an HTML shell, set syntax to XML, no existing XmlDeclaration -> triggers prepend new declaration
+        Document doc = Document.createShell("x");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // WHEN: setting UTF-8 charset
+        doc.outputSettings().charset(Charset.UTF_8);
+        // THEN: outputSettings updated
+        assertEquals(Charset.UTF_8, doc.outputSettings().charset(),
+                "Expected document charset to be set to UTF-8");
+        // First child should be XmlDeclaration
+        assertFalse(doc.childNodes().isEmpty(), "Expected at least one child node");
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected first child to be an XmlDeclaration");
+        XmlDeclaration decl = (XmlDeclaration) first;
+        assertEquals("xml", decl.name(), "Expected declaration name to be 'xml'");
+        assertEquals("UTF-8", decl.attr("encoding"),
+                "Expected encoding attribute to equal UTF-8");
+        assertEquals("1.0", decl.attr("version"),
+                "Expected version attribute to equal 1.0");
+    }
+
+    @Test
+    @DisplayName("TC04: charset(Charset.ISO_8859_1) on doc with syntax XML and existing XmlDeclaration updates encoding and preserves version")
+    public void test_TC04() {
+        // GIVEN: an HTML shell, syntax XML, and existing XmlDeclaration -> triggers update existing declaration
+        Document doc = Document.createShell("b");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        decl.attr("encoding", "UTF-16");
+        decl.attr("version", "0.9");
+        doc.prependChild(decl);
+        // WHEN: setting ISO-8859-1 charset
+        doc.outputSettings().charset(Charset.forName("ISO-8859-1"));
+        // THEN: outputSettings updated
+        assertEquals(Charset.forName("ISO-8859-1"), doc.outputSettings().charset(),
+                "Expected document charset to be set to ISO-8859-1");
+        // Existing declaration updated encoding and version overwritten to 1.0
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected first child to be an XmlDeclaration");
+        XmlDeclaration updated = (XmlDeclaration) first;
+        assertEquals("ISO-8859-1", updated.attr("encoding"),
+                "Expected updated encoding attribute to equal ISO-8859-1");
+        assertEquals("1.0", updated.attr("version"),
+                "Expected version attribute to be reset to 1.0");
+    }
+
+    @Test
+    @DisplayName("TC05: charset(null) throws IllegalArgumentException on null input")
+    public void test_TC05() {
+        // GIVEN: an HTML shell document
+        Document doc = Document.createShell("u");
+        Charset before = doc.outputSettings().charset();
+        // WHEN/THEN: passing null should throw and not change charset
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> doc.outputSettings().charset(null),
+                "Expected IllegalArgumentException when passing null charset");
+        // Ensure no change to charset
+        assertEquals(before, doc.outputSettings().charset(),
+                "Expected document charset to remain unchanged after exception");
+    }
+}

@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09_O1",
+      "description": "visitor.head replaces a child node to trigger the 'replaced' branch (origSize == parent.childNodeSize)",
+      "path": "B0→B1→B2→B4→B5→B6→B7→B8→B11→B12→B23→B1→…→B24",
+      "precondition": "root with two children; visitor.head on first child calls replaceWith(new Element)",
+      "expectedResult": "traversal continues on the replacement node; original child is not re-visited; no exceptions",
+      "tags": [
+        "positive",
+        "replacement",
+        "branch-replaced"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 replacement-branch",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element a = new Element(\"a\"), b = new Element(\"b\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) {",
+        "        if (\"a\".equals(n.nodeName()))",
+        "          n.replaceWith(new Element(\"x\"));",
+        "      }",
+        "      public void tail(Node n, int d) { /* no-op */ }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    // The replaced node \"x\" should be visited instead of \"a\" and b still visited",
+        "    assertEquals(\"x\", root.childNode(0).nodeName());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "three-level single-child tree to trigger the ascension loop twice when no siblings (B16→B17→B19)",
+      "path": "B0→B1→B2→B4→B5→B11→B12(loop×2)→B23→B1→B11→B13→B16→B20→B22→B23→…→B24",
+      "precondition": "root has one child which has one child (depth 2 chain)",
+      "expectedResult": "head and tail invoked at depths 0,1,2; loop ascends twice without siblings before finishing",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascension-loop"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 deep-ascension-loop",
+        "  GIVEN",
+        "    Element root = new Element(\"d1\");",
+        "    Element mid = new Element(\"d2\"), leaf = new Element(\"d3\");",
+        "    root.appendChild(mid); mid.appendChild(leaf);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { events.add(\"H:\"+n.nodeName()+\":\"+d); }",
+        "      public void tail(Node n, int d) { events.add(\"T:\"+n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(Arrays.asList(",
+        "      \"H:d1:0\",\"H:d2:1\",\"H:d3:2\",",
+        "      \"T:d3:2\",\"T:d2:1\",\"T:d1:0\"",
+        "    ), events);",
+        "END"
+      ]
+    }
+  ]
+}

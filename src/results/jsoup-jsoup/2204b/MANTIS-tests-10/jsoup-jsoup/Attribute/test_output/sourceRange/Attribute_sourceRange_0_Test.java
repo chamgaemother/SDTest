@@ -1,0 +1,45 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class Attribute_sourceRange_0_Test {
+
+    @Test
+    @DisplayName("When parent is null (branch r1 == null) returns UntrackedAttr constant")
+    public void test_TC01() {
+        // GIVEN an Attribute with no parent -> parent field is null, so sourceRange should not delegate
+        Attribute attr = new Attribute("key", "val", null);
+        // WHEN calling sourceRange on an attribute without a parent
+        org.jsoup.nodes.Range.AttributeRange result = attr.sourceRange();
+        // THEN expect the special UntrackedAttr constant to be returned
+        assertSame(Range.AttributeRange.UntrackedAttr, result,
+            "Expected UntrackedAttr when parent is null");
+    }
+
+    @Test
+    @DisplayName("When parent present (branch r1 != null) delegates to parent.sourceRange(key)")
+    public void test_TC02() {
+        // GIVEN a stub Attributes that returns a known AttributeRange when sourceRange is called
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String key) {
+                // return a fresh instance to verify delegation
+                return new Range.AttributeRange(1, 2);
+            }
+        };
+        // Create an Attribute with this stub as parent -> parent != null ensures delegation path
+        Attribute attr = new Attribute("dataKey", "someValue", stubParent);
+
+        // WHEN calling sourceRange, it should call stubParent.sourceRange with the same key
+        org.jsoup.nodes.Range.AttributeRange result = attr.sourceRange();
+
+        // THEN verify the returned range matches the stub's values exactly
+        assertNotNull(result, "Delegated sourceRange result should not be null");
+        assertAll("Check each field of the delegated AttributeRange",
+            () -> assertEquals(1, result.start(), "Start should be 1"),
+            () -> assertEquals(2, result.end(), "End should be 2")
+        );
+    }
+}

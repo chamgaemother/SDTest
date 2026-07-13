@@ -1,0 +1,211 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Default load() with no entries applies no systemProperties and returns empty Dotenv",
+      "path": "B0→B1→B2",
+      "precondition": "Ensure no .env file present in default './' directory; uses real DotenvReader and DotenvParser",
+      "expectedResult": "returned Dotenv.entries().size() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "systemProperties:false",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 load default empty-list",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"nonexistent_dir\").ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() == 0;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Default load() with a single valid entry applies no systemProperties and returns one entry",
+      "path": "B0→B1→B2",
+      "precondition": "Create temporary .env file in tempDir containing 'KEY=VALUE', use directory(tempDir)",
+      "expectedResult": "returned Dotenv.entries() contains DotenvEntry(\"KEY\",\"VALUE\")",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "systemProperties:false",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 load single-entry",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"envdir\");",
+        "    Files.write(dir.resolve(\".env\"), Collections.singletonList(\"KEY=VALUE\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).filename(\".env\");",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().contains(new DotenvEntry(\"KEY\",\"VALUE\"));"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Default load() with multiple valid entries applies no systemProperties and returns all entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create temp .env with two lines 'A=1','B=2'",
+      "expectedResult": "returned Dotenv.entries().size() == 2 and contains entries for keys A and B",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "systemProperties:false",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 load multiple-entries",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"envdir2\");",
+        "    Files.write(dir.resolve(\".env\"), Arrays.asList(\"A=1\",\"B=2\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() == 2;",
+        "    assert dotenv.get(\"A\").equals(\"1\");",
+        "    assert dotenv.get(\"B\").equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with systemProperties=true skips setting via forEach and returns entries without altering System properties",
+      "path": "B0→B2",
+      "precondition": "Create temp .env with 'X=Y', clear System property X beforehand; builder.systemProperties()",
+      "expectedResult": "System.getProperty(\"X\")==null and returned entries contains DotenvEntry(\"X\",\"Y\")",
+      "tags": [
+        "branch-false",
+        "systemProperties:true",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 load with systemProperties=true",
+        "  GIVEN",
+        "    System.clearProperty(\"X\");",
+        "    Path dir = Files.createTempDirectory(\"envdir3\");",
+        "    Files.write(dir.resolve(\".env\"), Collections.singletonList(\"X=Y\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert System.getProperty(\"X\") == null;",
+        "    assert dotenv.entries().contains(new DotenvEntry(\"X\",\"Y\"));"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env missing and throwIfMissing=true",
+      "path": "B0",
+      "precondition": "Ensure directory 'missingDir' exists but no .env; default throwIfMissing",
+      "expectedResult": "throws DotenvException; no System properties mutated",
+      "tags": [
+        "exception",
+        "branch-entry",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 load missing-file-exception",
+        "  GIVEN",
+        "    Files.createTempDirectory(\"missingDir\");",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"missingDir\");",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "load() ignores missing file when ignoreIfMissing() is set and returns empty Dotenv",
+      "path": "B0→B1→B2",
+      "precondition": "Directory exists but no .env; builder.ignoreIfMissing()",
+      "expectedResult": "returned Dotenv.entries().isEmpty()",
+      "tags": [
+        "branch-true",
+        "exception-handled",
+        "loop-0",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 ignore-missing-file",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"dir4\");",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() throws DotenvException on malformed entry when throwIfMalformed=true",
+      "path": "B0",
+      "precondition": "Create .env with malformed line 'NO_EQUALS', default throwIfMalformed",
+      "expectedResult": "throws DotenvException",
+      "tags": [
+        "exception",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 malformed-exception",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"dir5\");",
+        "    Files.write(dir.resolve(\".env\"), Collections.singletonList(\"NO_EQUALS\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString());",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "load() ignores malformed entries when ignoreIfMalformed() is set and returns only valid entries",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env with ['GOOD=1','BAD_LINE']; builder.ignoreIfMalformed()",
+      "expectedResult": "returned entries contains only DotenvEntry(\"GOOD\",\"1\")",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "exception-handled",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 ignore-malformed",
+        "  GIVEN",
+        "    Path dir = Files.createTempDirectory(\"dir6\");",
+        "    Files.write(dir.resolve(\".env\"), Arrays.asList(\"GOOD=1\",\"BAD_LINE\"));",
+        "    DotenvBuilder builder = Dotenv.configure().directory(dir.toString()).ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() == 1;",
+        "    assert dotenv.get(\"GOOD\").equals(\"1\");"
+      ]
+    }
+  ]
+}

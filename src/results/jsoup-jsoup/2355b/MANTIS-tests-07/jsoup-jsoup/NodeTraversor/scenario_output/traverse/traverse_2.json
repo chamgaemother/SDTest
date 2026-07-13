@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "Child replacement in head triggers replace branch (origSize==childNodeSize) then correct traversal of replacement",
+      "path": "B0→B1→B2→B5→B6→B7(origSize==childSize)→B8→B11→B12→B23→B1→…→B24",
+      "precondition": "root with one child; visitor replaces that child in head",
+      "expectedResult": "visit original child head, then replacement head and tail, then root tail",
+      "tags": [
+        "positive",
+        "branch-replace",
+        "replacement"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 replace-child-branch",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element child = new Element(Tag.valueOf(\"p\"), \"\");",
+        "    root.appendChild(child);",
+        "    Element repl = new Element(Tag.valueOf(\"span\"), \"\");",
+        "    List<String> order = new ArrayList<>();",
+        "    NodeVisitor v = new NodeVisitor() {",
+        "      public void head(Node n,int d){ order.add(\"H\"+n.nodeName()); if(n==child) n.replaceWith(repl);}",
+        "      public void tail(Node n,int d){ order.add(\"T\"+n.nodeName());}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v,root);",
+        "  THEN",
+        "    assert order.equals(List.of(\"Hp\",\"Hspan\",\"Tspan\",\"Tdiv\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Two sibling children trigger inner while sibling branch and correct ascend/tail order",
+      "path": "B0→B1→B2→B5→B6→B7→B9(r3!=null)→B10→B1→…→B11→B16→B20(nextSibling==null?false)→B21→B24",
+      "precondition": "root with two children at same depth",
+      "expectedResult": "sequence H0, H1:c1, T1:c1, H1:c2, T1:c2, T0:root",
+      "tags": [
+        "positive",
+        "branch-sibling",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 two-siblings-branch",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"ul\"), \"\");",
+        "    Element c1 = new Element(Tag.valueOf(\"li\"), \"\");",
+        "    Element c2 = new Element(Tag.valueOf(\"li\"), \"\");",
+        "    root.appendChild(c1);",
+        "    root.appendChild(c2);",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor v = new NodeVisitor(){",
+        "      public void head(Node n,int d){ seq.add(\"H\"+d+\":\"+n.nodeName()); }",
+        "      public void tail(Node n,int d){ seq.add(\"T\"+d+\":\"+n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v,root);",
+        "  THEN",
+        "    assert seq.equals(List.of(\"H0:ul\",\"H1:li\",\"T1:li\",\"H1:li\",\"T1:li\",\"T0:ul\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Deep tree triggers ascend loop when nextSibling null and depth>0 (inner while B19 branch)",
+      "path": "B0→B1→B2→…→B12(descend twice)→B23→B1→B5→B11→B13→B16→B17(i2>0)→B18→B20→B21→B24",
+      "precondition": "root with one child and that child with one grandchild",
+      "expectedResult": "visit depth sequence H0,H1,H2 then ascend grandchildren with correct tail order T2,T1,T0",
+      "tags": [
+        "positive",
+        "branch-ascend",
+        "depth"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 inner-ascend-loop-branch",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element child = new Element(Tag.valueOf(\"span\"), \"\");",
+        "    Element grand = new Element(Tag.valueOf(\"a\"), \"\");",
+        "    root.appendChild(child);",
+        "    child.appendChild(grand);",
+        "    List<String> log = new ArrayList<>();",
+        "    NodeVisitor v = new NodeVisitor(){",
+        "      public void head(Node n,int d){ log.add(\"H\"+d+\":\"+n.nodeName()); }",
+        "      public void tail(Node n,int d){ log.add(\"T\"+d+\":\"+n.nodeName()); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v,root);",
+        "  THEN",
+        "    assert log.equals(List.of(\"H0:div\",\"H1:span\",\"H2:a\",\"T2:a\",\"T1:span\",\"T0:div\"));",
+        "END"
+      ]
+    }
+  ]
+}

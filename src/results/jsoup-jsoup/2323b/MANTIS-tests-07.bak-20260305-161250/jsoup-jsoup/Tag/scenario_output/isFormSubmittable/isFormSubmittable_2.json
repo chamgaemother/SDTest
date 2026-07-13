@@ -1,0 +1,83 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "valueOf(tagName,namespace,settings) throws on null tagName",
+      "path": "B0→B1",
+      "precondition": "none",
+      "expectedResult": "NullPointerException or IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 valueOf null-name validation",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String ns = \"html\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "valueOf(tagName,namespace,settings) throws on empty tagName after trim",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "validation",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf empty-name validation",
+        "  GIVEN",
+        "    String tagName = \"   \";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Direct lookup path returns static known form-submittable tag without clone",
+      "path": "B0→B3→B4",
+      "precondition": "Tag \"textarea\" pre-registered with formSubmit=true",
+      "expectedResult": "return static Tag instance and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "branch",
+        "direct-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 direct-lookup static-submittable",
+        "  GIVEN",
+        "    String tagName = \"textarea\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, ns, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;",
+        "END"
+      ]
+    }
+  ]
+}

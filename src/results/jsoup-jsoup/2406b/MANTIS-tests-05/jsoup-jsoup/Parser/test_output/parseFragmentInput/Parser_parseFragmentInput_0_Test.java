@@ -1,0 +1,177 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parseFragmentInput(String, context non-null, baseUri non-empty) returns node list via treeBuilder.parseFragment")
+    public void test_TC01_O1() {
+        String fragment = "<p>text</p>";
+        Element context = new Element("div");
+        String baseUri = "http://example.com";
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Element);
+        assertEquals("p", ((Element) result.get(0)).tagName());
+        assertNull(context.parent());
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseFragmentInput(String, context null, baseUri empty) returns node list via treeBuilder.parseFragment")
+    public void test_TC02_O1() {
+        String fragment = "Hello";
+        Element context = null;
+        String baseUri = "";
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        assertEquals(1, result.size());
+        assertEquals("Hello", result.get(0).outerHtml());
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseFragmentInput(String, context non-null, baseUri null) returns node list and preserves fragment content")
+    public void test_TC03_O1() {
+        String fragment = "<span/>";
+        Element context = new Element("div");
+        String baseUri = null;
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Element);
+        assertEquals("span", ((Element) result.get(0)).tagName());
+        assertTrue(result.get(0).baseUri() == null || result.get(0).baseUri().isEmpty());
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parseFragmentInput(Reader, context non-null, baseUri non-empty) returns node list")
+    public void test_TC04_O2() {
+        Reader fragment = new StringReader("data");
+        Element context = new Element("p");
+        String baseUri = "uri";
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        assertEquals(1, result.size());
+        assertEquals("data", result.get(0).toString());
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseFragmentInput(Reader, context null, baseUri non-empty) returns node list")
+    public void test_TC05_O2() {
+        Reader fragment = new StringReader("<a/>"); // Fixed unclosed string literal
+        Element context = null;
+        String baseUri = "http";
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, baseUri);
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Element);
+        assertEquals("a", ((Element) result.get(0)).tagName());
+    }
+
+    @Test
+    @DisplayName("TC06_IOE_O2: parseFragmentInput(Reader, context any, baseUri any) throws UncheckedIOException when Reader IO fails")
+    public void test_TC06_IOE_O2() {
+        Reader fragment = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override
+            public void close() {}
+        };
+        Element context = null;
+        String baseUri = "uri";
+        Parser parser = Parser.htmlParser();
+        assertThrows(UncheckedIOException.class, () -> parser.parseFragmentInput(fragment, context, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC07_lock_reentrancy_O2: parseFragmentInput(Reader) acquires and releases lock even on successful parse")
+    public void test_TC07_lock_reentrancy_O2() throws Exception {
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                try {
+                    Field lockField = Parser.class.getDeclaredField("lock");
+                    lockField.setAccessible(true);
+                    ReentrantLock lock = (ReentrantLock) lockField.get(parser);
+                    assertTrue(lock.isHeldByCurrentThread(), "Lock should be held during parseFragment");
+                } catch (Exception e) {
+                    fail("Reflection failure: " + e.getMessage());
+                }
+                return Collections.emptyList();
+            }
+            @Override
+            public void process(Token token) {} // Implementing abstract method
+        };
+        Parser p = new Parser(stub);
+        Reader fragment = new StringReader("<b/>");
+        List<Node> result = p.parseFragmentInput(fragment, new Element("div"), "uri");
+        assertNotNull(result);
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(p);
+        assertFalse(lock.isLocked(), "Lock should be released after parse");
+    }
+
+    @Test
+    @DisplayName("TC08_lock_release_on_exception_O2: parseFragmentInput releases lock when treeBuilder.parseFragment throws runtime exception")
+    public void test_TC08_lock_release_on_exception_O2() throws Exception {
+        TreeBuilder stub = new TreeBuilder() {
+            @Override
+            public Document parse(Reader in, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) {
+                throw new RuntimeException("err");
+            }
+            @Override
+            public void process(Token token) {} // Implementing abstract method
+        };
+        Parser p = new Parser(stub);
+        Reader fragment = new StringReader("x");
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> p.parseFragmentInput(fragment, null, "u")
+        );
+        assertEquals("err", ex.getMessage());
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lock = (ReentrantLock) lockField.get(p);
+        assertFalse(lock.isLocked(), "Lock should be released after exception");
+    }
+
+    @Test
+    @DisplayName("TC09_O1_trackPosition_true: parseFragmentInput(String) with trackPosition enabled retains trackPosition flag after parse")
+    public void test_TC09_O1_trackPosition_true() {
+        Parser p = Parser.htmlParser().setTrackPosition(true);
+        String frag = "<i/>";
+        Element ctx = new Element("div");
+        List<Node> result = p.parseFragmentInput(frag, ctx, "u");
+        assertTrue(p.isTrackPosition(), "TrackPosition flag should remain true after parse");
+        assertFalse(result.isEmpty());
+        assertTrue(result.get(0) instanceof Element);
+    }
+}

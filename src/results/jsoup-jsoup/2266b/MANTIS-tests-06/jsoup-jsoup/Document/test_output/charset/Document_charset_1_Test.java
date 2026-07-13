@@ -1,0 +1,58 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Jsoup;
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_1_Test {
+
+    @Test
+    @DisplayName("charset(xml) updates encoding but does not add version when existing XmlDeclaration 'xml' lacks version attr")
+    public void test_TC07() throws Exception {
+        // Setup: create a document and configure xml syntax and update flag so ensureMetaCharsetElement runs xml branch
+        Document doc = new Document("/");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml); // enter xml branch in ensureMetaCharsetElement
+        doc.updateMetaCharsetElement(true); // allow meta charset updates
+        // Create an XmlDeclaration named 'xml' without version attribute to trigger B5->B6->B8 path
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        // Do not set version attr, so decl.hasAttr("version") is false
+        doc.prependChild(decl);
+
+        // Action: set charset, which should update the existing XmlDeclaration only
+        doc.charset(StandardCharsets.ISO_8859_1);
+
+        // Verify: first child is our declaration, encoding updated, version still not present
+        Node firstNode = doc.childNodes().get(0);
+        assertTrue(firstNode instanceof XmlDeclaration, "First node must be XmlDeclaration");
+        XmlDeclaration updated = (XmlDeclaration) firstNode;
+        // encoding should be set to the charset display name
+        assertEquals(StandardCharsets.ISO_8859_1.displayName(), updated.attr("encoding"));
+        // version attribute must not be added
+        assertFalse(updated.hasAttr("version"), "Version attr should remain absent when originally missing");
+    }
+
+    @Test
+    @DisplayName("charset(html) with only obsolete <meta name=charset> appends new meta[charset] and removes the obsolete")
+    public void test_TC08() {
+        // Setup: create a shell document (has html/head/body), add one obsolete meta[name=charset]
+        Document doc = Document.createShell("http://exa");
+        // Append obsolete meta to head to trigger html branch B2->B7->B9->B11
+        Element obsolete = doc.head().appendElement("meta");
+        obsolete.attr("name", "charset");
+
+        // Action: set charset, should add <meta charset> and remove obsolete ones
+        doc.charset(StandardCharsets.UTF_8);
+
+        // Verify: new meta[charset] exists with correct charset attr
+        Element metaCharset = doc.head().selectFirst("meta[charset]");
+        assertNotNull(metaCharset, "A new meta[charset] element should be appended");
+        assertEquals(StandardCharsets.UTF_8.displayName(), metaCharset.attr("charset"));
+        // The obsolete meta[name=charset] should be removed
+        assertTrue(doc.select("meta[name=charset]").isEmpty(), "Obsolete meta[name=charset] elements should be removed");
+    }
+}

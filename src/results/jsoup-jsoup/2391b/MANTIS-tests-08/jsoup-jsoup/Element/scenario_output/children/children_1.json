@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "children() returns cached child list on second invocation without modifications (cache-hit branch)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Element has >0 Element children and children() called once to populate cache",
+      "expectedResult": "second children() returns same list instance as cache",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children cache-hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"span\");",
+        "    Element c2 = new Element(\"p\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "    Elements first = parent.children();  // populate cache",
+        "  WHEN",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert second == first;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "children() refreshes cache when childNodes modCount mismatches stash (cache-invalidate branch)",
+      "path": "B0→B1→B4→B3(loop×3)→B5",
+      "precondition": "Element has >0 children and cache populated, then a new child appended",
+      "expectedResult": "children() after appending returns updated list of all children (cache invalidated)",
+      "tags": [
+        "positive",
+        "cache",
+        "modcount",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 children cache-invalidate",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element c1 = new Element(\"li\");",
+        "    parent.appendChild(c1);",
+        "    Elements first = parent.children();  // cache stash modCount",
+        "  WHEN",
+        "    Element c2 = new Element(\"li\");",
+        "    parent.appendChild(c2);",
+        "    Elements updated = parent.children();",
+        "  THEN",
+        "    assertEquals(2, updated.size());",
+        "    assertTrue(updated.contains(c1));",
+        "    assertTrue(updated.contains(c2));",
+        "END"
+      ]
+    }
+  ]
+}

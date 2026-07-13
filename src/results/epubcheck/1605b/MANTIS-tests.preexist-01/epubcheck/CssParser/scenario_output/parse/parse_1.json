@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parse(reader with ATKEYWORD that opens and closes a block → enter hasBlock=true, then handleDeclarationBlock empty)",
+      "path": "B0→B1→B2→B4→B7→B1→B8",
+      "precondition": "CssContentHandler and CssErrorHandler record calls",
+      "expectedResult": "startDocument, startAtRule(foo), endAtRule(foo), endDocument; no nested selector or declaration callbacks",
+      "tags": [
+        "positive",
+        "at-rule",
+        "block",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 at-rule-with-empty-block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@foo{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.calls == [\"startDocument\",\"startAtRule(foo)\",\"endAtRule(foo)\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse(reader with nested rulesets in an at-rule block → hasRuleSet true path and recursive handleRuleSet)",
+      "path": "B0→B1→B2→B4→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "CssContentHandler and CssErrorHandler record calls",
+      "expectedResult": "startDocument, startAtRule(bar), selectors, endSelectors, endDocument sequence with nested rule-set callbacks",
+      "tags": [
+        "positive",
+        "at-rule",
+        "nested",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 nested-ruleset-in-at-rule-block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@bar{a{}};\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser(Locale.ENGLISH).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.calls == [\"startDocument\",\"startAtRule(bar)\",\"selectors\",\"endSelectors\",\"endAtRule(bar)\",\"endDocument\"];"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parse(reader with rule-set missing closing brace → trigger PrematureEOFException in handleRuleSet catch",
+      "path": "B0→B1→B2→B3→B6→B8",
+      "precondition": "RecordingErrorHandler throws on error to propagate exception",
+      "expectedResult": "CssException or PrematureEOFException is thrown before endDocument",
+      "tags": [
+        "negative",
+        "exception",
+        "rule-set",
+        "branch"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 malformed-rule-set-prompts-premature-eof",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a{\");",
+        "    CssErrorHandler err = failingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call CssParser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws PrematureEOFException;"
+      ]
+    }
+  ]
+}

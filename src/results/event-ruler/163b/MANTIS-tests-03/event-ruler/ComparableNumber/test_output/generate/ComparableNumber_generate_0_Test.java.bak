@@ -1,0 +1,86 @@
+package software.amazon.event.ruler;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class ComparableNumber_generate_Test {
+
+    @Test
+    @DisplayName("generate(f) throws IllegalArgumentException when f is less than -5e9 (lower bound violation)")
+    void test_TC01() throws Exception {
+        // f < -5e9 triggers the lower bound check and throws
+        double f = -5_000_000_000.1;
+        Class<?> clazz = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = clazz.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            generate.invoke(null, f);
+        });
+        // message should mention the allowed range
+        String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+        assertTrue(msg.contains("Value must be between -5000000000.0 and 5000000000.0"),
+                "Exception message should contain the allowed range");
+    }
+
+    @Test
+    @DisplayName("generate(f) returns correct 14-char hex string when f equals -5e9 (lower boundary)")
+    void test_TC02() throws Exception {
+        // f = -5e9 leads to value = (5e9 + (-5e9)) *1e6 = 0, so hex string should be 14 zeros
+        double f = -5_000_000_000.0;
+        Class<?> clazz = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = clazz.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        assertNotNull(result);
+        assertEquals(14, result.length(), "Result must be 14 hex characters");
+        assertEquals("00000000000000", result, "Zero value should produce 14 '0' characters");
+    }
+
+    @Test
+    @DisplayName("generate(f) throws IllegalArgumentException when f is greater than 5e9 (upper bound violation)")
+    void test_TC03() throws Exception {
+        // f > 5e9 triggers the upper bound check and throws
+        double f = 5_000_000_000.1;
+        Class<?> clazz = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = clazz.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> {
+            generate.invoke(null, f);
+        });
+        String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+        assertTrue(msg.contains("Value must be between -5000000000.0 and 5000000000.0"),
+                "Exception message should mention the allowed range");
+    }
+
+    @Test
+    @DisplayName("generate(f) returns correct hex string when f equals 5e9 (upper boundary)")
+    void test_TC04() throws Exception {
+        // f = 5e9 leads to value = (5e9+5e9)*1e6 = 1e16, hex string length must be 14
+        double f = 5_000_000_000.0;
+        Class<?> clazz = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = clazz.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        assertNotNull(result);
+        assertEquals(14, result.length(), "Result must be 14 hex characters for max value");
+        // We cannot hardcode the exact hex without replicating logic, length check ensures correctness of format
+    }
+
+    @Test
+    @DisplayName("generate(f) returns correct hex string for typical fractional value within range")
+    void test_TC05() throws Exception {
+        // f is a typical fractional within bounds, ensure output is 14-char hex string
+        double f = 123.456789;
+        Class<?> clazz = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = clazz.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        assertNotNull(result);
+        assertEquals(14, result.length(), "Result must be 14 hex characters for fractional value");
+        // Specific content depends on precise rounding; only format and length are guaranteed by spec
+    }
+}

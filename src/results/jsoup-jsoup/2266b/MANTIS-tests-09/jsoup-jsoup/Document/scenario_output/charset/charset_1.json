@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "charset(Charset) with updateMetaCharset=true and xml syntax, existing non-xml XmlDeclaration should be replaced by new xml declaration",
+      "path": "B1→B5→B6→B8",
+      "precondition": "Document shell created, updateMetaCharset=true, outputSettings.syntax=xml, prepend a non-xml XmlDeclaration child",
+      "expectedResult": "First child is a new XmlDeclaration named 'xml' with encoding set to charset.displayName() and version '1.0'",
+      "tags": [
+        "positive",
+        "xml-syntax",
+        "existing-non-xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 replace-nonxml-declaration",
+        "  GIVEN",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration dummy = new XmlDeclaration(\"notxml\", false).attr(\"foo\",\"bar\");",
+        "    doc.prependChild(dummy);",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    Node n = doc.childNodes().get(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    XmlDeclaration xd = (XmlDeclaration) n;",
+        "    assertEquals(\"xml\", xd.name());",
+        "    assertEquals(cs.displayName(), xd.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", xd.attr(\"version\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "charset(Charset) with updateMetaCharset=true and xml syntax, existing xml XmlDeclaration with version should update encoding and reset version to '1.0'",
+      "path": "B1→B5→B6→B7",
+      "precondition": "Document shell created, updateMetaCharset=true, outputSettings.syntax=xml, prepend an xml XmlDeclaration with custom version",
+      "expectedResult": "Existing XmlDeclaration updated: encoding attribute set to charset.displayName() and version reset to '1.0'",
+      "tags": [
+        "positive",
+        "xml-syntax",
+        "existing-xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 update-existing-xml-declaration",
+        "  GIVEN",
+        "    Charset cs = StandardCharsets.UTF_8;",
+        "    Document doc = Document.createShell(\"http://example.com\");",
+        "    doc.updateMetaCharsetElement(true);",
+        "    doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "    XmlDeclaration existing = new XmlDeclaration(\"xml\", false).attr(\"version\",\"2.0\");",
+        "    doc.prependChild(existing);",
+        "  WHEN",
+        "    doc.charset(cs);",
+        "  THEN",
+        "    Node n = doc.childNodes().get(0);",
+        "    assert n instanceof XmlDeclaration;",
+        "    XmlDeclaration xd = (XmlDeclaration) n;",
+        "    assertEquals(\"xml\", xd.name());",
+        "    assertEquals(cs.displayName(), xd.attr(\"encoding\"));",
+        "    assertEquals(\"1.0\", xd.attr(\"version\"));",
+        "END"
+      ]
+    }
+  ]
+}

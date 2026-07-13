@@ -1,0 +1,200 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "search with term not in index should return empty list (branch index.containsKey false)",
+      "path": "B0→B1",
+      "precondition": "BM25InvertedIndex index is empty",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a new BM25InvertedIndex",
+        "WHEN calling search(\"nonexistent\")",
+        "THEN assert returned list size is 0"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "search with term present in index but no documents mapped (branch index.containsKey true, termDocs.size 0)",
+      "path": "B0→B2→B7→B6",
+      "precondition": "BM25InvertedIndex index contains key \"emptyTerm\" mapped to empty map",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN an index with entry \"emptyTerm\"→emptyMap",
+        "WHEN calling search(\"emptyTerm\")",
+        "THEN assert returned list size is 0"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "search skips documents whose Movie is missing (branch movie == null)",
+      "path": "B0→B2→B7→B3→B4→B7→B6",
+      "precondition": "BM25InvertedIndex index contains term→{1→1} but movies map is empty",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "exception-skip",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index term→{1→1} and no movies added",
+        "WHEN calling search(\"term\")",
+        "THEN assert returned list size is 0"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "search returns single result for one matching movie (branch movie != null, loop-1)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with one movie docId=1 containing term once",
+      "expectedResult": "returned list has one SearchResult with docId=1 and relevanceScore equals computeIDF(1)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index built with movie(1,\"A\",\"\",2010,\"term\")",
+        "WHEN calling search(\"term\")",
+        "THEN assert list size==1 and list.get(0).getDocId()==1 and list.get(0).getRelevanceScore()==Math.log((1-1+0.5)/(1+0.5))"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "search returns sorted results for two movies by descending score (loop-2)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with two movies both containing term once",
+      "expectedResult": "returned list size==2 and sorted by descending relevanceScore",
+      "tags": [
+        "branch-true",
+        "loop-2",
+        "ordering",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index built with movie(1,\"A\",\"\",2010,\"term\") and movie(2,\"B\",\"\",2011,\"term\")",
+        "WHEN calling search(\"term\")",
+        "THEN assert list.get(0).getRelevanceScore()>=list.get(1).getRelevanceScore() and both docIds present"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "search scoring accounts for term frequency >1 (loop-1, TF>1)",
+      "path": "B0→B2→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with movie(1) content having term twice",
+      "expectedResult": "returned list size==1 and relevanceScore > computeIDF(1)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "frequency-boundary",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index built with movie(1,\"\",\"\",2012,\"term term other\")",
+        "WHEN calling search(\"term\")",
+        "THEN assert list.size()==1 and list.get(0).getRelevanceScore()>Math.log((1-1+0.5)/(1+0.5))"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "search is case-insensitive: uppercase query matches lowercase index (branch index.containsKey true)",
+      "path": "B0→B2→B7→B6",
+      "precondition": "BM25InvertedIndex with term \"term\" added in lowercase",
+      "expectedResult": "returned list is non-empty as for lowercase query",
+      "tags": [
+        "branch-true",
+        "normalization",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index with movie(1,\"\",\"\",2013,\"Term\")",
+        "WHEN calling search(\"TERM\")",
+        "THEN assert returned list size==1 and docId==1"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "search with null term should throw NullPointerException at toLowerCase",
+      "path": "B0",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "exception",
+        "null-input",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN term=null",
+        "WHEN calling search(term)",
+        "THEN assert throws NullPointerException"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "search with empty string term normalizes to \"\" and returns empty list (boundary empty-term)",
+      "path": "B0→B1",
+      "precondition": "no movies added",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "boundary",
+        "empty-string",
+        "loop-0",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN a new BM25InvertedIndex",
+        "WHEN calling search(\"\")",
+        "THEN assert returned list size is 0"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "search with three matching movies exercises loop with N>2 iterations (loop-3)",
+      "path": "B0→B2→B7→B3→B5→B7→B3→B5→B7→B3→B5→B7→B6",
+      "precondition": "BM25InvertedIndex with three movies each containing term once",
+      "expectedResult": "returned list size==3 and sorted by descending relevanceScore",
+      "tags": [
+        "branch-true",
+        "loop-3",
+        "ordering",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN index with movie(1..3) each content \"term\"",
+        "WHEN calling search(\"term\")",
+        "THEN assert list.size()==3 and list[0].score>=list[1].score>=list[2].score"
+      ]
+    }
+  ]
+}

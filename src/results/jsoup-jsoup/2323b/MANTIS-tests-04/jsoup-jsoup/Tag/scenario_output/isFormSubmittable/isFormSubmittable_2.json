@@ -1,0 +1,56 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "Explicit overload returns same static 'input' instance without clone and formSubmit=true",
+      "path": "B0→B1→B2(true)→B3(return)→isFormSubmittable",
+      "precondition": "none",
+      "expectedResult": "returned Tag == registry instance and isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "identity-path",
+        "first-if-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 explicit-overload uses first branch",
+        "  GIVEN",
+        "    String name = \"input\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag1 = Tag.valueOf(name, ns, settings);",
+        "    Tag tag2 = Tag.valueOf(name, ns, settings);",
+        "  THEN",
+        "    assert tag1 == tag2;",
+        "    assert tag1.isFormSubmittable();"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "valueOf throws IllegalArgumentException when tagName is null",
+      "path": "B0→Validate.notNull(tagName)→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown before isFormSubmittable",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 null-tagName throws",
+        "  GIVEN",
+        "    String name = null;",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(name, ns, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

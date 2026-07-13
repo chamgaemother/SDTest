@@ -1,0 +1,101 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.FormElement;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_1_Test {
+
+    @Test
+    @DisplayName("charset(html syntax, updateMetaCharsetElement false) sets outputSettings charset only without touching head")
+    public void test_TC06() {
+        // GIVEN a simple HTML document shell with default html syntax and meta-update disabled by default
+        Document doc = Document.createShell("http://example.com");
+        // Sanity: updateMetaCharsetElement is false so ensureMetaCharsetElement should be skipped
+        assertFalse(doc.updateMetaCharsetElement(), "precondition: updateMetaCharsetElement should be false");
+
+        // WHEN setting charset to ISO_8859_1
+        doc.charset(StandardCharsets.ISO_8859_1);
+
+        // THEN outputSettings.charset updates
+        assertEquals(StandardCharsets.ISO_8859_1, doc.outputSettings().charset(),
+                "OutputSettings charset should match the given charset");
+        // No <meta charset> should be added because updateMetaCharsetElement is false
+        assertNull(doc.head().selectFirst("meta[charset]"),
+                "No meta[charset] tag expected when updateMetaCharsetElement is false");
+        // No obsolete <meta[name=charset]> to be removed
+        assertTrue(doc.select("meta[name=charset]").isEmpty(),
+                "No meta[name=charset] elements should exist");
+    }
+
+    @Test
+    @DisplayName("charset(xml syntax, existing XmlDeclaration with non-xml name) prepends a new xml declaration and leaves the old one intact")
+    public void test_TC07() {
+        // GIVEN a document shell, switch to XML syntax and enable meta charset updates
+        Document doc = Document.createShell("http://example.com");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(true);
+        // Prepend a non-xml declaration node to hit branch: node instanceof XmlDeclaration && name != "xml"
+        XmlDeclaration oldDecl = new XmlDeclaration("foo", false);
+        oldDecl.attr("encoding", "OLD");
+        doc.prependChild(oldDecl);
+
+        // WHEN calling charset to trigger ensureMetaCharsetElement under XML syntax
+        doc.charset(StandardCharsets.UTF_8);
+
+        // THEN we expect two declarations: first new xml, then the old foo
+        List<Node> nodes = doc.childNodes();
+        assertTrue(nodes.get(0) instanceof XmlDeclaration,
+                "First node should be the newly prepended xml declaration");
+        XmlDeclaration newDecl = (XmlDeclaration) nodes.get(0);
+        assertEquals("UTF-8", newDecl.attr("encoding"),
+                "New xml declaration should have the updated encoding");
+        assertEquals("1.0", newDecl.attr("version"),
+                "New xml declaration should have version reset to '1.0'");
+        assertTrue(nodes.get(1) instanceof XmlDeclaration,
+                "Second node should remain the old non-xml declaration");
+        XmlDeclaration second = (XmlDeclaration) nodes.get(1);
+        assertEquals("foo", second.name(),
+                "Old declaration's name should remain unchanged");
+    }
+
+    @Test
+    @DisplayName("charset(xml syntax, existing XmlDeclaration named 'xml' with version) updates only encoding and resets version to '1.0'")
+    public void test_TC08() {
+        // GIVEN a document shell with XML syntax, meta-update enabled, and an existing xml declaration with version info
+        Document doc = Document.createShell("http://example.com");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        doc.updateMetaCharsetElement(true);
+        XmlDeclaration existingDecl = new XmlDeclaration("xml", false);
+        existingDecl.attr("version", "2.0");
+        existingDecl.attr("encoding", "OLD");
+        doc.prependChild(existingDecl);
+
+        // WHEN setting a new charset US-ASCII
+        doc.charset(Charset.forName("US-ASCII"));
+
+        // THEN the existing XmlDeclaration should be updated, not replaced:
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration,
+                "First node after charset should still be an XmlDeclaration");
+        XmlDeclaration decl = (XmlDeclaration) first;
+        assertEquals("US-ASCII", decl.attr("encoding"),
+                "Existing declaration encoding should be updated to new charset");
+        assertEquals("1.0", decl.attr("version"),
+                "Existing declaration version should be reset to '1.0'");
+    }
+
+}

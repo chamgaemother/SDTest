@@ -1,0 +1,131 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() returns DotenvImpl instance without systemProperties when systemProperties=false and empty .env file (loop-0)",
+      "path": "B0→B2",
+      "precondition": "Create a temporary directory with an empty .env file at `<tempDir>/.env`; no mocking required",
+      "expectedResult": "returned DotenvImpl.get(\"ANY_KEY\") == null",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load no-system-properties empty-file",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"<tempDir>\");",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"ANY_KEY\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() returns DotenvImpl and sets no system properties when systemProperties=true but .env is empty (loop-0, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary directory with an empty .env file; no mocking required",
+      "expectedResult": "returned DotenvImpl.get(\"ANY_KEY\") == null AND no new system property \"ANY_KEY\"",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load system-properties empty-file",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"<tempDir>\").systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"ANY_KEY\") == null;",
+        "    assert System.getProperty(\"ANY_KEY\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() returns DotenvImpl and sets one system property when systemProperties=true and .env has one entry (loop-1, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary directory with .env containing \"FOO=bar\"; no mocking required",
+      "expectedResult": "returned DotenvImpl.get(\"FOO\") == \"bar\" AND System.getProperty(\"FOO\") == \"bar\"",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load system-properties one-entry",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"<tempDir>\").systemProperties();",
+        "    writeFile(\"<tempDir>/.env\", \"FOO=bar\");",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"FOO\").equals(\"bar\");",
+        "    assert System.getProperty(\"FOO\").equals(\"bar\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() returns DotenvImpl with multiple entries and sets each as system property when systemProperties=true (loop-N, branch-true)",
+      "path": "B0→B1→B2",
+      "precondition": "Create a temporary directory with .env containing \"A=1\" and \"B=2\" on separate lines; no mocking required",
+      "expectedResult": "returned DotenvImpl.get(\"A\") == \"1\", get(\"B\") == \"2\" AND System.getProperty(\"A\") == \"1\", System.getProperty(\"B\") == \"2\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load system-properties multiple-entries",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"<tempDir>\").systemProperties();",
+        "    writeFile(\"<tempDir>/.env\", \"A=1\\nB=2\");",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.get(\"A\").equals(\"1\");",
+        "    assert dotenv.get(\"B\").equals(\"2\");",
+        "    assert System.getProperty(\"A\").equals(\"1\");",
+        "    assert System.getProperty(\"B\").equals(\"2\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env file is missing and throwIfMissing=true",
+      "path": "B0",
+      "precondition": "Ensure no .env file exists in a unique temporary directory; no mocking required",
+      "expectedResult": "throws DotenvException",
+      "tags": [
+        "exception",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load missing-file throws",
+        "  GIVEN",
+        "    DotenvBuilder builder = Dotenv.configure().directory(\"<emptyDir>\");",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws DotenvException;",
+        "END"
+      ]
+    }
+  ]
+}

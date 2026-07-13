@@ -1,0 +1,123 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "String overload with non-null context and non-empty fragment returns nodes list (branch context!=null, loop-N)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(reader,ctx,uri,parser) returns List.of(nodeA,nodeB); context Element ctx != null; no mocks beyond fakeTreeBuilder stub",
+      "expectedResult": "returns List containing exactly [nodeA,nodeB]",
+      "tags": [
+        "overload:String",
+        "branch-context-nonNull",
+        "loop-N",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser using fakeTreeBuilder that returns two nodes; fragment=\"<p>A</p><div>B</div>\"; context=Element.createShell(\"http://x\"); baseUri=\"http://x\"",
+        "WHEN result = parser.parseFragmentInput(fragment, context, baseUri)",
+        "THEN assert result.size() == 2 && result.get(0)==nodeA && result.get(1)==nodeB"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "String overload with null context and empty fragment returns empty list (branch context==null, loop-0)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment(reader,null,uri,parser) returns emptyList; context=null",
+      "expectedResult": "returns empty List",
+      "tags": [
+        "overload:String",
+        "branch-context-null",
+        "loop-0",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser with fakeTreeBuilder returning empty list; fragment=\"\"; context=null; baseUri=\"http://x\"",
+        "WHEN result = parser.parseFragmentInput(fragment, null, baseUri)",
+        "THEN assert result.isEmpty()"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "Reader overload throws UncheckedIOException when Reader.read() IO error occurs (exception path)",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder); Reader faultyReader throws IOException on read; no other mocks",
+      "expectedResult": "throws UncheckedIOException; no nodes returned",
+      "tags": [
+        "overload:Reader",
+        "exception",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser with default treeBuilder; fragmentReader throws IOException on any read; baseUri=\"http://x\"",
+        "WHEN call parser.parseFragmentInput(faultyReader, null, baseUri)",
+        "THEN throws java.io.UncheckedIOException"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "Reader overload with non-null context returns single node list (branch context!=null, loop-1)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment returns List.of(nodeSingle); context Element exists",
+      "expectedResult": "returns List containing exactly [nodeSingle]",
+      "tags": [
+        "overload:Reader",
+        "branch-context-nonNull",
+        "loop-1",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser using fakeTreeBuilder stub returning one node; fragmentReader=StringReader(\"<span>X</span>\"); context=Element.createShell(\"u\"); baseUri=\"u\"",
+        "WHEN result = parser.parseFragmentInput(fragmentReader, context, baseUri)",
+        "THEN assert result.size()==1 && result.get(0)==nodeSingle"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "String overload propagates UncheckedIOException from Reader overload (exception propagation path)",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder); fakeTreeBuilder.parseFragment not reached because StringReader(fragment) uses faultyReader throwing IOException; fragmentReader wraps IOException",
+      "expectedResult": "throws java.io.UncheckedIOException",
+      "tags": [
+        "overload:String",
+        "exception",
+        "io-propagation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser with default treeBuilder; fragmentReader=Reader that throws IOException on read; fragment string unused; baseUri=\"u\"",
+        "WHEN call parser.parseFragmentInput((String)null, null, baseUri)",
+        "THEN throws java.io.UncheckedIOException"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "Reader overload with different baseUri and non-null context, returning multiple nodes to test varied baseUri handling",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = new Parser(fakeTreeBuilder) where fakeTreeBuilder.parseFragment asserts passed baseUri and returns List.of(node1,node2,node3); context=Element.createShell(\"http://y\")",
+      "expectedResult": "returns List containing exactly [node1,node2,node3]",
+      "tags": [
+        "overload:Reader",
+        "branch-context-nonNull",
+        "loop-N",
+        "baseUri-varied"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parser with fakeTreeBuilder checking baseUri==\"http://y\" and returning three nodes; fragmentReader=StringReader(\"<a/> <b/> <c/>\"); context=Element.createShell(\"http://y\"); baseUri=\"http://y\"",
+        "WHEN result = parser.parseFragmentInput(fragmentReader, context, baseUri)",
+        "THEN assert result.size()==3 && result.equals(List.of(node1,node2,node3))"
+      ]
+    }
+  ]
+}

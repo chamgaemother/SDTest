@@ -1,0 +1,139 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseFragmentInput(String, null, baseUri) on empty fragment returns empty list (loop-0)",
+      "path": "B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is a List<Node> of size 0",
+      "tags": [
+        "overload:String,Element,null",
+        "branch-true context==null",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parse empty fragment with null context",
+        "  GIVEN",
+        "    String fragment = \"\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseFragmentInput(String, null, baseUri) on single element returns one node (loop-1)",
+      "path": "B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is a List<Node> of size 1 and instance of Element for first node",
+      "tags": [
+        "overload:String,Element,null",
+        "branch-true context==null",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parse single element fragment with null context",
+        "  GIVEN",
+        "    String fragment = \"<p></p>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0) instanceof Element;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseFragmentInput(String, null, baseUri) on multiple siblings returns two nodes (loop-N)",
+      "path": "B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is a List<Node> of size 2 with Element nodes for both",
+      "tags": [
+        "overload:String,Element,null",
+        "branch-true context==null",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parse two-sibling fragment with null context",
+        "  GIVEN",
+        "    String fragment = \"<p></p><div></div>\";",
+        "    Element context = null;",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 2;",
+        "    assert nodes.get(0) instanceof Element;",
+        "    assert nodes.get(1) instanceof Element;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseFragmentInput(Reader, non-null context, baseUri) returns nodes without mutating context (loop-1)",
+      "path": "B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is a List<Node> of size 1; context children remains size 0",
+      "tags": [
+        "overload:Reader,Element,baseUri",
+        "branch-false context!=null",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parse with Reader and non-null context",
+        "  GIVEN",
+        "    Reader fragmentReader = new StringReader(\"<span>hi</span>\");",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = new Parser(new HtmlTreeBuilder()).parseFragmentInput(fragmentReader, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert context.childNodeSize() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseFragmentInput(Reader, context, baseUri) propagates UncheckedIOException on reader error",
+      "path": "B1→B2(exception)→B3",
+      "precondition": "Reader stubbed to throw IOException on read; why mocking: simulate I/O error",
+      "expectedResult": "throws UncheckedIOException; context not mutated",
+      "tags": [
+        "overload:Reader,Element,baseUri",
+        "exception",
+        "branch-false context!=null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parse propagates I/O exception",
+        "  GIVEN",
+        "    Reader badReader = stubReaderThrowsIOException();",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseFragmentInput(badReader, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    }
+  ]
+}

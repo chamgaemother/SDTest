@@ -1,0 +1,133 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class WordWrap_wrap_Test {
+
+    @Test
+    @DisplayName("TC01_O1: wrap() returns empty string when input is empty (no loop iterations, end-of-stream branch)")
+    void test_TC01_O1() {
+        // GIVEN an empty CharSequence => reader.read() immediately returns -1 (no loop iterations)
+        Builder b = WordWrap.from("");
+        // WHEN
+        String result = b.wrap();
+        // THEN expect empty string as no content was provided
+        assertEquals("", result);
+    }
+
+    @Test
+    @DisplayName("TC02_O1: wrap() with text shorter than maxWidth returns original text (no wrapping branch)")
+    void test_TC02_O1() {
+        // GIVEN text length 5, default maxWidth=80 (tooLong never true)
+        Builder b = WordWrap.from("hello");
+        // WHEN
+        String result = b.wrap();
+        // THEN no wrapping should occur, original text returned
+        assertEquals("hello", result);
+    }
+
+    @Test
+    @DisplayName("TC03_O1: wrap() with embedded newline preserves line break and resets buffers (newline branch true)")
+    void test_TC03_O1() {
+        // GIVEN text containing line-feed so ch=='\\n' branch exercised
+        Builder b = WordWrap.from("a\nb");
+        // WHEN
+        String result = b.wrap();
+        // THEN the newline should be preserved between 'a' and 'b'
+        assertEquals("a\nb", result);
+    }
+
+    @Test
+    @DisplayName("TC04_O1: wrap() breaks long word with hyphens when breakWords=true and insertHyphens=true (tooLong→writeBrokenWord hyphen branch)")
+    void test_TC04_O1() {
+        // GIVEN a word of length 6, set maxWidth=4 so initial part "abcd" fits, then hyphens inserted
+        Builder b = WordWrap.from("abcdef").maxWidth(4);
+        // WHEN
+        String result = b.wrap();
+        // THEN expect break with hyphen at width limit then remainder
+        assertEquals("abcd-\nef", result);
+    }
+
+    @Test
+    @DisplayName("TC05_O1: wrap() breaks long word without hyphens when insertHyphens=false (broken-word-no-hyphen branch)")
+    void test_TC05_O1() {
+        // GIVEN word length 6, maxWidth=3, disable hyphens => breakWords still true by default
+        Builder b = WordWrap.from("abcdef").maxWidth(3).insertHyphens(false);
+        // WHEN
+        String result = b.wrap();
+        // THEN expect split without hyphen
+        assertEquals("abc\ndef", result);
+    }
+
+    @Test
+    @DisplayName("TC06_O1: wrap() defers breaking when breakWords=false (sets broken flag without hyphen)")
+    void test_TC06_O1() {
+        // GIVEN word longer than maxWidth but breakWords=false => should not break, entire word remains
+        Builder b = WordWrap.from("abcdef").maxWidth(4).breakWords(false);
+        // WHEN
+        String result = b.wrap();
+        // THEN original text returned (no break)
+        assertEquals("abcdef", result);
+    }
+
+    @Test
+    @DisplayName("TC07_O1: wrapToList() returns list of lines split on newlines and breaks")
+    void test_TC07_O1() {
+        // GIVEN text "one two" shorter than default maxWidth => single line
+        Builder b = WordWrap.from("one two");
+        // WHEN
+        List<String> lines = b.wrapToList();
+        // THEN expect list containing the one line
+        assertEquals(Arrays.asList("one two"), lines);
+    }
+
+    @Test
+    @DisplayName("TC08_O2: wrap(File,Charset) writes wrapped content to file and reads back (successful file write branch)")
+    void test_TC08_O2() throws IOException {
+        // GIVEN a temp file and text "abc"
+        File f = Files.createTempFile("wwtest", ".txt").toFile();
+        f.deleteOnExit();
+        Builder b = WordWrap.from("abc");
+        // WHEN write to file
+        b.wrap(f, StandardCharsets.UTF_8);
+        // THEN file content matches original text
+        String content = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+        assertEquals("abc", content);
+    }
+
+    @Test
+    @DisplayName("TC09_O2: wrap(File,Charset) throws IORuntimeException when file not found (FileNotFoundException branch)")
+    void test_TC09_O2() {
+        // GIVEN a File path that cannot be created
+        File f = new File("/no/such/file/that/does/not/exist.txt");
+        Builder b = WordWrap.from("text");
+        // WHEN/THEN expect IORuntimeException wrapping FileNotFoundException
+        assertThrows(IORuntimeException.class, () -> b.wrap(f, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("TC10_O2: wrapUtf8(String) writes to named file with UTF-8 encoding (overload chain wrapUtf8→wrap)")
+    void test_TC10_O2() throws IOException {
+        // GIVEN a temporary filename and text "xyz"
+        File temp = Files.createTempFile("wwtest", ".txt").toFile();
+        temp.deleteOnExit();
+        String filename = temp.getAbsolutePath();
+        Builder b = WordWrap.from("xyz");
+        // WHEN calling wrapUtf8(String)
+        b.wrapUtf8(filename);
+        // THEN the named file contains the exact input text
+        String content = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);
+        assertEquals("xyz", content);
+    }
+}

@@ -1,0 +1,203 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    // Helper visitor to track head and tail calls
+    static class TrackVisitor implements NodeVisitor {
+        final List<String> headCalls = new ArrayList<>();
+        final List<String> tailCalls = new ArrayList<>();
+        @Override
+        public void head(Node node, int depth) {
+            headCalls.add(node.nodeName() + ":" + depth);
+        }
+        @Override
+        public void tail(Node node, int depth) {
+            tailCalls.add(node.nodeName() + ":" + depth);
+        }
+    }
+
+    @Test
+    @DisplayName("visitor is null triggers Validate.notNull(visitor) exception")
+    public void test_TC01_O1() {
+        // visitor null should fail at notNull(visitor)
+        NodeVisitor visitor = null;
+        Element root = new Element("div");
+        assertThrows(IllegalArgumentException.class,
+                () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("root is null triggers Validate.notNull(root) exception")
+    public void test_TC02_O1() {
+        // root null should fail at notNull(root)
+        NodeVisitor visitor = (n,d) -> {};
+        Node root = null;
+        assertThrows(IllegalArgumentException.class,
+                () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("single node with no children invokes head and tail exactly once each")
+    public void test_TC03_O1() {
+        // single node has no children => descend branch B11->B12, then tail and exit
+        Element root = new Element("p");
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        assertAll(
+            () -> assertEquals(1, visitor.headCalls.size()),
+            () -> assertEquals("p:0", visitor.headCalls.get(0)),
+            () -> assertEquals(1, visitor.tailCalls.size()),
+            () -> assertEquals("p:0", visitor.tailCalls.get(0))
+        );
+    }
+
+    @Test
+    @DisplayName("root with one child descends then ascends triggering depth=1 head/tail")
+    public void test_TC04_O1() {
+        // one child => B11->B12 descend, B23 loop, then child tail and root tail
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        List<String> expectedHeads = List.of("div:0", "span:1");
+        List<String> expectedTails = List.of("span:1", "div:0");
+        assertAll(
+            () -> assertEquals(expectedHeads, visitor.headCalls),
+            () -> assertEquals(expectedTails, visitor.tailCalls)
+        );
+    }
+
+    @Test
+    @DisplayName("root with two siblings tests nextSibling path (origSize unchanged) and depth decrement")
+    public void test_TC05_O1() {
+        // two children => visit sibling path B7->B8 and depth resets correctly
+        Element root = new Element("ul");
+        Element li1 = new Element("li");
+        Element li2 = new Element("li");
+        root.appendChild(li1);
+        root.appendChild(li2);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        // Expected visits: head div(ul):0, head li1:1, tail li1:1, head li2:1, tail li2:1, tail ul:0
+        // Total headCalls 3 (ul,li1,li2) and tailCalls 3
+        assertAll(
+            () -> assertEquals(3, visitor.headCalls.size()),
+            () -> assertEquals(3, visitor.tailCalls.size())
+        );
+    }
+
+    @Test
+    @DisplayName("visitor.head removes node triggers removal branch and skips tail for removed")
+    public void test_TC06_O1() {
+        // removal in head => parent.childNodeSize decreases => removal path B6->B11 skip tail
+        Element root = new Element("div");
+        Element child = new Element("b");
+        root.appendChild(child);
+        TrackVisitor visitor = new TrackVisitor() {
+            @Override public void head(Node node, int depth) {
+                super.head(node, depth);
+                if (node == child) node.remove();
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertNull(child.parentNode(), "Child should be removed from its parent");
+        // head should have recorded the removal node
+        assertTrue(visitor.headCalls.contains("b:1"));
+        // tail should not contain the removed child
+        assertFalse(visitor.tailCalls.contains("b:1"));
+    }
+
+    @Test
+    @DisplayName("visitor.head replaces node triggers replacement branch and continues traversal")
+    public void test_TC07_O1() {
+        // replacement in head => origSize unchanged => replacement path B7->B8
+        Element root = new Element("s");
+        Element child = new Element("u");
+        root.appendChild(child);
+        NodeVisitor visitor = (node, depth) -> {
+            if (node == child) child.replaceWith(new Element("i"));
+        };
+        NodeTraversor.traverse(visitor, root);
+        // root should now have 'i' instead of 'u'
+        assertEquals("i", root.childNode(0).nodeName());
+    }
+
+    @Test
+    @DisplayName("elements is null triggers Validate.notNull(elements) exception in overload Elements")
+    public void test_TC08_O2() {
+        // elements null should throw on notNull(elements)
+        NodeVisitor visitor = (n,d) -> {};
+        Elements elements = null;
+        assertThrows(IllegalArgumentException.class,
+                () -> NodeTraversor.traverse(visitor, elements));
+    }
+
+    @Test
+    @DisplayName("elements empty yields zero iterations, no calls to visitor.head")
+    public void test_TC09_O2() {
+        // empty elements => loop zero times B1->B3
+        Elements elements = new Elements();
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, elements);
+        assertTrue(visitor.headCalls.isEmpty());
+        assertTrue(visitor.tailCalls.isEmpty());
+    }
+
+    @Test
+    @DisplayName("elements with one element delegates to Node overload once")
+    public void test_TC10_O2() {
+        // one element => B1->B2->recursive B0->...->B3 exit
+        Element el = new Element("x");
+        Elements elements = new Elements(el);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, elements);
+        assertEquals(List.of("x:0"), visitor.headCalls);
+        assertEquals(List.of("x:0"), visitor.tailCalls);
+    }
+
+    @Test
+    @DisplayName("elements with multiple elements invokes Node overload for each in order")
+    public void test_TC11_O2() {
+        // three elements => three calls to overload
+        Elements elements = new Elements(
+                new Element("a"),
+                new Element("b"),
+                new Element("c")
+        );
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, elements);
+        assertEquals(3, visitor.headCalls.size());
+        assertEquals(3, visitor.tailCalls.size());
+        assertEquals(List.of("a:0","b:0","c:0"), visitor.headCalls);
+        assertEquals(List.of("a:0","b:0","c:0"), visitor.tailCalls);
+    }
+
+    @Test
+    @DisplayName("deep nested tree triggers multiple ascend and descend steps across depth>1")
+    public void test_TC12_O1() {
+        // depth 2 tree => paths through B12 descend twice then ascend
+        Element root = new Element("r");
+        Element c1 = new Element("c");
+        Element c2 = new Element("c2");
+        root.appendChild(c1);
+        c1.appendChild(c2);
+        TrackVisitor visitor = new TrackVisitor();
+        NodeTraversor.traverse(visitor, root);
+        List<String> expHead = List.of("r:0","c:1","c2:2");
+        List<String> expTail = List.of("c2:2","c:1","r:0");
+        assertEquals(expHead, visitor.headCalls);
+        assertEquals(expTail, visitor.tailCalls);
+    }
+}

@@ -1,0 +1,134 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser parser) uses xmlParser on a real file",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "temp HTML file exists at Path with content '<h1>Hi</h1>'",
+      "expectedResult": "Document contains 'Hi' in <h1>",
+      "tags": [
+        "positive",
+        "overload",
+        "path-variant"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse Path+charset+baseUri+parser",
+        "  GIVEN",
+        "    Path p = createTempFile(\".html\"); write \"<h1>Hi</h1>\" using UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"http://example.com/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, base, parser);",
+        "  THEN",
+        "    assert doc.select(\"h1\").first().text().equals(\"Hi\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(Path path) with valid gzipped file supports .gz suffix",
+      "path": "B0→B1→B6→B7→B8",
+      "precondition": "temp .gz file containing '<p>GZ</p>' exists at Path",
+      "expectedResult": "Document contains 'GZ' in <p>",
+      "tags": [
+        "positive",
+        "boundary",
+        "gzip-handling"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse gzipped Path default charset",
+        "  GIVEN",
+        "    Path gz = createTempFile(\"test.gz\"); write gzipped bytes for '<p>GZ</p>' to gz;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(gz);",
+        "  THEN",
+        "    assert doc.select(\"p\").first().text().equals(\"GZ\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(InputStream in, null charsetName, String baseUri) auto-detects charset when charsetName is null",
+      "path": "B0→B9→B10→B11",
+      "precondition": "InputStream over '<div>Auto</div>' in UTF-8",
+      "expectedResult": "Document contains 'Auto' in <div>",
+      "tags": [
+        "positive",
+        "null-charset",
+        "stream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse stream with null charset",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<div>Auto</div>\".getBytes(UTF_8));",
+        "    String charset = null;",
+        "    String base = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, base);",
+        "  THEN",
+        "    assert doc.select(\"div\").first().text().equals(\"Auto\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(String html, Parser parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B1→B12",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-parser",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse html with null parser",
+        "  GIVEN",
+        "    String html = \"<p>X</p>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(InputStream in, String charsetName, String baseUri, Parser parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B9→B13",
+      "precondition": "InputStream over any HTML",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "stream",
+        "null-parser",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse stream with null parser",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<span>Y</span>\".getBytes(UTF_8));",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(in, charset, base, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

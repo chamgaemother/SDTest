@@ -1,0 +1,239 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty expression returns an empty token list (no loop iterations, no braces/arrays)",
+      "path": "B0→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true; no mocks",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "loop-0",
+        "normal-return",
+        "branch-true",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-expression",
+        "  GIVEN",
+        "    String expr = \"\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single number literal yields one token and returns normally (one iteration, implicit multiplication not triggered)",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true; no mocks",
+      "expectedResult": "returned list has one NUMBER_LITERAL token with text \"123\"",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 single-number-literal",
+        "  GIVEN",
+        "    String expr = \"123\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.size() == 1; assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL; assert tokens.get(0).getToken().equals(\"123\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Implicit multiplication between number and variable when allowed inserts '*'",
+      "path": "B0→B1→B2→B3→B4→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true; FunctionDictionary returns variable token; OperatorDictionary contains '*' infix operator; no mocks",
+      "expectedResult": "returned tokens sequence is [NUMBER_LITERAL \"2\", INFIX_OPERATOR \"*\", VARIABLE_OR_CONSTANT \"x\"]",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "branch-false",
+        "implicit-multiplication",
+        "normal-return"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 implicit-mult-allowed",
+        "  GIVEN",
+        "    String expr = \"2x\"; ExpressionConfiguration config = stubConfigWithImplicitMult(true);",
+        "  WHEN",
+        "    List<Token> tokens = new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    assert tokens.get(0).getToken().equals(\"2\"); assert tokens.get(1).getToken().equals(\"*\"); assert tokens.get(2).getToken().equals(\"x\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Implicit multiplication disabled causes ParseException “Missing operator” after number-variable sequence",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=false, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Missing operator\"",
+      "tags": [
+        "exception",
+        "branch-true",
+        "implicit-multiplication-disabled"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 implicit-mult-disabled",
+        "  GIVEN",
+        "    String expr = \"2x\"; ExpressionConfiguration config = stubConfigWithImplicitMult(false);",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Missing operator\";"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Unbalanced open brace throws ParseException \"Closing brace not found\"",
+      "path": "B0→B1→B7→B8",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Closing brace not found\"",
+      "tags": [
+        "exception",
+        "branch-false",
+        "branch-true",
+        "brace-unbalanced"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 unbalanced-brace",
+        "  GIVEN",
+        "    String expr = \"(1+2\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Closing brace not found\";"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Unbalanced open array throws ParseException \"Closing array not found\"",
+      "path": "B0→B1→B7→B9→B10",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Closing array not found\"",
+      "tags": [
+        "exception",
+        "branch-false",
+        "branch-false",
+        "array-unbalanced"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 unbalanced-array",
+        "  GIVEN",
+        "    String expr = \"[1,2\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Closing array not found\";"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Unexpected closing brace at start throws ParseException \"Unexpected closing brace\"",
+      "path": "B0",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Unexpected closing brace\"",
+      "tags": [
+        "exception",
+        "getNextToken",
+        "closing-brace"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 unexpected-closing-brace",
+        "  GIVEN",
+        "    String expr = \")\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing brace\";"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Unexpected closing array at start throws ParseException \"Array close not allowed here\" or \"Unexpected closing array\"",
+      "path": "B0",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException of type ParseException",
+      "tags": [
+        "exception",
+        "getNextToken",
+        "closing-array"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 unexpected-closing-array",
+        "  GIVEN",
+        "    String expr = \"]\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "Structure separator at start throws ParseException \"Structure separator not allowed here\"",
+      "path": "B0",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true",
+      "expectedResult": "throws ParseException with message \"Structure separator not allowed here\"",
+      "tags": [
+        "exception",
+        "parseStructureSeparator"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 misplaced-structure-separator",
+        "  GIVEN",
+        "    String expr = \".a\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Structure separator not allowed here\";"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Infix operator followed by another infix operator throws ParseException \"Unexpected token after infix operator\"",
+      "path": "B0→B1→B2→B6→B1→B2→B6",
+      "precondition": "ExpressionConfiguration stub with implicitMultiplicationAllowed=true, arraysAllowed=true, structuresAllowed=true; OperatorDictionary contains '+' and '*' infix operators",
+      "expectedResult": "throws ParseException with message \"Unexpected token after infix operator\"",
+      "tags": [
+        "exception",
+        "invalid-after-infix",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 invalid-after-infix",
+        "  GIVEN",
+        "    String expr = \"1+*\"; ExpressionConfiguration config = stubConfig();",
+        "  WHEN",
+        "    call new Tokenizer(expr, config).parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected token after infix operator\";"
+      ]
+    }
+  ]
+}

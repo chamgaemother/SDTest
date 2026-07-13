@@ -1,0 +1,107 @@
+{
+  "method": "parseAndAddToColumn",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when input string is null (aString == null branch)",
+      "path": "B1→B2→B3(true)→B4→B5",
+      "precondition": "Use a simple stub of DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubDfColumn.lastAdded == null",
+      "tags": [
+        "branch-true",
+        "exception-false",
+        "null-input",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN stubDfColumn = new StubDfColumn(); DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", null);",
+        "WHEN col.parseAndAddToColumn(null, stubDfColumn);",
+        "THEN assert stubDfColumn.lastAdded == null;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() == true branch)",
+      "path": "B1→B2→B3(false)→B6→B7(true)→B4→B5",
+      "precondition": "Use a simple stub of DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubDfColumn.lastAdded == null",
+      "tags": [
+        "branch-false",
+        "branch-true",
+        "empty-string",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN stubDfColumn = new StubDfColumn(); DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", null);",
+        "WHEN col.parseAndAddToColumn(\"   \", stubDfColumn);",
+        "THEN assert stubDfColumn.lastAdded == null;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn parses valid date string after trim (trimmed.isEmpty() == false, parse succeeds)",
+      "path": "B1→B2→B3(false)→B6→B7(false)→B8→B4→B5",
+      "precondition": "Use a simple stub of DfColumn that records added objects; no mocking framework needed",
+      "expectedResult": "stubDfColumn.lastAdded.equals(LocalDate.of(2023,12,5))",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "valid-date",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN stubDfColumn = new StubDfColumn(); DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", null);",
+        "WHEN col.parseAndAddToColumn(\" 2023-12-5 \", stubDfColumn);",
+        "THEN assert stubDfColumn.lastAdded.equals(LocalDate.of(2023,12,5));"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn throws DateTimeParseException for malformed date (parse error in DateTimeFormatter)",
+      "path": "B1→B2→B3(false)→B6→B7(false)→B8(exception)",
+      "precondition": "Use a simple stub of DfColumn; exception arises before addObject; no mocking required",
+      "expectedResult": "throws java.time.format.DateTimeParseException; stubDfColumn.addCount == 0",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "exception",
+        "invalid-date",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN stubDfColumn = new StubDfColumn(); DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", null);",
+        "WHEN calling col.parseAndAddToColumn(\"2023-02-29\", stubDfColumn);",
+        "THEN expect DateTimeParseException and assert stubDfColumn.addCount == 0;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn parses with custom pattern (pattern=\"d/MM/uuuu\") and adds correct LocalDate",
+      "path": "B1→B2→B3(false)→B6→B7(false)→B8→B4→B5",
+      "precondition": "Use a simple stub of DfColumn that records added objects; custom pattern must be supported by DateTimeFormatter",
+      "expectedResult": "stubDfColumn.lastAdded.equals(LocalDate.of(2021,3,7))",
+      "tags": [
+        "branch-false",
+        "branch-false",
+        "valid-date",
+        "custom-pattern",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN stubDfColumn = new StubDfColumn(); DateSchemaColumn col = new DateSchemaColumn(schema, \"d\", \"d/MM/uuuu\");",
+        "WHEN col.parseAndAddToColumn(\"7/03/2021\", stubDfColumn);",
+        "THEN assert stubDfColumn.lastAdded.equals(LocalDate.of(2021,3,7));"
+      ]
+    }
+  ]
+}

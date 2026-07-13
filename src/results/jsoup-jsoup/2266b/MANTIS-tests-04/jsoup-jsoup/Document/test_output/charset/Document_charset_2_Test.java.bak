@@ -1,0 +1,71 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.helper.Validate;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("TC11: charset(html, updateMetaCharset=true, meta[charset] absent, obsolete meta[name=charset] present) appends new meta[charset] and removes obsolete")
+    public void test_TC11() {
+        // GIVEN: a new shell document with only an obsolete <meta name="charset">
+        Document doc = Document.createShell("http://example.com");
+        // Enable meta charset updates
+        doc.updateMetaCharsetElement(true);
+        // Append obsolete meta[name=charset]; this ensures no meta[charset] exists yet
+        doc.head().appendElement("meta").attr("name", "charset");
+
+        // Precondition comment: head contains <meta name="charset">, no <meta charset>
+
+        // WHEN: setting charset to ISO-8859-5
+        doc.charset(Charset.forName("ISO-8859-5"));
+
+        // THEN: new <meta charset="ISO-8859-5"> is added
+        Elements newMetaCharset = doc.select("meta[charset]");
+        assertEquals(1, newMetaCharset.size(), "Expected exactly one meta[charset] element");
+        assertEquals("ISO-8859-5", newMetaCharset.first().attr("charset"),
+                "The new meta[charset] must have the specified charset");
+        // And obsolete <meta name=charset> removed
+        Elements obsolete = doc.select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "Obsolete meta[name=charset] should have been removed");
+        // Also outputSettings charset should reflect the change
+        assertEquals(Charset.forName("ISO-8859-5"), doc.charset(),
+                "Document.charset() should return the newly set charset");
+    }
+
+    @Test
+    @DisplayName("TC12: charset(xml, updateMetaCharset=true, first child is XmlDeclaration with non-xml name) prepends new xml declaration")
+    public void test_TC12() {
+        // GIVEN: a new document, switch to XML syntax and enable update flag
+        Document doc = new Document("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(Document.OutputSettings.Syntax.xml);
+        // Create a wrong-named XML declaration and prepend it
+        XmlDeclaration wrong = new XmlDeclaration("notxml", false);
+        doc.prependChild(wrong);
+        // At this point, first child is an XmlDeclaration named "notxml"
+
+        // WHEN: setting charset to UTF-32
+        doc.charset(Charset.forName("UTF-32"));
+
+        // THEN: a new XmlDeclaration named "xml" is prepended before the wrong one
+        assertFalse(doc.childNodes().isEmpty(), "Document must have child nodes after charset()");
+        Node firstNode = doc.childNodes().get(0);
+        assertTrue(firstNode instanceof XmlDeclaration, "First child must be an XmlDeclaration");
+        XmlDeclaration newDecl = (XmlDeclaration) firstNode;
+        assertEquals("xml", newDecl.name(), "New declaration must be named 'xml'");
+        assertEquals("UTF-32", newDecl.attr("encoding"), "New declaration encoding must match");
+        assertEquals("1.0", newDecl.attr("version"), "New declaration version must be '1.0'");
+        // Original wrong declaration should now be second
+        assertSame(wrong, doc.childNodes().get(1),
+                "Original XmlDeclaration must be pushed to second position");
+    }
+}

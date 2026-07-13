@@ -1,0 +1,124 @@
+package org.jsoup.select;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class NodeTraversor_traverse_1_Test {
+
+    @Test
+    @DisplayName("TC02: traverse throws IllegalArgumentException when root is null")
+    public void test_TC02() {
+        // GIVEN a valid visitor and a null root
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {}
+            public void tail(Node node, int depth) {}
+        };
+        // WHEN / THEN invalid null root should trigger Validate.notNull -> IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> {
+            NodeTraversor.traverse(visitor, (org.jsoup.nodes.Node) null);
+        });
+    }
+
+    @Test
+    @DisplayName("TC06: removal in head triggers removal branch and skips tail for removed node")
+    public void test_TC06() {
+        // GIVEN a root Element with one TextNode child
+        Element root = new Element("div");
+        TextNode child = new TextNode("x");
+        root.appendChild(child);
+        // Record calls in order
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                // On head of child at depth 1, remove it to trigger removal branch origSize != childNodeSize
+                calls.add("head(" + node + "," + depth + ")");
+                if (node instanceof TextNode && depth == 1) {
+                    // removal happens here
+                    node.remove();
+                }
+            }
+            public void tail(Node node, int depth) {
+                calls.add("tail(" + node + "," + depth + ")");
+            }
+        };
+        // WHEN
+        NodeTraversor.traverse(visitor, root);
+        // THEN the sequence should be head(div,0), head(x,1), then tail(div,0), and no tail for x
+        List<String> expected = List.of(
+            "head(" + root + ",0)",
+            "head(" + child + ",1)",
+            "tail(" + root + ",0)"
+        );
+        assertEquals(expected, calls);
+    }
+
+    @Test
+    @DisplayName("TC09: traverse(visitor,Elements) with single Element delegates to node overload once")
+    public void test_TC09() {
+        // GIVEN one Element that has a single TextNode child
+        TextNode text = new TextNode("t");
+        Element el = new Element("div");
+        el.appendChild(text);
+        Elements els = new Elements(el);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                if (node instanceof TextNode && depth == 0) {
+                    calls.add("head(" + ((TextNode)node).text() + "," + depth + ")");
+                }
+            }
+            public void tail(Node node, int depth) {
+                if (node instanceof TextNode && depth == 0) {
+                    calls.add("tail(" + ((TextNode)node).text() + "," + depth + ")");
+                }
+            }
+        };
+        // WHEN
+        NodeTraversor.traverse(visitor, (org.jsoup.select.Elements) els);
+        // THEN one head and one tail call for the TextNode at depth 0
+        List<String> expected = List.of("head(t,0)", "tail(t,0)");
+        assertEquals(expected, calls);
+    }
+
+    @Test
+    @DisplayName("TC10: traverse(visitor,Elements) with multiple Elements iterates through all before returning")
+    public void test_TC10() {
+        // GIVEN two Elements each with one TextNode child
+        TextNode a = new TextNode("a");
+        TextNode b = new TextNode("b");
+        Element elA = new Element("div"); elA.appendChild(a);
+        Element elB = new Element("div"); elB.appendChild(b);
+        Elements els = new Elements(elA, elB);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            public void head(Node node, int depth) {
+                if (node instanceof TextNode && depth == 0) {
+                    calls.add("head(" + ((TextNode)node).text() + "," + depth + ")");
+                }
+            }
+            public void tail(Node node, int depth) {
+                if (node instanceof TextNode && depth == 0) {
+                    calls.add("tail(" + ((TextNode)node).text() + "," + depth + ")");
+                }
+            }
+        };
+        // WHEN
+        NodeTraversor.traverse(visitor, (org.jsoup.select.Elements) els);
+        // THEN calls reflect both children in sequence: a then b
+        List<String> expected = List.of("head(a,0)", "tail(a,0)", "head(b,0)", "tail(b,0)");
+        assertEquals(expected, calls);
+    }
+}

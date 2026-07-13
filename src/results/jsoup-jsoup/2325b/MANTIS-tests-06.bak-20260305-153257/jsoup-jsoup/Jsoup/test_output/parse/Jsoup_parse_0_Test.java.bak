@@ -1,0 +1,96 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("parse(html, baseUri) with non-empty html and non-empty baseUri calls Parser.parse and returns a Document")
+    public void test_TC01_O1() {
+        // Inline comment: non-empty html and baseUri should take the B0→B1→B2 path invoking Parser.parse
+        String html = "<p>Hello</p>";
+        String baseUri = "https://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Expect the document contains the paragraph and preserves the baseUri
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match the input baseUri");
+        assertTrue(doc.html().contains(html), "Document HTML should contain the input snippet");
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with empty html returns an empty Document with only html/body tags")
+    public void test_TC02_O1() {
+        // Inline comment: empty html string triggers Parser.parse but yields empty body (B0→B1→B2)
+        String html = "";
+        String baseUri = "http://test/";
+        Document doc = Jsoup.parse(html, baseUri);
+        // Expect the body to be empty and baseUri preserved
+        assertEquals("", doc.body().html(), "Body HTML should be empty for empty input");
+        assertEquals(baseUri, doc.baseUri(), "Base URI should match the input baseUri");
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri) with null html throws IllegalArgumentException")
+    public void test_TC03_O1() {
+        // Inline comment: null html should be rejected early (B0→B1→B3)
+        String html = null;
+        String baseUri = "https://x/";
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, baseUri),
+                "Passing null html should throw IllegalArgumentException");
+    }
+
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with custom Parser returns parser.parseInput result")
+    public void test_TC04_O2() {
+        // Inline comment: custom parser.parseInput is invoked (B0→B1→B2)
+        String html = "<div>Test</div>";
+        String baseUri = "http://x/";
+        Parser stubParser = new Parser() {
+            @Override
+            public Document parseInput(String inputHtml, String inputBaseUri) {
+                // Create a Document shell with the same baseUri
+                Document shell = Document.createShell(inputBaseUri);
+                shell.body().append("<stub/>");
+                return shell;
+            }
+        };
+        Document doc = Jsoup.parse(html, baseUri, stubParser);
+        // Expect exactly the stub Document returned
+        assertEquals(baseUri, doc.baseUri(), "Base URI should be set by stub parser");
+        assertTrue(doc.body().html().contains("stub"), "Stub parser output should be returned");
+    }
+
+    @Test
+    @DisplayName("parse(html, parser) with non-empty html and custom parser uses empty baseUri")
+    public void test_TC05_O3() {
+        // Inline comment: no explicit baseUri leads to empty string as baseUri (B0→B1→B2)
+        String html = "<span/>";
+        Parser xmlParser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, xmlParser);
+        // xmlParser produces a document with the element, baseUri was passed as ""
+        assertEquals("", doc.baseUri(), "Default baseUri should be empty string");
+        assertEquals(1, doc.select("span").size(), "Parser should create one <span> element");
+    }
+
+    @Test
+    @DisplayName("parse(html) with non-empty html and no baseUri returns Document with baseUri empty")
+    public void test_TC06_O4() {
+        // Inline comment: single-arg parse uses empty baseUri and Parser.parse (B0→B1→B2)
+        String html = "<h1>Title</h1>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri(), "Default baseUri should be empty string");
+        assertTrue(doc.html().contains(html), "Document HTML should contain the input snippet");
+    }
+
+    @Test
+    @DisplayName("parse(html) with null html throws IllegalArgumentException")
+    public void test_TC07_O4() {
+        // Inline comment: null html in single-arg version should throw (B0→B1→B3)
+        String html = null;
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html),
+                "Passing null html should throw IllegalArgumentException");
+    }
+}

@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() rebuilds childElementsList when shadowChildrenRef exists but referent has been cleared (weakRef.get()==null)",
+      "path": "B0→B1(false)→B2(true-getNull)→B3(buildList)→B5",
+      "precondition": "Element el with one Element child and a non-null shadowChildrenRef whose referent is null",
+      "expectedResult": "children() returns new Elements wrapping a freshly built list containing the single child",
+      "tags": [
+        "positive",
+        "cache",
+        "weakref",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children rebuild on cleared weak reference",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    // prime cache",
+        "    el.children();",
+        "    // use reflection to set private shadowChildrenRef to a WeakReference with null referent",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    refField.set(el, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == child;"
+      ]
+    }
+  ]
+}

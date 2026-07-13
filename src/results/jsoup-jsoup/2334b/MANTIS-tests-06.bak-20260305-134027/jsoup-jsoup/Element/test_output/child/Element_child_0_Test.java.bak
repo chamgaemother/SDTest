@@ -1,0 +1,80 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit tests for org.jsoup.nodes.Element.child(int) method scenarios.
+ */
+public class Element_child_Test {
+
+    @Test
+    @DisplayName("TC01: child(0) on element with no child elements throws IndexOutOfBoundsException (childNodeSize==0 branch)")
+    public void test_TC01() {
+        // GIVEN an empty parent with no child elements, so childNodeSize == 0
+        Element parent = new Element("div");
+        // WHEN/THEN: requesting index 0 should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02: child(-1) on element with one child element throws IndexOutOfBoundsException (negative index)")
+    public void test_TC02() {
+        // GIVEN a parent with exactly one element child; childElementsList size == 1
+        Element parent = new Element("div");
+        parent.appendElement("span");
+        // WHEN/THEN: negative index should not be valid and throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC03: child(0) returns the only child element when exactly one element child exists (loop-1, valid index)")
+    public void test_TC03() {
+        // GIVEN a parent with exactly one element child; childElementsList size == 1
+        Element parent = new Element("ul");
+        Element li = parent.appendElement("li");
+        // WHEN: retrieving index 0 should return the only child
+        Element result = parent.child(0);
+        // THEN: result must be the same instance as li
+        assertSame(li, result);
+    }
+
+    @Test
+    @DisplayName("TC04: child(1) returns second element when two element children exist (loop-N, valid upper-bound index)")
+    public void test_TC04() {
+        // GIVEN a parent with two children; childElementsList size == 2
+        Element parent = new Element("ol");
+        parent.appendElement("li"); // first
+        Element second = parent.appendElement("li"); // second
+        // WHEN: retrieving index 1 should return the second element
+        Element result = parent.child(1);
+        // THEN: result must be the same instance as second
+        assertSame(second, result);
+    }
+
+    @Test
+    @DisplayName("TC05: child(2) on element with two children throws IndexOutOfBoundsException (index equal size)")
+    public void test_TC05() {
+        // GIVEN a parent with two children; childElementsList size == 2
+        Element parent = new Element("ul");
+        parent.appendElement("li");
+        parent.appendElement("li");
+        // WHEN/THEN: requesting index equal to size (2) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(2));
+    }
+
+    @Test
+    @DisplayName("TC06: child(0) on element with mixed childNodes filters out non-Element nodes correctly (loop-N filters)")
+    public void test_TC06() {
+        // GIVEN a parent with mixed nodes: text, element, text; childElementsList should filter only the element
+        Element parent = new Element("p");
+        parent.appendText("text");
+        Element spanChild = parent.appendElement("span");
+        parent.appendText("more");
+        // WHEN: retrieving index 0 from filtered element list
+        Element result = parent.child(0);
+        // THEN: result must be the same as the span element (non-elements are filtered out)
+        assertSame(spanChild, result);
+    }
+}

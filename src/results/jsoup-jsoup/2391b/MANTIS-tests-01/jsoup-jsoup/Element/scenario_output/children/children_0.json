@@ -1,0 +1,101 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() returns empty Elements when element has no child nodes (childNodeSize == 0)",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "no-children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children no childNodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() returns empty Elements when only non-element child nodes exist (filterNodes finds zero Element instances)",
+      "path": "B0→B1→B3→B4→B5",
+      "precondition": "Element el = new Element(\"div\"); el.appendText(\"text\"); // one TextNode child",
+      "expectedResult": "returned Elements.size() == 0",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "non-element-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children only non-element children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.appendText(\"text\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() returns single-element list when exactly one Element child exists",
+      "path": "B0→B1→B3→B4(loop×1)→B5",
+      "precondition": "Element parent = new Element(\"div\"); Element child = new Element(\"span\"); parent.appendChild(child);",
+      "expectedResult": "returned Elements.size() == 1 and result.get(0) == child",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "single-element"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children one element child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\"); Element child = new Element(\"span\"); parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1 && result.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() returns multiple elements in correct order when mixed children exist",
+      "path": "B0→B1→B3→B4(loop×3)→B5",
+      "precondition": "Element parent = new Element(\"ul\"); Element li1 = new Element(\"li\"); Element li2 = new Element(\"li\"); TextNode t = new TextNode(\"x\"); parent.appendChild(li1); parent.appendChild(t); parent.appendChild(li2);",
+      "expectedResult": "returned Elements.size() == 2 and order is [li1, li2]",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "multiple-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children multiple element and non-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\"); Element li1 = new Element(\"li\"); Element li2 = new Element(\"li\"); TextNode t = new TextNode(\"x\"); parent.appendChild(li1); parent.appendChild(t); parent.appendChild(li2);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 2 && result.get(0) == li1 && result.get(1) == li2;",
+        "END"
+      ]
+    }
+  ]
+}

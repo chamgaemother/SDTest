@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Case-sensitive overload: known form-submittable tag ‘input’ returns true",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "true (formSubmit == true)",
+      "tags": [
+        "positive",
+        "overload",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 valueOf(String) with known tag",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Overload with custom namespace: unknown tag returns false",
+      "path": "B0→B1→B2→B6",
+      "precondition": "none",
+      "expectedResult": "false (formSubmit == false)",
+      "tags": [
+        "negative",
+        "overload",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 valueOf(String,Namespace,Settings) unknown tag",
+        "  GIVEN",
+        "    String tagName = \"myCustom\";",
+        "    String ns = Parser.NamespaceSvg;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Preserve-case clone path: uppercase known ‘INPUT’ returns true",
+      "path": "B0→B1→B2→B3→clone→B5",
+      "precondition": "none",
+      "expectedResult": "true (cloned formSubmit == true)",
+      "tags": [
+        "positive",
+        "clone",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 preserveCase clone branch",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    String normalName = \"input\";",
+        "    String ns = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "remove first of two siblings in head: triggers non-last-sibling remove (B9→B10) and then continue traversal of next sibling",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B9→B10→B1→B5→B11→B12→B23→B1→B5→B11→B16→B20→B21→B24",
+      "precondition": "none",
+      "expectedResult": "first child removed; visitor.head called on second child; traversal completes without tail on removed",
+      "tags": [
+        "positive",
+        "remove",
+        "sibling",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 remove non-last sibling in head",
+        "  GIVEN",
+        "    Element root = new Element(\"root\");",
+        "    TextNode a = new TextNode(\"a\");",
+        "    TextNode b = new TextNode(\"b\");",
+        "    root.appendChild(a);",
+        "    root.appendChild(b);",
+        "    List<String> events = new ArrayList<>();",
+        "    NodeVisitor visitor = (n, d) -> { events.add(n.outerHtml()); if (n == a) n.remove(); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root.childNode(0));",
+        "  THEN",
+        "    assert events.contains(\"b\");",
+        "    assert root.childNodeSize() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "deep tree with nested single child triggers ancestor-tail loop branch (node.nextSibling null && depth>0) and descent (B12→B23)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B5→B11→B13→B16→B20→B22→B23→B1→B5→B11→B13→B16→B20→B21→B24",
+      "precondition": "none",
+      "expectedResult": "head and tail invoked at each depth 0–2 in correct order; no exceptions",
+      "tags": [
+        "positive",
+        "iteration",
+        "depth",
+        "ascend-loop"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 nested single-child deep-tree traversal",
+        "  GIVEN",
+        "    Element root = Parser.parseFragment(\"<a><b><c/></b></a>\", new Parser(Settings.htmlDefault())).get(0);",
+        "    List<String> records = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n, int d) { records.add(\"head\"+d); }",
+        "      public void tail(Node n, int d) { records.add(\"tail\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"head0\",\"head1\",\"head2\",\"tail2\",\"tail1\",\"tail0\"), records);",
+        "END"
+      ]
+    }
+  ]
+}

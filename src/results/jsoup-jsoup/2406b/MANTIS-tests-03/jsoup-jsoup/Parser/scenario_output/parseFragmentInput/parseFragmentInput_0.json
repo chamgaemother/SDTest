@@ -1,0 +1,266 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "Reader overload with stub TreeBuilder returns empty list when context is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a stub TreeBuilder whose parseFragment(fragment,context,baseUri,parser) returns an empty List<Node> – stub used to isolate the method under test",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-true",
+        "normal",
+        "stub"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 stubbed-parseFragment returns empty",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"anything\");",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningEmpty());",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "Reader overload throws UncheckedIOException when stub TreeBuilder.parseFragment throws",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a stub TreeBuilder whose parseFragment(...) throws new UncheckedIOException(new IOException()) – stub used to simulate I/O error",
+      "expectedResult": "throws java.io.UncheckedIOException",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 stubbed-parseFragment throws I/O",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"any\");",
+        "    Parser parser = new Parser(new StubTreeBuilderThrowingIOException());",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    throws java.io.UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "Reader overload with real HtmlTreeBuilder parses single element fragment when context is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder",
+      "expectedResult": "returned list has size 1 and first node is an Element with tagName \"p\" and text \"Hi\"",
+      "tags": [
+        "overload:Reader,Element,String",
+        "integration",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 real-parse single-element",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<p>Hi</p>\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"p\");",
+        "    assert ((Element)result.get(0)).text().equals(\"Hi\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "Reader overload with real HtmlTreeBuilder parses single element fragment into non-null context",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder and context Element \"div\"",
+      "expectedResult": "returned list has size 1, node is an Element with tagName \"span\", and context remains unmodified apart from appended children",
+      "tags": [
+        "overload:Reader,Element,String",
+        "integration",
+        "branch-true",
+        "context-non-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 real-parse with-context",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<span>Hi</span>\");",
+        "    Element context = new Element(\"div\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"span\");",
+        "    assert context.children().contains(result.get(0));"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "String overload with real HtmlTreeBuilder parses fragment into non-null context",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder; uses StringReader internally",
+      "expectedResult": "returned list has size 1 and node is an Element with tagName \"b\"",
+      "tags": [
+        "overload:String,Element,String",
+        "integration",
+        "delegation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O2 string-overload integration",
+        "  GIVEN",
+        "    String fragment = \"<b>bold</b>\";",
+        "    Element context = new Element(\"div\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"b\");"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "String overload throws UncheckedIOException when stub TreeBuilder.parseFragment throws",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a stub TreeBuilder whose parseFragment(...) throws UncheckedIOException; uses StringReader internally – stub used to simulate I/O error",
+      "expectedResult": "throws java.io.UncheckedIOException",
+      "tags": [
+        "overload:String,Element,String",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 stubbed-parseFragment throws I/O",
+        "  GIVEN",
+        "    String fragment = \"anything\";",
+        "    Parser parser = new Parser(new StubTreeBuilderThrowingIOException());",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, new Element(\"div\"), \"base\");",
+        "  THEN",
+        "    throws java.io.UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "Reader overload with real HtmlTreeBuilder returns empty for empty fragment when context is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "overload:Reader,Element,String",
+        "integration",
+        "boundary",
+        "empty-fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O1 empty-fragment returns-empty",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "String overload with real HtmlTreeBuilder returns empty for empty fragment with non-null context",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder",
+      "expectedResult": "returned list is empty and context has no new children",
+      "tags": [
+        "overload:String,Element,String",
+        "integration",
+        "boundary",
+        "empty-fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 empty-string returns-empty",
+        "  GIVEN",
+        "    String fragment = \"\";",
+        "    Element context = new Element(\"div\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, context, \"base\");",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "    assert context.children().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "Reader overload with real HtmlTreeBuilder parses multiple siblings (loop-N) when context is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder",
+      "expectedResult": "returned list has size 3 and tagNames in order [\"p\",\"p\",\"p\"]",
+      "tags": [
+        "overload:Reader,Element,String",
+        "integration",
+        "loop-N",
+        "multiple-nodes"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O1 multiple-siblings parsed",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<p>1</p><p>2</p><p>3</p>\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert ((Element)result.get(0)).tagName().equals(\"p\");",
+        "    assert ((Element)result.get(1)).tagName().equals(\"p\");",
+        "    assert ((Element)result.get(2)).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "Reader overload with real HtmlTreeBuilder parses nested element fragment when context is null",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser instantiated with a real HtmlTreeBuilder",
+      "expectedResult": "returned list has size 1; the single Element has tagName \"div\" and a child Element with tagName \"span\"",
+      "tags": [
+        "overload:Reader,Element,String",
+        "integration",
+        "nested",
+        "branch-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O1 nested-elements parsed",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<div><span></span></div>\");",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    List<Node> result = parser.parseFragmentInput(fragment, null, \"base\");",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    Element div = (Element) result.get(0);",
+        "    assert div.tagName().equals(\"div\");",
+        "    assert div.children().get(0).tagName().equals(\"span\");"
+      ]
+    }
+  ]
+}

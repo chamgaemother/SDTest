@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() on element with only text child nodes returns empty list (childNodeSize>0 but no Element instances)",
+      "path": "B0→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "result.size()==0",
+      "tags": [
+        "boundary",
+        "filter",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children filters out non-Element nodes",
+        "  GIVEN",
+        "    Element parent = new Element(\"p\");",
+        "    parent.appendText(\"one\");",
+        "    parent.appendText(\"two\");",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() reuses cached shadowChildrenRef on second call when no mutation occurs (shadowChildrenRef!=null branch)",
+      "path": "B0→B3→B4→B6",
+      "precondition": "none",
+      "expectedResult": "two calls return same number of children without rebuild",
+      "tags": [
+        "iteration",
+        "cache",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children cache reuse",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendElement(\"a\");",
+        "    parent.appendElement(\"b\");",
+        "    // first invocation builds shadow cache",
+        "    Elements first = parent.children();",
+        "  WHEN",
+        "    // second invocation should hit shadowChildrenRef and not rebuild",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 2;",
+        "    assert second.size() == 2;",
+        "END"
+      ]
+    }
+  ]
+}

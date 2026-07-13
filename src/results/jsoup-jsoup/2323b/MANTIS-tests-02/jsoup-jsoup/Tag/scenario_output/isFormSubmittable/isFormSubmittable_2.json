@@ -1,0 +1,103 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "Uppercase known form-submittable tag via lower-case settings returns true without clone",
+      "path": "B0→B2→B3→B7→B10→B11→B12→return",
+      "precondition": "Parser.NamespaceHtml tag 'option' pre-registered with formSubmit=true",
+      "expectedResult": "return value is true (no clone path)",
+      "tags": [
+        "positive",
+        "overload",
+        "normalName-lookup"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 option uppercase without preserve-case",
+        "  GIVEN",
+        "    String tagName = \"OPTION\";",
+        "    ParseSettings settings = ParseSettings.notPreserveCase; // preserveTagCase=false",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Known tag in wrong namespace returns new generic tag with formSubmit=false",
+      "path": "B0→B2→B4(namespace mismatch)→B9→B10→return",
+      "precondition": "Pre-registered tagName \"input\" exists under Parser.NamespaceHtml",
+      "expectedResult": "return value is false (new generic, formSubmit default false)",
+      "tags": [
+        "negative",
+        "namespace",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 known tag wrong namespace",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String namespace = \"customNS\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Overload valueOf(name,namespace,settings) clone path preserves formSubmit flag for uppercase OUTPUT with preserve-case",
+      "path": "B0→B2→B3→B7→B8(clone)→B10→return",
+      "precondition": "Parser.NamespaceHtml tag 'output' pre-registered with formSubmit=true",
+      "expectedResult": "return value is true (clone preserves formSubmit)",
+      "tags": [
+        "positive",
+        "clone-path",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 uppercase OUTPUT with preserve-case clone path",
+        "  GIVEN",
+        "    String tagName = \"OUTPUT\";",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "Null tagName parameter throws IllegalArgumentException",
+      "path": "B0→Validate.notNull→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "precondition"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 valueOf null tagName throws",
+        "  GIVEN",
+        "    String tagName = null;",
+        "    String namespace = Parser.NamespaceHtml;",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    call Tag.valueOf(tagName, namespace, settings);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    }
+  ]
+}

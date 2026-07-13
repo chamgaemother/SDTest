@@ -1,0 +1,123 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) delegates to Reader overload and returns Document on successful parse",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "TreeBuilder stub returns a dummy Document; uses real Parser(htmlParser())",
+      "expectedResult": "returned Document is the same instance provided by TreeBuilder.parse",
+      "tags": [
+        "overload:String,String",
+        "branch-redirect",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput String overload successful",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilderReturningDoc()); String html=\"<p></p>\"; String baseUri=\"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc == StubTreeBuilderReturningDoc.DUMMY_DOC;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader, String) returns Document when TreeBuilder.parse succeeds",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Simple stub TreeBuilder that returns a new Document; no mocking framework used",
+      "expectedResult": "returned Document equals the stub's created Document instance",
+      "tags": [
+        "overload:Reader,String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput Reader overload successful",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<div/>\"); Parser parser = new Parser(new StubTreeBuilderReturningDoc()); String uri=\"base\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, uri);",
+        "  THEN",
+        "    assert result == StubTreeBuilderReturningDoc.DUMMY_DOC;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader, String) throws UncheckedIOException when TreeBuilder.parse throws one",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "Stub TreeBuilder.parse throws new UncheckedIOException(new IOException()); \"why mocking is necessary: to simulate I/O error\"",
+      "expectedResult": "throws java.io.UncheckedIOException; no Document returned; lock is released",
+      "tags": [
+        "overload:Reader,String",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput Reader overload unchecked-io-exception",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilderThrowingUncheckedIO()); Reader reader=new StringReader(\"x\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"uri\");",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when inputHtml is null",
+      "path": "B0→B1→B5",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException; no lock retention",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput Reader overload null-reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader=null; String uri=\"u\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, uri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseInput(String, String) accepts null baseUri and returns Document",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Stub TreeBuilder returning dummy; baseUri null",
+      "expectedResult": "returned Document is stub instance; baseUri passed as null to TreeBuilder.parse",
+      "tags": [
+        "overload:String,String",
+        "branch-redirect",
+        "null-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O1 parseInput String overload null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilderRecordingUri()); String html=\"<a/>\"; String baseUri=null;",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc == StubTreeBuilderRecordingUri.DUMMY_DOC; assert StubTreeBuilderRecordingUri.lastUri == null;",
+        "END"
+      ]
+    }
+  ]
+}

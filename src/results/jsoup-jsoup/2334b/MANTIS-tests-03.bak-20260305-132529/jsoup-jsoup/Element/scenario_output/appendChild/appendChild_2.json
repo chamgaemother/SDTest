@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild moves an existing node into a non-empty new parent reusing its childNodes (ensureChildNodes=false)",
+      "path": "B0→B2→B4→B5→B7",
+      "precondition": "newParent already has one TextNode child; child attached to oldParent",
+      "expectedResult": "child removed from oldParent, added to newParent at siblingIndex 1",
+      "tags": [
+        "positive",
+        "reuse-node",
+        "branch-ensureChildNodes-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 move-to-non-empty-parent",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"c\");",
+        "    oldParent.appendChild(child);",
+        "    Element newParent = new Element(\"section\");",
+        "    newParent.appendChild(new TextNode(\"first\"));",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 2;",
+        "    assert child.parent() == newParent;",
+        "    assert child.getSiblingIndex() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "appendChild of a node without an existing parent into an empty parent returns correct chaining and index",
+      "path": "B0→B1→B3→B5→B7",
+      "precondition": "parent has no children; child is a freshly created Element",
+      "expectedResult": "appendChild returns parent itself and siblingIndex set to 0",
+      "tags": [
+        "positive",
+        "chaining",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 append-new-element-to-empty-parent",
+        "  GIVEN",
+        "    Element parent = new Element(\"article\");",
+        "    Element child = new Element(\"section\");",
+        "  WHEN",
+        "    Element returned = parent.appendChild(child);",
+        "  THEN",
+        "    assert returned == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.getSiblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

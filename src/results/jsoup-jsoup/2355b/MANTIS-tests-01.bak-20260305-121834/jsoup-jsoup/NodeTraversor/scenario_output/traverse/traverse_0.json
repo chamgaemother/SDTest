@@ -1,0 +1,245 @@
+{
+  "method": "traverse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "visitor null triggers IllegalArgumentException at entry (r0 == null)",
+      "path": "B0→B1→B24",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "branch-true",
+        "overload:Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 traverse null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null; Node root = new Element(\"div\");",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "root null triggers IllegalArgumentException at entry (r1 == null)",
+      "path": "B0→B1→B24",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 traverse null-root",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d)->{}; Node root = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "single node with no children calls head and tail once (childNodeSize<=0, depth 0)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B24",
+      "precondition": "visitor collects calls into list; no mocking needed",
+      "expectedResult": "visitor.head invoked with (root,0); visitor.tail invoked with (root,0)",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 traverse single-node",
+        "  GIVEN",
+        "    List<String> calls = new ArrayList<>(); NodeVisitor visitor = (n,d)->calls.add(\"head:\"+d);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls containsExactly [\"head:0\",\"tail:0\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "two-level tree descends and ascends properly (one child, depth increments to 1)",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "tree root->child; visitor records head/tail; no mocks",
+      "expectedResult": "calls sequence head(root,0),head(child,1),tail(child,1),tail(root,0)",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 traverse two-level-tree",
+        "  GIVEN",
+        "    Element root = new Element(\"div\"); Element child = new Element(\"p\"); root.appendChild(child);",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor,calls)->traverse(visitor, root);",
+        "  THEN",
+        "    assert calls sequence [\"head:0\",\"head:1\",\"tail:1\",\"tail:0\"];",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "sibling replacement inside head triggers replace branch (origSize==new size)",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→B12→B23→B1→B24",
+      "precondition": "visitor.head replaces node with clone; uses real DOM behavior; stub visitor replaces current node without changing sibling count",
+      "expectedResult": "continue traversal with replaced node at same index; head and tail invoked on replacement",
+      "tags": [
+        "branch-true",
+        "branch-true",
+        "overload:Node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 traverse replace-in-head",
+        "  GIVEN",
+        "    Element root = new Element(\"div\"); Element a = new Element(\"a\"); root.appendChild(a);",
+        "    NodeVisitor visitor = new NodeVisitor(){",
+        "      public void head(Node n,int d){root.replaceWith(new Element(\"x\"));}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert root.tagName()==\"x\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "removal in head triggers removal branch (origSize!=new size)",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B9→B1→B24",
+      "precondition": "visitor.head removes node; real removal behavior; no mocks",
+      "expectedResult": "node removed and traversal skips tail for removed node",
+      "tags": [
+        "branch-true",
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O1 traverse remove-in-head",
+        "  GIVEN",
+        "    Element root = new Element(\"div\"); Element a = new Element(\"a\"); root.appendChild(a);",
+        "    NodeVisitor visitor = (n,d)->n.remove();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert root.childNodeSize()==0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "elements empty list yields zero iterations (hasNext false)",
+      "path": "B0→B1→B3",
+      "precondition": "Elements elements = new Elements();",
+      "expectedResult": "no exception; traverse is never invoked on individual elements",
+      "tags": [
+        "loop-0",
+        "overload:Elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 traverse empty-elements",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d)->{}; Elements els = new Elements();",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, els);",
+        "  THEN",
+        "    assert true; // no heads or tails called",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "elements with multiple entries invokes traverse per element until exhaustion",
+      "path": "B0→B1→B2→B1→B2→B1→B3",
+      "precondition": "Elements contains two distinct Element roots; visitor records calls",
+      "expectedResult": "visitor.head and tail called for each element in sequence twice",
+      "tags": [
+        "loop-N",
+        "overload:Elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 traverse multiple-elements",
+        "  GIVEN",
+        "    Elements els = new Elements(new Element(\"a\"), new Element(\"b\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, els);",
+        "  THEN",
+        "    assert calls contains head/tail for \"a\" then head/tail for \"b\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "assertion disabled path avoids AssertionError when z0 true ($assertionsDisabled=true)",
+      "path": "B0→B1→B2→B3→B5→B11→B13→B14→B16→B20→B21→B24",
+      "precondition": "JVM assertions disabled",
+      "expectedResult": "no AssertionError thrown",
+      "tags": [
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P2",
+      "environment": "Java 8 -ea disabled",
+      "pseudocode": [
+        "TEST TC09_O1 traverse assertions-disabled",
+        "  GIVEN",
+        "    Set -ea disabled; visitor noop; root leaf node;",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert no exception;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O1",
+      "description": "root=leaf triggers immediate return after tail (node==root branch in B20)",
+      "path": "B0→B1→B2→B3→B5→B11→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "single leaf node; visitor records calls",
+      "expectedResult": "head and tail called then return",
+      "tags": [
+        "branch-false",
+        "overload:Node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O1 traverse leaf-node return",
+        "  GIVEN",
+        "    Element leaf = new Element(\"span\");",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, leaf);",
+        "  THEN",
+        "    assert calls == [\"head:0\",\"tail:0\"];",
+        "END"
+      ]
+    }
+  ]
+}

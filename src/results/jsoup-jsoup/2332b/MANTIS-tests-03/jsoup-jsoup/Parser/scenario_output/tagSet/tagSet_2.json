@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "tagSet with a non-empty tag set updates settings and returns the same Parser instance",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser instance created (htmlParser)",
+      "expectedResult": "returns same Parser; settings().tagNames() equals provided non-empty set",
+      "tags": [
+        "positive",
+        "non-empty",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 tagSet non-empty-set",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Set<String> tags = new HashSet<>(Arrays.asList(\"div\",\"span\",\"p\"));",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\", Set.class);",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    Object result = m.invoke(parser, tags);",
+        "  THEN",
+        "    assertSame(parser, result);",
+        "    assertEquals(tags, parser.settings().tagNames());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "tagSet with an empty tag set clears settings tagNames and returns the same Parser instance",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Parser instance created (xmlParser)",
+      "expectedResult": "returns same Parser; settings().tagNames() is empty",
+      "tags": [
+        "boundary",
+        "empty",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 tagSet empty-set",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    Set<String> tags = Collections.emptySet();",
+        "    Method m = Parser.class.getDeclaredMethod(\"tagSet\", Set.class);",
+        "    m.setAccessible(true);",
+        "  WHEN",
+        "    Object result = m.invoke(parser, tags);",
+        "  THEN",
+        "    assertSame(parser, result);",
+        "    assertTrue(parser.settings().tagNames().isEmpty());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.select.Elements;
+
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() on newly created Element with no child nodes returns empty list (childNodeSize()==0)")
+    public void test_TC01() {
+        // GIVEN an element with no children -> childNodeSize()==0 triggers B3(true) path
+        Element el = new Element("div");
+        // WHEN
+        Elements result = el.children();
+        // THEN should filter out to empty list
+        assertEquals(0, result.size(), "Expected no child Elements for brand new Element");
+    }
+
+    @Test
+    @DisplayName("TC02: children() with only text nodes returns empty list (filters out non-Element instances)")
+    public void test_TC02() {
+        // GIVEN an element with one TextNode child -> childNodeSize()>0 but no Element instances triggers loop that filters out text nodes
+        Element el = new Element("p");
+        el.appendText("hello");
+        // WHEN
+        Elements result = el.children();
+        // THEN no Element children should be present
+        assertEquals(0, result.size(), "Expected no child Elements when only TextNode present");
+    }
+
+    @Test
+    @DisplayName("TC03: children() with single Element child returns list of size 1 (filters and collects Element)")
+    public void test_TC03() {
+        // GIVEN an element with one Element child -> childNodeSize()>0 and loop finds exactly one Element instance
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child); // only one Element to collect
+        // WHEN
+        Elements result = parent.children();
+        // THEN exactly that child should be returned
+        assertEquals(1, result.size(), "Expected exactly one child Element");
+        assertSame(child, result.get(0), "Expected the returned child to be the appended Element instance");
+    }
+
+    @Test
+    @DisplayName("TC04: children() with mixed children returns only Element instances (filters out TextNode among multiple nodes)")
+    public void test_TC04() {
+        // GIVEN an element with mixed children: TextNode, Element 'a', TextNode, Element 'b'
+        Element el = new Element("div");
+        el.appendChild(new TextNode("t1")); // non-Element should be filtered
+        Element a = new Element("a");
+        el.appendChild(a);                   // first Element
+        el.appendText("t2");                // non-Element should be filtered
+        Element b = new Element("b");
+        el.appendChild(b);                   // second Element
+        // WHEN
+        Elements result = el.children();
+        // THEN should only collect the two Element instances in order
+        assertEquals(2, result.size(), "Expected two child Elements from mixed content");
+        assertEquals("a", result.get(0).tagName(), "First collected Element should be <a>");
+        assertEquals("b", result.get(1).tagName(), "Second collected Element should be <b>");
+    }
+
+    @Test
+    @DisplayName("TC05: children() uses cached shadowChildrenRef on second call without recomputing list")
+    public void test_TC05() {
+        // GIVEN an element with two children -> first call builds and caches the list, second should reuse same instance
+        Element el = new Element("div");
+        Element c1 = new Element("x");
+        el.appendChild(c1);
+        Element c2 = new Element("y");
+        el.appendChild(c2);
+        // WHEN first and second invocation
+        Elements first = el.children();  // builds childElementsList and wraps it
+        Elements second = el.children(); // should reuse cached childElementsList instance
+        // THEN the returned wrapper should refer to the same underlying list instance for caching behavior
+        // Note: testing identity to catch unintended recompute of list reference
+        assertSame(first, second, "Expected same Elements instance on repeated children() call for cache hit");
+        assertEquals(2, first.size(), "Expected two children from cache");
+    }
+
+    @Test
+    @DisplayName("TC06: children() recomputes after nodelistChanged invalidates cache")
+    public void test_TC06() throws Exception {
+        // GIVEN an element with one child -> cache built, then invalidated by nodelistChanged, then a second child appended
+        Element el = new Element("p");
+        Element a = new Element("i");
+        el.appendChild(a);
+        // prime the cache
+        el.children();
+        // invalidate cache via package-private nodelistChanged
+        Method nodelistChanged = Element.class.getDeclaredMethod("nodelistChanged");
+        nodelistChanged.setAccessible(true);
+        nodelistChanged.invoke(el);
+        // append another Element after invalidation -> childNodeSize()>0 and loop finds two Elements
+        Element b = new Element("u");
+        el.appendChild(b);
+        // WHEN
+        Elements result = el.children();
+        // THEN should recompute list and collect both Elements a and b
+        assertEquals(2, result.size(), "Expected two children after cache invalidation and new append");
+        assertSame(a, result.get(0), "First child should be the original Element");
+        assertSame(b, result.get(1), "Second child should be the newly appended Element");
+    }
+}

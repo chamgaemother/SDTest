@@ -1,0 +1,54 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "Putting an existing key via dataset view updates the underlying element attribute (update-existing)",
+      "path": "B0→B1→B2(put)→B3",
+      "precondition": "Element has attribute data-name='old'",
+      "expectedResult": "el.attr('data-name') is updated to 'new'",
+      "tags": [
+        "positive",
+        "view-binding",
+        "update"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 dataset updates existing data-attr",
+        "  GIVEN",
+        "    Element el = new Element('div');",
+        "    el.attr('data-name', 'old');",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put('name', 'new');",
+        "  THEN",
+        "    assert el.attr('data-name').equals('new');"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "Adding a data- attribute after obtaining dataset view is reflected when accessing the view (dynamic-view)",
+      "path": "B0→B1(initial)→B2(late add)→B1(lookup)",
+      "precondition": "Element with no data- attributes",
+      "expectedResult": "ds.containsKey('x') is true after el.attr('data-x')",
+      "tags": [
+        "positive",
+        "dynamic",
+        "view-binding"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 dataset dynamic view sees new data-attr",
+        "  GIVEN",
+        "    Element el = new Element('p');",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    el.attr('data-x', '1');",
+        "  THEN",
+        "    assert ds.containsKey('x');",
+        "    assert ds.get('x').equals('1');"
+      ]
+    }
+  ]
+}

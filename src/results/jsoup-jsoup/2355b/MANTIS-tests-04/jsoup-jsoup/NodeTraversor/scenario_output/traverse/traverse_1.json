@@ -1,0 +1,71 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "visitor.head replaces a node triggers the 'replace' branch (origSize == parent.childNodeSize())",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→B12→B23→B1→…→B24",
+      "precondition": "root has one child; visitor.head replaces that child with a new node",
+      "expectedResult": "Traversal continues on replaced node; both head and tail are invoked on the replacement and the root",
+      "tags": [
+        "positive",
+        "branch-replace",
+        "modification"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 traverse replacement branch",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    root.appendChild(child);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override head(Node node,int depth) {",
+        "        if (node == child) {",
+        "          node.replaceWith(new Element(\"em\"));",
+        "        }",
+        "      }",
+        "      @Override tail(Node node,int depth) {",
+        "        record(node.nodeName()+\"@\"+depth);",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    // Replacement 'em' should be visited instead of original span",
+        "    assert sawHead(\"em\",1) && sawTail(\"em\",1);",
+        "    assert sawTail(\"div\",0);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "traverse(NodeVisitor,Elements) processes multiple elements in sequence (loop-N >1)",
+      "path": "B0→B1→B2→B1→B2→B1→B3",
+      "precondition": "Elements list contains two sibling elements with no children",
+      "expectedResult": "Visitor.head and tail invoked once per element in order, then returns",
+      "tags": [
+        "positive",
+        "iteration",
+        "elements-overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 traverse elements multiple items",
+        "  GIVEN",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override head(Node node,int depth) { calls.add(\"H:\"+node.nodeName()+depth); }",
+        "      @Override tail(Node node,int depth) { calls.add(\"T:\"+node.nodeName()+depth); }",
+        "    };",
+        "    Elements els = new Elements(new Element(\"p\"), new Element(\"span\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, els);",
+        "  THEN",
+        "    assert calls.equals([\"H:p0\",\"T:p0\",\"H:span0\",\"T:span0\"]);",
+        "END"
+      ]
+    }
+  ]
+}

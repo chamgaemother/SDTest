@@ -1,0 +1,41 @@
+{
+  "method": "sourceRange",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "sourceRange returns UntrackedAttr when parent is null (branch parent==null)",
+      "path": "B0→B1",
+      "precondition": "Create Attribute with parent=null",
+      "expectedResult": "returned Range.AttributeRange is Range.AttributeRange.UntrackedAttr",
+      "tags": [
+        "branch-true",
+        "parent-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 sourceRange parent-null",
+        "  GIVEN\n    // Arrange\n    Attribute attr = new Attribute(\"key\", \"value\", null);",
+        "  WHEN\n    Range.AttributeRange range = attr.sourceRange();\n  THEN\n    assert range == Range.AttributeRange.UntrackedAttr;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "sourceRange delegates to parent.sourceRange(key) when parent non-null (branch parent!=null)",
+      "path": "B0→B2",
+      "precondition": "Use a hand-written stub Attributes that returns a fixed Range.AttributeRange for key",
+      "expectedResult": "returned Range.AttributeRange is the stubbed value",
+      "tags": [
+        "branch-false",
+        "parent-not-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 sourceRange parent-not-null",
+        "  GIVEN\n    // Arrange\n    Range.AttributeRange expected = new Range.AttributeRange(1,2,3,4);\n    Attributes stubParent = new Attributes(){ @Override public Range.AttributeRange sourceRange(String k){ return expected; }};\n    Attribute attr = new Attribute(\"key\", \"value\", stubParent);",
+        "  WHEN\n    Range.AttributeRange range = attr.sourceRange();\n  THEN\n    assert range == expected;"
+      ]
+    }
+  ]
+}

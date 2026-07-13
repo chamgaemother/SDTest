@@ -1,0 +1,151 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.XmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_Complete_Test {
+
+    @Test
+    @DisplayName("TC07: parseInput(String, String) delegates to Reader overload and returns a Document with expected <p> text")
+    public void test_TC07() {
+        // B0→B14→B15→B16: htmlParser and String overload should delegate correctly
+        Parser parser = Parser.htmlParser();
+        String html = "<html><body><p>Hello</p></body></html>";
+        Document doc = parser.parseInput(html, "http://base/");
+        // verify correct delegation and parsing of <p>
+        Element p = doc.selectFirst("p");
+        assertNotNull(p, "Expected a <p> element in parsed document");
+        assertEquals("Hello", p.text());
+    }
+
+    @Test
+    @DisplayName("TC08: parseInput(Reader, String) returns a Document with nested <div><span> parsed")
+    public void test_TC08() {
+        // B0→B14→B15→B16: Reader overload, nested elements case
+        Parser parser = Parser.htmlParser();
+        Reader rdr = new StringReader("<div><span>X</span></div>");
+        Document doc = parser.parseInput(rdr, "");
+        Element span = doc.selectFirst("span");
+        assertNotNull(span, "Expected a <span> element parsed from reader");
+        assertEquals("X", span.text());
+    }
+
+    @Test
+    @DisplayName("TC09: parseFragmentInput(String, Element, String) returns nodes under provided context")
+    public void test_TC09() {
+        // B0→B17→B18→B19: string overload with non-null context
+        Document shell = Document.createShell("http://x/");
+        Element context = shell.body();
+        String frag = "<b>Bold</b>";
+        Parser parser = Parser.htmlParser();
+        List<Node> nodes = parser.parseFragmentInput(frag, context, shell.baseUri());
+        // should parse one <b> node under context
+        assertEquals(1, nodes.size(), "Expected exactly one node parsed in fragment");
+        Node n0 = nodes.get(0);
+        assertTrue(n0 instanceof Element);
+        assertEquals("b", ((Element) n0).tagName());
+    }
+
+    @Test
+    @DisplayName("TC10: parseFragmentInput(Reader, null, String) returns nodes with no context for XML parser")
+    public void test_TC10() {
+        // B0→B17→B18→B19: reader overload with null context, xmlParser should return text node
+        Parser parser = Parser.xmlParser();
+        Reader rdr = new StringReader("text");
+        List<Node> nodes = parser.parseFragmentInput(rdr, null, "");
+        assertEquals(1, nodes.size(), "Expected exactly one node when parsing XML fragment text");
+        Node node = nodes.get(0);
+        assertEquals("text", node.outerHtml());
+    }
+
+    @Test
+    @DisplayName("TC11: static parse(String, String) returns Document with baseUri resolved links")
+    public void test_TC11() {
+        // B20→B21→B22: static HTML parse should resolve relative URLs to absolute
+        String html = "<a href=\"page.html\">link</a>";
+        Document doc = Parser.parse(html, "http://site/");
+        Element a = doc.selectFirst("a");
+        assertNotNull(a);
+        assertEquals("http://site/page.html", a.absUrl("href"));
+    }
+
+    @Test
+    @DisplayName("TC12: static parseFragment(String, Element, String) with external error list preserves errors")
+    public void test_TC12() {
+        // B23→B24→B25→B26: supply a tracking error list and malformed fragment
+        Element ctx = Document.createShell("").body();
+        ParseErrorList errors = ParseErrorList.tracking(1);
+        String frag = "<unclosed><b>";
+        List<Node> nodes = Parser.parseFragment(frag, ctx, "", errors);
+        // error list should contain at most one error
+        assertTrue(errors.size() <= 1, "Error list should track at most 1 error");
+        // nodes should be returned even if malformed
+        assertTrue(nodes.size() > 0, "Expected some nodes from malformed fragment");
+    }
+
+    @Test
+    @DisplayName("TC13: static parseXmlFragment(String, String) returns XML nodes without HTML wrapper")
+    public void test_TC13() {
+        // B27→B28→B29: xml fragment parsing yields exact tag names including namespace
+        String xml = "<a:tag xmlns:a=\"urn:a\">X</a:tag>";
+        List<Node> nodes = Parser.parseXmlFragment(xml, "");
+        assertEquals(1, nodes.size(), "Expected exactly one XML element parsed");
+        Node node = nodes.get(0);
+        assertTrue(node instanceof Element);
+        assertEquals("a:tag", ((Element) node).tagName());
+    }
+
+    @Test
+    @DisplayName("TC14: parseBodyFragment moves and removes nodes correctly (multiple siblings)")
+    public void test_TC14() {
+        // B30→B31(loop×n)→B32→B33: parseBodyFragment should reparent and remove siblings in reverse loop
+        String body = "<div>one</div><div>two</div><div>three</div>";
+        Document doc = Parser.parseBodyFragment(body, "");
+        List<Node> children = doc.body().childNodes();
+        // after transformation, body should contain exactly the three reparented children
+        assertEquals(3, children.size(), "Expected three child nodes after body fragment parse");
+        Element first = (Element) children.get(0);
+        assertEquals("one", first.text(), "First <div> text should be 'one'");
+    }
+
+    @Test
+    @DisplayName("TC15: unescapeEntities handles attribute mode and decodes '&amp;lt;' to '<'")
+    public void test_TC15() {
+        // B34→B35→B36: attribute mode true should unescape &amp;lt; to literal '<'
+        String escaped = "&amp;lt;tag&amp;gt;";
+        String result = Parser.unescapeEntities(escaped, true);
+        assertEquals("<tag>", result);
+    }
+
+    @Test
+    @DisplayName("TC16: isContentForTagData returns true for script tag and false for div")
+    public void test_TC16() {
+        // B37→B38(true) & B37→B38(false): HTML parser special-cases script but not div
+        Parser parser = Parser.htmlParser();
+        boolean scr = parser.isContentForTagData("script");
+        boolean div = parser.isContentForTagData("div");
+        assertTrue(scr, "script should be content-for-data");
+        assertFalse(div, "div should not be content-for-data");
+    }
+
+    @Test
+    @DisplayName("TC17: settings(ParseSettings) updates parse-settings and settings() returns new value")
+    public void test_TC17() {
+        // B39→B40→B41: setter and getter for settings should preserve the provided instance
+        Parser parser = Parser.htmlParser();
+        ParseSettings ps = ParseSettings.preserveCase;
+        parser.settings(ps);
+        assertSame(ps, parser.settings(), "Parser.settings() should return the exact instance passed to settings(...)");
+    }
+}

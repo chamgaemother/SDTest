@@ -1,0 +1,207 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    // TC01: basic non-null html and baseUri path B0→B1→B2
+    @Test
+    @DisplayName("parse(html, baseUri) with non-empty html and non-empty baseUri returns Document via Parser.parse")
+    public void test_TC01() {
+        // GIVEN
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com/";
+        // WHEN
+        Document doc = Jsoup.parse(html, baseUri);
+        // THEN
+        assertEquals(baseUri, doc.baseUri(), "baseUri must match the provided non-empty baseUri");
+        assertEquals("Test", doc.select("p").text(), "parsed <p> node text should be 'Test'");
+    }
+
+    // TC02: null html should throw NullPointerException path B0→B1→B3
+    @Test
+    @DisplayName("parse(html, baseUri) with null html throws NullPointerException")
+    public void test_TC02() {
+        // GIVEN
+        String html = null;
+        String baseUri = "http://example.com/";
+        // WHEN / THEN
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri),
+                "Invoking parse with null html should throw NullPointerException");
+    }
+
+    // TC03: custom parser stub invoked via parse(html, baseUri, parser) path B0→B4→B5
+    @Test
+    @DisplayName("parse(html, baseUri, parser) with custom parser invoked")
+    public void test_TC03() {
+        // GIVEN
+        String html = "<div>1</div>";
+        String baseUri = "";
+        class StubParser extends Parser {
+            String inputHtml;
+            String inputBaseUri;
+            Document returned = new Document("stub");
+            @Override
+            public Document parseInput(String inHtml, String inBaseUri) {
+                this.inputHtml = inHtml;
+                this.inputBaseUri = inBaseUri;
+                return returned;
+            }
+        }
+        StubParser parser = new StubParser();
+        // WHEN
+        Document result = Jsoup.parse(html, baseUri, parser);
+        // THEN
+        assertAll("custom parser should have been invoked with correct args and result returned",
+                () -> assertEquals(html, parser.inputHtml, "Parser.parseInput must receive the html input"),
+                () -> assertEquals(baseUri, parser.inputBaseUri, "Parser.parseInput must receive the baseUri input"),
+                () -> assertSame(parser.returned, result, "Result must be the stub's returned Document")
+        );
+    }
+
+    // TC04: parse(html, parser) default baseUri "" path B0→B6→B7
+    @Test
+    @DisplayName("parse(html, parser) with empty baseUri calls parser.parseInput with blank string")
+    public void test_TC04() {
+        // GIVEN
+        String html = "<span>x</span>";
+        class StubParser extends Parser {
+            String inputBaseUri;
+            Document returned = new Document("stub4");
+            @Override
+            public Document parseInput(String inHtml, String inBaseUri) {
+                this.inputBaseUri = inBaseUri;
+                return returned;
+            }
+        }
+        StubParser parser = new StubParser();
+        // WHEN
+        Document doc = Jsoup.parse(html, parser);
+        // THEN
+        assertAll("default baseUri should be blank when omitted",
+                () -> assertEquals("", parser.inputBaseUri, "BaseUri stub recorded must be empty string"),
+                () -> assertSame(parser.returned, doc, "Return must be the parser's returned Document")
+        );
+    }
+
+    // TC05: parse(html) no baseUri path B0→B8→B9
+    @Test
+    @DisplayName("parse(html) with simple html uses Parser.parse with empty baseUri")
+    public void test_TC05() {
+        // GIVEN
+        String html = "<h1>Title</h1>";
+        // WHEN
+        Document doc = Jsoup.parse(html);
+        // THEN
+        assertEquals("", doc.baseUri(), "Default baseUri when none given should be empty");
+        assertEquals("Title", doc.select("h1").text(), "Parsed <h1> content should be 'Title'");
+    }
+
+    // TC06: parse(file, charsetName, baseUri) valid file path B0→B10→B11
+    @Test
+    @DisplayName("parse(file, charsetName, baseUri) with valid file returns Document")
+    public void test_TC06() throws IOException {
+        // GIVEN
+        File temp = File.createTempFile("jsoup-test", ".html");
+        temp.deleteOnExit();
+        String content = "<a href='x'>x</a>";
+        java.nio.file.Files.write(temp.toPath(), content.getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "http://site/";
+        // WHEN
+        Document doc = Jsoup.parse(temp, charset, baseUri);
+        // THEN
+        assertAll("file parse must read links and set baseUri",
+                () -> assertEquals("x", doc.select("a").attr("href"), "href attribute must be 'x'"),
+                () -> assertEquals(baseUri, doc.baseUri(), "baseUri must match provided baseUri")
+        );
+    }
+
+    // TC07: parse(file, charsetName) missing file throws IOException path B0→B10→B12
+    @Test
+    @DisplayName("parse(file, charsetName) with non-existing file throws IOException")
+    public void test_TC07() {
+        // GIVEN
+        File missing = new File("no_such.html");
+        String charset = null;
+        // WHEN / THEN
+        assertThrows(IOException.class, () -> Jsoup.parse(missing, charset),
+                "Parsing a non-existent file should throw IOException");
+    }
+
+    // TC08: parse(url, timeoutMillis) invalid protocol throws MalformedURLException path B0→B13→B14
+    @Test
+    @DisplayName("parse(URL url, timeoutMillis) with invalid protocol throws MalformedURLException")
+    public void test_TC08() throws Exception {
+        // GIVEN
+        URL url = new URL("ftp://example.com");
+        int timeout = 1000;
+        // WHEN / THEN
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, timeout),
+                "Using non-http/https protocol URL must throw MalformedURLException");
+    }
+
+    // TC09: parse(url, timeoutMillis) http-success stub HttpConnection path B0→B13→B15→B16
+    @Test
+    @DisplayName("parse(URL url, timeoutMillis) with valid http URL returns Document stubbed")
+    public void test_TC09() throws Exception {
+        // GIVEN
+        URL url = new URL("http://example.com");
+        int timeout = 5000;
+        Document stubDoc = new Document("stub9");
+        // stub HttpConnection.connect via Mockito mockStatic
+        try (MockedStatic<HttpConnection> ms = Mockito.mockStatic(HttpConnection.class)) {
+            HttpConnection con = Mockito.mock(HttpConnection.class);
+            Mockito.when(con.timeout(timeout)).thenReturn(con);
+            Mockito.when(con.get()).thenReturn(stubDoc);
+            ms.when(() -> HttpConnection.connect(url)).thenReturn(con);
+
+            // WHEN
+            Document result = Jsoup.parse(url, timeout);
+            // THEN
+            assertSame(stubDoc, result, "Should return the Document stubbed by the mocked connection");
+        }
+    }
+
+    // TC10: parse(InputStream in, charsetName, baseUri) stream close path B0→B17→B18
+    @Test
+    @DisplayName("parse(InputStream in, charsetName, baseUri) with valid stream returns Document and closes stream")
+    public void test_TC10() throws IOException {
+        // GIVEN
+        class TrackableInputStream extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackableInputStream(byte[] buf) { super(buf); }
+            @Override public void close() throws IOException { super.close(); closed = true; }
+            public boolean isClosed() { return closed; }
+        }
+        byte[] data = "<b>bold</b>".getBytes("UTF-8");
+        TrackableInputStream in = new TrackableInputStream(data);
+        String charset = null;
+        String baseUri = "";
+        // WHEN
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        // THEN
+        assertAll("parsed <b> tag and stream must be closed",
+                () -> assertEquals("bold", doc.select("b").text(), "Should parse bold tag text"),
+                () -> assertTrue(in.isClosed(), "InputStream should be closed after parsing")
+        );
+    }
+}

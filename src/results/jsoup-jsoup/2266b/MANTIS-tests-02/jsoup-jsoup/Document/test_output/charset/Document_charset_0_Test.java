@@ -1,0 +1,122 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_charset_0_Test {
+
+    @Test
+    @DisplayName("charset(htmlSyntax, no existing meta[charset]) appends <meta charset> under <head>")
+    void test_TC01() {
+        // GIVEN: an HTML document shell with no existing <meta charset>
+        Document doc = Document.createShell("http://example.com");
+        // WHEN: setting charset to UTF-16 should append a new <meta charset>
+        doc.charset(StandardCharsets.UTF_16);
+        // THEN: outputSettings charset is updated
+        assertEquals(StandardCharsets.UTF_16, doc.outputSettings().charset());
+        // AND: a new <meta charset> element is present under head
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta, "Expected a <meta charset> element");
+        assertEquals("UTF-16", meta.attr("charset"));
+        // AND: no obsolete meta[name=charset] remains
+        Elements obsolete = doc.head().select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "No obsolete meta[name=charset] should remain");
+    }
+
+    @Test
+    @DisplayName("charset(htmlSyntax, existing meta[charset]) updates existing element's charset attribute")
+    void test_TC02() {
+        // GIVEN: HTML document with an existing <meta charset> in head
+        Document doc = Document.createShell("base");
+        doc.head().appendElement("meta").attr("charset", "ISO-8859-1");
+        // WHEN: setting charset to UTF-8 should update the existing attribute rather than adding new
+        doc.charset(StandardCharsets.UTF_8);
+        // THEN: the single <meta charset> element's charset equals UTF-8
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta);
+        assertEquals("UTF-8", meta.attr("charset"));
+        // AND: no duplicate meta elements were created
+        Elements all = doc.head().select("meta[charset]");
+        assertEquals(1, all.size(), "Should have only one meta[charset]");
+    }
+
+    @Test
+    @DisplayName("charset(htmlSyntax, obsolete meta[name=charset] present) adds new meta[charset] and removes meta[name=charset]")
+    void test_TC03() {
+        // GIVEN: HTML document shell with an obsolete <meta name=charset>
+        Document doc = Document.createShell("u");
+        doc.head().appendElement("meta").attr("name", "charset").attr("content", "x");
+        // WHEN: setting charset to US-ASCII should remove obsolete and add proper meta[charset]
+        Charset ascii = Charset.forName("US-ASCII");
+        doc.charset(ascii);
+        // THEN: a meta[charset] with correct charset attribute exists
+        Element meta = doc.head().selectFirst("meta[charset]");
+        assertNotNull(meta);
+        assertEquals("US-ASCII", meta.attr("charset"));
+        // AND: obsolete meta[name=charset] elements are removed
+        Elements obsolete = doc.head().select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "Obsolete meta[name=charset] should be removed");
+    }
+
+    @Test
+    @DisplayName("charset(xmlSyntax, no existing XmlDeclaration) prepends new XmlDeclaration with encoding and version attributes")
+    void test_TC04() {
+        // GIVEN: Document in XML syntax with no XmlDeclaration at root
+        Document doc = Document.createShell("b");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // WHEN: setting charset to default UTF-8 should prepend a new XmlDeclaration
+        doc.charset(StandardCharsets.UTF_8);
+        // THEN: first child node is an XmlDeclaration with correct attributes
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected first node to be XmlDeclaration");
+        XmlDeclaration decl = (XmlDeclaration) first;
+        assertEquals("xml", decl.name());
+        assertEquals("UTF-8", decl.attr("encoding"));
+        assertEquals("1.0", decl.attr("version"));
+    }
+
+    @Test
+    @DisplayName("charset(xmlSyntax, existing XmlDeclaration name=\"xml\" without version attr) updates encoding but does not add version attr when version missing")
+    void test_TC05() {
+        // GIVEN: Document in XML syntax with an XmlDeclaration lacking version attr
+        Document doc = Document.createShell("u");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        decl.removeAttr("version"); // ensure version absent
+        doc.prependChild(decl);
+        // WHEN: setting charset to ISO-8859-1 updates only encoding
+        Charset iso = Charset.forName("ISO-8859-1");
+        doc.charset(iso);
+        // THEN: the existing XmlDeclaration at position 0 has updated encoding
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration);
+        XmlDeclaration d2 = (XmlDeclaration) first;
+        assertEquals("ISO-8859-1", d2.attr("encoding"));
+        assertFalse(d2.hasAttr("version"), "Should not add version attribute when originally missing");
+    }
+
+    @Test
+    @DisplayName("charset(xmlSyntax, existing XmlDeclaration name!=\"xml\") replaces with new xml declaration")
+    void test_TC06() {
+        // GIVEN: Document in XML syntax with an XmlDeclaration of wrong name at root
+        Document doc = Document.createShell("u");
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        XmlDeclaration wrong = new XmlDeclaration("notxml", false);
+        doc.prependChild(wrong);
+        // WHEN: setting charset triggers replacement of wrong declaration
+        doc.charset(StandardCharsets.UTF_8);
+        // THEN: first child is a new XmlDeclaration named xml with correct encoding and version
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration);
+        XmlDeclaration repl = (XmlDeclaration) first;
+        assertEquals("xml", repl.name());
+        assertEquals("UTF-8", repl.attr("encoding"));
+        assertEquals("1.0", repl.attr("version"));
+    }
+}

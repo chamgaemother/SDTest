@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "RemovingVisitor on a parent with two children skips tail of removed and continues traversal to next sibling",
+      "path": "B0→B1→B2→B5→B6→B11→B5→B6→B7→B9→B10→B1→B2→B5→B11→B12→B23→B1→B6→B11→B13→B16→B20→B21→B24",
+      "precondition": "Parent element with two child leaf nodes; RemovingVisitor that calls node.remove() in head",
+      "expectedResult": "First child head called and removed (no tail), then second child's head and tail called once each, then root tail",
+      "tags": [
+        "remove",
+        "iteration",
+        "sibling",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 remove-first-sibling",
+        "  GIVEN",
+        "    Element parent = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element c1 = new Element(Tag.valueOf(\"a\"), \"\");",
+        "    Element c2 = new Element(Tag.valueOf(\"b\"), \"\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "    RemovingVisitor v = new RemovingVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, parent);",
+        "  THEN",
+        "    assertEquals(2, v.headCount);",
+        "    assertEquals(2, v.tailCount);",
+        "    // c1 removed, so only c2 and parent tail"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "ReplacingVisitor on a parent with two children replaces first child and then continues to second child",
+      "path": "B0→B1→B2→B5→B6→B7→B8→B11→B12→B23→B1→B6→B7→B8→B11→B12→B23→B1→B6→B11→B13→B16→B20→B22→B23→B1→B6→B11→B13→B16→B20→B21→B24",
+      "precondition": "Parent element with two child leaf nodes; ReplacingVisitor that replaces the node in head",
+      "expectedResult": "First child is replaced then both replacement and second original child get head and tail, then parent tail",
+      "tags": [
+        "replace",
+        "sibling",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 replace-first-sibling",
+        "  GIVEN",
+        "    Element parent = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element c1 = new Element(Tag.valueOf(\"span\"), \"\");",
+        "    Element c2 = new Element(Tag.valueOf(\"em\"), \"\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "    ReplacingVisitor v = new ReplacingVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, parent);",
+        "  THEN",
+        "    assertTrue(v.sequence.indexOf(\"head1\") < v.sequence.indexOf(\"tail1\"));",
+        "    assertTrue(v.sequence.contains(\"head1\"));",
+        "    assertTrue(v.sequence.contains(\"tail2\"));"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Traverse overload with two root elements in Elements list invokes traversal for each element and then returns",
+      "path": "B0→B1→B2→(recursive)→B3→B1→B2→(recursive)→B3",
+      "precondition": "Elements list containing two independent simple roots, RecordingVisitor",
+      "expectedResult": "Visitor.head and tail called once per root, total headCount=2, tailCount=2",
+      "tags": [
+        "elements",
+        "overload",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 multi-element-list",
+        "  GIVEN",
+        "    Element el1 = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element el2 = new Element(Tag.valueOf(\"p\"), \"\");",
+        "    Elements list = new Elements(el1, el2);",
+        "    RecordingVisitor v = new RecordingVisitor();",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, list);",
+        "  THEN",
+        "    assertEquals(2, v.headCount);",
+        "    assertEquals(2, v.tailCount);"
+      ]
+    }
+  ]
+}

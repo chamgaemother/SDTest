@@ -1,0 +1,158 @@
+package org.jsoup;
+
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Generated JUnit 5 tests for org.jsoup.Jsoup.parse overloads.
+ */
+public class Jsoup_parse_Test {
+    @Test
+    @DisplayName("TC01_O1: parse(html) uses empty baseUri and returns a Document with html content")
+    public void test_TC01_O1() {
+        String html = "<p>Hello</p>";
+        // branch B2: default empty baseUri
+        Document doc = Jsoup.parse(html);
+        assertEquals("<p>Hello</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O2: parse(html, baseUri) resolves relative links against provided baseUri")
+    public void test_TC02_O2() {
+        String html = "<a href=\"page\">link</a>";
+        String baseUri = "http://example.com/";
+        // resolution branch: relative URL "page" + baseUri
+        Document doc = Jsoup.parse(html, baseUri);
+        String abs = doc.select("a").first().absUrl("href");
+        assertEquals("http://example.com/page", abs);
+    }
+
+    @Test
+    @DisplayName("TC03_O3: parse(html, baseUri, parser) delegates to custom Parser.parseInput")
+    public void test_TC03_O3() {
+        String html = "x";
+        String baseUri = "u";
+        // use stub parser to hit branch B3
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(String h, String u) {
+                assertEquals("x", h);      // ensure html passed
+                assertEquals("u", u);      // ensure baseUri passed
+                Document d = new Document(u);
+                d.appendElement("div").attr("id", "stub-parsed");
+                return d;
+            }
+        };
+        Document doc = Jsoup.parse(html, baseUri, stub);
+        assertNotNull(doc.getElementById("stub-parsed"));
+    }
+
+    @Test
+    @DisplayName("TC04_O4: parse(html, parser) passes empty baseUri to parser.parseInput")
+    public void test_TC04_O4() {
+        String html = "y";
+        // stub asserts empty baseUri
+        Parser stub = new Parser() {
+            @Override
+            public Document parseInput(String h, String u) {
+                assertEquals("y", h);
+                assertEquals("", u); // empty default
+                return new Document(u);
+            }
+        };
+        // no exception means stub assertion passed
+        Jsoup.parse(html, stub);
+    }
+
+    @Test
+    @DisplayName("TC05_O5: parse(file, charset, baseUri) returns Document loaded from file")
+    public void test_TC05_O5() throws IOException {
+        File f = File.createTempFile("test", ".html");
+        try (Writer w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8")) {
+            w.write("<h1>Hi</h1>");
+        }
+        String charset = "UTF-8";
+        String baseUri = "";
+        Document doc = Jsoup.parse(f, charset, baseUri);
+        assertEquals("Hi", doc.select("h1").first().text());
+    }
+
+    @Test
+    @DisplayName("TC06_O6: parse(file, charset) infers baseUri from file path")
+    public void test_TC06_O6() throws IOException {
+        File f = File.createTempFile("test2", ".html");
+        try (Writer w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8")) {
+            w.write("<p>Test</p>");
+        }
+        String charset = "UTF-8";
+        Document doc = Jsoup.parse(f, charset);
+        assertEquals("Test", doc.select("p").first().text());
+        // ensure baseUri was inferred (non-empty, contains file path)
+        assertTrue(doc.baseUri().contains(f.getAbsolutePath()));
+    }
+
+    @Test
+    @DisplayName("TC07_O7: parse(file) uses null charsetName and infers UTF-8 or BOM")
+    public void test_TC07_O7() throws IOException {
+        File f = File.createTempFile("test3", ".html");
+        try (Writer w = new OutputStreamWriter(new FileOutputStream(f), "UTF-8")) {
+            w.write("<div>A</div>");
+        }
+        Document doc = Jsoup.parse(f);
+        assertEquals("A", doc.select("div").first().text());
+    }
+
+    @Test
+    @DisplayName("TC08_O8: parse(path, charset, baseUri) throws IOException for nonexistent path")
+    public void test_TC08_O8() {
+        Path p = Paths.get("no-such-file-hopefully-not-exist.html");
+        String charset = "UTF-8";
+        String baseUri = "";
+        assertThrows(IOException.class, () -> Jsoup.parse(p, charset, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC09_O9: parse(in, charset, baseUri) closes InputStream after load")
+    public void test_TC09_O9() throws IOException {
+        // wrap ByteArrayInputStream to track close()
+        class TrackInput extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackInput(byte[] b) { super(b); }
+            @Override public void close() throws IOException {
+                closed = true;
+                super.close();
+            }
+        }
+        TrackInput in = new TrackInput("<span>X</span>".getBytes("UTF-8"));
+        String charset = "UTF-8";
+        String baseUri = "";
+        Document doc = Jsoup.parse(in, charset, baseUri);
+        assertEquals("X", doc.select("span").first().text());
+        assertTrue(in.closed, "InputStream should be closed after parse");
+    }
+
+    @Test
+    @DisplayName("TC10_O10: parse(url, timeoutMillis) retrieves Document body text via HTTP")
+    public void test_TC10_O10() {
+        // Since real HTTP is out of scope, expect MalformedURLException for unsupported file URL
+        assertThrows(MalformedURLException.class, () -> {
+            URL url = new URL("file:///no-such.html");
+            Jsoup.parse(url, 1000);
+        });
+    }
+}

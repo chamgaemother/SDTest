@@ -1,0 +1,257 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap() returns empty string when input is empty (no loop iterations, end-of-stream branch)",
+      "path": "B0→B1→B2",
+      "precondition": "Builder created from(CharSequence) with empty text",
+      "expectedResult": "return value is \"\"",
+      "tags": [
+        "loop-0",
+        "boundary",
+        "empty-input",
+        "overload:void()→String",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-input returns-empty",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap() with text shorter than maxWidth returns original text (no wrapping branch)",
+      "path": "B0→B1→B3→B4",
+      "precondition": "default maxWidth=80, text length 5",
+      "expectedResult": "return value is \"hello\"",
+      "tags": [
+        "loop-1",
+        "positive",
+        "no-wrap",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 short-text no-wrap",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap() with embedded newline preserves line break and resets buffers (newline branch true)",
+      "path": "B0→B1→B5→B6→B7",
+      "precondition": "text \"a\\nb\" triggers ch=='\\n' branch",
+      "expectedResult": "return value is \"a\\nb\"",
+      "tags": [
+        "loop-N",
+        "newline-branch",
+        "reset-line",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 embedded-newline preserves-lines",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a\\nb\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap() breaks long word with hyphens when breakWords=true and insertHyphens=true (tooLong→writeBrokenWord hyphen branch)",
+      "path": "B0→B1→B8→B9→B10",
+      "precondition": "maxWidth=3, text \"abcdef\"",
+      "expectedResult": "return value is \"abcd-\\nef\"",
+      "tags": [
+        "loop-N",
+        "breakWords-true",
+        "insertHyphens-true",
+        "broken-word-hyphen",
+        "overload:wrap()"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 break-with-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(4);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcd-\\nef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "wrap() breaks long word without hyphens when insertHyphens=false (broken-word-no-hyphen branch)",
+      "path": "B0→B1→B8→B9→B11",
+      "precondition": "maxWidth=3, text \"abcdef\", insertHyphens=false",
+      "expectedResult": "return value is \"abc\\ndef\"",
+      "tags": [
+        "loop-N",
+        "breakWords-true",
+        "insertHyphens-false",
+        "broken-word-no-hyphen",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 break-without-hyphens",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(3).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abc\\ndef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "wrap() defers breaking when breakWords=false (sets broken flag without hyphen)",
+      "path": "B0→B1→B8→B12",
+      "precondition": "maxWidth=3, text \"abcdef\", breakWords=false",
+      "expectedResult": "return value is \"abcdef\"",
+      "tags": [
+        "loop-1",
+        "breakWords-false",
+        "defer-break",
+        "overload:wrap()"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 no-breakWords defers",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(6).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcdef\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "wrapToList() returns list of lines split on newlines and breaks",
+      "path": "B0→B1→B3→B4",
+      "precondition": "default maxWidth=80, text \"one two\"",
+      "expectedResult": "return value is list [\"one two\"]",
+      "tags": [
+        "loop-1",
+        "to-list",
+        "overload:wrapToList()"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrapToList single-line",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"one two\");",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"one two\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "wrap(File,Charset) writes wrapped content to file and reads back (successful file write branch)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "temporary file created, default charset UTF-8",
+      "expectedResult": "file content equals original text",
+      "tags": [
+        "file-io",
+        "successful-write",
+        "overload:wrap(File,Charset)"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 wrap-file-success",
+        "  GIVEN",
+        "    File f = tempFile();",
+        "    Builder b = WordWrap.from(\"abc\");",
+        "  WHEN",
+        "    b.wrap(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    assert readFile(f, UTF-8).equals(\"abc\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "wrap(File,Charset) throws IORuntimeException when file not found (FileNotFoundException branch)",
+      "path": "B0→B1→B6",
+      "precondition": "nonexistent File reference",
+      "expectedResult": "throws IORuntimeException containing FileNotFoundException",
+      "tags": [
+        "exception",
+        "file-not-found",
+        "overload:wrap(File,Charset)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 wrap-file-not-found",
+        "  GIVEN",
+        "    File f = new File(\"/no/such/file\");",
+        "    Builder b = WordWrap.from(\"text\");",
+        "  WHEN",
+        "    call b.wrap(f, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "wrapUtf8(String) writes to named file with UTF-8 encoding (overload chain wrapUtf8→wrap)",
+      "path": "B0→B1→B4→B5",
+      "precondition": "temporary filename, exists or creatable",
+      "expectedResult": "file content equals input",
+      "tags": [
+        "file-io",
+        "utf8",
+        "overload:wrapUtf8(String)"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 wrapUtf8 filename",
+        "  GIVEN",
+        "    String filename = tempFilename();",
+        "    Builder b = WordWrap.from(\"xyz\");",
+        "  WHEN",
+        "    b.wrapUtf8(filename);",
+        "  THEN",
+        "    assert readFile(new File(filename), UTF-8).equals(\"xyz\");",
+        "END"
+      ]
+    }
+  ]
+}

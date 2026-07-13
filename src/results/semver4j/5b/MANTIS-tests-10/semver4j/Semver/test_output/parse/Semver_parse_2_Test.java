@@ -1,0 +1,60 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.semver4j.Semver;
+
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_2_Test {
+
+    @Test
+    @DisplayName("parse(\"1.2.3-alpha\") returns Semver with pre-release only (branch version!=null, no exception, preRelease non-empty)")
+    void test_TC05() {
+        // Input has a valid semver string with only pre-release; trim()!=null, parser should succeed (path B0→B2→B3)
+        String version = "1.2.3-alpha";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for valid pre-release version");
+        // getVersion should reflect the input including pre-release
+        assertEquals("1.2.3-alpha", result.getVersion());
+        // preRelease list should contain exactly ["alpha"]
+        assertEquals(Collections.singletonList("alpha"), result.getPreRelease());
+        // build metadata is absent, so build list should be empty
+        assertTrue(result.getBuild().isEmpty());
+    }
+
+    @Test
+    @DisplayName("parse(\"1.2.3+build.123\") returns Semver with build metadata only (branch version!=null, no exception, build non-empty)")
+    void test_TC06() {
+        // Input has a valid semver string with only build metadata; trim()!=null, parser should succeed (path B0→B2→B3)
+        String version = "1.2.3+build.123";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for valid build-only version");
+        // getVersion should reflect the input including build metadata
+        assertEquals("1.2.3+build.123", result.getVersion());
+        // preRelease is absent, so its list should be empty
+        assertTrue(result.getPreRelease().isEmpty());
+        // build list should split "build.123" into ["build","123"]
+        assertEquals(Arrays.asList("build", "123"), result.getBuild());
+    }
+
+    @Test
+    @DisplayName("parse(\"\") returns null for empty string after trim (branch version!=null, exception path)")
+    void test_TC07() {
+        // Input is empty string, trimmed to empty; parse should return null (path B0→B2→B4)
+        String version = "";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for empty version string after trim");
+    }
+
+    @Test
+    @DisplayName("parse(\"  \") returns null for blank string after trim (branch version!=null, exception path)")
+    void test_TC08() {
+        // Input is blank spaces, trimmed to empty; parse should return null (path B0→B2→B4)
+        String version = "  ";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for blank version string after trim");
+    }
+}

@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "load() propagates unchecked RuntimeException when parse() throws non-DotenvException",
+      "path": "B0→B1→B2",
+      "precondition": "DotenvParserStubControl.toThrow set to new RuntimeException(\"boom\")",
+      "expectedResult": "RuntimeException(\"boom\") is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "unchecked"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 propagate-unchecked-exception",
+        "  GIVEN",
+        "    DotenvParserStubControl.toThrow = new RuntimeException(\"boom\");",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "  WHEN",
+        "    call builder.load();",
+        "  THEN",
+        "    throws RuntimeException with message \"boom\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "load() with systemProperties=true skips forEach and does not set any system properties even for multiple entries",
+      "path": "B0→B2",
+      "precondition": "DotenvParserStubControl.stubList contains two entries, systemProperties enabled",
+      "expectedResult": "returned Dotenv has two entries; System.getProperty keys are null",
+      "tags": [
+        "positive",
+        "branch",
+        "systemProperties"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 systemProperties-true-multiple-entries-no-set",
+        "  GIVEN",
+        "    DotenvParserStubControl.stubList = Arrays.asList(new DotenvEntry(\"K1\",\"V1\"), new DotenvEntry(\"K2\",\"V2\"));",
+        "    DotenvBuilder builder = new DotenvBuilder().systemProperties();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assert dotenv.entries().size() == 2;",
+        "    assert System.getProperty(\"K1\") == null;",
+        "    assert System.getProperty(\"K2\") == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "load() returns unmodifiable entries set: entries().add throws UnsupportedOperationException",
+      "path": "B0→B1→B2",
+      "precondition": "DotenvParserStubControl.stubList contains one entry",
+      "expectedResult": "entries().add(...) throws UnsupportedOperationException",
+      "tags": [
+        "positive",
+        "unmodifiable",
+        "collection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 entries-unmodifiable",
+        "  GIVEN",
+        "    DotenvParserStubControl.stubList = Collections.singletonList(new DotenvEntry(\"A\",\"1\"));",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    Dotenv dotenv = builder.load();",
+        "  WHEN",
+        "    call dotenv.entries().add(new DotenvEntry(\"X\",\"Y\"));",
+        "  THEN",
+        "    throws UnsupportedOperationException;",
+        "END"
+      ]
+    }
+  ]
+}

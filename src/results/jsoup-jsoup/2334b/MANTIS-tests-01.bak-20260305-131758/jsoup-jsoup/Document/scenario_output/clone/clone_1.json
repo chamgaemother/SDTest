@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "clone() preserves child DocumentType node and its position",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document with a DocumentType prepended",
+      "expectedResult": "clone contains a distinct DocumentType child at first position",
+      "tags": [
+        "positive",
+        "child-node",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone with DocumentType child",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://x\");",
+        "    DocumentType dt = new DocumentType(\"html\",\"\",\"http://x\");",
+        "    orig.prependChild(dt);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertNotSame(orig,copy);",
+        "    assertNotSame(orig.documentType(), copy.documentType());",
+        "    assertEquals(orig.documentType().name(), copy.documentType().name());"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() duplicates element tree including head and body children",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document created via createShell(\"http://y\")",
+      "expectedResult": "clone has its own head and body elements separate from original",
+      "tags": [
+        "positive",
+        "structure",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone of shell document structure",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"http://y\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    Element origHead = orig.head();",
+        "    Element copyHead = copy.head();",
+        "    assertNotSame(origHead, copyHead);",
+        "    Element origBody = orig.body();",
+        "    Element copyBody = copy.body();",
+        "    assertNotSame(origBody, copyBody);"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() copies root attributes without sharing mutable map",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Document with an attribute on root element",
+      "expectedResult": "clone has same attribute value but independent attributes map",
+      "tags": [
+        "positive",
+        "attributes",
+        "deep-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone with root attributes",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://z\");",
+        "    orig.attr(\"lang\",\"en\");",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assertEquals(\"en\", copy.attr(\"lang\"));",
+        "    orig.attr(\"lang\",\"fr\");",
+        "    assertEquals(\"en\", copy.attr(\"lang\"));"
+      ]
+    }
+  ]
+}

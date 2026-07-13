@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() builds list but returns empty when only TextNode children (childNodeSize>0, no Element instances)",
+      "path": "B0→B3→B5(loop×n)→B7→B8",
+      "precondition": "Element has one or more TextNode children but no Element children",
+      "expectedResult": "returned Elements list is empty",
+      "tags": [
+        "positive",
+        "iteration",
+        "filter",
+        "no-elements"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children with only TextNode children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendText(\"one\");",
+        "    el.appendText(\"two\");",
+        "  WHEN",
+        "    Elements result1 = el.children();",
+        "  THEN",
+        "    assert result1.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() returns same cached list after non-structural attribute mutation (cache preserved)",
+      "path": "B0→B3→B5(loop×m)→B6(cache store)→attr mutation→B3(cached)→B6(cache hit)→B8",
+      "precondition": "Element has two Element children, shadowChildrenRef built on first children()",
+      "expectedResult": "second children() returns same instance as first",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children cache persists after attribute change",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c1 = new Element(\"p\"); el.appendChild(c1);",
+        "    Element c2 = new Element(\"span\"); el.appendChild(c2);",
+        "    // warm cache",
+        "    Elements first = el.children();",
+        "  WHEN",
+        "    el.attr(\"class\", \"x\");",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertSame(first, second);",
+        "    assertEquals(2, second.size());"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "children() rebuilds cache when previous cache referent is cleared (WeakReference.get()==null)",
+      "path": "B0→B3→B5(loop×p)→B6(cache store)→clear referent→B3(cache miss)→B5(loop×p)→B6(new cache)→B8",
+      "precondition": "Element has three Element children and initial cache built via children(); Reflection to clear shadowChildrenRef referent",
+      "expectedResult": "after referent cleared, children() returns a new list instance with same elements",
+      "tags": [
+        "positive",
+        "cache",
+        "reflection",
+        "rebuild"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 children rebuilds after WeakReference referent cleared",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element a = new Element(\"a\"); el.appendChild(a);",
+        "    Element b = new Element(\"b\"); el.appendChild(b);",
+        "    Element c = new Element(\"c\"); el.appendChild(c);",
+        "    // warm cache",
+        "    Elements first = el.children();",
+        "    // clear referent via reflection",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    refField.set(el, new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertNotSame(first, second);",
+        "    assertEquals(3, second.size());"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+package org.semver4j;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Semver_parse_2_Test {
+
+    @Test
+    @DisplayName("TC09: parse(\"1.2.3-alpha\") returns Semver for valid version with pre-release only (B0→B1→B3→B4→B5)")
+    void test_TC09() {
+        // Input has non-empty main version and valid pre-release token, triggering parsing path for pre-release only
+        String version = "1.2.3-alpha";
+        Semver result = Semver.parse(version);
+        assertNotNull(result, "Expected non-null Semver for valid pre-release-only string");
+        assertEquals("1.2.3-alpha", result.getVersion(),
+                "Parsed version string should preserve the pre-release part");
+    }
+
+    @Test
+    @DisplayName("TC10: parse(\"1.2.3-\") returns null for version with empty pre-release section (B0→B1→B3→B6→B7)")
+    void test_TC10() {
+        // Input has trailing hyphen with empty pre-release, should be invalid and return null
+        String version = "1.2.3-";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for version with empty pre-release section");
+    }
+
+    @Test
+    @DisplayName("TC11: parse(\"1.2.3+\") returns null for version with empty build metadata (B0→B1→B3→B6→B7)")
+    void test_TC11() {
+        // Input has trailing plus with empty build metadata, should be invalid and return null
+        String version = "1.2.3+";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for version with empty build metadata");
+    }
+
+    @Test
+    @DisplayName("TC12: parse(\"1.2.03\") returns null when patch has leading zero (B0→B1→B3→B6→B7)")
+    void test_TC12() {
+        // Patch segment "03" has a leading zero, violating semver numeric rules, should return null
+        String version = "1.2.03";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for patch part with leading zero");
+    }
+
+    @Test
+    @DisplayName("TC13: parse(\"1.0.0-01\") returns null when numeric pre-release identifier has leading zero (B0→B1→B3→B6→B7)")
+    void test_TC13() {
+        // Pre-release identifier "01" is numeric with leading zero, invalid semver, should return null
+        String version = "1.0.0-01";
+        Semver result = Semver.parse(version);
+        assertNull(result, "Expected null for numeric pre-release identifier with leading zero");
+    }
+}

@@ -1,0 +1,54 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseBodyFragment(String bodyHtml, String baseUri) with null baseUri throws NullPointerException",
+      "path": "B0→B1→B6",
+      "precondition": "bodyHtml non-null",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseBodyFragment null-baseUri",
+        "  GIVEN",
+        "    String bodyHtml = \"<p>Test</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseBodyFragment respects <base href> tag and overrides provided baseUri for link resolution",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "anchor abs:href uses base href from fragment",
+      "tags": [
+        "positive",
+        "resolution",
+        "base-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseBodyFragment base-tag-override",
+        "  GIVEN",
+        "    String bodyHtml = \"<base href='http://override.com/'><a href='a.html'>link</a>\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(bodyHtml, baseUri);",
+        "  THEN",
+        "    assert doc.body().select(\"a\").attr(\"abs:href\").equals(\"http://override.com/a.html\");",
+        "END"
+      ]
+    }
+  ]
+}

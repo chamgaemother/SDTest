@@ -1,0 +1,77 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "tagSet skips empty tokens when input contains only commas and whitespace",
+      "path": "B0→B3→B6×3→B4×3→B5",
+      "precondition": "none",
+      "expectedResult": "returns empty set",
+      "tags": [
+        "boundary",
+        "empty-token",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 skip-empty-tokens",
+        "  GIVEN",
+        "    String input = \", , ,\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assertTrue(result.isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "tagSet lower-cases uppercase tokens before adding to the set",
+      "path": "B0→B3→B6×2→B5",
+      "precondition": "none",
+      "expectedResult": "returns set containing lower-cased tags",
+      "tags": [
+        "positive",
+        "case-normalization"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 normalize-case",
+        "  GIVEN",
+        "    String input = \"DIV,Span\";",
+        "  WHEN",
+        "    Set<String> result = Parser.tagSet(input);",
+        "  THEN",
+        "    assertEquals(2, result.size());",
+        "    assertTrue(result.contains(\"div\"));",
+        "    assertTrue(result.contains(\"span\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "tagSet throws IllegalArgumentException for tokens with illegal characters",
+      "path": "B0→B3→B6→B7→B8",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "negative",
+        "exception",
+        "invalid-token"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 invalid-character-throws",
+        "  GIVEN",
+        "    String input = \"valid, inv@lid\";",
+        "  WHEN",
+        "    call Parser.tagSet(input);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

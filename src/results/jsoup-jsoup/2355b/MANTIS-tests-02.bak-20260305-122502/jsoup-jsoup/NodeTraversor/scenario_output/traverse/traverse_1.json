@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "traverse: replacement in head on a mid-tree node with siblings triggers B8→B11 path and correct depth adjustments",
+      "path": "B0→B2→B5→B6→B7→B8→B11→B12→B23→…→B24",
+      "precondition": "root Element with two children, and visitor replaces the second-level node in head with a new node at same index",
+      "expectedResult": "Traversal continues into replaced node; head/tail called in correct order and depths",
+      "tags": [
+        "positive",
+        "replace",
+        "branch-B8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 traverse replacement on deep sibling",
+        "  GIVEN",
+        "    Element root = Jsoup.parse(\"<div><span><a/><b/></span></div>\").body().child(0);",
+        "    List<String> log = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n,int d) {",
+        "        if (n.nodeName().equals(\"b\")) n.replaceWith(new Element(\"c\"));",
+        "        log.add(\"h:\"+n.nodeName()+\":\"+d);",
+        "      }",
+        "      public void tail(Node n,int d) { log.add(\"t:\"+n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    // 'c' appears in log as replacement for 'b', and depth returns properly",
+        "    assert log.contains(\"h:c:2\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "traverse: removal in head on a leaf with no nextSibling triggers B9 removal→ ascend→ continue at parent",
+      "path": "B0→B2→B5→B6→B7→B9→B1→…→B24",
+      "precondition": "root Element with single child and visitor removes child in head",
+      "expectedResult": "Child is removed, tail never called on it, traversal ascends back to root, then terminates",
+      "tags": [
+        "negative",
+        "remove",
+        "branch-B9"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 traverse removal without siblings",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element li = new Element(\"li\");",
+        "    root.appendChild(li);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n,int d) {",
+        "        if (n instanceof Element && ((Element)n).tagName().equals(\"li\")) n.remove();",
+        "        calls.add(\"h:\"+n.nodeName()+\":\"+d);",
+        "      }",
+        "      public void tail(Node n,int d) { calls.add(\"t:\"+n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assert !calls.contains(\"t:li:1\");",
+        "    assert calls.contains(\"h:li:1\");"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "traverse: ascend-loop branch when a node has nextSibling!=null at depth=0 triggers B16→B20→B22",
+      "path": "B0→B2→B5→B11→B13→B16→B20→B22→B23→…→B24",
+      "precondition": "root Element with two leaf children, visitor only logs, assertions enabled",
+      "expectedResult": "Traverses first child (has nextSibling, depth=1) through B18, but for root-level nextSibling at depth=0 goes B16→B20→B22",
+      "tags": [
+        "positive",
+        "siblings",
+        "branch-B20-B22"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 traverse sibling ascend at depth zero",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    root.appendChild(new TextNode(\"a\"));",
+        "    root.appendChild(new TextNode(\"b\"));",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node n,int d) { seq.add(\"h:\"+n.nodeName()+\":\"+d); }",
+        "      public void tail(Node n,int d) { seq.add(\"t:\"+n.nodeName()+\":\"+d); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    // ensure 'b' is visited via B22->B23, depth remains correct",
+        "    assert seq.get(2).equals(\"h:b:1\");",
+        "    assert seq.get(3).equals(\"t:b:1\");"
+      ]
+    }
+  ]
+}

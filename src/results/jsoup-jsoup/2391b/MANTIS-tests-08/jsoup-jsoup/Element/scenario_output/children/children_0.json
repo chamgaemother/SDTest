@@ -1,0 +1,215 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on an element with no child nodes returns an empty Elements (childNodeSize=0 branch)",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); // no children",
+      "expectedResult": "returned Elements is empty (size == 0)",
+      "tags": [
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 children empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() with only a TextNode child returns empty Elements (filters out non-Element)",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element el = new Element(\"p\"); el.appendChild(new TextNode(\"text\"));",
+      "expectedResult": "returned Elements is empty (size == 0)",
+      "tags": [
+        "branch-false",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 children filters-textnodes",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() with one direct Element child returns list of size 1 (single iteration branch)",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"ul\"); Element child = new Element(\"li\"); parent.appendChild(child);",
+      "expectedResult": "returned Elements contains exactly [child] (size == 1 and element == child)",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 children single-element",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element child = new Element(\"li\");",
+        "    parent.appendChild(child);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() with multiple Element children returns list preserving insertion order (multiple iterations)",
+      "path": "B0→B1→B3(loop×3)→B4",
+      "precondition": "Element parent = new Element(\"div\"); Element c1 = new Element(\"span\"); Element c2 = new Element(\"a\"); Element c3 = new Element(\"b\"); parent.appendChild(c1); parent.appendChild(c2); parent.appendChild(c3);",
+      "expectedResult": "returned Elements is [c1,c2,c3] in order (size == 3)",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 children multiple-elements",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c1 = new Element(\"span\");",
+        "    Element c2 = new Element(\"a\");",
+        "    Element c3 = new Element(\"b\");",
+        "    parent.appendChild(c1); parent.appendChild(c2); parent.appendChild(c3);",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.get(0) == c1 && result.get(1) == c2 && result.get(2) == c3;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() filters out mixed node types returning only Element children (mixed Element, TextNode, DataNode)",
+      "path": "B0→B1→B3(loop×4)→B4",
+      "precondition": "Element el = new Element(\"div\"); el.appendChild(new TextNode(\"one\")); Element e1 = new Element(\"p\"); el.appendChild(e1); el.appendChild(new DataNode(\"data\")); Element e2 = new Element(\"span\"); el.appendChild(e2);",
+      "expectedResult": "returned Elements is [e1,e2] (size == 2)",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"one\"));",
+        "    Element e1 = new Element(\"p\");",
+        "    el.appendChild(e1);",
+        "    el.appendChild(new DataNode(\"data\"));",
+        "    Element e2 = new Element(\"span\");",
+        "    el.appendChild(e2);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0) == e1 && result.get(1) == e2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() returns only direct children, not grandchildren (nested children are excluded)",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element root = new Element(\"div\"); Element c = new Element(\"section\"); Element gc = new Element(\"article\"); c.appendChild(gc); root.appendChild(c);",
+      "expectedResult": "returned Elements is [c] only (size == 1), gc not included",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children direct-only",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c = new Element(\"section\");",
+        "    Element gc = new Element(\"article\");",
+        "    c.appendChild(gc);",
+        "    root.appendChild(c);",
+        "  WHEN",
+        "    Elements result = root.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == c;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() returned Elements is a copy so modifying it does not affect the element’s internal child list",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); Element c = new Element(\"span\"); parent.appendChild(c);",
+      "expectedResult": "after result.add(new Element(\"p\")), parent.children().size() remains 1",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children immutability",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element c = new Element(\"span\");",
+        "    parent.appendChild(c);",
+        "    Elements result = parent.children();",
+        "  WHEN",
+        "    result.add(new Element(\"p\"));",
+        "  THEN",
+        "    assert parent.children().size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() reflects updates: after appending a new Element child, children() returns updated list",
+      "path": "B0→B1→B2→B1→B3(loop×1)→B4",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "after appendChild(e), el.children() contains [e]",
+      "tags": [
+        "branch-false-to-true",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 children dynamic-update",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element e = new Element(\"p\");",
+        "  WHEN",
+        "    el.appendChild(e);",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1 && result.get(0) == e;",
+        "END"
+      ]
+    }
+  ]
+}

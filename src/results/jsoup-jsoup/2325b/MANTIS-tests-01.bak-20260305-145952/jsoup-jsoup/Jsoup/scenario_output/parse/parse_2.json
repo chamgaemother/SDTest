@@ -1,0 +1,102 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "parse(String html, String baseUri, Parser parser) invokes parser.parseInput and returns its Document",
+      "path": "B0→B4→B5",
+      "precondition": "html=\"<tag/>\", baseUri=\"http://base/\", parser=custom stub",
+      "expectedResult": "returns the Document produced by parser.parseInput with correct html and baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse overload with non-null html and parser",
+        "  GIVEN",
+        "    String html = \"<tag/>\";",
+        "    String baseUri = \"http://base/\";",
+        "    AtomicReference<String> inHtml = new AtomicReference<>();",
+        "    AtomicReference<String> inBase = new AtomicReference<>();",
+        "    Document stubDoc = new Document(\"stub\");",
+        "    Parser stub = new Parser(null) {",
+        "      @Override public Document parseInput(String h, String b) { inHtml.set(h); inBase.set(b); return stubDoc; }",
+        "    };",
+        "  WHEN",
+        "    Document result = Jsoup.parse(html, baseUri, stub);",
+        "  THEN",
+        "    assertSame(stubDoc, result);",
+        "    assertEquals(html, inHtml.get());",
+        "    assertEquals(baseUri, inBase.get());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(String html, String baseUri, Parser parser) propagates exception thrown by parser.parseInput",
+      "path": "B0→B4→B6",
+      "precondition": "html=\"data\", baseUri=\"base\", parser stub that throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "negative",
+        "overload",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse overload parser-exception",
+        "  GIVEN",
+        "    String html = \"data\";",
+        "    String baseUri = \"base\";",
+        "    Parser stub = new Parser(null) {",
+        "      @Override public Document parseInput(String inHtml, String b) {",
+        "        throw new IllegalStateException(\"fail\");",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, stub);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(URL url, int timeoutMillis) uses Connection.timeout and get to return a Document",
+      "path": "B0→B28→B29→B30→B31",
+      "precondition": "URL(\"http://test/\"), timeoutMillis=5000, stubbed Connection via HttpConnection.connect",
+      "expectedResult": "returns Document produced by Connection.get() after setting timeout",
+      "tags": [
+        "positive",
+        "network",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parse(URL, timeout) success-path",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com\");",
+        "    int timeout = 5000;",
+        "    Document stubDoc = new Document(\"from-url\");",
+        "    Connection mockCon = new HttpConnection() {{}};",
+        "    // stub HttpConnection.connect to return mockCon",
+        "    Method m = HttpConnection.class.getDeclaredMethod(\"connect\", URL.class);",
+        "    m.setAccessible(true);",
+        "    // replace static connect via mocking framework or reflection hack",
+        "    // assume connect(url) will return mockCon",
+        "    mockCon.timeout(timeout);",
+        "    when(mockCon.get()).thenReturn(stubDoc);",
+        "  WHEN",
+        "    Document result = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assertSame(stubDoc, result);",
+        "    verify(mockCon).timeout(timeout);",
+        "END"
+      ]
+    }
+  ]
+}

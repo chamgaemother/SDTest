@@ -1,0 +1,149 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.XmlTreeBuilder;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.Tag;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("TC09: clone() produces a deep copy: independent trackPosition and settings")
+    public void test_TC09() {
+        // GIVEN a Parser with trackPosition=true and a custom settings
+        Parser original = Parser.htmlParser().setTrackPosition(true).settings(new ParseSettings(true, true));
+        // WHEN cloning and then modifying the clone’s position tracking and settings
+        Parser copy = original.clone();
+        // Modify clone
+        copy.setTrackPosition(false).settings(new ParseSettings(false, false));
+        // THEN original remains unchanged, and settings instances differ
+        assertTrue(original.isTrackPosition(), "Original's trackPosition should remain true after clone is modified.");
+        assertNotSame(original.settings(), copy.settings(), "Settings instances must be distinct (deep copy).");
+        assertTrue(copy.isTrackPosition(), "Clone should retain original trackPosition=true at clone time (before modification).");
+    }
+
+    @Test
+    @DisplayName("TC10: setTreeBuilder() updates builder and sets builder.parser back-reference")
+    public void test_TC10() throws Exception {
+        // GIVEN a Parser and a new XmlTreeBuilder
+        Parser p = Parser.htmlParser();
+        XmlTreeBuilder tb = new XmlTreeBuilder();
+        // WHEN setting the new tree builder
+        Parser returned = p.setTreeBuilder(tb);
+        // THEN setTreeBuilder returns 'this'
+        assertSame(p, returned, "setTreeBuilder should return the same Parser instance for chaining.");
+        // The builder is updated
+        assertSame(tb, p.getTreeBuilder(), "Parser's treeBuilder should be the XmlTreeBuilder we passed in.");
+        // And the TreeBuilder.parser back-reference is set; use reflection because parser field is package-private
+        Field parserField = TreeBuilder.class.getDeclaredField("parser");
+        parserField.setAccessible(true);
+        Object backRef = parserField.get(tb);
+        assertSame(p, backRef, "TreeBuilder.parser back-reference should point to the Parser instance.");
+    }
+
+    @Test
+    @DisplayName("TC11: parseInput(String,baseUri) returns Document with correct body content")
+    public void test_TC11() {
+        // GIVEN a simple HTML snippet
+        String html = "<p>hello</p>";
+        String uri = "base";
+        Parser p = Parser.htmlParser();
+        // WHEN parsing via String overload
+        Document doc = p.parseInput(html, uri);
+        // THEN the body contains a <p> with text "hello"
+        Element pEl = doc.body().selectFirst("p");
+        assertNotNull(pEl, "Parsed document body should contain a <p> element.");
+        assertEquals("hello", pEl.text(), "The <p> element's text should be 'hello'.");
+    }
+
+    @Test
+    @DisplayName("TC12: parseFragmentInput(String,null,baseUri) handles null context returning nodes list")
+    public void test_TC12() {
+        // GIVEN a fragment and null context
+        String frag = "<span>t</span>";
+        String uri = "u";
+        Parser p = Parser.htmlParser();
+        // WHEN parsing fragment with null context
+        List<Node> nodes = p.parseFragmentInput(frag, null, uri);
+        // THEN we get one Element node of tag "span"
+        assertEquals(1, nodes.size(), "Expected exactly one node for the fragment.");
+        Node n = nodes.get(0);
+        assertTrue(n instanceof Element, "Node should be an Element when parsing HTML fragment.");
+        assertEquals("span", ((Element) n).tagName(), "The element tag should be 'span'.");
+    }
+
+    @Test
+    @DisplayName("TC13: parseFragmentInput(Reader,Element,baseUri) Reader overload with non-null context")
+    public void test_TC13() {
+        // GIVEN an <em> fragment, a context <div>, and a reader
+        String frag = "<em>x</em>";
+        String uri = "u";
+        Element ctx = new Element(Tag.valueOf("div"), uri);
+        Parser p = Parser.htmlParser();
+        Reader r = new StringReader(frag);
+        // WHEN parsing fragment via Reader overload
+        List<Node> out = p.parseFragmentInput(r, ctx, uri);
+        // THEN we get one <em> element node
+        assertEquals(1, out.size(), "Expected one node parsed from reader overload.");
+        Node n = out.get(0);
+        assertTrue(n instanceof Element, "Parsed node should be an Element.");
+        assertEquals("em", ((Element) n).tagName(), "The element tag should be 'em'.");
+    }
+
+    @Test
+    @DisplayName("TC14: xmlParser().parseXmlFragment produces nodes for simple XML fragment")
+    public void test_TC14() {
+        // GIVEN a simple XML <item>1</item>
+        String xml = "<item>1</item>";
+        String uri = "u";
+        // WHEN using static parseXmlFragment
+        List<Node> nodes = Parser.parseXmlFragment(xml, uri);
+        // THEN we get one Element <item> with text "1"
+        assertEquals(1, nodes.size(), "XML fragment should produce exactly one node.");
+        Node n = nodes.get(0);
+        assertTrue(n instanceof Element, "Node should be an Element for XML fragment.");
+        Element it = (Element) n;
+        assertEquals("item", it.tagName(), "Element tag name should be 'item'.");
+        assertEquals("1", it.text(), "Element text should be '1'.");
+    }
+
+    @Test
+    @DisplayName("TC15: static parse(String,baseUri) creates HTML Document via htmlParser path")
+    public void test_TC15() {
+        // GIVEN a full HTML document with title
+        String html = "<html><head><title>T</title></head><body/></html>";
+        String uri = "u";
+        // WHEN using static parse
+        Document doc = Parser.parse(html, uri);
+        // THEN document has correct title and non-null body
+        assertEquals("T", doc.title(), "Document title should be parsed as 'T'.");
+        assertNotNull(doc.body(), "Parsed document should have a non-null body element.");
+    }
+
+    @Test
+    @DisplayName("TC16: parseFragment(String,null,baseUri) static overload with null context throws exception")
+    public void test_TC16() {
+        // GIVEN a fragment and null context
+        String frag = "<b>x</b>";
+        String uri = "u";
+        Element ctx = null;
+        // WHEN calling static parseFragment with null context THEN expect NullPointerException
+        assertThrows(NullPointerException.class, () -> Parser.parseFragment(frag, ctx, uri),
+                "parseFragment with null context should throw NullPointerException");
+    }
+}

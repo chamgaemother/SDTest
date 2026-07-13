@@ -1,0 +1,33 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "children() rebuilds and returns a new list after the cache is invalidated by a later modification (nodelistChanged branch)",
+      "path": "B0→B3(build)→B5(return)→nodelistChanged→B0→B3(build)→B5(return)",
+      "precondition": "Element has one child element, shadowChildrenRef is set after first children() call",
+      "expectedResult": "Second children() returns a different Elements instance than the first call",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children cache invalidation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = el.appendElement(\"span\");",
+        "    Elements firstList = el.children();",
+        "  WHEN",
+        "    el.appendText(\"text\");    // triggers nodelistChanged and invalidates cache",
+        "    Elements secondList = el.children();",
+        "  THEN",
+        "    assertNotSame(firstList, secondList);",
+        "    assertEquals(1, secondList.size());",
+        "    assertSame(child, secondList.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

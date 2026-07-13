@@ -1,0 +1,140 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Comment;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_0_Test {
+
+    @Test
+    @DisplayName("TC01 child(0) on element with no children throws IndexOutOfBoundsException")
+    public void test_TC01() {
+        // GIVEN an element with no children -> childNodeSize==0 branch
+        Element el = new Element("div");
+        // WHEN & THEN calling child(0) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02 child(0) on element with only non-Element nodes throws IndexOutOfBoundsException")
+    public void test_TC02() {
+        // GIVEN an element with one TextNode child -> childNodeSize>0 and loop×1 but filter yields empty list
+        Element el = new Element("p");
+        el.appendChild(new TextNode("text"));
+        // WHEN & THEN calling child(0) should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC03 child(0) on element with one direct Element child returns that child")
+    public void test_TC03() {
+        // GIVEN a parent with one span child -> childNodeSize>0 and loop×1 yields list [child]
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // WHEN retrieving child(0)
+        Element result = parent.child(0);
+        // THEN result is the same instance
+        assertEquals(child, result);
+    }
+
+    @Test
+    @DisplayName("TC04 child(2) on element with three Element children returns the third")
+    public void test_TC04() {
+        // GIVEN a ul with three li children -> loop×3 yields list [one, two, three]
+        Element parent = new Element("ul");
+        Element one = new Element("li");
+        Element two = new Element("li");
+        Element three = new Element("li");
+        parent.appendChild(one);
+        parent.appendChild(two);
+        parent.appendChild(three);
+        // WHEN retrieving child(2)
+        Element result = parent.child(2);
+        // THEN result is the third li
+        assertEquals(three, result);
+    }
+
+    @Test
+    @DisplayName("TC05 child(-1) on element with two Element children throws IndexOutOfBoundsException")
+    public void test_TC05() {
+        // GIVEN a div with two element children -> loop×2 yields list size 2
+        Element parent = new Element("div");
+        parent.appendChild(new Element("a"));
+        parent.appendChild(new Element("b"));
+        // WHEN & THEN negative index -1 out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> parent.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC06 child(0) on element with mixed nodes returns first Element child")
+    public void test_TC06() {
+        // GIVEN a div: TextNode, span, Comment -> loop×3 filter keeps only span
+        Element el = new Element("div");
+        el.appendChild(new TextNode("T"));
+        Element e1 = new Element("span");
+        el.appendChild(e1);
+        el.appendChild(new Comment("c"));
+        // WHEN retrieving child(0)
+        Element result = el.child(0);
+        // THEN result is the span
+        assertEquals(e1, result);
+    }
+
+    @Test
+    @DisplayName("TC07 child(1) uses cached childElementsList on second call")
+    public void test_TC07() {
+        // GIVEN a div with two element children -> first call builds cache, second reuses it
+        Element p = new Element("div");
+        Element a = new Element("i");
+        Element b = new Element("b");
+        p.appendChild(a);
+        p.appendChild(b);
+        // WHEN retrieving twice
+        Element first = p.child(1);
+        Element second = p.child(1);
+        // THEN both return the same b
+        assertEquals(b, first);
+        assertEquals(b, second);
+    }
+
+    @Test
+    @DisplayName("TC08 child(2) on element with two children throws IndexOutOfBoundsException")
+    public void test_TC08() {
+        // GIVEN a ul with two li children -> list of size 2, index==size is out of upper bound
+        Element p = new Element("ul");
+        p.appendChild(new Element("li"));
+        p.appendChild(new Element("li"));
+        // WHEN & THEN child(2) throws IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> p.child(2));
+    }
+
+    @Test
+    @DisplayName("TC09 child(0) after empty() throws IndexOutOfBoundsException and invalidates cache")
+    public void test_TC09() {
+        // GIVEN a p with one a child, then empty() clears childNodes and cache
+        Element p = new Element("p");
+        p.appendChild(new Element("a"));
+        p.empty(); // nodelistChanged clears shadowChildrenRef
+        // WHEN & THEN child(0) now throws IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> p.child(0));
+    }
+
+    @Test
+    @DisplayName("TC10 child(0) on element with deep hierarchy returns first direct child only")
+    public void test_TC10() {
+        // GIVEN a div with a span child, which itself has an i child -> childElementsList only sees span
+        Element root = new Element("div");
+        Element parent = new Element("span");
+        Element leaf = new Element("i");
+        parent.appendChild(leaf);
+        root.appendChild(parent);
+        // WHEN retrieving child(0)
+        Element result = root.child(0);
+        // THEN result is the direct span, not the leaf
+        assertEquals(parent, result);
+    }
+}

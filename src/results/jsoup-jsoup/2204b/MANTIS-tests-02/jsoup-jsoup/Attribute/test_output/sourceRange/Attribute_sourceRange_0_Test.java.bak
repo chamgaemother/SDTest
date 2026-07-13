@@ -1,0 +1,51 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Attribute.sourceRange()
+ */
+public class Attribute_sourceRange_Test {
+
+    @Test
+    @DisplayName("sourceRange returns UntrackedAttr when parent is null (parent==null branch)")
+    public void test_TC01() {
+        // Given an Attribute with null parent, so parent==null triggers the UntrackedAttr branch
+        Attribute attr = new Attribute("key", "value", null);
+        
+        // When calling sourceRange()
+        Range.AttributeRange result = attr.sourceRange();
+        
+        // Then expect the special UntrackedAttr constant
+        assertSame(Range.AttributeRange.UntrackedAttr, result,
+            "Expect UntrackedAttr when no parent is set");
+    }
+
+    @Test
+    @DisplayName("sourceRange delegates to parent.sourceRange when parent is non-null (parent!=null branch)")
+    public void test_TC02() {
+        // Given a stubbed Attributes parent that returns a known Range.AttributeRange
+        Range.AttributeRange stubRange = new Range.AttributeRange(1, 2, 3, 4);
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String key) {
+                // Return stubRange for any key
+                return stubRange;
+            }
+        };
+        // The key of attribute is "key"; parent is non-null, so delegation should occur
+        Attribute attr = new Attribute("key", "value", stubParent);
+        
+        // When calling sourceRange()
+        Range.AttributeRange result = attr.sourceRange();
+        
+        // Then expect exactly the stubRange instance returned by stubParent
+        assertSame(stubRange, result,
+            "Expect sourceRange to delegate to parent.sourceRange and return its result");
+    }
+}

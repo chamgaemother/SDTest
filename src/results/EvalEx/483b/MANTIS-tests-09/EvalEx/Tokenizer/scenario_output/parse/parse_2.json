@@ -1,0 +1,132 @@
+{
+  "scenarios": [
+    {
+      "id": "TC19",
+      "description": "Array open at start throws exception when no previous token (arrayOpenOrStructureSeparatorNotAllowed)",
+      "path": "B0→getNextToken→parseArrayOpen",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "ParseException with message \"Array open not allowed here\"",
+      "tags": [
+        "exception",
+        "array",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 array-open-at-start",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig().allowArrays(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"[\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Array open not allowed here\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Structure separator after infix operator throws exception (Structure not allowed here)",
+      "path": "B0→B2→B6→B2 (on '+')→B6→validateToken→exception",
+      "precondition": "configuration.isStructuresAllowed() == true",
+      "expectedResult": "ParseException with message \"Structure separator not allowed here\"",
+      "tags": [
+        "exception",
+        "structure",
+        "infix"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 structure-after-infix",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig().allowStructures(true);",
+        "    config.withInfix(\"+\");",
+        "    Tokenizer tokenizer = new Tokenizer(\"1+.\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Structure separator not allowed here\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "Undefined operator throws exception in parseOperator",
+      "path": "B0→getNextToken→parseOperator→exception",
+      "precondition": "no operators registered in OperatorDictionary",
+      "expectedResult": "ParseException with message \"Undefined operator '$'\"",
+      "tags": [
+        "exception",
+        "operator",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 undefined-operator",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig();",
+        "    Tokenizer tokenizer = new Tokenizer(\"$\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined operator '$'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "Valid scientific notation decimal literal is accepted",
+      "path": "B0→getNextToken→parseNumberLiteral→parseDecimalNumberLiteral→return→end",
+      "precondition": "none",
+      "expectedResult": "One NUMBER_LITERAL token \"3.14e+2\"",
+      "tags": [
+        "positive",
+        "number",
+        "scientific"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 valid-scientific-notation",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig();",
+        "    Tokenizer tokenizer = new Tokenizer(\"3.14e+2\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;",
+        "    assert tokens.get(0).getTokenString().equals(\"3.14e+2\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "Unexpected closing array throws exception when arrayBalance drops below zero",
+      "path": "B0→getNextToken '['→add→getNextToken '1'→add→getNextToken ']'→add→getNextToken ']'→parseArrayClose→exception",
+      "precondition": "configuration.isArraysAllowed() == true",
+      "expectedResult": "ParseException with message \"Unexpected closing array\"",
+      "tags": [
+        "exception",
+        "array",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 unexpected-closing-array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new StubConfig().allowArrays(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"[1]]\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing array\";",
+        "END"
+      ]
+    }
+  ]
+}

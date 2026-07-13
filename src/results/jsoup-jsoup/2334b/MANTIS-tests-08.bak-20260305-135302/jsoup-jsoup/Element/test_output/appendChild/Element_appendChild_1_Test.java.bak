@@ -1,0 +1,56 @@
+import org.jsoup.nodes.Comment;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.WeakHashMap;
+import java.lang.ref.WeakReference;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild(Element) invalidates cached shadowChildrenRef via nodelistChanged")
+    public void test_TC05() throws Exception {
+        // GIVEN: a parent with one child element -> triggers childElementsList cache
+        Element parent = new Element("div");
+        Element firstChild = parent.appendElement("p");
+        // populate shadowChildrenRef via children()
+        List<Element> cachedChildren = parent.children();
+        // use reflection to access private shadowChildrenRef
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> refBefore = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNotNull(refBefore, "Cache should be populated after calling children()");
+
+        // WHEN: append another element -> should invalidate cache via nodelistChanged
+        Element secondChild = new Element("span");
+        parent.appendChild(secondChild);
+
+        // THEN: shadowChildrenRef is reset to null and children() reflects both children
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> refAfter = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNull(refAfter, "Cache should be invalidated (set to null) after appendChild");
+        assertEquals(2, parent.children().size(), "children() should include both original and new child");
+    }
+
+    @Test
+    @DisplayName("appendChild(Comment) appends a Comment node and sets correct siblingIndex")
+    public void test_TC06() {
+        // GIVEN: a fresh parent with no children -> childNodes is EmptyNodes and ensureChildNodes will be called
+        Element parent = new Element("div");
+        Comment comment = new Comment("cmt");
+
+        // WHEN: append a Comment node -> should call ensureChildNodes, add node, and set sibling index
+        parent.appendChild(comment);
+
+        // THEN: one child node present, parent set correctly, and siblingIndex is 0
+        assertEquals(1, parent.childNodeSize(), "One child node should be added");
+        assertSame(parent, comment.parent(), "Parent of appended comment should be the element");
+        assertEquals(0, comment.siblingIndex(), "Appended comment should have siblingIndex 0 at first position");
+    }
+}

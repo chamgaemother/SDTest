@@ -1,0 +1,52 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for the Element#attr(String, boolean) method.
+ */
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("TC14: attr(String,boolean) is chainable and returns same Element instance")
+    public void test_TC14() {
+        // GIVEN an empty element and a boolean attribute key
+        Element el = new Element("div");
+        String key = "draggable";
+        // WHEN setting the boolean attribute to true (expects to add the attribute)
+        Element returned = el.attr(key, true); // B3→B4 path: true branch
+        // THEN the returned instance must be the same (chainable)
+        assertSame(el, returned, "Method should return the same Element instance for chaining");
+        // AND the attribute should be present in the element's attributes
+        assertTrue(el.attributes().hasKey(key), "Attribute 'draggable' should be added when set to true");
+    }
+
+    @Test
+    @DisplayName("TC15: attr(String,boolean) true on empty key adds boolean attribute under empty key")
+    public void test_TC15() {
+        // GIVEN an element and an empty string as key (boundary condition)
+        Element el = new Element("div");
+        String key = "";
+        // WHEN setting the boolean attribute to true on empty key (expects to add an entry with empty key)
+        el.attr(key, true); // B3→B4: still true branch even if key is empty
+        // THEN the attributes map must contain the empty key
+        assertTrue(el.attributes().hasKey(key), "Empty key should be present when a boolean true attribute is added with empty key");
+        // AND the value for the empty key must be the empty string (boolean attribute semantics)
+        assertEquals("", el.attributes().get(key), "Boolean attribute true should map to empty string value");
+    }
+
+    @Test
+    @DisplayName("TC16: attr(String,boolean) false on empty key does nothing (no exception, no attribute)")
+    public void test_TC16() {
+        // GIVEN an element and an empty key
+        Element el = new Element("div");
+        String key = "";
+        // WHEN setting the boolean attribute to false on empty key (expects no-op, no exception)
+        el.attr(key, false); // B5 path: false branch
+        // THEN the attributes map must not contain the empty key
+        assertFalse(el.attributes().hasKey(key), "No attribute should be added when setting boolean false on empty key");
+    }
+}

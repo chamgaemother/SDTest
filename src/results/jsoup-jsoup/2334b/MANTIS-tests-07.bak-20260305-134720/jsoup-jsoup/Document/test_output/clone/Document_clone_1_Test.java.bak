@@ -1,0 +1,87 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+
+import java.lang.reflect.Method;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_clone_Test {
+
+    @Test
+    @DisplayName("cloning a Document containing a DocumentType child preserves the doctype instance independently")
+    public void test_TC04() throws Exception {
+        // GIVEN a Document with a single DocumentType child at root
+        Document orig = new Document("http://example.com");
+        DocumentType dt = new DocumentType("html", "", "", orig.baseUri());
+        // insertChildren is protected/package-private in Element; use reflection
+        Method insertChildren = Document.class.getSuperclass()
+            .getDeclaredMethod("insertChildren", int.class, Node[].class);
+        insertChildren.setAccessible(true);
+        // invoking insertChildren(0, new Node[]{dt}) puts dt as first child
+        insertChildren.invoke(orig, 0, new Node[]{dt});
+
+        // WHEN cloning the document
+        Document copy = orig.clone();
+
+        // THEN the documentType instances have equal values but are different objects
+        DocumentType origDt = orig.documentType();
+        DocumentType copyDt = copy.documentType();
+        assertNotNull(origDt, "Original should have a DocumentType");
+        assertNotNull(copyDt, "Clone should have a DocumentType");
+        assertNotSame(origDt, copyDt, "Clone should have a distinct DocumentType instance");
+        assertEquals(origDt.name(), copyDt.name(), "The cloned DocumentType should have the same name");
+        assertEquals(origDt.publicId(), copyDt.publicId(), "The cloned DocumentType should have the same publicId");
+        assertEquals(origDt.systemId(), copyDt.systemId(), "The cloned DocumentType should have the same systemId");
+    }
+
+    @Test
+    @DisplayName("cloning a Document with multiple children exercises deep-clone loop for several nodes")
+    public void test_TC05() {
+        // GIVEN a fresh shell Document with head and body
+        Document orig = Document.createShell("base");
+        // body() creates html->head->body structure; now add two children to body
+        Element body = orig.body();
+        Element p = body.appendElement("p").text("one");
+        Element div = body.appendElement("div").text("two");
+
+        // WHEN cloning the document
+        Document copy = orig.clone();
+
+        // THEN copy.body() has two independent children equal in tag and text
+        Element copyBody = copy.body();
+        assertEquals(2, copyBody.children().size(), "Clone should have two children in body");
+        // first child
+        Element copyP = copyBody.child(0);
+        assertNotSame(p, copyP, "First child should be a new instance");
+        assertEquals("one", copyP.text(), "First child text should match original");
+        // second child
+        Element copyDiv = copyBody.child(1);
+        assertNotSame(div, copyDiv, "Second child should be a new instance");
+        assertEquals("two", copyDiv.text(), "Second child text should match original");
+    }
+
+    @Test
+    @DisplayName("cloning a Document with a non-default parser preserves parser type and isolates subsequent changes")
+    public void test_TC06() {
+        // GIVEN a Document with its parser set to an XML parser
+        Document orig = new Document("http://x");
+        Parser xmlParser = Parser.xmlParser();
+        orig.parser(xmlParser);
+        // Ensure branch through clone that copies parser field
+        Document copy = orig.clone();
+
+        // THEN the cloned parser is a new instance equal in type but independent
+        assertNotSame(orig.parser(), copy.parser(), "Parser instances should be distinct objects after clone");
+        assertEquals(xmlParser.getName(), copy.parser().getName(), "Cloned parser must match the original parser type");
+
+        // WHEN changing the original's parser to HTML parser
+        orig.parser(Parser.htmlParser());
+
+        // THEN the clone's parser remains unaffected and still XML
+        assertEquals(xmlParser.getName(), copy.parser().getName(),
+            "Modifying original parser should not affect the clone's parser");
+    }
+}

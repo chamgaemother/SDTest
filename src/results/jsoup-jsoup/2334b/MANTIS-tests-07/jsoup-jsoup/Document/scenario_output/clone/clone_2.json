@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "clone() deep-copies custom child nodes: modifying clone’s root children does not affect original",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original has custom child Elements under root",
+      "expectedResult": "clone has independent children list; original remains unchanged when clone is mutated",
+      "tags": [
+        "deep-copy",
+        "children",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone deep-copies custom children",
+        "  GIVEN",
+        "    Document original = new Document(\"html\", \"http://example.com\");",
+        "    Element div = original.appendElement(\"div\");",
+        "    div.text(\"hello\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    // Mutate clone's children: remove and add new element",
+        "    copy.child(0).remove();",
+        "    copy.appendElement(\"span\");",
+        "  THEN",
+        "    // Original still has its 'div' child and no 'span'",
+        "    assert original.select(\"div\").size() == 1;",
+        "    assert original.select(\"span\").isEmpty();",
+        "    // Clone has only 'span' and not 'div'",
+        "    assert copy.select(\"div\").isEmpty();",
+        "    assert copy.select(\"span\").size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() on an empty Document yields an independent document with no child nodes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original is newly created via Document(String,String) with no appended children",
+      "expectedResult": "clone has no children and is a distinct instance",
+      "tags": [
+        "boundary",
+        "empty",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone empty document",
+        "  GIVEN",
+        "    Document original = new Document(\"html\", \"http://empty\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assert original.childNodeSize() == 0;",
+        "    assert copy.childNodeSize() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

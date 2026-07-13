@@ -1,0 +1,119 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.parser.Token.TokenType;
+import com.ezylang.evalex.parser.Token; // Added import for Token
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+public class Tokenizer_parse_1_Test {
+
+  @Test
+  @DisplayName("parse() throws Unexpected closing brace when encountering unmatched ')' at start")
+  void test_TC11() {
+    String expr = ")";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Unexpected closing brace"));
+  }
+
+  @Test
+  @DisplayName("parse() throws Unexpected closing array on extra ']' after balanced array")
+  void test_TC12() {
+    String expr = "[5]]";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+        .arraysAllowed(true)
+        .build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Unexpected closing array"));
+  }
+
+  @Test
+  @DisplayName("parse() throws Illegal scientific format for dangling 'e' in number literal")
+  void test_TC13() {
+    String expr = "1e";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Illegal scientific format"));
+  }
+
+  @Test
+  @DisplayName("parse() throws Number contains more than one decimal point on '1.2.3'")
+  void test_TC14() {
+    String expr = "1.2.3";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Number contains more than one decimal point"));
+  }
+
+  @Test
+  @DisplayName("parse() recognizes hex number literal '0xFa' as NUMBER_LITERAL")
+  void test_TC15() throws ParseException {
+    String expr = "0xFa";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    List<Token> tokens = tokenizer.parse();
+    assertEquals(1, tokens.size());
+    Token t = tokens.get(0); // Updated to use the correct Token import
+    assertEquals(TokenType.NUMBER_LITERAL, t.getType());
+    assertEquals("0xFa", t.getText());
+  }
+
+  @Test
+  @DisplayName("parse() throws Undefined operator for unknown operator token '$'")
+  void test_TC16() {
+    String expr = "$";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Undefined operator '$'"));
+  }
+
+  @Test
+  @DisplayName("parse() throws Undefined function when encountering unknown identifier followed by '('")
+  void test_TC17() {
+    String expr = "foo()";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder().build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertTrue(ex.getMessage().contains("Undefined function 'foo'"));
+  }
+
+  @Test
+  @DisplayName("parse() successfully parses structure separator '.' between variables when allowed")
+  void test_TC18() throws ParseException {
+    String expr = "x.y";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+        .structuresAllowed(true)
+        .build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    List<Token> tokens = tokenizer.parse();
+    assertEquals(3, tokens.size());
+    assertEquals(TokenType.VARIABLE_OR_CONSTANT, tokens.get(0).getType());
+    assertEquals(TokenType.STRUCTURE_SEPARATOR, tokens.get(1).getType());
+    Token t = tokens.get(2); // Updated to use the correct Token import
+    assertEquals("y", t.getText());
+  }
+
+  @Test
+  @DisplayName("parse() inserts implicit '*' between two parenthesized subexpressions when allowed")
+  void test_TC19() throws ParseException {
+    String expr = "(1)(2)";
+    ExpressionConfiguration cfg = ExpressionConfiguration.builder()
+        .implicitMultiplicationAllowed(true)
+        .build();
+    Tokenizer tokenizer = new Tokenizer(expr, cfg);
+    List<Token> tokens = tokenizer.parse();
+    assertEquals(7, tokens.size());
+    assertEquals(TokenType.INFIX_OPERATOR, tokens.get(3).getType());
+    assertEquals("*", tokens.get(3).getText());
+  }
+}

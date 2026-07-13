@@ -1,0 +1,163 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseInput(String, String) with null baseUri throws NullPointerException",
+      "path": "B0→B2→B3",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-input"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseXmlFragment(String, String) returns a list containing a self-closed XML element",
+      "path": "B0→B1→B4→B6",
+      "precondition": "none",
+      "expectedResult": "List size 1 with Element tag 'a'",
+      "tags": [
+        "positive",
+        "xml",
+        "fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseXmlFragment simple-self-close",
+        "  GIVEN",
+        "    String xml = \"<a/>\";",
+        "    String baseUri = \"http://test\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0) instanceof Element;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"a\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "static parseFragment with provided ParseErrorList records parse errors on bad HTML",
+      "path": "B0→B7→B8→B9",
+      "precondition": "none",
+      "expectedResult": "errorList.size()>0 and returned list contains recovered nodes",
+      "tags": [
+        "negative",
+        "error-tracking",
+        "static-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseFragment errorList capture",
+        "  GIVEN",
+        "    String frag = \"<div><unclosed>\";",
+        "    Element ctx = Element.tag(\"body\");",
+        "    ParseErrorList errors = ParseErrorList.tracking(5);",
+        "  WHEN",
+        "    List<Node> out = Parser.parseFragment(frag, ctx, \"\", errors);",
+        "  THEN",
+        "    assert errors.size() > 0;",
+        "    assert out.size() >= 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "setTreeBuilder replaces builder and links new builder.parser back to this parser",
+      "path": "B0→B10→B11",
+      "precondition": "none",
+      "expectedResult": "getTreeBuilder() returns new builder whose parser field == parser instance",
+      "tags": [
+        "positive",
+        "setter",
+        "builder"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 setTreeBuilder links-back",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    TreeBuilder tb = new HtmlTreeBuilder();",
+        "  WHEN",
+        "    parser.setTreeBuilder(tb);",
+        "  THEN",
+        "    assert parser.getTreeBuilder() == tb;",
+        "    assert tb.parser == parser;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "settings(ParseSettings) and settings() reflect a custom case-sensitive configuration",
+      "path": "B0→B12→B13→B14",
+      "precondition": "none",
+      "expectedResult": "settings() returns the custom ParseSettings",
+      "tags": [
+        "positive",
+        "setter-getter",
+        "settings"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 settings setter-getter",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings custom = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    parser.settings(custom);",
+        "  THEN",
+        "    assert parser.settings() == custom;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parseFragmentInput(Reader, Element, String) with a non-null context nests output under context",
+      "path": "B0→B2→B5→B6",
+      "precondition": "none",
+      "expectedResult": "fragment nodes are returned under provided context without modification of context",
+      "tags": [
+        "positive",
+        "fragment",
+        "context"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 parseFragmentInput with-context-reader",
+        "  GIVEN",
+        "    String frag = \"<span>x</span>\";",
+        "    Element context = new Element(\"div\");",
+        "    String base = \"\";",
+        "  WHEN",
+        "    List<Node> out = Parser.htmlParser().parseFragmentInput(new StringReader(frag), context, base);",
+        "  THEN",
+        "    assert out.size() == 1;",
+        "    assert out.get(0) instanceof Element;",
+        "    assert ((Element)out.get(0)).tagName().equals(\"span\");",
+        "    assert !context.childNodes().contains(out.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

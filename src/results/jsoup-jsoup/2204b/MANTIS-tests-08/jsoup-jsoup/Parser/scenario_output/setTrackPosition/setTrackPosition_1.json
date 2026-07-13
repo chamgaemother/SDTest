@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Calling setTrackPosition(true) twice retains true and returns same instance",
+      "path": "B0→B1→B2→B1→B2",
+      "precondition": "Parser.htmlParser() with default trackPosition=false",
+      "expectedResult": "First call sets to true, second call leaves it true, both return same instance",
+      "tags": [
+        "positive",
+        "chain",
+        "no-state-change"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 setTrackPosition idempotent-true",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Parser first = parser.setTrackPosition(true);",
+        "    Parser second = parser.setTrackPosition(true);",
+        "  THEN",
+        "    assertSame(parser, first);",
+        "    assertSame(parser, second);",
+        "    assertTrue(parser.isTrackPosition());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Chaining setTrackPosition(false) then true then false returns same instance and toggles state accordingly",
+      "path": "B0→B1→B2→B1→B2→B1→B2",
+      "precondition": "Parser.htmlParser() with default trackPosition=false",
+      "expectedResult": "First false no-op, then true sets, then false clears; each returns same instance",
+      "tags": [
+        "positive",
+        "chain",
+        "toggle"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 setTrackPosition chain-toggle",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Parser a = parser.setTrackPosition(false);",
+        "    Parser b = parser.setTrackPosition(true);",
+        "    Parser c = parser.setTrackPosition(false);",
+        "  THEN",
+        "    assertSame(parser, a);",
+        "    assertSame(parser, b);",
+        "    assertSame(parser, c);",
+        "    assertFalse(parser.isTrackPosition());",
+        "END"
+      ]
+    }
+  ]
+}

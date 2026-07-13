@@ -1,0 +1,118 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "unbalanced nested tags are auto-closed to a balanced structure",
+      "path": "B0→B3→B5→B8→B10",
+      "precondition": "none",
+      "expectedResult": "unclosed <span> is auto-closed: output '<div><span>Test</span></div>'",
+      "tags": [
+        "positive",
+        "auto-close",
+        "unbalanced"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 auto-close unbalanced tags",
+        "  GIVEN",
+        "    String html = \"<div><span>Test\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://example.com/\");",
+        "  THEN",
+        "    assertEquals(\"<div><span>Test</span></div>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "self-closing tags remain self-closed in the fragment output",
+      "path": "B0→B3→B5→B7→B9",
+      "precondition": "none",
+      "expectedResult": "self-closing <img/> preserved: output '<img src=\"foo.png\"/>'",
+      "tags": [
+        "positive",
+        "self-closing"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 self-closing tag preserved",
+        "  GIVEN",
+        "    String html = \"<img src='foo.png'/>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"\");",
+        "  THEN",
+        "    assertEquals(\"<img src=\\\"foo.png\\\"/>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "script tag content containing '<' is not parsed as markup",
+      "path": "B0→B3→B5→B6→B8",
+      "precondition": "none",
+      "expectedResult": "script content preserved literally inside <script> tags",
+      "tags": [
+        "positive",
+        "script",
+        "raw-text"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 script raw-text handling",
+        "  GIVEN",
+        "    String html = \"<script>if (a < b) alert('x');</script>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"http://x/\");",
+        "  THEN",
+        "    assertTrue(doc.body().html().contains(\"a < b\"));"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "mismatched closing tag closes innermost open tag first",
+      "path": "B0→B3→B5→B7→B10",
+      "precondition": "none",
+      "expectedResult": "mismatched </div> closes <span> then <div>: output '<div><span>Test</span></div>'",
+      "tags": [
+        "positive",
+        "mismatch",
+        "error-recovery"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 mismatched tag recovery",
+        "  GIVEN",
+        "    String html = \"<div><span>Test</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"\");",
+        "  THEN",
+        "    assertEquals(\"<div><span>Test</span></div>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "uppercase tags are normalized to lowercase in output",
+      "path": "B0→B3→B5→B7→B9",
+      "precondition": "none",
+      "expectedResult": "uppercase <DIV> and <P> normalized: output '<div><p>Test</p></div>'",
+      "tags": [
+        "positive",
+        "normalization",
+        "case-insensitive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 tag name normalization",
+        "  GIVEN",
+        "    String html = \"<DIV><P>Test</P></DIV>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, \"\");",
+        "  THEN",
+        "    assertEquals(\"<div><p>Test</p></div>\", doc.body().html());"
+      ]
+    }
+  ]
+}

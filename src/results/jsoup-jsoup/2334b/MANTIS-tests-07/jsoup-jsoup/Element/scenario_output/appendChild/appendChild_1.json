@@ -1,0 +1,36 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "appendChild reassigns parent when child already has a different parent",
+      "path": "B0→B1(reparent)→B2(ensureChildNodes)→B3(add)→B4(return)",
+      "precondition": "child is already appended to another Element",
+      "expectedResult": "child is removed from old parent, added to new parent, siblingIndex updated, returns new parent",
+      "tags": [
+        "positive",
+        "reparent",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent existing child",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    Element newParent = new Element(\"section\");",
+        "    Element child = new Element(\"span\");",
+        "    oldParent.appendChild(child);",
+        "  WHEN",
+        "    Element result = newParent.appendChild(child);",
+        "  THEN",
+        "    assert result == newParent;",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert newParent.childNodes().get(0) == child;",
+        "    assert child.parent() == newParent;",
+        "    assert child.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

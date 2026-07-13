@@ -1,0 +1,69 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("parseInput(Reader, String) with null baseUri should default baseUri to empty string and succeed")
+    public void test_TC14() {
+        // GIVEN: an HTML parser and reader of a simple span element
+        Parser parser = Parser.htmlParser();
+        Reader input = new StringReader("<span>hello</span>");
+        String baseUri = null;
+        // WHEN: parsing with null baseUri should be treated as empty string (branch B2 where baseUri == null)
+        Document doc = parser.parseInput(input, baseUri);
+        // THEN: baseUri defaults to "" and element is parsed
+        assertEquals("", doc.baseUri(), "Expected default baseUri to be empty string when input baseUri is null");
+        assertEquals(1, doc.select("span").size(), "Expected one <span> element to be present after parsing");
+    }
+
+    @Test
+    @DisplayName("xmlParser.parseInput(Reader, String) correctly parses case-sensitive XML from Reader overload")
+    public void test_TC15() {
+        // GIVEN: an XML parser which is case-sensitive and reader of XML with <Item/>
+        Parser parser = Parser.xmlParser();
+        Reader input = new StringReader("<root><Item/></root>");
+        String baseUri = "base";
+        // WHEN: parsing XML, <Item> should be recognized but not <item> (branch B2 normal flow)
+        Document doc = parser.parseInput(input, baseUri);
+        // THEN: only exact-case tag matches
+        assertEquals(1, doc.getElementsByTag("Item").size(), "Expected one <Item> element in XML parsing");
+        Element lower = doc.getElementsByTag("item").first();
+        assertNull(lower, "Expected no <item> element as XML parsing is case-sensitive");
+    }
+
+    @Test
+    @DisplayName("parseInput(String, String) returns null when custom TreeBuilder.parse returns null")
+    public void test_TC16() {
+        // GIVEN: a stub TreeBuilder that returns null for parse
+        Document stubResult = null;
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(false, false); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader in, String uri, Parser p) { return stubResult; }
+            @Override public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }
+            @Override protected void process(org.jsoup.parser.Token token) {
+                // no-op
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "<p/>";
+        String baseUri = "u";
+        // WHEN: using parseInput(String, String) delegates to stubBuilder.parse and should return null (branch B3 returns stubResult)
+        Document result = parser.parseInput(html, baseUri);
+        // THEN: result is null and no exception is thrown
+        assertNull(result, "Expected parseInput to return null when underlying TreeBuilder.parse returns null");
+    }
+}

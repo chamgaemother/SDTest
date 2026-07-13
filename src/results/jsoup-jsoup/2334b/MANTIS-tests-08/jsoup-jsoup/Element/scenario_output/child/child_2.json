@@ -1,0 +1,36 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "After cache built, nodelistChanged invalidates shadowChildrenRef and childElementsList() recomputes on next call",
+      "path": "B0→B3[F]→B4(loop×1)→B6[T rebuild)→B7→B8",
+      "precondition": "Element with one child accessed once to build cache, then empty() called to clear and nodelistChanged, then a new Element child appended",
+      "expectedResult": "child(0) returns the newly appended element after cache invalidation",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 child cache rebuild after nodelistChanged",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"p\");",
+        "    parent.appendChild(first);",
+        "    // build cache",
+        "    parent.child(0);",
+        "    // invalidate cache",
+        "    parent.empty();",
+        "    Element second = new Element(\"span\");",
+        "    parent.appendChild(second);",
+        "  WHEN",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == second;",
+        "END"
+      ]
+    }
+  ]
+}

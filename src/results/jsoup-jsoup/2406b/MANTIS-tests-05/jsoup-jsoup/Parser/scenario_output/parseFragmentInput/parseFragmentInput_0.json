@@ -1,0 +1,214 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseFragmentInput(String, context non-null, baseUri non-empty) returns node list via treeBuilder.parseFragment",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use real HtmlTreeBuilder instance and Element context; no mocks",
+      "expectedResult": "List<Node> returned contains nodes corresponding to parsed fragment \"<p>text</p>\"; context.parent() unchanged",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-non-null",
+        "baseUri-non-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput String overload with non-null context",
+        "  GIVEN",
+        "    String fragment = \"<p>text</p>\"; Element context = new Element(\"div\"); String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> result = Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0) instanceof Element; assert ((Element)result.get(0)).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseFragmentInput(String, context null, baseUri empty) returns node list via treeBuilder.parseFragment",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use real HtmlTreeBuilder; context null allowed",
+      "expectedResult": "List<Node> returned contains nodes for fragment \"Hello\"; context is null so global context used",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "context-null",
+        "baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput String overload with null context",
+        "  GIVEN",
+        "    String fragment = \"Hello\"; Element context = null; String baseUri = \"\";",
+        "  WHEN",
+        "    List<Node> result = Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).outerHtml().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseFragmentInput(String, context non-null, baseUri null) returns node list and preserves fragment content",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use real HtmlTreeBuilder; baseUri null tolerated",
+      "expectedResult": "List<Node> returned contains element for \"<span/>\"; calling node.baseUri() yields null or \"\"",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-normal",
+        "baseUri-null"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O1 parseFragmentInput String overload with null baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span/>\"; Element context = new Element(\"div\"); String baseUri = null;",
+        "  WHEN",
+        "    List<Node> result = Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert ((Element)result.get(0)).tagName().equals(\"span\");"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseFragmentInput(Reader, context non-null, baseUri non-empty) returns node list",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use StringReader as Reader; real HtmlTreeBuilder; no mocks",
+      "expectedResult": "List<Node> returned contains one TextNode with data \"data\"",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "context-non-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O2 parseFragmentInput Reader overload with non-null context",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"data\"); Element context = new Element(\"p\"); String baseUri = \"uri\";",
+        "  WHEN",
+        "    List<Node> result = Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert result.get(0).toString().equals(\"data\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseFragmentInput(Reader, context null, baseUri non-empty) returns node list",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use StringReader; real HtmlTreeBuilder",
+      "expectedResult": "List<Node> returned contains element \"a\" for fragment \"<a/>\"",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-normal",
+        "context-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O2 parseFragmentInput Reader overload with null context",
+        "  GIVEN",
+        "    Reader fragment = new StringReader(\"<a/>\"); Element context = null; String baseUri = \"http\";",
+        "  WHEN",
+        "    List<Node> result = Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert result.size() == 1; assert ((Element)result.get(0)).tagName().equals(\"a\");"
+      ]
+    },
+    {
+      "id": "TC06_IOE_O2",
+      "description": "parseFragmentInput(Reader, context any, baseUri any) throws UncheckedIOException when Reader IO fails",
+      "path": "B0→B1→B4",
+      "precondition": "Stub Reader to throw IOException on read; mocking Reader minimal",
+      "expectedResult": "throws java.io.UncheckedIOException; no nodes returned",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "IO-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_IOE_O2 parseFragmentInput Reader overload IO exception",
+        "  GIVEN",
+        "    Reader fragment = new Reader(){ public int read(char[] cbuf,int off,int len)throws IOException{throw new IOException(\"fail\");} public void close(){} }; Element context = null; String baseUri = \"uri\";",
+        "  WHEN",
+        "    call Parser.htmlParser().parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC07_lock_reentrancy_O2",
+      "description": "parseFragmentInput(Reader) acquires and releases lock even on successful parse",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Use a custom TreeBuilder that records lock-held state; stubbed TreeBuilder for behavior",
+      "expectedResult": "lock was held during parse and released after; returned nodes list non-null",
+      "tags": [
+        "overload:Reader,Element,String",
+        "branch-lock",
+        "lock-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_lock_reentrancy_O2 verify lock usage in parseFragmentInput",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder(){override parseFragment(...){assert lock.isHeldByCurrentThread(); return Collections.emptyList();}}; Parser p = new Parser(stub); Reader fragment=new StringReader(\"<b/>\");",
+        "  WHEN",
+        "    List<Node> result = p.parseFragmentInput(fragment, new Element(\"div\"), \"uri\");",
+        "  THEN",
+        "    assert result.isEmpty(); assert !p.lock.isLocked();"
+      ]
+    },
+    {
+      "id": "TC08_lock_release_on_exception_O2",
+      "description": "parseFragmentInput(Reader) releases lock when treeBuilder.parseFragment throws runtime exception",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Stub TreeBuilder.parseFragment to throw RuntimeException; stub described",
+      "expectedResult": "RuntimeException thrown; lock not held afterwards",
+      "tags": [
+        "overload:Reader,Element,String",
+        "exception",
+        "lock-release"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08_lock_release_on_exception_O2 parseFragmentInput releases lock on runtime exception",
+        "  GIVEN",
+        "    TreeBuilder stub = new TreeBuilder(){override parseFragment(...){throw new RuntimeException(\"err\");}}; Parser p = new Parser(stub); Reader fragment=new StringReader(\"x\");",
+        "  WHEN",
+        "    call p.parseFragmentInput(fragment, null, \"u\");",
+        "  THEN",
+        "    throws RuntimeException; assert !p.lock.isLocked();"
+      ]
+    },
+    {
+      "id": "TC09_O1_trackPosition_true",
+      "description": "parseFragmentInput(String) with trackPosition enabled retains trackPosition flag after parse",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser p = Parser.htmlParser().setTrackPosition(true)",
+      "expectedResult": "p.isTrackPosition() == true; returned nodes list non-null",
+      "tags": [
+        "overload:String,Element,String",
+        "branch-flag",
+        "trackPosition-true"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09_O1 parseFragmentInput preserves trackPosition flag",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser().setTrackPosition(true); String frag=\"<i/>\"; Element ctx=new Element(\"div\");",
+        "  WHEN",
+        "    List<Node> result = p.parseFragmentInput(frag, ctx, \"u\");",
+        "  THEN",
+        "    assert p.isTrackPosition(); assert result.get(0) instanceof Element;"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_Test {
+
+    @Test
+    @DisplayName("TC10: parseFragmentInput(Reader, context non-null, baseUri empty) returns nodes for empty baseUri branch")
+    public void test_TC10() {
+        // GIVEN a standard HTML parser, non-null context, empty baseUri triggers branch for empty string handling
+        Parser parser = Parser.htmlParser();
+        Reader fragment = new StringReader("<b>bold</b>");
+        Element context = new Element("div");
+        String baseUri = "";
+        // WHEN
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+        // THEN expect one child Element <b> under context, matching intended HTML fragment parsing
+        assertEquals(1, nodes.size(), "Should parse one node from fragment");
+        assertTrue(nodes.get(0) instanceof Element, "Parsed node should be an Element");
+        assertEquals("b", ((Element) nodes.get(0)).tagName(), "Tag name should be 'b'");
+    }
+
+    @Test
+    @DisplayName("TC11: parseFragmentInput holds and releases lock on successful parse (TreeBuilder stub)")
+    public void test_TC11() throws Exception {
+        // GIVEN a stub TreeBuilder that records lock state during parseFragment invocation
+        AtomicBoolean lockHeldDuring = new AtomicBoolean(false);
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override public org.jsoup.nodes.Document parse(Reader in, String uri, Parser p) {
+                return null;
+            }
+            @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                try {
+                    // reflectively check lock is held
+                    Field lockField = Parser.class.getDeclaredField("lock");
+                    lockField.setAccessible(true);
+                    ReentrantLock lock = (ReentrantLock) lockField.get(p);
+                    lockHeldDuring.set(lock.isHeldByCurrentThread());
+                } catch (Exception e) {
+                    fail("Reflection error: " + e.getMessage());
+                }
+                return Collections.emptyList();
+            }
+            @Override public void process(org.jsoup.parser.Token token) {}
+        };
+        Parser parser = new Parser(stubBuilder);
+        Reader fragment = new StringReader("<i/>");
+        // WHEN
+        List<Node> result = parser.parseFragmentInput(fragment, new Element("div"), "uri");
+        // THEN lock was held during stub parseFragment call
+        assertTrue(lockHeldDuring.get(), "Lock should be held during parseFragment");
+        // AND lock is released after parseFragmentInput returns
+        Field lockField2 = Parser.class.getDeclaredField("lock");
+        lockField2.setAccessible(true);
+        ReentrantLock lockAfter = (ReentrantLock) lockField2.get(parser);
+        assertFalse(lockAfter.isLocked(), "Lock should be released after parseFragmentInput");
+    }
+
+    @Test
+    @DisplayName("TC12: parseFragmentInput releases lock when treeBuilder.parseFragment throws RuntimeException")
+    public void test_TC12() throws Exception {
+        // GIVEN a stub TreeBuilder that throws during parseFragment to exercise exception path and finally block
+        TreeBuilder errorBuilder = new TreeBuilder() {
+            @Override public org.jsoup.nodes.Document parse(Reader in, String uri, Parser p) {
+                return null;
+            }
+            @Override public List<Node> parseFragment(Reader in, Element ctx, String uri, Parser p) {
+                throw new RuntimeException("parse failure");
+            }
+            @Override public void process(org.jsoup.parser.Token token) {}
+        };
+        Parser parser = new Parser(errorBuilder);
+        Reader fragment = new StringReader("x");
+        // WHEN & THEN expect RuntimeException and lock released afterwards
+        RuntimeException ex = assertThrows(RuntimeException.class, () ->
+            parser.parseFragmentInput(fragment, null, "base")
+        );
+        assertEquals("parse failure", ex.getMessage(), "Exception message should propagate from stub");
+        Field lockField = Parser.class.getDeclaredField("lock");
+        lockField.setAccessible(true);
+        ReentrantLock lockAfter = (ReentrantLock) lockField.get(parser);
+        assertFalse(lockAfter.isLocked(), "Lock should be released even when exception is thrown");
+    }
+
+    @Test
+    @DisplayName("TC13: xmlParser.parseFragmentInput(String, null, baseUri) returns text node via XmlTreeBuilder")
+    public void test_TC13() {
+        // GIVEN an XML parser, null context for XML, baseUri non-empty to take XML fragment branch
+        Parser parser = Parser.xmlParser();
+        String fragment = "<tag attr=\"v\">val</tag>";
+        Element context = null;
+        String baseUri = "http://x";
+        // WHEN
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+        // THEN expect a single node whose outerHtml matches the input fragment exactly
+        assertEquals(1, nodes.size(), "XML fragment should produce one node");
+        Node n = nodes.get(0);
+        assertEquals("<tag attr=\"v\">val</tag>", n.outerHtml(), "Outer HTML of node should match XML fragment");
+    }
+}

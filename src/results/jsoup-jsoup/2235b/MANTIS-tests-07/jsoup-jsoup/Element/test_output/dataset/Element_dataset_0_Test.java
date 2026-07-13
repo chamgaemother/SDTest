@@ -1,0 +1,78 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+public class Element_dataset_0_Test {
+
+    @Test
+    @DisplayName("TC01: dataset() on new Element with no attributes returns empty map (attributes==null branch, zero data-* attrs)")
+    public void test_TC01() {
+        // GIVEN an element with no pre-set attributes; attributes field is null
+        Element el = new Element("div");
+        // WHEN dataset() is called, it must initialize attributes() then filter none (loop-0)
+        Map<String, String> ds = el.dataset();
+        // THEN the returned map is empty
+        assertTrue(ds.isEmpty(), "Expected empty dataset for element with no attributes");
+    }
+
+    @Test
+    @DisplayName("TC02: dataset() after setting non-data attribute returns empty map (attributes!=null branch, zero data-* attrs)")
+    public void test_TC02() {
+        // GIVEN an element with a non-data attr; attributes() != null and no data- prefix
+        Element el = new Element("span");
+        el.attr("foo", "bar");
+        // WHEN dataset() filters attributes, finding no keys starting with "data-" (loop-0)
+        Map<String, String> ds = el.dataset();
+        // THEN the returned map is still empty
+        assertTrue(ds.isEmpty(), "Expected dataset to exclude non-data attributes");
+    }
+
+    @Test
+    @DisplayName("TC03: dataset() includes single data-* attribute (loop-1 iteration)")
+    public void test_TC03() {
+        // GIVEN an element with exactly one data-* attribute
+        Element el = new Element("p");
+        el.attr("data-key", "value");
+        // WHEN dataset() is called, it must include the single mapping key->value
+        Map<String, String> ds = el.dataset();
+        // THEN the map has exactly one entry and maps "key" to "value"
+        assertEquals(1, ds.size(), "Expected exactly one entry in dataset");
+        assertEquals("value", ds.get("key"), "Expected dataset key 'key' to map to 'value'");
+    }
+
+    @Test
+    @DisplayName("TC04: dataset() includes multiple data-* attributes (loop-N>1)")
+    public void test_TC04() {
+        // GIVEN an element with multiple data-* attributes");
+        Element el = new Element("div");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        el.attr("data-c", "3");
+        // WHEN dataset() collects all data-* entries (loop over 3 entries)
+        Map<String, String> ds = el.dataset();
+        // THEN the map size is 3 and each key maps correctly
+        assertEquals(3, ds.size(), "Expected three entries in dataset");
+        assertEquals("1", ds.get("a"), "Expected 'a'->'1'");
+        assertEquals("2", ds.get("b"), "Expected 'b'->'2'");
+        assertEquals("3", ds.get("c"), "Expected 'c'->'3'");
+    }
+
+    @Test
+    @DisplayName("TC05: dataset() returns view that reflects adding via map.put propagates to element attributes")
+    public void test_TC05() {
+        // GIVEN a fresh element and its dataset view (attributes() becomes non-null)
+        Element el = new Element("div");
+        Map<String, String> ds = el.dataset();
+        // WHEN we mutate the map view by putting a new entry
+        ds.put("new", "val");
+        // THEN the element's attributes must reflect this under the "data-new" key
+        assertEquals("val", el.attr("data-new"),
+                "Expected element.attr('data-new') to reflect dataset.put('new','val')");
+    }
+}

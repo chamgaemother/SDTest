@@ -1,0 +1,49 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Document.outputSettings behavior.
+ */
+public class Document_outputSettings_Test {
+
+    @Test
+    @DisplayName("Setting an OutputSettings with XML syntax via Document.outputSettings updates escapeMode to xhtml")
+    public void test_TC06() {
+        // GIVEN a new Document and default OutputSettings
+        Document doc = new Document("http://example.com");
+        OutputSettings settings = new OutputSettings();
+        
+        // WHEN applying xml syntax: this branch in OutputSettings.syntax should set escapeMode to xhtml
+        doc.outputSettings(settings).syntax(OutputSettings.Syntax.xml);
+        
+        // THEN syntax should be xml and escapeMode should be xhtml
+        assertEquals(OutputSettings.Syntax.xml, doc.outputSettings().syntax(),
+            "Expected syntax to be set to XML to trigger escapeMode update branch");
+        assertEquals(Entities.EscapeMode.xhtml, doc.outputSettings().escapeMode(),
+            "Expected escapeMode to update to XHTML when XML syntax is selected");
+    }
+
+    @Test
+    @DisplayName("Chaining Document.outputSettings().prettyPrint(false) retains the same OutputSettings instance")
+    public void test_TC07() {
+        // GIVEN a new Document and capture its original OutputSettings instance
+        Document doc = new Document("http://example.com");
+        OutputSettings original = doc.outputSettings();
+        
+        // WHEN calling prettyPrint(false) on the settings: branch sets prettyPrint flag but returns same instance
+        OutputSettings returned = doc.outputSettings().prettyPrint(false);
+        
+        // THEN the returned instance must be the same, and prettyPrint flag must be false
+        assertSame(original, returned,
+            "Chained prettyPrint call should return the same OutputSettings instance for chaining");
+        assertFalse(doc.outputSettings().prettyPrint(),
+            "Expected prettyPrint to be disabled after calling prettyPrint(false)");
+    }
+}

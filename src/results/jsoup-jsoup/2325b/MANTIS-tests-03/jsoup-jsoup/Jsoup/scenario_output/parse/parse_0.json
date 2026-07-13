@@ -1,0 +1,237 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(String, String) with non-empty html and baseUri delegates to Parser.parse",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returns Document created by Parser.parse(html, baseUri)",
+      "tags": [
+        "overload:String,String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01_O1 parse(String, String) delegation",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc instanceof Document;",
+        "    assert doc.body().html().equals(\"<p>Test</p>\");"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parse(String, String, Parser) with custom parser parses via parser.parseInput",
+      "path": "B0→B1→B3",
+      "precondition": "Parser stub used to simulate xmlParser behavior",
+      "expectedResult": "returns result of parser.parseInput(html, baseUri)",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02_O2 parse(String, String, Parser) with custom Parser",
+        "  GIVEN",
+        "    String html = \"<root><a/></root>\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");"
+      ]
+    },
+    {
+      "id": "TC03_O3",
+      "description": "parse(String, Parser) with empty html delegates to parser.parseInput and uses \"\" baseUri",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "returns Document from parser.parseInput(html, \"\")",
+      "tags": [
+        "overload:String,Parser",
+        "boundary-empty-html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03_O3 parse(String, Parser) empty html",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.body().html().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC04_O4",
+      "description": "parse(String) uses Parser.parse(html, \"\") to parse simple body",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "returns Document whose body.html equals input html",
+      "tags": [
+        "overload:String",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04_O4 parse(String) default baseUri",
+        "  GIVEN",
+        "    String html = \"<div>Hi</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>Hi</div>\");"
+      ]
+    },
+    {
+      "id": "TC05_O5",
+      "description": "parse(File, String, String) with existing file returns parsed Document",
+      "path": "B0→B5→B6",
+      "precondition": "File tempHtml contains \"<h1>Hdr</h1>\"; charsetName=\"UTF-8\"",
+      "expectedResult": "returns Document whose body.html equals \"<h1>Hdr</h1>\"",
+      "tags": [
+        "overload:File,String,String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05_O5 parse(File,String,String) from file",
+        "  GIVEN",
+        "    File file = createTempFile(\"test.html\",\"<h1>Hdr</h1>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h1>Hdr</h1>\");"
+      ]
+    },
+    {
+      "id": "TC06_O6",
+      "description": "parse(File, String) with null charsetName falls back to BOM/meta or UTF-8",
+      "path": "B0→B5→B6",
+      "precondition": "File tempHtml contains UTF-8 BOM and \"<p>UTF</p>\"; charsetName=null",
+      "expectedResult": "returns Document whose body.html equals \"<p>UTF</p>\"",
+      "tags": [
+        "overload:File,String",
+        "boundary-null-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06_O6 parse(File,String) null charset",
+        "  GIVEN",
+        "    File file = createTempFileWithBom(\"utf.html\",\"<p>UTF</p>\");",
+        "    String charset = null;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>UTF</p>\");"
+      ]
+    },
+    {
+      "id": "TC07_O7",
+      "description": "parse(File) with missing file throws IOException",
+      "path": "B0→B5→B7",
+      "precondition": "File does-not-exist.html does not exist",
+      "expectedResult": "throws IOException; no Document returned",
+      "tags": [
+        "overload:File",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07_O7 parse(File) missing file",
+        "  GIVEN",
+        "    File file = new File(\"missing.html\");",
+        "  WHEN",
+        "    call Jsoup.parse(file);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC08_O8",
+      "description": "parse(URL, int) with valid HTTP URL returns Document",
+      "path": "B0→B8→B9→B10",
+      "precondition": "Embedded test HTTP server at http://localhost:8888 returns 200 and \"<p>OK</p>\"",
+      "expectedResult": "returns Document whose body.html equals \"<p>OK</p>\"",
+      "tags": [
+        "overload:URL,int",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08_O8 parse(URL,int) valid URL",
+        "  GIVEN",
+        "    URL url = new URL(\"http://localhost:8888/\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>OK</p>\");"
+      ]
+    },
+    {
+      "id": "TC09_O8",
+      "description": "parse(URL, int) with non-http URL throws MalformedURLException",
+      "path": "B0→B8→B11",
+      "precondition": "URL ftp://example.com/ uses unsupported protocol",
+      "expectedResult": "throws java.net.MalformedURLException; no Document returned",
+      "tags": [
+        "overload:URL,int",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09_O8 parse(URL,int) unsupported protocol",
+        "  GIVEN",
+        "    URL url = new URL(\"ftp://example.com/\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws MalformedURLException;"
+      ]
+    },
+    {
+      "id": "TC10_O8",
+      "description": "parse(URL, int) that times out throws SocketTimeoutException",
+      "path": "B0→B8→B9→B12",
+      "precondition": "Embedded server delays > timeout",
+      "expectedResult": "throws java.net.SocketTimeoutException; no Document returned",
+      "tags": [
+        "overload:URL,int",
+        "exception",
+        "timeout"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10_O8 parse(URL,int) timeout",
+        "  GIVEN",
+        "    URL url = new URL(\"http://localhost:8889/slow\");",
+        "    int timeout = 10;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws SocketTimeoutException;"
+      ]
+    }
+  ]
+}

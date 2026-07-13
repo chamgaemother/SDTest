@@ -1,0 +1,113 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader,null) with null baseUri throws IllegalArgumentException",
+      "path": "B0→B2→B6",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseInput Reader null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader input = new StringReader(\"<p>test</p>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(String,baseUri) propagates exception from a stubbed XmlTreeBuilder",
+      "path": "B0→B2→B6",
+      "precondition": "Parser created with stub XmlTreeBuilder that throws RuntimeException",
+      "expectedResult": "RuntimeException(\"xml-fail\") is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseInput stubbed XmlTreeBuilder exception",
+        "  GIVEN",
+        "    class StubXmlBuilder extends XmlTreeBuilder {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new RuntimeException(\"xml-fail\"); }",
+        "    }",
+        "    Parser parser = new Parser(new StubXmlBuilder());",
+        "    String html = \"<root/>\";",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws RuntimeException with message \"xml-fail\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseInput(String,baseUri) with trackErrors enabled records parse errors for malformed HTML",
+      "path": "B0→B1→B2→B7→B8",
+      "precondition": "Parser created and setTrackErrors(1)",
+      "expectedResult": "getErrors().size() == 1 and isTrackErrors() == true",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseInput malformed-html with error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackErrors(1);",
+        "    String html = \"<div><span>\"; // unclosed tags",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == true;",
+        "    assert parser.getErrors().size() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseInput(Reader,baseUri) with trackErrors disabled records no parse errors for malformed HTML",
+      "path": "B0→B1→B2→B7→B9",
+      "precondition": "Parser created and setTrackErrors(0)",
+      "expectedResult": "getErrors().isEmpty() and isTrackErrors() == false",
+      "tags": [
+        "positive",
+        "error-tracking",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseInput malformed-html without error-tracking",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackErrors(0);",
+        "    Reader input = new StringReader(\"<ul><li>\"); // unclosed tags",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assert parser.isTrackErrors() == false;",
+        "    assert parser.getErrors().isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

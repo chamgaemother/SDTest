@@ -1,0 +1,235 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parse(String html, String baseUri) with valid HTML and non-empty baseUri returns a Document with resolved baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return Document whose html() contains '<p>Hello</p>' and baseUri() equals 'http://example.com/'",
+      "tags": [
+        "overload:String,String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parse html with baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\"; String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert doc.html().contains(\"<p>Hello</p>\"); assert doc.baseUri().equals(\"http://example.com/\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parse(String html, String baseUri) with html == null throws NullPointerException",
+      "path": "B0→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-html"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parse null-html exception",
+        "  GIVEN",
+        "    String html = null; String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parse(String html, String baseUri, Parser parser) with valid inputs returns Document via parser",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Use real Parser via Parser.htmlParser()",
+      "expectedResult": "return Document whose body().html() equals '<div>Test</div>' and baseUri equals 'uri'",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parse with custom parser",
+        "  GIVEN",
+        "    String html=\"<div>Test</div>\"; String baseUri=\"uri\"; Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    Document d = Jsoup.parse(html, baseUri, p);",
+        "  THEN",
+        "    assert d.body().html().equals(\"<div>Test</div>\"); assert d.baseUri().equals(\"uri\");"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parse(String html, String baseUri, Parser parser) with parser == null throws NullPointerException",
+      "path": "B0→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String,Parser",
+        "exception",
+        "branch-null-parser"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parse null-parser exception",
+        "  GIVEN",
+        "    String html=\"<p/>\"; String baseUri=\"\"; Parser p=null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, baseUri, p);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC05_O3",
+      "description": "parse(String html, Parser parser) with empty html and xml parser returns empty Document",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Use real Parser.xmlParser()",
+      "expectedResult": "return Document with empty body html '' and baseUri equals ''",
+      "tags": [
+        "overload:String,Parser",
+        "boundary-empty-html",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O3 parse empty-html xml parser",
+        "  GIVEN",
+        "    String html=\"\"; Parser p=Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc=Jsoup.parse(html, p);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\"); assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC06_O3",
+      "description": "parse(String html, Parser parser) with html == null throws NullPointerException",
+      "path": "B0→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,Parser",
+        "exception",
+        "branch-null-html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O3 parse null-html xml parser exception",
+        "  GIVEN",
+        "    String html=null; Parser p=Parser.xmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, p);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC07_O4",
+      "description": "parse(String html) with minimal HTML returns Document with empty baseUri",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return Document whose body().html() equals '<span/>' and baseUri equals ''",
+      "tags": [
+        "overload:String",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O4 parse minimal-html",
+        "  GIVEN",
+        "    String html=\"<span/>\";",
+        "  WHEN",
+        "    Document doc=Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span/>\"); assert doc.baseUri().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC08_O4",
+      "description": "parse(String html) with html == null throws NullPointerException",
+      "path": "B0→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String",
+        "exception",
+        "branch-null-html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O4 parse null-html exception",
+        "  GIVEN",
+        "    String html=null;",
+        "  WHEN",
+        "    call Jsoup.parse(html);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parse(String html, String baseUri) with empty baseUri resolves relative links based on document fragment",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return Document whose body().html() contains '<a href=\"?x\">x</a>' with href unchanged",
+      "tags": [
+        "overload:String,String",
+        "boundary-empty-baseUri",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O1 parse relative-link with empty baseUri",
+        "  GIVEN",
+        "    String html=\"<a href='?x'>x</a>\"; String baseUri=\"\";",
+        "  WHEN",
+        "    Document d=Jsoup.parse(html, baseUri);",
+        "  THEN",
+        "    assert d.select(\"a\").first().attr(\"href\").equals(\"?x\");"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "parse(String html, String baseUri, Parser parser) with html containing unbalanced tags is balanced by parser",
+      "path": "B0→B1→B4→B5",
+      "precondition": "Use real Parser.htmlParser()",
+      "expectedResult": "return Document whose body().html() equals '<div><p>text</p></div>' balancing missing tags",
+      "tags": [
+        "overload:String,String,Parser",
+        "positive",
+        "branch-normal"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O2 parse unbalanced-tags balances",
+        "  GIVEN",
+        "    String html=\"<div><p>text\"; String baseUri=\"u\"; Parser p=Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc=Jsoup.parse(html, baseUri, p);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div><p>text</p></div>\");"
+      ]
+    }
+  ]
+}

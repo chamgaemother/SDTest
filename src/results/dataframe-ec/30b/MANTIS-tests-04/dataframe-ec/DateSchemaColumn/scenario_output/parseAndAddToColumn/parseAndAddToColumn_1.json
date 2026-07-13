@@ -1,0 +1,158 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseAndAddToColumn adds null when input string is null (aString == null branch)",
+      "path": "B0→B1(true)→B3",
+      "precondition": "none",
+      "expectedResult": "dfColumn.lastAdded == null; dfColumn.addCount == 1",
+      "tags": [
+        "null-input",
+        "branch-null",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 parseAndAddToColumn null-input",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null)",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = null",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    assert stub.lastAdded == null",
+        "    assert stub.addCount == 1"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() == true branch)",
+      "path": "B0→B1(false)→B2(true)→B3",
+      "precondition": "none",
+      "expectedResult": "dfColumn.lastAdded == null; dfColumn.addCount == 1",
+      "tags": [
+        "empty-trim",
+        "branch-empty",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 parseAndAddToColumn empty-trim",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null)",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = \"   \"",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    assert stub.lastAdded == null",
+        "    assert stub.addCount == 1"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseAndAddToColumn parses valid date string with default pattern after trim (successful parse branch)",
+      "path": "B0→B1(false)→B2(false)→B4→B5→B6→B7→B3",
+      "precondition": "none",
+      "expectedResult": "dfColumn.lastAdded == LocalDate.of(2023,12,5); dfColumn.addCount == 1",
+      "tags": [
+        "valid-parse",
+        "branch-parse",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 parseAndAddToColumn valid-default",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null)  // default pattern 'uuuu-M-d'",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = \" 2023-12-5 \"",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    assert stub.lastAdded == LocalDate.of(2023,12,5)",
+        "    assert stub.addCount == 1"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseAndAddToColumn throws DateTimeParseException for malformed date (parse error branch)",
+      "path": "B0→B1(false)→B2(false)→B4→B5→B6(exception)",
+      "precondition": "none",
+      "expectedResult": "DateTimeParseException thrown; dfColumn.addCount == 0",
+      "tags": [
+        "invalid-parse",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 parseAndAddToColumn invalid-default",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null)",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = \"2023-02-29\"",
+        "  WHEN",
+        "    call col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    throws DateTimeParseException",
+        "    assert stub.addCount == 0"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseAndAddToColumn parses with custom pattern and adds correct LocalDate (custom-pattern parse branch)",
+      "path": "B0→B1(false)→B2(false)→B4→B5→B6→B7→B3",
+      "precondition": "none",
+      "expectedResult": "dfColumn.lastAdded == LocalDate.of(2021,3,7); dfColumn.addCount == 1",
+      "tags": [
+        "custom-pattern",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 parseAndAddToColumn custom-pattern",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", \"d/MM/uuuu\")",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = \"7/03/2021\"",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    assert stub.lastAdded == LocalDate.of(2021,3,7)",
+        "    assert stub.addCount == 1"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseAndAddToColumn parses Feb 29 on a leap year with default pattern (boundary-date leap-year branch)",
+      "path": "B0→B1(false)→B2(false)→B4→B5→B6→B7→B3",
+      "precondition": "none",
+      "expectedResult": "dfColumn.lastAdded == LocalDate.of(2020,2,29); dfColumn.addCount == 1",
+      "tags": [
+        "leap-year",
+        "boundary",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseAndAddToColumn leap-year-default",
+        "  GIVEN",
+        "    DateSchemaColumn col = new DateSchemaColumn(null, \"d\", null)",
+        "    StubDfColumn stub = new StubDfColumn()",
+        "    String aString = \"2020-2-29\"",
+        "  WHEN",
+        "    col.parseAndAddToColumn(aString, stub)",
+        "  THEN",
+        "    assert stub.lastAdded == LocalDate.of(2020,2,29)",
+        "    assert stub.addCount == 1"
+      ]
+    }
+  ]
+}

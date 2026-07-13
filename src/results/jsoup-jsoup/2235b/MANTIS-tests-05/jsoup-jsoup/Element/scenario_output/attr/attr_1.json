@@ -1,0 +1,78 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "attr(String key, boolean true) sets a boolean attribute with empty value",
+      "path": "B0→B1→B2(true)→B4→B5",
+      "precondition": "new Element without attributes",
+      "expectedResult": "attribute 'checked' exists with empty string value and is boolean",
+      "tags": [
+        "positive",
+        "boolean-overload",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 attr-boolean-add",
+        "  GIVEN",
+        "    Element el = new Element(\"input\");",
+        "  WHEN",
+        "    el.attr(\"checked\", true);",
+        "  THEN",
+        "    assertEquals(\"\", el.attributes().get(\"checked\"));",
+        "    assertTrue(el.attributes().get(\"checked\").isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "attr(String key, boolean false) removes an existing boolean attribute",
+      "path": "B0→B1→B2(false)→B3(removal)→B5",
+      "precondition": "Element with existing boolean attribute 'selected'",
+      "expectedResult": "attribute 'selected' is removed",
+      "tags": [
+        "negative",
+        "boolean-overload",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 attr-boolean-remove-existing",
+        "  GIVEN",
+        "    Element el = new Element(\"option\");",
+        "    el.attr(\"selected\", true);",
+        "  WHEN",
+        "    el.attr(\"selected\", false);",
+        "  THEN",
+        "    assertFalse(el.attributes().hasKey(\"selected\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "attr(String key, boolean false) on non-existent attribute does nothing",
+      "path": "B0→B1→B2(false)→B4(no-removal)→B5",
+      "precondition": "new Element without attributes",
+      "expectedResult": "no exception and attributes remain empty",
+      "tags": [
+        "boundary",
+        "boolean-overload",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 attr-boolean-remove-nonexistent",
+        "  GIVEN",
+        "    Element el = new Element(\"option\");",
+        "  WHEN",
+        "    el.attr(\"selected\", false);",
+        "  THEN",
+        "    assertEquals(0, el.attributes().size());",
+        "END"
+      ]
+    }
+  ]
+}

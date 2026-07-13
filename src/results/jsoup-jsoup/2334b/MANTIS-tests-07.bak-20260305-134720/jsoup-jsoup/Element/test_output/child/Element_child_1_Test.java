@@ -1,0 +1,47 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.DataNode;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(index) throws IndexOutOfBoundsException when index equals number of element children (upper-bound exception branch)")
+    public void test_TC06() {
+        // GIVEN an Element with exactly two Element children
+        Element parent = new Element("div");
+        Element first = new Element("span");
+        Element second = new Element("b");
+        parent.appendChild(first);
+        parent.appendChild(second);
+        // At this point, parent.children() has size 2 (children indices 0 and 1)
+        // WHEN calling parent.child(2), index == childrenSize -> should go through the filter loop twice and hit .get(2) out of bounds
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            parent.child(2);
+        });
+    }
+
+    @Test
+    @DisplayName("child(index) returns correct element from mixed childNodes list after filtering non-Element nodes (filter loop with mixed types)")
+    public void test_TC07() {
+        // GIVEN an Element with mixed children: TextNode, e1, e2, DataNode, e3
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("t1"));          // non-Element, filtered out
+        Element e1 = new Element("p");
+        parent.appendChild(e1);                           // first Element child (filtered index 0)
+        Element e2 = new Element("span");
+        parent.appendChild(e2);                           // second Element child (filtered index 1)
+        parent.appendChild(new DataNode("d1"));           // non-Element, filtered out
+        Element e3 = new Element("b");
+        parent.appendChild(e3);                           // third Element child (filtered index 2)
+        // WHEN requesting the child at filtered index 1, expecting e2
+        Element result = parent.child(1);
+        // THEN the returned element should be e2
+        assertEquals(e2, result);
+    }
+}

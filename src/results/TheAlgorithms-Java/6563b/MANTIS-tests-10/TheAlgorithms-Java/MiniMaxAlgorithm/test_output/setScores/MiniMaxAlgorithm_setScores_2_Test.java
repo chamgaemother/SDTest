@@ -1,0 +1,32 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.thealgorithms.others.MiniMaxAlgorithm;
+public class MiniMaxAlgorithm_setScores_2_Test {
+
+    @Test
+    @DisplayName("TC05: setScores(null) throws NullPointerException before any assignment")
+    public void test_TC05() {
+        // GIVEN a MiniMaxAlgorithm instance and a null array
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = null;
+        // WHEN & THEN: setting scores to null should immediately throw NPE at length check in setScores
+        assertThrows(NullPointerException.class, () -> alg.setScores(newScores),
+            "Expected NullPointerException when calling setScores with null");
+    }
+
+    @Test
+    @DisplayName("TC06: setScores(empty array) causes StackOverflowError in log2 due to zero length")
+    public void test_TC06() {
+        // GIVEN a MiniMaxAlgorithm instance and an empty array
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] newScores = new int[0];
+        // WHEN & THEN: setting an array of length 0 enters log2(0) recursion and overflows
+        assertThrows(StackOverflowError.class, () -> alg.setScores(newScores),
+            "Expected StackOverflowError due to infinite recursion in log2(0)");
+    }
+}

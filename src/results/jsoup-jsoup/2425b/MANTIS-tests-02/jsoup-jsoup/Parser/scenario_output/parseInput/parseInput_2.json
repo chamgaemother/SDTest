@@ -1,0 +1,70 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "parseInput(Reader,String) propagates arbitrary RuntimeException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Parser constructed with TreeBuilder stub whose parse(…) throws new RuntimeException(\"boom\")",
+      "expectedResult": "RuntimeException with message \"boom\" is thrown",
+      "tags": [
+        "exception",
+        "runtime",
+        "stub"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 propagate-runtime-exception",
+        "  GIVEN",
+        "    // Arrange a TreeBuilder stub that throws RuntimeException",
+        "    TreeBuilder stubBuilder = new TreeBuilder() {",
+        "      // implement defaultSettings, newInstance, defaultNamespace, parseFragment, process as no-op",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.preserveCase; }",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public String defaultNamespace() { return Parser.NamespaceHtml; }",
+        "      @Override public Document parse(Reader r, String u, Parser p) { throw new RuntimeException(\"boom\"); }",
+        "      @Override public List<Node> parseFragment(Reader r, Element c, String u, Parser p) { return null; }",
+        "      @Override public void process(Token t) { }",
+        "    };",
+        "    Parser parser = new Parser(stubBuilder);",
+        "    Reader reader = new StringReader(\"<p>fail</p>\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    // Act",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    // Assert",
+        "    throws RuntimeException with message \"boom\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseInput(String,String) propagates NullPointerException when baseUri is null",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "exception",
+        "null",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    // Act",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    // Assert",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

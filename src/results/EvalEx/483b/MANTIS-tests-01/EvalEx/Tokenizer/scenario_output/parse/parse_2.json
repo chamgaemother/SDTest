@@ -1,0 +1,180 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "parseBraceClose throws Unexpected closing brace when braceBalance < 0",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Unexpected closing brace'",
+      "tags": ["exception","brace","boundary"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 unexpected-closing-brace",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\")\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected closing brace';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parseArrayClose throws Unexpected closing array when arrayBalance < 0",
+      "path": "B0→B1→B2→B6→B1→B7→B9→B10",
+      "precondition": "config.setArraysAllowed(true)",
+      "expectedResult": "ParseException with message 'Unexpected closing array'",
+      "tags": ["exception","array","boundary"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 unexpected-closing-array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"]\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Unexpected closing array';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parseStructureSeparator produces valid token sequence when allowed between variables",
+      "path": "B0→B6→B1→B6→B1→B7→B9→B11",
+      "precondition": "config.setStructuresAllowed(true)",
+      "expectedResult": "List of tokens [VARIABLE_OR_CONSTANT('x'), STRUCTURE_SEPARATOR('.'), VARIABLE_OR_CONSTANT('y')]",
+      "tags": ["positive","structure","separator"],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 valid-structure-separator",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setStructuresAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"x.y\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens sequence is VARIABLE_OR_CONSTANT 'x', STRUCTURE_SEPARATOR '.', VARIABLE_OR_CONSTANT 'y';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseStructureSeparator throws when separator after BRACE_OPEN (not allowed)",
+      "path": "B0→B6→B2→B3→B5",
+      "precondition": "config.setStructuresAllowed(true)",
+      "expectedResult": "ParseException with message 'Structure separator not allowed here'",
+      "tags": ["exception","structure","separator"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 separator-after-brace-open-disallowed",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setStructuresAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"(.x\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Structure separator not allowed here';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parseArrayOpen throws Array open not allowed here at start (previousToken==null)",
+      "path": "B0→B2→B3→B5",
+      "precondition": "config.setArraysAllowed(true)",
+      "expectedResult": "ParseException with message 'Array open not allowed here'",
+      "tags": ["exception","array","open"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 array-open-at-start-disallowed",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"[1]\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Array open not allowed here';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parseArrayClose throws Array close not allowed here when previous INFIX_OPERATOR",
+      "path": "B0→B6→B6→B2→B3→B5",
+      "precondition": "config.setArraysAllowed(true)",
+      "expectedResult": "ParseException with message 'Array close not allowed here'",
+      "tags": ["exception","array","close"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 array-close-after-infix-disallowed",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"1+]\"," +
+        " config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message 'Array close not allowed here';",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parseIdentifier throws on undefined function name before '('",
+      "path": "B0→B6→B6→B2→B6→B1→B7→B9→B10",
+      "precondition": "none",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": ["exception","function","identifier"],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 undefined-function-call",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"foo()\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined function 'foo'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parseDecimalNumberLiteral accepts valid scientific notation '3.14e2'",
+      "path": "B0→B6→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "One NUMBER_LITERAL token with value '3.14e2'",
+      "tags": ["positive","number","scientific"],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 valid-scientific-notation",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"3.14e2\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;",
+        "    assert tokens.get(0).getValue().equals(\"3.14e2\");",
+        "END"
+      ]
+    }
+  ]
+}

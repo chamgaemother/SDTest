@@ -1,0 +1,108 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "dataset.putAll inserts multiple data- entries into element attributes",
+      "path": "B0→B1→B3→B4",
+      "precondition": "Element el = new Element(\"div\"), no existing data- attributes",
+      "expectedResult": "element has 'data-k1'='v1' and 'data-k2'='v2'; dataset contains keys 'k1','k2'",
+      "tags": [
+        "live-view",
+        "putAll",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 dataset putAll multiple entries",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.putAll(Map.of(\"k1\",\"v1\",\"k2\",\"v2\"));",
+        "  THEN",
+        "    assertEquals(\"v1\", el.attr(\"data-k1\"));",
+        "    assertEquals(\"v2\", el.attr(\"data-k2\"));",
+        "    assertTrue(ds.containsKey(\"k1\") && ds.containsKey(\"k2\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "dataset.clear removes all data- attributes from the element",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Element el = new Element(\"span\") with data-a and data-b set",
+      "expectedResult": "dataset is empty and el.attr(\"data-a\"), el.attr(\"data-b\") return empty",
+      "tags": [
+        "live-view",
+        "clear",
+        "negative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 dataset clear removes entries",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.clear();",
+        "  THEN",
+        "    assertTrue(ds.isEmpty());",
+        "    assertEquals(\"\", el.attr(\"data-a\"));",
+        "    assertEquals(\"\", el.attr(\"data-b\"));"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "dataset with multi-hyphen key normalizes to camelCase chain",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-user-id-test\",\"X\")",
+      "expectedResult": "dataset contains key 'userIdTest' mapping to 'X'",
+      "tags": [
+        "camelCase",
+        "boundary",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 dataset multi-hyphen normalization",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-user-id-test\",\"X\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assertTrue(ds.containsKey(\"userIdTest\"));",
+        "    assertEquals(\"X\", ds.get(\"userIdTest\"));"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "dataset.put overrides existing data- attribute value",
+      "path": "B0→B1→B3→B7",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-x\",\"old\")",
+      "expectedResult": "el.attr('data-x') updated to 'new'; dataset.get('x') returns 'new'",
+      "tags": [
+        "live-view",
+        "override",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 dataset put overrides value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-x\",\"old\");",
+        "    Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"x\",\"new\");",
+        "  THEN",
+        "    assertEquals(\"new\", el.attr(\"data-x\"));",
+        "    assertEquals(\"new\", ds.get(\"x\"));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,185 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "attr(String,String) with new key and non-null value sets attribute and returns same element",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); no mocks",
+      "expectedResult": "el.attr(\"data-test\",\"value\") returns el; el.attributes().get(\"data-test\")==\"value\"",
+      "tags": [
+        "branch-false(keyNull)",
+        "branch-false(valueNull)",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 attr new key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"data-test\";",
+        "    String val = \"value\";",
+        "  WHEN",
+        "    Element result = el.attr(key, val);",
+        "  THEN",
+        "    assert result == el;",
+        "    assert el.attributes().get(key).equals(val);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "attr(String,String) with existing key updates its value",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"id\",\"old\"); no mocks",
+      "expectedResult": "el.attr(\"id\",\"new\"); el.attributes().get(\"id\")==\"new\"",
+      "tags": [
+        "branch-false(keyNull)",
+        "branch-false(valueNull)",
+        "update"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 attr update existing",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"id\",\"old\");",
+        "  WHEN",
+        "    el.attr(\"id\",\"new\");",
+        "  THEN",
+        "    assert el.attributes().get(\"id\").equals(\"new\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "attr(String,String) with key null throws IllegalArgumentException",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"p\"); no mocks",
+      "expectedResult": "throws IllegalArgumentException; no attribute added",
+      "tags": [
+        "branch-true(keyNull)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 attr null key",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    String key = null;",
+        "    String val = \"v\";",
+        "  WHEN",
+        "    call el.attr(key, val);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "attr(String,String) with value null throws IllegalArgumentException",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"p\"); no mocks",
+      "expectedResult": "throws IllegalArgumentException; no attribute added",
+      "tags": [
+        "branch-false(keyNull)",
+        "branch-true(valueNull)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 attr null value",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    String key = \"attr\";",
+        "    String val = null;",
+        "  WHEN",
+        "    call el.attr(key, val);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "attr(String,boolean) true sets boolean attribute with empty string value",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); no mocks",
+      "expectedResult": "el.attr(\"hidden\",true); el.attributes().hasKey(\"hidden\"); el.attributes().get(\"hidden\").equals(\"\")",
+      "tags": [
+        "overload:String,boolean",
+        "branch-false(keyNull)",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 attr boolean true",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"hidden\";",
+        "  WHEN",
+        "    Element result = el.attr(key, true);",
+        "  THEN",
+        "    assert result == el;",
+        "    assert el.attributes().get(key).equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "attr(String,boolean) false removes existing attribute",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"checked\",true); no mocks",
+      "expectedResult": "el.attr(\"checked\",false); !el.attributes().hasKey(\"checked\")",
+      "tags": [
+        "overload:String,boolean",
+        "branch-false(keyNull)",
+        "loop-0",
+        "update"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 attr boolean false",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"checked\", true);",
+        "  WHEN",
+        "    el.attr(\"checked\", false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(\"checked\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "attr(String,boolean) with key null throws IllegalArgumentException",
+      "path": "B0→B1→B2",
+      "precondition": "Element el = new Element(\"div\"); no mocks",
+      "expectedResult": "throws IllegalArgumentException; no attribute added",
+      "tags": [
+        "overload:String,boolean",
+        "branch-true(keyNull)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 attr boolean null key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = null;",
+        "  WHEN",
+        "    call el.attr(key, true);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    }
+  ]
+}

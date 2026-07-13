@@ -1,0 +1,39 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.Parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_setTrackPosition_0_Test {
+
+    @Test
+    @DisplayName("Calling setTrackPosition(true) enables position tracking when previously disabled")
+    public void test_TC01() {
+        // GIVEN a fresh HTML parser with default trackPosition = false (branch B0→B1: entering setTrackPosition)
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: tracking should be disabled by default");
+
+        // WHEN enabling position tracking (branch B2→B3: trackPosition parameter true)
+        Parser returned = parser.setTrackPosition(true);
+
+        // THEN the same parser instance is returned (fluent API) and tracking is enabled
+        assertSame(parser, returned, "setTrackPosition should return the same instance for fluent chaining");
+        assertTrue(parser.isTrackPosition(), "Track position should be enabled after setTrackPosition(true)");
+    }
+
+    @Test
+    @DisplayName("Calling setTrackPosition(false) leaves position tracking disabled when already disabled")
+    public void test_TC02() {
+        // GIVEN a fresh HTML parser with default trackPosition = false (branch B0→B1: entering setTrackPosition)
+        Parser parser = Parser.htmlParser();
+        assertFalse(parser.isTrackPosition(), "Precondition: tracking should be disabled by default");
+
+        // WHEN disabling position tracking again (branch B2→B4: trackPosition parameter false)
+        Parser returned = parser.setTrackPosition(false);
+
+        // THEN the same parser instance is returned and tracking remains disabled
+        assertSame(parser, returned, "setTrackPosition should return the same instance for fluent chaining");
+        assertFalse(parser.isTrackPosition(), "Track position should remain disabled after setTrackPosition(false)");
+    }
+}

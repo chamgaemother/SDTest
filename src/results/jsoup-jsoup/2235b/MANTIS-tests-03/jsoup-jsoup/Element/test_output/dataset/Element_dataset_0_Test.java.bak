@@ -1,0 +1,96 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("element with no attributes returns empty dataset map (loop-0)")
+    public void test_TC01() {
+        // GIVEN an element with no attributes => loop in dataset sees zero entries
+        Element el = new Element("div");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN expect empty map
+        assertTrue(ds.isEmpty(), "Dataset should be empty when no data- attributes present");
+    }
+
+    @Test
+    @DisplayName("element with one data- attribute returns single entry (loop-1, branch-true)")
+    public void test_TC02() {
+        // GIVEN one data- attribute => one loop iteration with branch true
+        Element el = new Element("p");
+        el.attr("data-name", "value");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN
+        assertEquals(1, ds.size(), "Dataset should contain exactly one entry");
+        assertEquals("value", ds.get("name"), "Key 'name' should map to 'value'");
+    }
+
+    @Test
+    @DisplayName("element with multiple data- attributes returns all entries (loop-N)")
+    public void test_TC03() {
+        // GIVEN three data- attributes => loop executes three times, branch true each time
+        Element el = new Element("span");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        el.attr("data-c", "3");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN
+        assertEquals(3, ds.size(), "Dataset should contain three entries");
+        assertAll("Check each mapping",
+            () -> assertEquals("1", ds.get("a"), "Key 'a' should map to '1'"),
+            () -> assertEquals("2", ds.get("b"), "Key 'b' should map to '2'"),
+            () -> assertEquals("3", ds.get("c"), "Key 'c' should map to '3'")
+        );
+    }
+
+    @Test
+    @DisplayName("dataset reflects changes when map modified (view-binding)")
+    public void test_TC04() {
+        // GIVEN two data- attributes => initial loop iterations
+        Element el = new Element("div");
+        el.attr("data-one", "one");
+        el.attr("data-two", "two");
+        // WHEN obtaining view and modifying it => side-effect back to element attributes
+        Map<String, String> ds = el.dataset();
+        ds.put("x", "y");
+        // THEN el.attr("data-x") should reflect the added mapping
+        assertEquals("y", el.attr("data-x"), "Adding to dataset map should update the element's data-x attribute");
+    }
+
+    @Test
+    @DisplayName("data- attribute with uppercase letters is normalized to lowercase key (prefix-handling)")
+    public void test_TC05() {
+        // GIVEN attribute 'DATA-Test' => loop iteration with uppercase in key, branch true
+        Element el = new Element("div");
+        el.attr("DATA-Test", "Val");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN normalized key 'test' present mapping to 'Val'
+        assertTrue(ds.containsKey("test"), "Dataset key should be normalized to lowercase 'test'");
+        assertEquals("Val", ds.get("test"), "Value for normalized key 'test' should be 'Val'");
+    }
+
+    @Test
+    @DisplayName("non-data- attributes are filtered out (branch-false in loop)")
+    public void test_TC06() {
+        // GIVEN one data- and one non-data- attribute => loop runs twice but only one branch true
+        Element el = new Element("p");
+        el.attr("data-k", "v");
+        el.attr("other", "x");
+        // WHEN
+        Map<String, String> ds = el.dataset();
+        // THEN only data- attr appears
+        assertEquals(1, ds.size(), "Dataset should only include data- attributes");
+        assertTrue(ds.containsKey("k"), "Dataset should contain key 'k' from data-k");
+        assertFalse(ds.containsKey("other"), "Non-data- attribute should be filtered out");
+    }
+}

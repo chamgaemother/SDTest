@@ -1,0 +1,104 @@
+package org.jsoup.select;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Tag;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class NodeTraversor_traverse_2_Test {
+
+    @Test
+    @DisplayName("Child replacement in head triggers replace branch (origSize==childNodeSize) then correct traversal of replacement")
+    public void test_TC10() {
+        // root with one child; visitor replaces that child in head to trigger replacement branch
+        Element root = new Element(Tag.valueOf("div"), "");
+        Element child = new Element(Tag.valueOf("p"), "");
+        root.appendChild(child);
+        Element repl = new Element(Tag.valueOf("span"), "");
+        List<String> order = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int d) {
+                order.add("H" + n.nodeName());
+                // replace original child when visiting it
+                if (n == child) {
+                    n.replaceWith(repl);
+                }
+            }
+            public void tail(Node n, int d) {
+                order.add("T" + n.nodeName());
+            }
+        };
+        NodeTraversor.traverse(v, root);
+        // Expect: head original child, head replacement, tail replacement, tail root
+        List<String> expected = Arrays.asList("Hp", "Hspan", "Tspan", "Tdiv");
+        assertEquals(expected, order);
+    }
+
+    @Test
+    @DisplayName("Two sibling children trigger inner while sibling branch and correct ascend/tail order")
+    public void test_TC11() {
+        // root with two children; sibling branch when nextSibling non-null
+        Element root = new Element(Tag.valueOf("ul"), "");
+        Element c1 = new Element(Tag.valueOf("li"), "");
+        Element c2 = new Element(Tag.valueOf("li"), "");
+        root.appendChild(c1);
+        root.appendChild(c2);
+        List<String> seq = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int depth) {
+                seq.add("H" + depth + ":" + n.nodeName());
+            }
+            public void tail(Node n, int depth) {
+                seq.add("T" + depth + ":" + n.nodeName());
+            }
+        };
+        NodeTraversor.traverse(v, root);
+        // Expect traversal: root head, c1 head and tail, c2 head and tail, root tail
+        List<String> expected = Arrays.asList(
+                "H0:ul",
+                "H1:li",
+                "T1:li",
+                "H1:li",
+                "T1:li",
+                "T0:ul"
+        );
+        assertEquals(expected, seq);
+    }
+
+    @Test
+    @DisplayName("Deep tree triggers ascend loop when nextSibling null and depth>0 (inner while ascend branch)")
+    public void test_TC12() {
+        // root -> child -> grandchild; no siblings so ascend loop when nextSibling null and depth>0
+        Element root = new Element(Tag.valueOf("div"), "");
+        Element child = new Element(Tag.valueOf("span"), "");
+        Element grand = new Element(Tag.valueOf("a"), "");
+        root.appendChild(child);
+        child.appendChild(grand);
+        List<String> log = new ArrayList<>();
+        NodeVisitor v = new NodeVisitor() {
+            public void head(Node n, int depth) {
+                log.add("H" + depth + ":" + n.nodeName());
+            }
+            public void tail(Node n, int depth) {
+                log.add("T" + depth + ":" + n.nodeName());
+            }
+        };
+        NodeTraversor.traverse(v, root);
+        // Expect: heads at depths 0,1,2 then tails grandchildren up to root
+        List<String> expected = Arrays.asList(
+                "H0:div",
+                "H1:span",
+                "H2:a",
+                "T2:a",
+                "T1:span",
+                "T0:div"
+        );
+        assertEquals(expected, log);
+    }
+}

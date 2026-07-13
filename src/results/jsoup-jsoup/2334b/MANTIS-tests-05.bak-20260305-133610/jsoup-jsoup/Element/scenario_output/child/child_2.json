@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "child(2) returns the third Element in a mix of three Elements and one TextNode, skipping non-Elements",
+      "path": "B0→B3→B5(loop×4)→B7",
+      "precondition": "parent has three Element children and one TextNode interspersed",
+      "expectedResult": "returns the third Element instance",
+      "tags": [
+        "positive",
+        "iteration",
+        "mixed-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child returns third element",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"a\"));",
+        "    parent.appendChild(new TextNode(\"skip\"));",
+        "    Element second = new Element(\"span\");",
+        "    parent.appendChild(second);",
+        "    parent.appendChild(new Element(\"b\"));",
+        "  WHEN",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assertSame(parent.childElementsList().get(2), result);",
+        "    assertSame(parent.childElementsList().get(2), result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "child(2) after cache invalidation builds new shadow list when a new Element is appended",
+      "path": "B0→B3→B5(loop×2)→B6→B3→B5(loop×3)→B7",
+      "precondition": "parent initially has two Element children; cache present after first child()",
+      "expectedResult": "after appending a third Element and invalidation, child(2) returns the new Element",
+      "tags": [
+        "positive",
+        "cache",
+        "nodelistChanged"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 child rebuilds shadow cache after change",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = new Element(\"p\");",
+        "    Element second = new Element(\"q\");",
+        "    parent.appendChild(first);",
+        "    parent.appendChild(second);",
+        "    // populate cache",
+        "    Element result1 = parent.child(1);",
+        "  WHEN",
+        "    Element third = new Element(\"span\");",
+        "    parent.appendChild(third); // triggers nodelistChanged and cache clear",
+        "    Element result2 = parent.child(2);",
+        "  THEN",
+        "    assertSame(third, result2);",
+        "    assertThrows(IndexOutOfBoundsException.class, () -> parent.child(3));",
+        "END"
+      ]
+    }
+  ]
+}

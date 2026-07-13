@@ -1,0 +1,108 @@
+{
+  "method": "clone",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "clone() on empty Document returns a distinct Document instance with same baseUri, empty childNodes, cloned outputSettings and parser",
+      "path": "B0→B1→B2",
+      "precondition": "Document original = new Document(\"http://example.com\");",
+      "expectedResult": "result != original; result.baseUri() == original.baseUri(); result.childNodes().isEmpty(); result.outputSettings() != original.outputSettings(); result.parser() != original.parser();",
+      "tags": [
+        "branch-normal",
+        "no-children",
+        "distinct-instances"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 clone empty document",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document result = original.clone();",
+        "  THEN",
+        "    assert result != original;",
+        "    assert result.baseUri().equals(original.baseUri());",
+        "    assert result.childNodes().isEmpty();",
+        "    assert result.outputSettings() != original.outputSettings();",
+        "    assert result.parser() != original.parser();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "clone() on Document with nested children clones the full node tree but returns independent nodes",
+      "path": "B0→B1→B2",
+      "precondition": "Document original = Document.createShell(\"http://foo\"); original.body().appendElement(\"p\").text(\"Hello\");",
+      "expectedResult": "result != original; result.select(\"p\").text().equals(\"Hello\"); result.select(\"p\").first() != original.select(\"p\").first();",
+      "tags": [
+        "branch-normal",
+        "with-children",
+        "tree-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 clone with children",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://foo\");",
+        "    original.body().appendElement(\"p\").text(\"Hello\");",
+        "  WHEN",
+        "    Document result = original.clone();",
+        "  THEN",
+        "    assert result != original;",
+        "    assert result.select(\"p\").text().equals(\"Hello\");",
+        "    assert result.select(\"p\").first() != original.select(\"p\").first();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "clone() ensures modifications to clone.outputSettings do not affect original.outputSettings",
+      "path": "B0→B1→B2",
+      "precondition": "Document original = new Document(\"u\");",
+      "expectedResult": "after result.outputSettings().indentAmount(5); original.outputSettings().indentAmount() == 1",
+      "tags": [
+        "branch-normal",
+        "outputSettings-independence"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 outputSettings independence",
+        "  GIVEN",
+        "    Document original = new Document(\"u\");",
+        "  WHEN",
+        "    Document result = original.clone();",
+        "    result.outputSettings().indentAmount(5);",
+        "  THEN",
+        "    assert original.outputSettings().indentAmount() == 1;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() ensures modifications to clone.parser do not affect original.parser",
+      "path": "B0→B1→B2",
+      "precondition": "Document original = new Document(\"u\");",
+      "expectedResult": "after result.parser().setTrackErrors(10); original.parser().getErrors().isEmpty()",
+      "tags": [
+        "branch-normal",
+        "parser-independence"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parser independence",
+        "  GIVEN",
+        "    Document original = new Document(\"u\");",
+        "  WHEN",
+        "    Document result = original.clone();",
+        "    result.parser().setTrackErrors(10);",
+        "  THEN",
+        "    assert original.parser().getErrors().isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

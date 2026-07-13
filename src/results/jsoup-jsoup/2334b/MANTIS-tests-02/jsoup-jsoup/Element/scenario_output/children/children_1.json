@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() returns new Elements list with no element nodes when all childNodes are non-Elements (childNodeSize>0, filter yields empty)",
+      "path": "B0→B1′→B2(loop×N)→B3→B4",
+      "precondition": "parent has only TextNode and DataNode children",
+      "expectedResult": "returns empty Elements list despite childNodeSize()>0",
+      "tags": [
+        "boundary",
+        "filter",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children with non-Element children only",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new TextNode(\"a\"));",
+        "    parent.appendChild(new DataNode(\"b\"));",
+        "  WHEN",
+        "    Elements result = parent.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() returns cached Elements list on second call without mutation (shadowChildrenRef non-null and not cleared)",
+      "path": "B0→B2(cache-hit)→B4",
+      "precondition": "parent has two Element children; no intervening mutation between calls",
+      "expectedResult": "second children() returns same list instance as first (cache hit)",
+      "tags": [
+        "iteration",
+        "cache",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children cache hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element c1 = new Element(\"li\");",
+        "    Element c2 = new Element(\"li\");",
+        "    parent.appendChild(c1);",
+        "    parent.appendChild(c2);",
+        "  WHEN",
+        "    Elements first = parent.children();",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first == second;",
+        "    assert second.size() == 2;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "Reader overload with real HtmlTreeBuilder parses HTML correctly (covers B_rd→B_exit)",
+      "path": "B0→B_rd→B_exit",
+      "precondition": "Parser parser = Parser.htmlParser(), Reader input = new StringReader(\"<span>Test</span>\")",
+      "expectedResult": "Document body contains one <span> element with text \"Test\"",
+      "tags": [
+        "positive",
+        "real-object",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput reader real-html",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader input = new StringReader(\"<span>Test</span>\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    List<Element> spans = doc.body().select(\"span\");",
+        "    assertEquals(1, spans.size());",
+        "    assertEquals(\"Test\", spans.get(0).text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "String overload with real XmlTreeBuilder via xmlParser parses XML fragment correctly (covers B_str→B_rd→B_exit)",
+      "path": "B0→B_str→B_rd→B_exit",
+      "precondition": "Parser parser = Parser.xmlParser()",
+      "expectedResult": "Document contains XML element <item>Value</item> under root",
+      "tags": [
+        "positive",
+        "real-object",
+        "string-overload",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 parseInput string real-xml",
+        "  GIVEN",
+        "    Parser parser = Parser.xmlParser();",
+        "    String xml = \"<root><item>Value</item></root>\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc);",
+        "    Element root = doc.child(0);",
+        "    assertEquals(\"root\", root.tagName());",
+        "    Element item = root.child(0);",
+        "    assertEquals(\"item\", item.tagName());",
+        "    assertEquals(\"Value\", item.text());",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() on element with multiple Element children returns all in order (loop>1, branch match true multiple times)",
+      "path": "B0→B3(false)→B5(true)→B7(loop×3 match true×3)→B8",
+      "precondition": "none",
+      "expectedResult": "Elements.size()==3, tagNames in insertion order",
+      "tags": [
+        "positive",
+        "iteration",
+        "multiple"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children multiple-element-children",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li1 = el.appendElement(\"li\");",
+        "    Element li2 = el.appendElement(\"li\");",
+        "    Element li3 = el.appendElement(\"li\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 3;",
+        "    assert result.get(0).tagName().equals(\"li\");",
+        "    assert result.get(1).tagName().equals(\"li\");",
+        "    assert result.get(2).tagName().equals(\"li\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() after manual cache invalidation without adding new children rebuilds and returns same elements (shadowChildrenRef cleared branch)",
+      "path": "B0→B3(false)→B5(true)→B7(loop×1)→B8→B11(nodelistChanged)→B3(false)→B5(true)→B7(loop×1)→B8",
+      "precondition": "none",
+      "expectedResult": "Elements.size()==1 before and after invalidation, same element instance",
+      "tags": [
+        "positive",
+        "cache",
+        "invalidated"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children cache-invalidated-no-new",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = el.appendElement(\"span\");",
+        "    Elements first = el.children();",
+        "    // manually clear cache without adding nodes",
+        "    el.nodelistChanged();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert second.size() == 1;",
+        "    assert second.get(0) == child;",
+        "END"
+      ]
+    }
+  ]
+}

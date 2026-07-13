@@ -1,0 +1,215 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseInput(String,Reader) and parseInput(Reader,String) both produce equivalent Documents",
+      "path": "B0→B2→B4→B5",
+      "precondition": "none",
+      "expectedResult": "Documents from both overloads have same title and body",
+      "tags": [
+        "positive",
+        "overload",
+        "parseInput"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 parseInput overloads equivalence",
+        "  GIVEN",
+        "    String html = \"<html><head><title>t</title></head><body><p>x</p></body></html>\";",
+        "    Parser p1 = Parser.htmlParser();",
+        "    Parser p2 = Parser.htmlParser();",
+        "  WHEN",
+        "    Document d1 = p1.parseInput(html, \"base\");",
+        "    Document d2 = p2.parseInput(new StringReader(html), \"base\");",
+        "  THEN",
+        "    assert d1.title().equals(d2.title());",
+        "    assert d1.body().text().equals(d2.body().text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseFragmentInput on an Element context returns correct child nodes",
+      "path": "B0→B1→B3→B6",
+      "precondition": "Document shell created with body",
+      "expectedResult": "Returned nodes list size matches fragment elements and context not modified",
+      "tags": [
+        "positive",
+        "parseFragmentInput",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 instance parseFragmentInput with context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Document doc = Document.createShell(\"uri\");",
+        "    Element ctx = doc.body();",
+        "    String frag = \"<span>a</span><span>b</span>\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(frag, ctx, \"uri\");",
+        "  THEN",
+        "    assert nodes.size() == 2;",
+        "    assert ctx.children().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "static parseFragment overload with supplied ParseErrorList tracks errors",
+      "path": "B0→B7→B9→B11",
+      "precondition": "tracking ParseErrorList maxSize=1",
+      "expectedResult": "Error list captures mismatched-tag error up to limit",
+      "tags": [
+        "exception",
+        "parseFragment",
+        "error-tracking"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 static parseFragment with errorList",
+        "  GIVEN",
+        "    String frag = \"<div><span></div>\"; // mismatched tags",
+        "    Element ctx = Document.createShell(\"u\").body();",
+        "    ParseErrorList errs = ParseErrorList.tracking(1);",
+        "  WHEN",
+        "    List<Node> out = Parser.parseFragment(frag, ctx, \"u\", errs);",
+        "  THEN",
+        "    assert errs.size() == 1;",
+        "    assert out != null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseXmlFragment returns XML nodes without HTML semantics",
+      "path": "B0→B13→B15",
+      "precondition": "none",
+      "expectedResult": "List contains single element 'foo' with tag name foo and no html namespace",
+      "tags": [
+        "positive",
+        "parseXmlFragment",
+        "xml"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseXmlFragment basic",
+        "  GIVEN",
+        "    String xml = \"<foo>bar</foo>\";",
+        "  WHEN",
+        "    List<Node> nodes = Parser.parseXmlFragment(xml, \"base\");",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert ((Element)nodes.get(0)).tagName().equals(\"foo\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parseBodyFragment populates body and preserves head shell",
+      "path": "B0→B17→B19→B21→loop×n",
+      "precondition": "none",
+      "expectedResult": "Document shell head empty and body contains new div with text",
+      "tags": [
+        "positive",
+        "parseBodyFragment",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 parseBodyFragment simple",
+        "  GIVEN",
+        "    String bodyHtml = \"<div>Hello</div>\";",
+        "  WHEN",
+        "    Document doc = Parser.parseBodyFragment(bodyHtml, \"u\");",
+        "  THEN",
+        "    assert doc.head().children().isEmpty();",
+        "    assert doc.body().child(0).tagName().equals(\"div\");",
+        "    assert doc.body().text().equals(\"Hello\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "setTreeBuilder swaps in XmlTreeBuilder and getTreeBuilder reflects change",
+      "path": "B0→B23→B24",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "Parser.getTreeBuilder returns new XmlTreeBuilder instance and parser reference set",
+      "tags": [
+        "positive",
+        "setter",
+        "getTreeBuilder"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 setTreeBuilder chaining",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    XmlTreeBuilder xtb = new XmlTreeBuilder();",
+        "  WHEN",
+        "    Parser ret = parser.setTreeBuilder(xtb);",
+        "  THEN",
+        "    assertSame(parser, ret);",
+        "    assertTrue(parser.getTreeBuilder() instanceof XmlTreeBuilder);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "isContentForTagData distinguishes script/style vs normal tags",
+      "path": "B0→B25→B26",
+      "precondition": "Parser created as htmlParser",
+      "expectedResult": "script returns true, div returns false",
+      "tags": [
+        "positive",
+        "content-for-tag-data"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 isContentForTagData script vs div",
+        "  GIVEN",
+        "    Parser p = Parser.htmlParser();",
+        "  WHEN",
+        "    boolean b1 = p.isContentForTagData(\"script\");",
+        "    boolean b2 = p.isContentForTagData(\"div\");",
+        "  THEN",
+        "    assertTrue(b1);",
+        "    assertFalse(b2);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "defaultNamespace reflects HTML vs XML parser defaults",
+      "path": "B0→B27",
+      "precondition": "none",
+      "expectedResult": "htmlParser defaultNamespace is HTML namespace, xmlParser defaultNamespace is XML namespace",
+      "tags": [
+        "positive",
+        "defaultNamespace"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 defaultNamespace for html and xml",
+        "  GIVEN",
+        "    Parser ph = Parser.htmlParser();",
+        "    Parser px = Parser.xmlParser();",
+        "  WHEN",
+        "    String nh = ph.defaultNamespace();",
+        "    String nx = px.defaultNamespace();",
+        "  THEN",
+        "    assertEquals(Parser.NamespaceHtml, nh);",
+        "    assertEquals(Parser.NamespaceXml, nx);",
+        "END"
+      ]
+    }
+  ]
+}

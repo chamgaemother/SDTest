@@ -1,0 +1,120 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "visitor.head replaces a child node (origSize == parent.childNodeSize) triggers replace branch",
+      "path": "B0→B1→B2→B5→B6→B7→B8→B11→B12→B23→B1→...→B24",
+      "precondition": "root has one child C1; visitor replaces C1 with C2 in head",
+      "expectedResult": "traversal visits head(C2,1), tail(C2,1), tail(root,0); C2 only in events",
+      "tags": [
+        "positive",
+        "replacement",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 replacement-preserves-index",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element c1 = new Element(\"span\"); root.appendChild(c1);",
+        "    Element c2 = new Element(\"em\");",
+        "    NodeVisitor visitor = (n, d) -> {",
+        "      if (n.equals(c1)) n.replaceWith(c2);",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor.andThen((n,d)-> events.add(n.nodeName()+\"@\"+d)), root);",
+        "  THEN",
+        "    assert events.contains(\"em@1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "visitor.head removes a grandchild triggers removed-continue-up branch (origSize != parent.childNodeSize)",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B1→B6→B11→B12→B23→...→B24",
+      "precondition": "root->child->grandchild exists; visitor removes grandchild in head",
+      "expectedResult": "grandchild not traversed in tail; traversal skips its tail and continues at child",
+      "tags": [
+        "negative",
+        "removal",
+        "branch"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 removal-during-head-on-nested-node",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element li = new Element(\"li\"); root.appendChild(li);",
+        "    Element gc = new Element(\"b\"); li.appendChild(gc);",
+        "    NodeVisitor visitor = (n, d) -> {",
+        "      if (n.equals(gc)) n.remove();",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor.andThen((n,d)-> events.add(n.nodeName()+\"@\"+d)), root);",
+        "  THEN",
+        "    assertFalse(events.stream().anyMatch(e -> e.startsWith(\"b@\")));",
+        "    assertTrue(events.contains(\"li@1\") && events.contains(\"/li@1\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "deep tree with no siblings ascends through multiple tail calls (node.nextSibling==null & depth>0 loop)",
+      "path": "B0→B1→B2→B5→B11→B13→B16→B20→B21→B24",
+      "precondition": "root->A->B->C chain; no siblings at any level",
+      "expectedResult": "visits head/tail for C,B,A,root in correct order; confirms multiple ascents",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-loop"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 multi-level-no-siblings-ascend",
+        "  GIVEN",
+        "    Element root = new Element(\"d\");",
+        "    Element a = new Element(\"a\"); root.appendChild(a);",
+        "    Element b = new Element(\"b\"); a.appendChild(b);",
+        "    Element c = new Element(\"c\"); b.appendChild(c);",
+        "    NodeVisitor visitor = (n, d) -> events.add(n.nodeName()+\"@\"+d);",
+        "    visitor = visitor.andThen((n,d)-> events.add(\"/\"+n.nodeName()+\"@\"+d));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(",
+        "      \"head(d,0)\",\"head(a,1)\",\"head(b,2)\",\"head(c,3)\",",
+        "      \"/c@3\",\"/b@2\",\"/a@1\",\"/d@0\"",
+        "    ), events);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "visitor with no children (node.childNodeSize()==0) triggers direct tail and break at root==node",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B24",
+      "precondition": "root has no children (single node)",
+      "expectedResult": "calls head and tail once then exits cleanly",
+      "tags": [
+        "positive",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 single-node-no-children-direct-tail",
+        "  GIVEN",
+        "    Element root = new Element(\"p\");",
+        "    NodeVisitor visitor = (n, d) -> events.add(n.nodeName()+\"@\"+d);",
+        "    visitor = visitor.andThen((n,d)-> events.add(\"/\"+n.nodeName()+\"@\"+d));",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assertEquals(List.of(\"p@0\",\"/p@0\"), events);",
+        "END"
+      ]
+    }
+  ]
+}

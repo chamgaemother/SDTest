@@ -1,0 +1,86 @@
+[Input]
+- Library Name → { LIBRARY_NAME }
+- Class Name → { CLASS_NAME }
+- Target Method → { TARGET_METHOD }
+- Method Infomation :
+{ TARGET_METHOD_INFOMATION }
+
+[Requirement Summary]
+1) **Information**
+- Existing Unit Test Code: { EXISTING_JUNIT5_TEST_CODE }
+- Error Log Message: { ERROR_LOG_MESSAGE }
+
+2) **What to Produce**
+- Output a single JSON object containing an array named `"ErrorGuides"`.
+- Each element of `"ErrorGuides"` MUST have exactly these keys:
+  - `"ErrorSpot"`: A precise pointer to the error location (e.g., method name, file path + line number, or `"import section"`). If it is an import error, specify `"import section"` and the file.
+  - `"ErrorCause"`: A concise English description of the root cause (why it failed).
+  - `"ErrorGuide"`: A pseudocode-style, step-by-step fix guide in English.
+  - `"Before"`: The minimal code fragment (or signature) that is wrong.
+  - `"After"`: The corrected minimal code fragment (or signature) that should replace the `"Before"`.
+- Only report issues that are evidenced by the provided error log. Do not invent additional problems.
+- If multiple errors exist, list them in the order they appear in the log.
+
+3) **Constraints**
+- Do NOT change the number of test scenarios (this prompt does not ask you to output fixed tests).
+- Keep fixes minimal and focused strictly on the error causes shown in the log.
+- If the error references a missing/invalid constructor or generic type inference failure, show the corrected constructor/generics explicitly in `"After"`.
+- If the error references class/file name mismatch, `"ErrorSpot"` must include both the public class name and the filename, and `"Before"`/`"After"` must reflect the correct pairing.
+- If reflection access or import is the issue, set fields accessible and ensure imports are correct, but only if such errors are indicated in the log.
+- Avoid mocks/abstractions unless the log directly points to them.
+
+4) **Style**
+- All explanations (`"ErrorCause"` and `"ErrorGuide"`) should be in **English**.
+- Keep `"Before"`/`"After"` as short, minimal code blocks or single-line signatures where possible.
+- If line numbers are present in the log, include them in `"ErrorSpot"` (e.g., `"…Test.java:123:45"`).
+
+[Error Categories to Handle]
+You must analyze and report all errors from the following categories:
+  1) Type: Syntax / Compile Error
+  Description: Missing import, invalid class, wrong method signature, incompatible types
+  Examples: “cannot find symbol”, “missing return statement”, “incompatible types”
+
+  2) Type: Runtime Error
+  Description: Exception occurring during test execution
+  Examples: “NullPointerException”, “IndexOutOfBoundsException”, “IllegalArgumentException”
+
+
+[Rules for Each Error Type]
+  1) Compile-Time Errors:
+  Identify incorrect syntax, type, import, or constructor.
+  Include file and class name if mismatched.
+  Keep “Before” and “After” minimal and focused.
+
+  2) Runtime Errors:
+  Specify which statement threw the exception.
+  Suggest fixes such as null checks, bounds checks, or proper initialization.
+
+
+[Emphasis/Request]
+- Minimize changes; focus on compilability/run-ability per the error log.
+- Never summarize or remove scenarios; this prompt is ONLY for producing Error Guides.
+- Ensure steps are practical and do not introduce infinite loops or unrelated edits.
+
+[Output Format]
+Return ONLY one JSON object, enclosed in triple backticks as `"json"`. The schema MUST be:
+
+```json
+{
+  "ErrorGuides": [
+    {
+      "ErrorSpot": "<file path or class#method or 'import section'>",
+      "ErrorCause": "<short and clear explanation of the cause>",
+      "ErrorGuide": "<pseudocode-style step-by-step fix guide>",
+      "Before": "<minimal code snippet that is wrong>",
+      "After": "<corrected minimal code snippet>"
+    }
+    // ... more errors in log order
+  ]
+}
+
+[SUMMARY]
+Output strictly JSON (no extra text or markdown).
+Focus only on real, logged issues.
+Ensure minimal, safe, and realistic fixes.
+Avoid any fix that could introduce infinite loops or unbounded execution.
+Goal: Produce a clean, precise, developer-ready Error Guide JSON.

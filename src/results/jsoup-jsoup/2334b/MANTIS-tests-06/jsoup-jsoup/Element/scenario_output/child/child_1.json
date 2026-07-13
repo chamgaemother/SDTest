@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "child(-1) on element with multiple element children returns last Element after index adjustment",
+      "path": "B0→B3(loop×N)→B4(adjust index<0)→B3(loop×N)→B5",
+      "precondition": "Element parent has three Element children appended in order",
+      "expectedResult": "return value is the third (last) Element child",
+      "tags": [
+        "negative-index",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 child negative-index-valid",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    parent.appendChild(new Element(\"li\"));",
+        "    parent.appendChild(new Element(\"li\"));",
+        "  WHEN",
+        "    Element result = parent.child(-1);",
+        "  THEN",
+        "    assertSame(parent.children().get(2), result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "child(index) throws IndexOutOfBoundsException when index >= element children count",
+      "path": "B0→B3(loop×M)→B6(exception)",
+      "precondition": "Element parent has two Element children",
+      "expectedResult": "IndexOutOfBoundsException is thrown",
+      "tags": [
+        "positive",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 child positive-index-oob",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    parent.appendChild(new Element(\"p\"));",
+        "    parent.appendChild(new Element(\"span\"));",
+        "  WHEN",
+        "    call parent.child(2);",
+        "  THEN",
+        "    throws IndexOutOfBoundsException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "child(index) hits cached shadowChildrenRef path when invoked twice without modifications",
+      "path": "B0→B3(loop×K)→B7(cache filled)→B7(cache hit)→B5",
+      "precondition": "Element parent has two Element children and no intervening modifications",
+      "expectedResult": "both invocations return same Element instance from cache",
+      "tags": [
+        "cache",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 child cache-hit",
+        "  GIVEN",
+        "    Element parent = new Element(\"section\");",
+        "    Element a = parent.appendElement(\"article\");",
+        "    Element b = parent.appendElement(\"aside\");",
+        "  WHEN",
+        "    Element firstCall = parent.child(1);",
+        "    Element secondCall = parent.child(1);",
+        "  THEN",
+        "    assertSame(b, firstCall);",
+        "    assertSame(firstCall, secondCall);",
+        "END"
+      ]
+    }
+  ]
+}

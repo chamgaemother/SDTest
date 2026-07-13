@@ -1,0 +1,69 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+import org.jsoup.select.Elements;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("children() on element with no children returns empty Elements (childNodeSize()==0 branch)")
+    public void test_TC01() {
+        // GIVEN an element with no children so childNodeSize() == 0 triggers EmptyChildren branch
+        Element el = new Element("div");
+        // WHEN
+        Elements result = el.children();
+        // THEN
+        assertTrue(result.isEmpty(), "Expected no child elements when none appended");
+    }
+
+    @Test
+    @DisplayName("children() filters out non-Element nodes only (one TextNode only)")
+    public void test_TC02() {
+        // GIVEN an element with one TextNode child (non-Element) so loop visits and filters out all nodes
+        Element el = new Element("p");
+        el.appendChild(new TextNode("text"));
+        // WHEN
+        Elements result = el.children();
+        // THEN
+        assertTrue(result.isEmpty(), "Expected children() to exclude TextNode and return empty");
+    }
+
+    @Test
+    @DisplayName("children() returns only Element children preserving order (mixed nodes)")
+    public void test_TC03() {
+        // GIVEN mixed child nodes: one TextNode then two Element nodes, ensuring loop picks only Elements in order
+        Element el = new Element("div");
+        el.appendChild(new TextNode("a")); // filtered out
+        el.appendChild(new Element("span"));
+        el.appendChild(new Element("em"));
+        // WHEN
+        Elements result = el.children();
+        // THEN
+        assertAll("Children should include only element nodes in original order",
+            () -> assertEquals(2, result.size(), "Expected two element children"),
+            () -> assertEquals("span", result.get(0).tagName(), "First child should be <span>"),
+            () -> assertEquals("em", result.get(1).tagName(), "Second child should be <em>")
+        );
+    }
+
+    @Test
+    @DisplayName("children() rebuilds cache after mutation: initial elements, then after appendChild")
+    public void test_TC04() {
+        // GIVEN an element with two initial <li> children so cache built with size 2
+        Element el = new Element("ul");
+        el.appendChild(new Element("li"));
+        el.appendChild(new Element("li"));
+        // WHEN first retrieval (cache created)
+        Elements first = el.children();
+        // Mutate by appending another <li>, invalidating cache via nodelistChanged()
+        el.appendChild(new Element("li"));
+        // WHEN second retrieval (cache rebuilt)
+        Elements second = el.children();
+        // THEN
+        assertAll("Cache should reflect updated child count",
+            () -> assertEquals(2, first.size(), "First call should have two children"),
+            () -> assertEquals(3, second.size(), "Second call should reflect three children after appendChild")
+        );
+    }
+}

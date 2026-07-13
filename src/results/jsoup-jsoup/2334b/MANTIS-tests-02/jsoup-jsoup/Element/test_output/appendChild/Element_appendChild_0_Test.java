@@ -1,0 +1,93 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_appendChild_0_Test {
+
+    @Test
+    @DisplayName("TC01: appendChild(null) throws IllegalArgumentException when child is null (Validate.notNull fail)")
+    public void test_TC01() {
+        Element parent = new Element("div");
+        // branch-false(child!=null): passing null to appendChild should trigger Validate.notNull
+        assertThrows(IllegalArgumentException.class, () -> parent.appendChild(null));
+        // no child should be added
+        assertEquals(0, parent.childNodeSize());
+    }
+
+    @Test
+    @DisplayName("TC02: appendChild(firstChild) creates new childNodes list and sets sibling index to 0")
+    public void test_TC02() throws Exception {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("text");
+        // branch-true(child!=null) and branch-true(empty childNodes): first appendChild on empty list
+        Element returned = parent.appendChild(child);
+        // chaining return
+        assertSame(parent, returned, "appendChild should return the parent element for chaining");
+        // exactly one child in childNodes
+        assertEquals(1, parent.childNodeSize(), "childNodeSize should be 1 after first appendChild");
+        // the node at index 0 should be our TextNode
+        assertSame(child, parent.childNode(0), "childNode(0) should be the appended child");
+        // the child's parent should be set to the parent
+        assertSame(parent, child.parent(), "child.parent() should reference the parent element");
+        // siblingIndex == 0
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(child);
+        assertEquals(0, idx, "siblingIndex should be 0 for the first child");
+    }
+
+    @Test
+    @DisplayName("TC03: appendChild(secondChild) reuses existing childNodes list and sets sibling index to 1")
+    public void test_TC03() throws Exception {
+        Element parent = new Element("div");
+        TextNode first = new TextNode("one");
+        parent.appendChild(first);
+        // now list is non-empty: branch-false(empty childNodes)
+        TextNode second = new TextNode("two");
+        parent.appendChild(second);
+        // should now have 2 children
+        assertEquals(2, parent.childNodeSize(), "childNodeSize should be 2 after second appendChild");
+        // childNode(1) should be second
+        assertSame(second, parent.childNode(1), "childNode(1) should be the second appended child");
+        // second.parent() must point to parent
+        assertSame(parent, second.parent(), "second.child.parent() should reference the parent element");
+        // siblingIndex == 1
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        int idx = idxField.getInt(second);
+        assertEquals(1, idx, "siblingIndex should be 1 for the second child");
+    }
+
+    @Test
+    @DisplayName("TC04: appendChild(chained) supports chaining calls and maintains order across three children")
+    public void test_TC04() throws Exception {
+        Element parent = new Element("div");
+        TextNode c1 = new TextNode("1");
+        TextNode c2 = new TextNode("2");
+        TextNode c3 = new TextNode("3");
+        // chained calls: branch-true(child!=null) and repeated loops
+        parent.appendChild(c1).appendChild(c2).appendChild(c3);
+        // verify total count
+        assertEquals(3, parent.childNodeSize(), "childNodeSize should be 3 after chaining three appendChild calls");
+        // verify order in childNodes
+        assertSame(c1, parent.childNode(0), "first child must be c1");
+        assertSame(c2, parent.childNode(1), "second child must be c2");
+        assertSame(c3, parent.childNode(2), "third child must be c3");
+        // verify each child's parent
+        assertSame(parent, c1.parent(), "c1.parent() should reference the parent");
+        assertSame(parent, c2.parent(), "c2.parent() should reference the parent");
+        assertSame(parent, c3.parent(), "c3.parent() should reference the parent");
+        // verify sibling indices 0,1,2
+        Field idxField = Node.class.getDeclaredField("siblingIndex");
+        idxField.setAccessible(true);
+        assertAll("sibling indices",
+            () -> assertEquals(0, idxField.getInt(c1), "c1.siblingIndex should be 0"),
+            () -> assertEquals(1, idxField.getInt(c2), "c2.siblingIndex should be 1"),
+            () -> assertEquals(2, idxField.getInt(c3), "c3.siblingIndex should be 2")
+        );
+    }
+}

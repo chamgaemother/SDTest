@@ -1,0 +1,119 @@
+{
+  "method": "child",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "child(0) on element with zero element children throws IndexOutOfBoundsException",
+      "path": "B0→B1→B2",
+      "precondition": "Element parent = new Element(\"div\"); // no children",
+      "expectedResult": "throws IndexOutOfBoundsException; no child returned",
+      "tags": [
+        "exception",
+        "branch-false",
+        "loop-0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent element with no children",
+        "WHEN parent.child(0) is invoked",
+        "THEN expect IndexOutOfBoundsException"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "child(-1) on element with one element child throws IndexOutOfBoundsException",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); Element child1 = new Element(\"span\"); parent.appendChild(child1);",
+      "expectedResult": "throws IndexOutOfBoundsException; negative index not allowed",
+      "tags": [
+        "exception",
+        "branch-true",
+        "loop-1",
+        "boundary-negative-index"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent with one element child",
+        "WHEN parent.child(-1) is invoked",
+        "THEN expect IndexOutOfBoundsException"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "child(1) on element with one element child throws IndexOutOfBoundsException",
+      "path": "B0→B1→B3(loop×1)→B4",
+      "precondition": "Element parent = new Element(\"div\"); Element child1 = new Element(\"span\"); parent.appendChild(child1);",
+      "expectedResult": "throws IndexOutOfBoundsException; index equal to size out of bounds",
+      "tags": [
+        "exception",
+        "branch-true",
+        "loop-1",
+        "boundary-index-equals-size"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent with one element child",
+        "WHEN parent.child(1) is invoked",
+        "THEN expect IndexOutOfBoundsException"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "child(0) on element with exactly one element child returns that child",
+      "path": "B0→B1→B3(loop×1)→B5",
+      "precondition": "Element parent = new Element(\"div\"); Element child1 = new Element(\"span\"); parent.appendChild(child1);",
+      "expectedResult": "return value is the previously appended child element",
+      "tags": [
+        "branch-true",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent with one element child child1",
+        "WHEN Element result = parent.child(0)",
+        "THEN assert result == child1"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "child(1) on element with mixed childNodes returns second Element after filtering",
+      "path": "B0→B1→B3(loop×3)→B5",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"txt\")); Element e1 = new Element(\"p\"); Element e2 = new Element(\"a\"); parent.appendChild(e1); parent.appendChild(e2);",
+      "expectedResult": "return value is e2; only elements are indexed",
+      "tags": [
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent with TextNode, p, a appended",
+        "WHEN Element result = parent.child(1)",
+        "THEN assert result == e2"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "child(0) on element with non-element children throws IndexOutOfBoundsException after filtering",
+      "path": "B0→B1→B3(loop×2)→B4",
+      "precondition": "Element parent = new Element(\"div\"); parent.appendChild(new TextNode(\"one\")); parent.appendChild(new DataNode(\"two\"));",
+      "expectedResult": "throws IndexOutOfBoundsException; no element present after filter",
+      "tags": [
+        "exception",
+        "branch-true",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN parent with only TextNode and DataNode",
+        "WHEN parent.child(0) is invoked",
+        "THEN expect IndexOutOfBoundsException"
+      ]
+    }
+  ]
+}

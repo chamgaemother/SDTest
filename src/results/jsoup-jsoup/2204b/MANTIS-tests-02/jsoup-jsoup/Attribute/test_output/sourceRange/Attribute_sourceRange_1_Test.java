@@ -1,0 +1,38 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Attributes;
+import org.jsoup.nodes.Range;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+/**
+ * JUnit 5 tests for {@link Attribute#sourceRange()} branch coverage.
+ */
+public class Attribute_sourceRange_1_Test {
+
+    @Test
+    @DisplayName("sourceRange delegates to parent.sourceRange when parent is non-null")
+    public void test_TC02() {
+        // Arrange: create a known Range.AttributeRange instance for delegation
+        Range.AttributeRange stubRange = new Range.AttributeRange(10, 20);
+        // Create a stubbed Attributes that always returns stubRange for any key
+        Attributes stubParent = new Attributes() {
+            @Override
+            public Range.AttributeRange sourceRange(String k) {
+                // Return an instance of Range.AttributeRange instead of an int
+                return stubRange; // Correctly return the stubRange instance
+            }
+        };
+        // Instantiate Attribute with a non-null parent to force the delegation branch (parent != null)
+        Attribute attr = new Attribute("myKey", "myValue", stubParent);
+
+        // Act: call sourceRange, which should delegate to stubParent.sourceRange(key)
+        Range.AttributeRange result = attr.sourceRange();
+
+        // Assert: verify that the returned instance is exactly the stubRange
+        assertSame(stubRange, result, "Expected sourceRange() to return the same instance provided by the parent stub");
+    }
+}

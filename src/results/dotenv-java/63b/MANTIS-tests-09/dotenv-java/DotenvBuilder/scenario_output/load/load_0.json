@@ -1,0 +1,125 @@
+{
+  "method": "load",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "load() with no entries and systemProperties=false skips setting system properties",
+      "path": "B0→B2",
+      "precondition": "Ensure no .env file present or an empty .env file in working directory; builder configured with default settings (systemProperties=false)",
+      "expectedResult": "returned Dotenv.entries(filter) is empty Set; Dotenv.entries() size equals System.getenv().size(); no new System properties set",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 load no-entries systemProperties-false",
+        "  GIVEN",
+        "    // Arrange\n    // Ensure .env is empty or missing in cwd\n    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    // Act\n    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert\n    assert dotenv.entries((f)->true).isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "load() with no entries and systemProperties=true still loops zero times",
+      "path": "B0→B1→B2",
+      "precondition": "Ensure empty .env file; builder.systemProperties() invoked",
+      "expectedResult": "returned Dotenv.entries(filter) is empty Set; System.getProperties() contains no new keys from file",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "priority-P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 load empty-file systemProperties-true",
+        "  GIVEN",
+        "    // Arrange\n    // Create empty .env file\n    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    // Act\n    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert\n    assert dotenv.entries((f)->true).isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "load() with one entry and systemProperties=true sets exactly one System property",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env file with single line \"KEY1=VALUE1\"; clear System property KEY1 before test; builder.systemProperties() invoked",
+      "expectedResult": "System.getProperty(\"KEY1\") equals \"VALUE1\"; returned Dotenv.entries((f)->true) contains DotenvEntry(\"KEY1\",\"VALUE1\")",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 load single-entry systemProperties-true",
+        "  GIVEN",
+        "    // Arrange\n    writeEnvFile(\"KEY1=VALUE1\");\n    System.clearProperty(\"KEY1\");\n    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    // Act\n    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert\n    assert System.getProperty(\"KEY1\").equals(\"VALUE1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "load() with multiple entries and systemProperties=true sets all file entries as System properties",
+      "path": "B0→B1→B2",
+      "precondition": "Create .env file with lines \"A=1\" and \"B=2\"; clear System properties A and B; builder.systemProperties() invoked",
+      "expectedResult": "System.getProperty(\"A\")==\"1\" and System.getProperty(\"B\")==\"2\"; returned Dotenv.entries((f)->true) contains both entries",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 load multiple-entries systemProperties-true",
+        "  GIVEN",
+        "    // Arrange\n    writeEnvFile(\"A=1\\nB=2\");\n    System.clearProperty(\"A\");\n    System.clearProperty(\"B\");\n    DotenvBuilder builder = Dotenv.configure().systemProperties();",
+        "  WHEN",
+        "    // Act\n    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    // Assert\n    assert System.getProperty(\"A\").equals(\"1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "load() throws DotenvException when .env file is missing and throwIfMissing=true",
+      "path": "B0",
+      "precondition": "Ensure .env file is absent; builder configured with default settings",
+      "expectedResult": "throws io.github.cdimascio.dotenv.DotenvException; no System properties set",
+      "tags": [
+        "exception",
+        "priority-P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 load missing-file throws",
+        "  GIVEN",
+        "    // Arrange\n    deleteEnvFileIfExists();\n    DotenvBuilder builder = Dotenv.configure();",
+        "  WHEN",
+        "    // Act",
+        "    call builder.load();",
+        "  THEN",
+        "    // Assert\n    throws io.github.cdimascio.dotenv.DotenvException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Document.QuirksMode;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.Jsoup;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("charset(Charset) with updateMetaCharset=true and xml syntax, existing non-xml XmlDeclaration should be replaced by new xml declaration")
+    public void test_TC05() {
+        // GIVEN: a new XML-doc shell, updateMetaCharset=true, xml syntax, and a dummy non-xml declaration prepended
+        Charset cs = StandardCharsets.UTF_8;
+        Document doc = Document.createShell("http://example.com");
+        // enable meta charset updates
+        doc.updateMetaCharsetElement(true);
+        // switch to XML syntax to enter xml branch
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // PRE: create a non-xml XmlDeclaration to trigger replacement path
+        XmlDeclaration dummy = new XmlDeclaration("notxml", false).attr("foo", "bar");
+        doc.prependChild(dummy);
+        // Sanity: first child before charset call is our dummy
+        assertSame(dummy, doc.childNodes().get(0));
+
+        // WHEN: applying charset should replace non-xml declaration with a new xml one
+        doc.charset(cs);
+
+        // THEN: first child is an XmlDeclaration named "xml" with correct encoding and version
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected first child to be XmlDeclaration");
+        XmlDeclaration xd = (XmlDeclaration) first;
+        assertAll("Validate new xml declaration",
+            () -> assertEquals("xml", xd.name(), "Declaration name should be 'xml'"),
+            () -> assertEquals(cs.displayName(), xd.attr("encoding"), "Encoding attribute should match charset"),
+            () -> assertEquals("1.0", xd.attr("version"), "Version should be reset to '1.0'")
+        );
+    }
+
+    @Test
+    @DisplayName("charset(Charset) with updateMetaCharset=true and xml syntax, existing xml XmlDeclaration with version should update encoding and reset version to '1.0'")
+    public void test_TC06() {
+        // GIVEN: a new XML-doc shell, updateMetaCharset=true, xml syntax, and an existing xml declaration with custom version
+        Charset cs = StandardCharsets.UTF_8;
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true);
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // PRE: existing declaration is xml with version 2.0 to trigger update path
+        XmlDeclaration existing = new XmlDeclaration("xml", false).attr("version", "2.0");
+        doc.prependChild(existing);
+        // ensure precondition
+        assertSame(existing, doc.childNodes().get(0));
+        assertEquals("2.0", existing.attr("version"), "Precondition: version should be '2.0'");
+
+        // WHEN: applying charset should update existing xml declaration
+        doc.charset(cs);
+
+        // THEN: the same XmlDeclaration updated with new encoding and version forced to '1.0'
+        Node first = doc.childNodes().get(0);
+        assertTrue(first instanceof XmlDeclaration, "Expected first child to remain XmlDeclaration");
+        XmlDeclaration xd = (XmlDeclaration) first;
+        assertAll("Validate updated xml declaration",
+            () -> assertEquals("xml", xd.name(), "Declaration name should remain 'xml'"),
+            () -> assertEquals(cs.displayName(), xd.attr("encoding"), "Encoding attribute should match charset"),
+            () -> assertEquals("1.0", xd.attr("version"), "Version should be reset to '1.0'")
+        );
+    }
+}

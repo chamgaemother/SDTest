@@ -1,0 +1,259 @@
+{
+  "method": "traverse",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "Null visitor throws IllegalArgumentException at entry",
+      "path": "B0→B1→B24",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no calls to visitor.head/tail",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "exception",
+        "branch-false B1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 traverse null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null;",
+        "    Node root = new TextNode(\"text\", \"\");",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "Null root throws IllegalArgumentException at entry",
+      "path": "B0→B1→B24",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no calls to visitor.head/tail",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "exception",
+        "branch-false B1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 traverse null-root",
+        "  GIVEN",
+        "    NodeVisitor visitor = (n,d)->{};",
+        "    Node root = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "Single-node tree triggers head and tail once each",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "visitor.head called once with (root,0); visitor.tail called once with (root,0)",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "branch-true B1",
+        "loop-0",
+        "leaf-node"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 traverse single-node",
+        "  GIVEN",
+        "    NodeVisitor visitor = spy head/tail counters;",
+        "    Node root = new Element(Tag.valueOf(\"p\"),\"\");",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert headCount==1; assert tailCount==1;"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "Two-level tree descends then ascends, verifying depth tracking",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B12→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "visits in order head(root,0), head(child,1), tail(child,1), tail(root,0)",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "branch-true B1",
+        "loop-1",
+        "depth"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O1 traverse two-level-tree",
+        "  GIVEN",
+        "    List<String> log = new ArrayList<>();",
+        "    NodeVisitor visitor = (n,d)->log.add(\"H\"+d+\":\"+n.nodeName());",
+        "  WHEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"),\"\").appendChild(new Element(Tag.valueOf(\"span\"),\"\"));",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert log.equals([\"H0:div\",\"H1:span\",\"T1:span\",\"T0:div\"]);"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "Multi-sibling children triggers inner while for nextSibling null and ascend",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B2→B3→B5→B11→B12→B23→B1→B24",
+      "precondition": "Tree with two siblings under root",
+      "expectedResult": "Order: head(root), head(c1), tail(c1), head(c2), tail(c2), tail(root)",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "branch-true B1",
+        "loop-N",
+        "siblings"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 traverse siblings",
+        "  GIVEN",
+        "    List<String> seq = new ArrayList<>();",
+        "    NodeVisitor v = (n,d)->seq.add((d>0?\" \":\"\")+n.nodeName());",
+        "  WHEN",
+        "    Element root = new Element(Tag.valueOf(\"ul\"),\"\");",
+        "    root.appendChild(new Element(Tag.valueOf(\"li\"),\"\")).appendSibling(new Element(Tag.valueOf(\"li\"),\"\"));",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assert seq.equals([\"ul\",\" li\",\" li\"]);"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "Child removed in head causes skip of tail for that node",
+      "path": "B0→B1→B2→B3→B5→B6→B11→B11→B12→B23→B1→B24",
+      "precondition": "visitor.head removes node from parent when depth==1",
+      "expectedResult": "head called then on removal skip tail for removed child, then tail on root",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "branch-true B1",
+        "branch-true B6",
+        "exception-skip",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O1 head-removes-child",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"),\"\");",
+        "    Element child = new Element(Tag.valueOf(\"span\"),\"\");",
+        "    root.appendChild(child);",
+        "    NodeVisitor v = (n,d)->{ if(d==1) n.remove(); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assertChildNotIn(root,child); assert headCalledOn(child); assert tailCalledOn(root);"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "Child replaced in head triggers replaced branch then tail correctly",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B8→B11→B12→B23→B1→B24",
+      "precondition": "visitor.head replaces a child with new node",
+      "expectedResult": "head called on original then on replacement; tail on replacement then root",
+      "tags": [
+        "overload:NodeVisitor,Node",
+        "branch-true B6",
+        "branch-true B7",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O1 head-replaces-child",
+        "  GIVEN",
+        "    Element root = new Element(Tag.valueOf(\"div\"),\"\");",
+        "    Element child = new Element(Tag.valueOf(\"p\"),\"\"); root.appendChild(child);",
+        "    Node replacement = new Element(Tag.valueOf(\"span\"),\"\");",
+        "    NodeVisitor v = (n,d)->{ if(n==child) n.replaceWith(replacement); };",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assertVisitedSequence([\"p\",\"span\",\"span\",\"div\"]);"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "Elements overload with empty list does nothing",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "no calls to traverse(NodeVisitor,Node)",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-false B1",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 traverse empty-elements",
+        "  GIVEN",
+        "    NodeVisitor v = (n,d)->{};",
+        "    Elements elems = new Elements();",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, elems);",
+        "  THEN",
+        "    assert traverseNotInvoked();"
+      ]
+    },
+    {
+      "id": "TC09_O2",
+      "description": "Elements overload with multiple elements stops when first STOP encountered",
+      "path": "B0→B1→B2→B1",
+      "precondition": "filter in first element returns FilterResult.STOP on head",
+      "expectedResult": "filter called once; subsequent elements not traversed",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-true B1",
+        "loop-1",
+        "stop-condition"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O2 traverse elements with stop",
+        "  GIVEN",
+        "    NodeVisitor v = spyTraverse();",
+        "    Elements elems = new Elements(new Element(Tag.valueOf(\"div\"),\"\"),new Element(Tag.valueOf(\"p\"),\"\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, elems);",
+        "  THEN",
+        "    assert traverseCalledWith(elems.get(0)); assertNotCalledWith(elems.get(1));"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "Elements overload iterates all elements when none returns STOP",
+      "path": "B0→B1→B2→B1→B2→B1→B3",
+      "precondition": "visitor never throws",
+      "expectedResult": "traverse invoked for each element in order",
+      "tags": [
+        "overload:NodeVisitor,Elements",
+        "branch-true B1",
+        "loop-N"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O2 traverse multiple-elements",
+        "  GIVEN",
+        "    NodeVisitor v = spyTraverse();",
+        "    Elements elems = new Elements(new Element(Tag.valueOf(\"a\"),\"\"),new Element(Tag.valueOf(\"b\"),\"\"));",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, elems);",
+        "  THEN",
+        "    assert traverseCalledOrdered(elems.get(0),elems.get(1));"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "element with no attributes returns empty dataset map (loop-0)",
+      "path": "B0→B1",
+      "precondition": "Element created with no attributes",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "P0",
+        "Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty-case",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "element with one data- attribute returns single entry (loop-1, branch-true)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element created; attr(\"data-name\",\"value\") set",
+      "expectedResult": "returned map contains exactly one mapping \"name\"→\"value\"",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset single-entry",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-name\",\"value\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.get(\"name\").equals(\"value\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "element with multiple data- attributes returns all entries (loop-N)",
+      "path": "B0→B1→B2(loop×3)→B3",
+      "precondition": "Element created; three data- attrs set",
+      "expectedResult": "returned map contains keys \"a\",\"b\",\"c\" mapping to their values",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset multiple-entries",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\"); el.attr(\"data-c\",\"3\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 3;",
+        "    assert ds.get(\"a\").equals(\"1\");",
+        "    assert ds.get(\"b\").equals(\"2\");",
+        "    assert ds.get(\"c\").equals(\"3\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset reflects changes when map modified (view-binding)",
+      "path": "B0→B1→B2(loop×2)→B3",
+      "precondition": "Element with two data- attrs; no mocks",
+      "expectedResult": "after ds.put(\"x\",\"y\"), el.attr(\"data-x\") == \"y\"",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "side-effect",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset map-view-binding",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-one\",\"one\"); el.attr(\"data-two\",\"two\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "    ds.put(\"x\",\"y\");",
+        "  THEN",
+        "    assert el.attr(\"data-x\").equals(\"y\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "data- attribute with uppercase letters is normalized to lowercase key (prefix-handling)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element with attribute \"DATA-Test\"→\"Val\"",
+      "expectedResult": "returned map contains key \"test\" mapping to \"Val\"",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "boundary",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset key-normalization",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"DATA-Test\",\"Val\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.containsKey(\"test\");",
+        "    assert ds.get(\"test\").equals(\"Val\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "non-data- attributes are filtered out (branch-false in loop)",
+      "path": "B0→B1→B2(loop×2 with one false)→B3",
+      "precondition": "Element with one data- and one non-data- attr",
+      "expectedResult": "returned map contains only the data- attribute entry",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "branch-false",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 dataset filter-non-data",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-k\",\"v\"); el.attr(\"other\",\"x\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.containsKey(\"k\");"
+      ]
+    }
+  ]
+}

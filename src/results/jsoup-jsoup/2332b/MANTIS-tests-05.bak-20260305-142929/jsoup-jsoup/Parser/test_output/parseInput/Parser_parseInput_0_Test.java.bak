@@ -1,0 +1,170 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("TC01_O1: String overload with valid HTML and baseUri invokes Reader overload and returns Document")
+    public void test_TC01_O1() {
+        // Given: a stub TreeBuilder returns a dummy Document
+        Document dummy = new Document("http://example.com");
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Parser newInstance() { return this; }
+            @Override
+            public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+                return dummy; // stubbed return
+            }
+            @Override
+            public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "<p>Hello</p>";
+        String baseUri = "http://example.com";
+
+        // When
+        Document result = parser.parseInput(html, baseUri);
+        // Then: stubBuilder.parse returns dummy
+        assertSame(dummy, result);
+    }
+
+    @Test
+    @DisplayName("TC02_O1: String overload with null html should throw NullPointerException before parsing")
+    public void test_TC02_O1() {
+        // Given: html is null, using real htmlParser
+        Parser parser = Parser.htmlParser();
+        String html = null;
+        String baseUri = "http://example.com";
+        // When & Then: constructing StringReader(null) triggers NPE
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC06_O1: String overload with null baseUri passes null to TreeBuilder.parse and returns Document")
+    public void test_TC06_O1() {
+        // Given: stub TreeBuilder accepts null baseUri and returns dummy Document
+        Document dummy = new Document("");
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Parser newInstance() { return this; }
+            @Override
+            public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+                // baseUri is null as per scenario
+                assertNull(baseUri, "Expected null baseUri passed through");
+                return dummy;
+            }
+            @Override
+            public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "<div/>";
+        String baseUri = null;
+
+        // When
+        Document result = parser.parseInput(html, baseUri);
+        // Then
+        assertSame(dummy, result);
+    }
+
+    @Test
+    @DisplayName("TC03_O2: Reader overload with valid Reader and baseUri returns Document")
+    public void test_TC03_O2() {
+        // Given: stub TreeBuilder returns dummy Document on parse
+        Document dummy = new Document("http://example.com");
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Parser newInstance() { return this; }
+            @Override
+            public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+                return dummy;
+            }
+            @Override
+            public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(stubBuilder);
+        Reader reader = new StringReader("<span/>");
+        String baseUri = "http://example.com";
+
+        // When
+        Document result = parser.parseInput(reader, baseUri);
+        // Then: should return stubbed dummy
+        assertSame(dummy, result);
+    }
+
+    @Test
+    @DisplayName("TC04_O2: Reader overload with null Reader should throw NullPointerException before parsing")
+    public void test_TC04_O2() {
+        // Given: reader is null, using real htmlParser
+        Parser parser = Parser.htmlParser();
+        Reader reader = null;
+        String baseUri = "http://example.com";
+        // When & Then: passing null reader should lead to NPE when TreeBuilder.parse tries to read
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri));
+    }
+
+    @Test
+    @DisplayName("TC05_O2: Reader overload when TreeBuilder.parse throws RuntimeException propagates the exception")
+    public void test_TC05_O2() {
+        // Given: stub TreeBuilder whose parse throws RuntimeException("parse fail")
+        TreeBuilder failingStub = new TreeBuilder() {
+            @Override
+            public Parser newInstance() { return this; }
+            @Override
+            public org.jsoup.nodes.Document parse(Reader input, String baseUri, Parser parser) {
+                throw new RuntimeException("parse fail");
+            }
+            @Override
+            public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+            @Override
+            public org.jsoup.parser.ParseSettings defaultSettings() { return new ParseSettings(); }
+            @Override
+            public boolean isContentForTagData(String normalName) { return false; }
+            @Override
+            public String defaultNamespace() { return ""; }
+        };
+        Parser parser = new Parser(failingStub);
+        Reader reader = new StringReader("irrelevant");
+        String baseUri = "http://example.com";
+
+        // When & Then: exception is propagated with correct message
+        RuntimeException ex = assertThrows(RuntimeException.class,
+            () -> parser.parseInput(reader, baseUri));
+        assertEquals("parse fail", ex.getMessage());
+    }
+}

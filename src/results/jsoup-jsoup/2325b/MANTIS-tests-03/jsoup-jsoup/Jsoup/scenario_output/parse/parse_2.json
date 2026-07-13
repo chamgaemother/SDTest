@@ -1,0 +1,226 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parse(String, String, Parser) with xmlParser yields XML contentType branch",
+      "path": "B0→B2→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse String with xmlParser",
+        "  GIVEN",
+        "    String html = \"<root><a/></root>\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(String, Parser) with xmlParser and non-empty HTML yields xml branch",
+      "path": "B0→B4→B6→B8",
+      "precondition": "none",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse String body with xmlParser",
+        "  GIVEN",
+        "    String html = \"<tag>value</tag>\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(File) positive path reads file, charset auto-detect, returns HTML",
+      "path": "B0→B7→B9",
+      "precondition": "temp file exists with UTF-8 encoded <h3>OK</h3>",
+      "expectedResult": "body.html() is \"<h3>OK</h3>\"",
+      "tags": [
+        "overload",
+        "positive",
+        "file"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse File no-args positive",
+        "  GIVEN",
+        "    Path tmp = createTempFile(\"ok\", \".html\");",
+        "    write tmp with \"<h3>OK</h3>\" in UTF-8;",
+        "    File file = tmp.toFile();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h3>OK</h3>\");",
+        "    delete tmp file;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(File, charsetName, baseUri, Parser) with xmlParser yields XML branch",
+      "path": "B0→B7→B8→B10",
+      "precondition": "temp .xml file exists with UTF-8 encoded <root/>",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "file",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse File with xmlParser",
+        "  GIVEN",
+        "    Path p = createTempFile(\"x\", \".xml\");",
+        "    write p with \"<root/>\" in UTF-8;",
+        "    File file = p.toFile();",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://example.org/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "    delete p;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(Path, charsetName, baseUri) explicit charset path branch",
+      "path": "B0→B11→B12",
+      "precondition": "temp .html file exists with UTF-8 <p>Path</p>",
+      "expectedResult": "body.html() is \"<p>Path</p>\"",
+      "tags": [
+        "overload",
+        "positive",
+        "path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parse Path with charset and baseUri",
+        "  GIVEN",
+        "    Path p = createTempFile(\"tpath\", \".html\");",
+        "    write p with \"<p>Path</p>\" in UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>Path</p>\");",
+        "    delete p;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(Path, charsetName, baseUri, Parser) with xmlParser yields XML branch",
+      "path": "B0→B11→B13→B14",
+      "precondition": "temp .xml file exists with UTF-8 <root/>",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "path",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 parse Path with xmlParser",
+        "  GIVEN",
+        "    Path p = createTempFile(\"xpath\", \".xml\");",
+        "    write p with \"<root/>\" in UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://x/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "    delete p;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(InputStream, charsetName, baseUri, Parser) xmlParser branch",
+      "path": "B0→B15→B16→B18",
+      "precondition": "ByteArrayInputStream of \"<r/>\"",
+      "expectedResult": "Document.contentType() is \"text/xml\"",
+      "tags": [
+        "overload",
+        "positive",
+        "stream",
+        "xml-parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse InputStream with xmlParser",
+        "  GIVEN",
+        "    byte[] xml = \"<r/>\".getBytes(UTF-8);",
+        "    InputStream in = new ByteArrayInputStream(xml);",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.contentType().equals(\"text/xml\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "parse(URL, timeout) that times out triggers SocketTimeoutException branch",
+      "path": "B0→B19→B20→B22",
+      "precondition": "HTTP server sleeps longer than timeout",
+      "expectedResult": "throws java.net.SocketTimeoutException",
+      "tags": [
+        "overload",
+        "exception",
+        "timeout"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 parse URL timeout branch",
+        "  GIVEN",
+        "    start HTTP server on port 8090 that Thread.sleep(200) before response;",
+        "    URL url = new URL(\"http://localhost:8090/slow\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 50);",
+        "  THEN",
+        "    throws SocketTimeoutException;",
+        "    stop server;",
+        "END"
+      ]
+    }
+  ]
+}

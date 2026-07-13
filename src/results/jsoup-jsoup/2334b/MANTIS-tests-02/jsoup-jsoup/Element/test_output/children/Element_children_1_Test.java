@@ -1,0 +1,43 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.DataNode;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+public class Element_children_1_Test {
+
+    @Test
+    @DisplayName("children() returns new Elements list with no element nodes when all childNodes are non-Elements (childNodeSize>0, filter yields empty)")
+    public void test_TC05() {
+        // GIVEN an Element with only TextNode and DataNode children (childNodeSize()>0, but no Element instances)
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("a"));   // TextNode should be filtered out
+        parent.appendChild(new DataNode("b"));   // DataNode should be filtered out
+        // WHEN children() is called, the internal list has size>0 but filtered childElementsList yields empty
+        Elements result = parent.children();
+        // THEN expect an empty Elements list
+        assertEquals(0, result.size(), "Expected no element children when only non-Element nodes present");
+    }
+
+    @Test
+    @DisplayName("children() returns cached Elements list on second call without mutation (shadowChildrenRef non-null and not cleared)")
+    public void test_TC06() {
+        // GIVEN an Element with two Element children, no mutations between calls
+        Element parent = new Element("ul");
+        Element c1 = new Element("li");
+        Element c2 = new Element("li");
+        parent.appendChild(c1);
+        parent.appendChild(c2);
+        // WHEN children() is called twice in succession
+        Elements first = parent.children();  // first call populates shadowChildrenRef cache
+        Elements second = parent.children(); // second call should hit cache
+        // THEN the same list instance is returned and size remains correct
+        assertSame(first, second, "Expected cached Elements instance on second children() call");
+        assertEquals(2, second.size(), "Expected two element children in the list");
+    }
+}

@@ -1,0 +1,87 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "Known submit tag with uppercase name and preserveCase true triggers clone path and returns true",
+      "path": "B0→B1(false)→B2(true)→B3(true)→B4(clone)→B7",
+      "precondition": "Parser.NamespaceHtml registered; ParseSettings.preserveCase",
+      "expectedResult": "clone of original Tag returned; isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "clone-path",
+        "case-preserve",
+        "iteration-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 uppercase-known-submit-clone",
+        "  GIVEN",
+        "    String tagName = \"INPUT\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag != Tag.valueOf(\"input\");",
+        "    assert result == true;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Known submit tag with non-default namespace falls through to default creation and returns false",
+      "path": "B0→B1(false)→B2(true)→B3(false)→B5(new)→B7",
+      "precondition": "Parser.NamespaceHtml and custom namespace 'urn:custom'",
+      "expectedResult": "new Tag created; isFormSubmittable() == false",
+      "tags": [
+        "negative",
+        "namespace-mismatch",
+        "default-creation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 known-submit-ns-mismatch",
+        "  GIVEN",
+        "    String tagName = \"input\";",
+        "    String ns = \"urn:custom\";",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, ns, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag.namespace().equals(ns);",
+        "    assert result == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "Known submit tag with mixed-case name and preserveCase false returns original instance and true",
+      "path": "B0→B1(false)→B2(true)→B3(true)→B4(skip clone)→B6",
+      "precondition": "Parser.NamespaceHtml registered; ParseSettings.preserveLowerCase",
+      "expectedResult": "original static Tag returned; isFormSubmittable() == true",
+      "tags": [
+        "positive",
+        "case-normalize",
+        "no-clone"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 mixed-case-known-submit-no-clone",
+        "  GIVEN",
+        "    String tagName = \"InPuT\";",
+        "    ParseSettings settings = ParseSettings.preserveLowerCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, settings);",
+        "    boolean result = tag.isFormSubmittable();",
+        "  THEN",
+        "    assert tag == Tag.valueOf(\"input\");",
+        "    assert result == true;",
+        "END"
+      ]
+    }
+  ]
+}

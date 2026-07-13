@@ -1,0 +1,75 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("TC01: children() returns empty list when element has no child nodes (childNodeSize()==0 branch)")
+    public void test_TC01() {
+        // GIVEN an element with no children: childNodeSize()==0 triggers the empty-children shortcut
+        Element el = new Element("div");
+        // WHEN
+        Elements result = el.children();
+        // THEN expect no child elements returned
+        assertEquals(0, result.size(), "Expected children() to return empty list for element with no children");
+    }
+
+    @Test
+    @DisplayName("TC02: children() returns single-element list when one Element child present (one loop iteration)")
+    public void test_TC02() {
+        // GIVEN an element with exactly one Element child: childNodeSize()>0 and loop runs once
+        Element el = new Element("div");
+        Element p = new Element("p");
+        el.appendChild(p);
+        // WHEN
+        Elements result = el.children();
+        // THEN expect exactly that one <p> child returned
+        assertEquals(1, result.size(), "Expected children() to return one element");
+        assertEquals("p", result.get(0).tagName(), "Expected the single child to have tagName 'p'");
+    }
+
+    @Test
+    @DisplayName("TC03: children() filters out non-Element nodes: only Element children returned when mixed nodes present")
+    public void test_TC03() {
+        // GIVEN an element with mixed node types: a TextNode then an Element
+        Element el = new Element("div");
+        TextNode text = new TextNode("x");
+        Element span = new Element("span");
+        el.appendChild(text);
+        el.appendChild(span);
+        // WHEN
+        Elements result = el.children();
+        // THEN only the Element child should be returned, TextNode filtered out
+        assertEquals(1, result.size(), "Expected children() to filter out non-Element nodes");
+        assertEquals("span", result.get(0).tagName(), "Expected the only child to be the <span> element");
+    }
+
+    @Test
+    @DisplayName("TC04: children() invalidates and rebuilds cache after node list change (cache invalidation)")
+    public void test_TC04() {
+        // GIVEN an element with one child, and children() is called to prime the cache
+        Element el = new Element("div");
+        Element a = new Element("a");
+        el.appendChild(a);
+        // prime the cache: initial build of shadowChildrenRef
+        Elements firstCall = el.children();
+        assertEquals(1, firstCall.size(), "Sanity: initial children() call should return one element");
+
+        // WHEN appending a new child <b> after cache is built
+        Element b = new Element("b");
+        el.appendChild(b);
+        // children() should detect list change, invalidate cache, and rebuild
+        Elements result = el.children();
+
+        // THEN expect both <a> and <b> in correct order
+        assertEquals(2, result.size(), "Expected children() to return two elements after cache invalidation");
+        assertEquals("a", result.get(0).tagName(), "First child should be <a>");
+        assertEquals("b", result.get(1).tagName(), "Second child should be <b>");
+    }
+}

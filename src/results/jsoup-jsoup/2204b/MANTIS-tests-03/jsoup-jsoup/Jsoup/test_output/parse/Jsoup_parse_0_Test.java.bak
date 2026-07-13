@@ -1,0 +1,186 @@
+package org.jsoup;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(html, baseUri) with non-empty html and baseUri returns a Document with correct baseUri")
+    public void test_TC01_O1() {
+        // Branches B0→B1→B2→B3: direct call to Parser.parse
+        String html = "<p>Test</p>";
+        String baseUri = "http://example.com";
+        Document doc = Jsoup.parse(html, baseUri);
+        assertEquals("http://example.com", doc.baseUri(),
+                "Expected baseUri to be set from argument");
+        assertTrue(doc.html().contains("<p>Test</p>"),
+                "Expected returned HTML to contain the input markup");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parse(html) with non-empty html uses empty baseUri and returns a Document")
+    public void test_TC02_O1() {
+        // Branches B0→B1→B4: call parse(html) delegates to Parser.parse(html, "")
+        String html = "<div>Hello</div>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("", doc.baseUri(),
+                "Expected default baseUri to be empty string");
+        assertTrue(doc.html().contains("<div>Hello</div>"),
+                "Expected returned HTML to contain the input markup");
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parse(null, baseUri) with null html throws NullPointerException")
+    public void test_TC03_O1() {
+        // Branches B0→B1→B5: html=null triggers NullPointerException in Parser
+        String html = null;
+        String baseUri = "http://x";
+        assertThrows(NullPointerException.class, () -> Jsoup.parse(html, baseUri),
+                "Expected NullPointerException when html is null");
+    }
+
+    @Test
+    @DisplayName("TC04_O2: parse(html, baseUri, parser) uses provided parser to parse input")
+    public void test_TC04_O2() {
+        // Branches B0→B6→B7: parse(html, baseUri, parser) calls parser.parseInput
+        String html = "x";
+        String baseUri = "u";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        assertEquals("u", doc.baseUri(),
+                "Expected baseUri set from argument when using custom parser");
+        assertTrue(doc.childNodeSize() > 0,
+                "Expected parser to produce at least one child node");
+    }
+
+    @Test
+    @DisplayName("TC05_O3: parse(html, parser) with parser parses input and uses empty baseUri")
+    public void test_TC05_O3() {
+        // Branches B0→B8→B9: parse(html, parser) calls parser.parseInput(html, "")
+        String html = "<tag/>";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, parser);
+        assertEquals("", doc.baseUri(),
+                "Expected default baseUri to be empty string with parser overload");
+        assertEquals(1, doc.select("tag").size(),
+                "Expected xmlParser to parse a single <tag/> element");
+    }
+
+    @Test
+    @DisplayName("TC06_O4: parse(File, charsetName, baseUri) with valid file and charset reads file")
+    public void test_TC06_O4() throws IOException {
+        // Branches B0→B10→B11: DataUtil.load(file, charsetName, baseUri)
+        File temp = File.createTempFile("jsouptest", ".html");
+        temp.deleteOnExit();
+        String content = "<span>Hi</span>";
+        Files.write(temp.toPath(), content.getBytes("UTF-8"));
+        String charsetName = "UTF-8";
+        String baseUri = "http://b";
+        Document doc = Jsoup.parse(temp, charsetName, baseUri);
+        assertTrue(doc.html().contains("<span>Hi</span>"),
+                "Expected content from file to be in document HTML");
+        assertEquals("http://b", doc.baseUri(),
+                "Expected baseUri from argument, not file path");
+    }
+
+    @Test
+    @DisplayName("TC07_O4: parse(File, charsetName) with null charsetName reads meta or defaults to UTF-8")
+    public void test_TC07_O4() throws IOException {
+        // Branches B0→B10→B12: DataUtil.load(file, null, file.getAbsolutePath())
+        File temp = File.createTempFile("jsouptestbom", ".html");
+        temp.deleteOnExit();
+        // Write BOM + content
+        byte[] bom = {(byte)0xEF, (byte)0xBB, (byte)0xBF};
+        byte[] htmlBytes = "<p>Bom</p>".getBytes("UTF-8");
+        Files.write(temp.toPath(), concat(bom, htmlBytes));
+        String charsetName = null;
+        Document doc = Jsoup.parse(temp, charsetName);
+        assertTrue(doc.html().contains("<p>Bom</p>"),
+                "Expected content with BOM to be correctly read");
+        assertEquals(temp.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri default to file path when not provided");
+    }
+
+    @Test
+    @DisplayName("TC08_O4: parse(File) with simple file defaults charset and baseUri to file path")
+    public void test_TC08_O4() throws IOException {
+        // Branches B0→B10→B13: DataUtil.load(file, null, file.getAbsolutePath())
+        File temp = File.createTempFile("jsouptestsimple", ".html");
+        temp.deleteOnExit();
+        String content = "<h1>One</h1>";
+        Files.write(temp.toPath(), content.getBytes("UTF-8"));
+        Document doc = Jsoup.parse(temp);
+        assertTrue(doc.html().contains("<h1>One</h1>"),
+                "Expected content from simple file to be in document HTML");
+        assertEquals(temp.getAbsolutePath(), doc.baseUri(),
+                "Expected baseUri default to file path");
+    }
+
+    @Test
+    @DisplayName("TC09_O5: parse(File, charsetName, baseUri, parser) uses provided parser to read file")
+    public void test_TC09_O5() throws IOException {
+        // Branches B0→B10→B14: DataUtil.load(file, charsetName, baseUri, parser)
+        File temp = File.createTempFile("jsouptestxml", ".xml");
+        temp.deleteOnExit();
+        String content = "<x/>";
+        Files.write(temp.toPath(), content.getBytes("UTF-8"));
+        String charsetName = "UTF-8";
+        String baseUri = "u";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(temp, charsetName, baseUri, parser);
+        assertEquals(1, doc.select("x").size(),
+                "Expected xmlParser to recognize <x/> element in file");
+        assertEquals("u", doc.baseUri(),
+                "Expected baseUri from argument when using multi-arg overload");
+    }
+
+    @Test
+    @DisplayName("TC10_O6: parse(Path, charsetName, baseUri) with non-existent path throws IOException")
+    public void test_TC10_O6() {
+        // Branches B0→B15→B16: DataUtil.load(path...) on missing path throws IOException
+        Path path = Paths.get("/no/such/file.html");
+        String charsetName = "UTF-8";
+        String baseUri = "b";
+        assertThrows(IOException.class, () -> Jsoup.parse(path, charsetName, baseUri),
+                "Expected IOException when file path does not exist");
+    }
+
+    @Test
+    @DisplayName("TC11_O7: parse(InputStream, charsetName, baseUri) reads and closes stream")
+    public void test_TC11_O7() throws IOException {
+        // Branches B0→B17→B18: DataUtil.load(in, charsetName, baseUri) closes InputStream
+        byte[] bytes = "<i>In</i>".getBytes("UTF-8");
+        InputStream in = new ByteArrayInputStream(bytes);
+        String charsetName = null;
+        String baseUri = "u";
+        Document doc = Jsoup.parse(in, charsetName, baseUri);
+        assertTrue(doc.html().contains("<i>In</i>"),
+                "Expected content from InputStream to be in document HTML");
+        // After parsing, the stream should be closed: reading should throw IOException
+        assertThrows(IOException.class, in::read,
+                "Expected InputStream to be closed after parsing");
+    }
+
+    // helper to concatenate byte arrays
+    private static byte[] concat(byte[] a, byte[] b) {
+        byte[] c = new byte[a.length + b.length];
+        System.arraycopy(a, 0, c, 0, a.length);
+        System.arraycopy(b, 0, c, a.length, b.length);
+        return c;
+    }
+}

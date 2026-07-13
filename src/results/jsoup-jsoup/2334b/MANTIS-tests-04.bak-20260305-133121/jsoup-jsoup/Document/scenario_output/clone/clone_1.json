@@ -1,0 +1,118 @@
+{
+  "scenarios": [
+    {
+      "id": "TC04",
+      "description": "clone() on a default Document returns a distinct instance with independent outputSettings and parser",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document created with new Document(\"http://example.com\")",
+      "expectedResult": "clone is not the same object; outputSettings and parser are equal but not identical instances",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "default"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 default-document-clone",
+        "  GIVEN",
+        "    Document original = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assertEquals(original.outputSettings().charset(), copy.outputSettings().charset());",
+        "    assertNotSame(original.outputSettings(), copy.outputSettings());",
+        "    assertEquals(original.parser().getTrackErrors(), copy.parser().getTrackErrors());",
+        "    assertNotSame(original.parser(), copy.parser());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() on a Document with children deep-copies the node tree so mutations to original do not affect clone",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document.createShell(\"http://shell\") with appended child <div>hello</div>",
+      "expectedResult": "clone has same child count and content but is unaffected by further original modifications",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "children"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone-preserves-children",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://shell\");",
+        "    original.appendElement(\"div\").text(\"hello\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "    int origCount = original.childNodes().size();",
+        "    original.appendElement(\"span\");",
+        "  THEN",
+        "    assertEquals(origCount, copy.childNodes().size());",
+        "    assertEquals(origCount + 1, original.childNodes().size());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() on a Document with a custom Connection retains the same connection reference in clone",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original has connection set via original.connection(customConn)",
+      "expectedResult": "clone.connection field equals the original Connection instance",
+      "tags": [
+        "positive",
+        "connection",
+        "shallow-field"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone-retains-connection-field",
+        "  GIVEN",
+        "    Connection customConn = Jsoup.connect(\"http://example.com\");",
+        "    Document original = new Document(\"http://example.com\").connection(customConn);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    // internal field is copied by super.clone() shallowly",
+        "    assertSame(original.connection, copy.connection);",
+        "    // but the connection() method returns a session if field null",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "clone() on a Document with XML parser and xml syntax outputSettings deep-copies parser state including syntax-driven escapeMode",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document original configured with Parser.xmlParser() and outputSettings.syntax(xml)",
+      "expectedResult": "copy.parser and copy.outputSettings.syntax() equal originals but are distinct instances",
+      "tags": [
+        "positive",
+        "parser",
+        "outputSettings",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 clone-with-xml-parser-and-syntax",
+        "  GIVEN",
+        "    Document original = new Document(\"http://xml\");",
+        "    original.parser(Parser.xmlParser());",
+        "    original.outputSettings().syntax(Document.OutputSettings.Syntax.xml);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original.parser(), copy.parser());",
+        "    assertEquals(original.parser().getErrors().size(), copy.parser().getErrors().size());",
+        "    assertNotSame(original.outputSettings(), copy.outputSettings());",
+        "    assertEquals(Document.OutputSettings.Syntax.xml, copy.outputSettings().syntax());",
+        "    assertEquals(Entities.EscapeMode.xhtml, copy.outputSettings().escapeMode());",
+        "END"
+      ]
+    }
+  ]
+}

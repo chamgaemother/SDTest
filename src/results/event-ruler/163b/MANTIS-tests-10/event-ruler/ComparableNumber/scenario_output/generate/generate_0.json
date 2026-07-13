@@ -1,0 +1,236 @@
+{
+  "method": "generate",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "generate throws IllegalArgumentException when f < -5e9 (below lower bound)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "boundary-below"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 generate below-lower-bound",
+        "  GIVEN",
+        "    double f = -5000000000.000001;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;<no state mutated>"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "generate throws IllegalArgumentException when f > 5e9 (above upper bound)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "boundary-above"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 generate above-upper-bound",
+        "  GIVEN",
+        "    double f = 5000000000.0001;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;<no state mutated>"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "generate returns fourteen-char hex string for f = 0 (mid-range zero)",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is \"116BDE03C00000\"",
+      "tags": [
+        "branch-false",
+        "normal",
+        "mid-range",
+        "zero"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 generate zero-mid",
+        "  GIVEN",
+        "    double f = 0.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"116BDE03C00000\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "generate returns fourteen-char hex string for f = -5000000000.0 (exact lower bound)",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is \"00000000000000\"",
+      "tags": [
+        "branch-false",
+        "boundary",
+        "lower-bound"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 generate exact-lower-bound",
+        "  GIVEN",
+        "    double f = -5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"00000000000000\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "generate returns fourteen-char hex string for f = 5000000000.0 (exact upper bound)",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is \"2386F26FC10000\"",
+      "tags": [
+        "branch-false",
+        "boundary",
+        "upper-bound"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 generate exact-upper-bound",
+        "  GIVEN",
+        "    double f = 5000000000.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"2386F26FC10000\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "generate returns expected hex for a small negative integer f = -2.0",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is \"116BDE01A7B880\"",
+      "tags": [
+        "branch-false",
+        "normal",
+        "negative-integer"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 generate negative-integer",
+        "  GIVEN",
+        "    double f = -2.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"116BDE01A7B880\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "generate returns expected hex for a small positive integer f = 2.0",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "return value is \"116BDE05A84880\"",
+      "tags": [
+        "branch-false",
+        "normal",
+        "positive-integer"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 generate positive-integer",
+        "  GIVEN",
+        "    double f = 2.0;",
+        "  WHEN",
+        "    String result = ComparableNumber.generate(f);",
+        "  THEN",
+        "    assert result.equals(\"116BDE05A84880\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "generate throws IllegalArgumentException for f = NaN (undefined number)",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "nan"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 generate NaN",
+        "  GIVEN",
+        "    double f = Double.NaN;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;<no state mutated>"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "generate throws IllegalArgumentException for f = +Infinity",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "infinite"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 generate positive-infinity",
+        "  GIVEN",
+        "    double f = Double.POSITIVE_INFINITY;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;<no state mutated>"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "generate throws IllegalArgumentException for f = -Infinity",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException with message \"Value must be between -5000000000.0 and 5000000000.0, inclusive\"",
+      "tags": [
+        "branch-true",
+        "exception",
+        "infinite"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC10 generate negative-infinity",
+        "  GIVEN",
+        "    double f = Double.NEGATIVE_INFINITY;",
+        "  WHEN",
+        "    call ComparableNumber.generate(f);",
+        "  THEN",
+        "    throws IllegalArgumentException;<no state mutated>"
+      ]
+    }
+  ]
+}

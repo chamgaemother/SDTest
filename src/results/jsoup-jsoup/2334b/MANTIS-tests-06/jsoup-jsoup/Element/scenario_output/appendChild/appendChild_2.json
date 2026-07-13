@@ -1,0 +1,60 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "appendChild on a new Node sets the child's parent and returns this element (reparentChild no-op path)",
+      "path": "B0→B2→B3→B5→B6",
+      "precondition": "child.parent() == null",
+      "expectedResult": "child.parent() == parent and returned element == parent; siblingIndex == 0",
+      "tags": [
+        "positive",
+        "reparent-skip",
+        "return-value"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 appendChild sets parent on new node",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"hello\");",
+        "    // child has no parent",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent;",
+        "    assert child.parent() == parent;",
+        "    assert child.siblingIndex() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "appendChild chaining supports multiple calls and updates siblingIndex incrementally",
+      "path": "B0→B2→B3→B5→B6 (×2)",
+      "precondition": "child.parent() == null for both nodes",
+      "expectedResult": "first child index 0, second child index 1, return chaining works",
+      "tags": [
+        "positive",
+        "iteration",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 appendChild supports chaining and correct indices",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(first).appendChild(second);",
+        "  THEN",
+        "    assert first.siblingIndex() == 0;",
+        "    assert second.siblingIndex() == 1;",
+        "    assert parent.childNodeSize() == 2;",
+        "END"
+      ]
+    }
+  ]
+}

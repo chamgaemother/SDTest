@@ -1,0 +1,135 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "parse(String html, Parser parser) with null html throws IllegalArgumentException",
+      "path": "B0→B2→B3→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse null-html with parser",
+        "  GIVEN",
+        "    String html = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(String html, Parser parser) with null parser throws IllegalArgumentException",
+      "path": "B0→B2→B4→exception",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "null-parser",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse with null parser",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "    Parser parser = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html, parser);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser) with XML parser produces correct element",
+      "path": "B0→B1→B3→B5",
+      "precondition": "temp file exists with XML content",
+      "expectedResult": "parsed Document contains XML element text",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC19 parse Path+charset+baseUri+parser",
+        "  GIVEN",
+        "    Path xml = createTempFile containing \"<item>42</item>\" in UTF-8;",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"unused\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(xml, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.select(\"item\").text().equals(\"42\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(InputStream in, null charsetName, String baseUri) uses default charset UTF-8",
+      "path": "B0→B2→B5→B6",
+      "precondition": "ByteArrayInputStream open with HTML",
+      "expectedResult": "Document body html matches input",
+      "tags": [
+        "positive",
+        "boundary",
+        "null-charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse InputStream with null charset",
+        "  GIVEN",
+        "    byte[] data = \"<div>OK</div>\".getBytes(UTF_8);",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    String charset = null;",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>OK</div>\");",
+        "    assert stream is closed;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(URL url, int timeoutMillis) on unreachable host throws SocketTimeoutException",
+      "path": "B0→B1→B3→exception",
+      "precondition": "URL pointing to non-routable IP",
+      "expectedResult": "SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "network",
+        "timeout",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse URL times out",
+        "  GIVEN",
+        "    URL url = new URL(\"http://10.255.255.1/\");",
+        "    int timeout = 100;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    }
+  ]
+}

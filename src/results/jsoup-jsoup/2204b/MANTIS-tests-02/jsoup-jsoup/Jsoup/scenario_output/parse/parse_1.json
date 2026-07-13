@@ -1,0 +1,224 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(String html, String baseUri, Parser parser) uses provided parser and preserves baseUri",
+      "path": "B0→B3→B12→B14",
+      "precondition": "none",
+      "expectedResult": "Document parsed by custom parser with correct body and baseUri",
+      "tags": [
+        "overload",
+        "positive",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse with custom parser and baseUri",
+        "  GIVEN",
+        "    String html = \"<item>1</item>\";",
+        "    String baseUri = \"https://xml.example/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<item>1</item>\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(File file, String charsetName) loads file with explicit charset and uses file path as baseUri",
+      "path": "B0→B5→B20→B22",
+      "precondition": "temporary HTML file exists",
+      "expectedResult": "Document body reflects file contents and baseUri equals file absolute path",
+      "tags": [
+        "overload",
+        "file",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parse file with charset overload",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"jsoup\", \".html\");",
+        "    write \"<div>F</div>\" to temp using UTF-8;",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(temp, \"UTF-8\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>F</div>\");",
+        "    assert doc.baseUri().equals(temp.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(File file, String charsetName, String baseUri, Parser parser) uses parser and explicit baseUri",
+      "path": "B0→B5→B23→B25",
+      "precondition": "temporary XML-style file exists",
+      "expectedResult": "Body contains XML fragment and baseUri preserved",
+      "tags": [
+        "overload",
+        "file",
+        "parser",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 parse file with charset, baseUri and custom parser",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"xml\", \".txt\");",
+        "    write \"<root>OK</root>\" to temp UTF-8;",
+        "    String base = \"http://xml.test/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(temp, \"UTF-8\", base, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<root>OK</root>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(Path path, String charsetName, String baseUri) loads gzipped path with null charsetName",
+      "path": "B0→B7→B30→B32",
+      "precondition": "temporary .gz file exists with gzipped HTML",
+      "expectedResult": "Document body reflects gzipped contents and baseUri preserved",
+      "tags": [
+        "overload",
+        "path",
+        "positive",
+        "gzip"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse Path gzipped with null charset",
+        "  GIVEN",
+        "    Path gz = Files.createTempFile(\"jsoup\", \".html.gz\");",
+        "    gzip write \"<p>GZ</p>\" to gz;",
+        "    String base = \"https://gz.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(gz, null, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>GZ</p>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(Path path, String charsetName) loads file path with explicit charset and uses path as baseUri",
+      "path": "B0→B7→B28→B29",
+      "precondition": "temporary HTML file exists as Path",
+      "expectedResult": "Body matches file and baseUri equals absolute path",
+      "tags": [
+        "overload",
+        "path",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse Path with charset overload",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"jsoup\", \".htm\");",
+        "    Files.write(p, \"<span>P</span>\".getBytes(\"UTF-8\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, \"UTF-8\");",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>P</span>\");",
+        "    assert doc.baseUri().equals(p.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(Path path) loads file path with default charset and uses path as baseUri",
+      "path": "B0→B7→B26→B27",
+      "precondition": "temporary HTML file exists as Path",
+      "expectedResult": "Body matches file and baseUri equals absolute path",
+      "tags": [
+        "overload",
+        "path",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse Path default charset",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"jsoupDef\", \".html\");",
+        "    Files.write(p, \"<em>E</em>\".getBytes(\"UTF-8\"));",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<em>E</em>\");",
+        "    assert doc.baseUri().equals(p.toAbsolutePath().toString());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "parse(Path path, String charsetName, String baseUri, Parser parser) uses parser for Path overload",
+      "path": "B0→B7→B33→B35",
+      "precondition": "temporary Path file exists",
+      "expectedResult": "Body contains parsed fragment and baseUri respected",
+      "tags": [
+        "overload",
+        "path",
+        "parser",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 parse Path with charset, baseUri and parser",
+        "  GIVEN",
+        "    Path p = Files.createTempFile(\"jsoupX\", \".xml\");",
+        "    Files.write(p, \"<x>OK</x>\".getBytes(\"UTF-8\"));",
+        "    String base = \"http://path.test/\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, \"UTF-8\", base, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<x>OK</x>\");",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(InputStream in, String charsetName, String baseUri, Parser parser) closes stream after use",
+      "path": "B0→B9→B40→B42",
+      "precondition": "ByteArrayInputStream with HTML fragment",
+      "expectedResult": "Body matches input and baseUri preserved, stream closed afterwards",
+      "tags": [
+        "overload",
+        "stream",
+        "parser",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse InputStream with charset, baseUri and parser",
+        "  GIVEN",
+        "    byte[] data = \"<i>I</i>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, \"UTF-8\", \"baseUriX\", parser);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<i>I</i>\");",
+        "    assert doc.baseUri().equals(\"baseUriX\");",
+        "    assert in.read() == -1; // stream is closed",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,132 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_attr_0_Test {
+
+    @Test
+    @DisplayName("TC01: attr(String key, String value) with normal non-empty key and value sets attribute and returns this")
+    public void test_TC01() {
+        // GIVEN: new Element with null attributes
+        Element el = new Element("div");
+        // WHEN: setting a new attribute on a fresh element
+        Element returned = el.attr("data-test", "123");
+        // THEN: return should be same instance, and attribute should be set
+        assertSame(el, returned, "attr should return same instance for chaining");
+        assertEquals("123", el.attributes().get("data-test"),
+                "The attribute value for 'data-test' should be '123'");
+    }
+
+    @Test
+    @DisplayName("TC02: attr(String key, String value) updates an existing attribute value")
+    public void test_TC02() {
+        // GIVEN: element with pre-existing attribute 'title'="old"
+        Element el = new Element("span");
+        el.attr("title", "old");
+        // WHEN: updating the same attribute key
+        Element returned = el.attr("title", "new");
+        // THEN: should return same instance and update the value
+        assertSame(el, returned, "attr should return same instance when updating existing key");
+        assertEquals("new", el.attributes().get("title"),
+                "The attribute 'title' should be updated to 'new'");
+    }
+
+    @Test
+    @DisplayName("TC03: attr(String key, String value) with empty key throws IllegalArgumentException")
+    public void test_TC03() {
+        // GIVEN: a simple element
+        Element el = new Element("p");
+        // WHEN/THEN: empty key should violate notEmptyParam and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class,
+                () -> el.attr("", "value"),
+                "An empty key must trigger IllegalArgumentException");
+    }
+
+    @Test
+    @DisplayName("TC04: attr(String key, String value) with key containing only whitespace throws IllegalArgumentException")
+    public void test_TC04() {
+        // GIVEN: a simple element
+        Element el = new Element("p");
+        // WHEN/THEN: blank key should violate notEmptyParam and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class,
+                () -> el.attr("   ", "v"),
+                "A blank key must trigger IllegalArgumentException");
+    }
+
+    @Test
+    @DisplayName("TC05: attr(String key, String value) with empty value sets attribute to empty string")
+    public void test_TC05() {
+        // GIVEN: element with null attributes
+        Element el = new Element("div");
+        // WHEN: setting an attribute with empty value
+        el.attr("empty", "");
+        // THEN: key exists with empty value
+        assertEquals("", el.attributes().get("empty"),
+                "Attribute 'empty' should be stored as empty string");
+    }
+
+    @Test
+    @DisplayName("TC06: attr(String key, String value) with whitespace value preserves whitespace")
+    public void test_TC06() {
+        // GIVEN: element with null attributes
+        Element el = new Element("div");
+        // WHEN: setting an attribute with whitespace value
+        el.attr("x", "  ");
+        // THEN: whitespace must be preserved exactly
+        assertEquals("  ", el.attributes().get("x"),
+                "Attribute 'x' should preserve whitespace value '  '");
+    }
+
+    @Test
+    @DisplayName("TC07: attr(String key, String value) with null key throws IllegalArgumentException")
+    public void test_TC07() {
+        // GIVEN: a new element
+        Element el = new Element("div");
+        // WHEN/THEN: null key should trigger validation notNull and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class,
+                () -> el.attr(null, "v"),
+                "A null key must trigger IllegalArgumentException");
+    }
+
+    @Test
+    @DisplayName("TC08: attr(String key, String value) with null value throws NullPointerException")
+    public void test_TC08() {
+        // GIVEN: a new element
+        Element el = new Element("div");
+        // WHEN/THEN: null value must cause NullPointerException in underlying Attributes.put
+        assertThrows(NullPointerException.class,
+                () -> el.attr("k", null),
+                "A null value should trigger NullPointerException when storing attribute");
+    }
+
+    @Test
+    @DisplayName("TC09: attr(String key, String value) on element with pre-existing attributes object uses existing Attributes instance")
+    public void test_TC09() {
+        // GIVEN: element and force attributes creation
+        Element el = new Element("div");
+        Attributes before = el.attributes(); // instantiate attributes
+        // WHEN: setting a new attribute
+        el.attr("k", "v");
+        // THEN: should reuse same Attributes instance and set the new key
+        assertSame(before, el.attributes(),
+                "Attributes instance should be reused");
+        assertEquals("v", before.get("k"),
+                "Attribute 'k' should be set to 'v' in reused Attributes");
+    }
+
+    @Test
+    @DisplayName("TC10: attr(String key, String value) supports method chaining to set multiple attributes")
+    public void test_TC10() {
+        // GIVEN: fresh element
+        Element el = new Element("div");
+        // WHEN: chaining two attr calls
+        el.attr("a", "1").attr("b", "2");
+        // THEN: both attributes should be set in same Attributes container
+        assertAll(
+            () -> assertEquals("1", el.attributes().get("a"), "First attribute 'a' should be '1'"),
+            () -> assertEquals("2", el.attributes().get("b"), "Second attribute 'b' should be '2'")
+        );
+    }
+}

@@ -1,0 +1,87 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * JUnit 5 tests for Element.appendChild method covering scenarios TC01-TC05.
+ */
+public class Element_appendChild_0_Test {
+
+    @Test
+    @DisplayName("appendChild(null) throws IllegalArgumentException when child is null")
+    public void test_TC01() {
+        Element parent = new Element("div");
+        // design: passing null should trigger Validate.notNull(child) and throw IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> parent.appendChild((Node) null));
+        // ensure no children were added
+        assertEquals(0, parent.childNodeSize());
+    }
+
+    @Test
+    @DisplayName("appendChild on empty children list creates new childNodes and appends child")
+    public void test_TC02() {
+        Element parent = new Element("div");
+        TextNode child = new TextNode("text");
+        // design: ensureChildNodes is true on first append, creating childNodes
+        Element result = parent.appendChild(child);
+        // assert that exactly one node added
+        assertEquals(1, parent.childNodeSize(), "Expected one child node after appendChild on empty list");
+        // the sole child must be the same instance
+        assertSame(child, parent.child(0), "Child at index 0 should be the appended node");
+        // child's parent should be set to parent
+        assertSame(parent, child.parent(), "Appended child's parent should be the element it was appended to");
+        // appendChild returns the parent element for chaining
+        assertSame(parent, result, "appendChild should return the parent for method chaining");
+    }
+
+    @Test
+    @DisplayName("appendChild on non-empty children list reuses existing childNodes")
+    public void test_TC03() {
+        Element parent = new Element("div");
+        TextNode first = new TextNode("one");
+        parent.appendChild(first);
+        TextNode second = new TextNode("two");
+        // design: ensureChildNodes is false on second append since childNodes already initialized
+        parent.appendChild(second);
+        // now two child nodes exist
+        assertEquals(2, parent.childNodeSize(), "Expected two child nodes after second appendChild");
+        // second element in the list should be our second node
+        assertSame(second, parent.child(1), "Second child should be the second appended node");
+        // verify reparenting set parent correctly
+        assertSame(parent, second.parent(), "Second appended node's parent should be the element it was appended to");
+    }
+
+    @Test
+    @DisplayName("appendChild reparents node from old parent to new parent")
+    public void test_TC04() {
+        Element oldParent = new Element("div");
+        Element newParent = new Element("span");
+        Element child = new Element("child");
+        oldParent.appendChild(child);
+        // precondition: child is an Element so oldParent.childrenSize() == 1
+        assertEquals(1, oldParent.childrenSize(), "Precondition: oldParent should have one element child");
+        // design: reparentChild should remove child from oldParent and append to newParent
+        newParent.appendChild(child);
+        // oldParent should now have zero element children
+        assertEquals(0, oldParent.childrenSize(), "Child should be removed from oldParent after reparenting");
+        // newParent should now have child in its element children list
+        assertEquals(1, newParent.childrenSize(), "Child should appear under newParent as element child");
+        // child's parent reference should be updated
+        assertSame(newParent, child.parent(), "Child's parent should be newParent after reparenting");
+    }
+
+    @Test
+    @DisplayName("appendChild returns same element for chaining usage")
+    public void test_TC05() {
+        Element el = new Element("p");
+        TextNode a = new TextNode("A");
+        TextNode b = new TextNode("B");
+        // design: chaining should return same element reference
+        Element returned = el.appendChild(a).appendChild(b);
+        assertSame(el, returned, "Chained appendChild calls should return the same element instance");
+        // two nodes appended in total
+        assertEquals(2, el.childNodeSize(), "Two child nodes should be present after chaining two appendChild calls");
+    }
+}

@@ -1,0 +1,56 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.nodes.Comment;
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_2_Test {
+
+    @Test
+    @DisplayName("TC12: child(0) rebuilds cache after a prior childElementsList then element removal invalidates cache")
+    public void test_TC12() {
+        // GIVEN: parent with two element children a, b
+        Element parent = new Element("div");
+        Element a = new Element("span");
+        Element b = new Element("span");
+        parent.appendChild(a);
+        parent.appendChild(b);
+
+        // WHEN: call child(0) once to build and cache childElementsList (loop through children twice)
+        Element first = parent.child(0);
+        // Inline comment: the initial call populates shadowChildrenRef via childElementsList()
+
+        // WHEN: remove the first child element, which must trigger nodelistChanged() and clear the cache
+        a.remove();
+        // Inline comment: removal invokes Node.remove() and calls onContentsChanged(), invalidating the cached list
+
+        // THEN: child(0) must traverse childNodes again and return the new first element (b)
+        Element result = parent.child(0);
+        assertSame(b, result, "After removal of the first element, child(0) should return the second element");
+    }
+
+    @Test
+    @DisplayName("TC13: child(1) on element with mixed nodes and two element children returns second element (loop×4)")
+    public void test_TC13() {
+        // GIVEN: element with mixed child nodes: TextNode, span1, Comment, span2
+        Element e = new Element("div");
+        TextNode text = new TextNode("t");
+        e.appendChild(text);
+        Element span1 = new Element("span");
+        e.appendChild(span1);
+        Comment comment = new Comment("c");
+        e.appendChild(comment);
+        Element span2 = new Element("span");
+        e.appendChild(span2);
+        // Inline comment: childElementsList() will loop over all childNodes (4 iterations),
+        // picking only nodes instanceof Element, thus span1 and span2
+
+        // WHEN: request the second element child by index 1
+        Element result = e.child(1);
+
+        // THEN: must return the second element (span2)
+        assertSame(span2, result, "child(1) should skip non-Element nodes and return the second Element child");
+    }
+}

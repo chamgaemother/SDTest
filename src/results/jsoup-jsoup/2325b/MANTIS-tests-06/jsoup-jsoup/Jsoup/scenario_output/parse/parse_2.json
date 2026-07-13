@@ -1,0 +1,190 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parse(html, Parser) invokes custom parser.parseInput and returns stub Document",
+      "path": "B0→B3→B4",
+      "precondition": "none",
+      "expectedResult": "Document returned by stub parser with baseUri '' and title 'stub1'",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse with parser-only overload",
+        "  GIVEN",
+        "    String html = \"<x>y</x>\";",
+        "    Parser stub = new Parser() {",
+        "      @Override",
+        "      public Document parseInput(String sourceHtml, String baseUri) {",
+        "        Document d = new Document(baseUri);",
+        "        d.title(\"stub1\");",
+        "        return d;",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, stub);",
+        "  THEN",
+        "    assertEquals(\"\", doc.baseUri());",
+        "    assertEquals(\"stub1\", doc.title());"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(html, baseUri, Parser) invokes custom parser.parseInput with provided baseUri",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "Document returned by stub parser with baseUri 'u2' and title 'stub2'",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse with baseUri and parser",
+        "  GIVEN",
+        "    String html = \"body\";",
+        "    String baseUri = \"u2\";",
+        "    Parser stub = new Parser() {",
+        "      @Override",
+        "      public Document parseInput(String src, String bu) {",
+        "        Document d = new Document(bu);",
+        "        d.title(\"stub2\");",
+        "        return d;",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, baseUri, stub);",
+        "  THEN",
+        "    assertEquals(\"u2\", doc.baseUri());",
+        "    assertEquals(\"stub2\", doc.title());"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parseBodyFragment(bodyHtml, baseUri) returns Document containing fragment in body",
+      "path": "B0→B1→B5",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals '<p>f</p>' and baseUri 'http://a/'",
+      "tags": [
+        "positive",
+        "fragment"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<p>f</p>\";",
+        "    String baseUri = \"http://a/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, baseUri);",
+        "  THEN",
+        "    assertEquals(\"http://a/\", doc.baseUri());",
+        "    assertEquals(\"<p>f</p>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parseBodyFragment(bodyHtml) uses empty baseUri and returns fragment",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals '<span>z</span>' and baseUri ''",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parseBodyFragment default baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span>z</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assertEquals(\"\", doc.baseUri());",
+        "    assertEquals(\"<span>z</span>\", doc.body().html());"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(File, charsetName, baseUri, Parser) uses DataUtil.load with parser override",
+      "path": "B0→B7→B8",
+      "precondition": "temp file exists with '<d>d</d>'",
+      "expectedResult": "Document from stub parser with title 'fp2' and baseUri 'u3'",
+      "tags": [
+        "positive",
+        "file",
+        "parser",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 parse file with parser overload",
+        "  GIVEN",
+        "    Path temp = Files.createTempFile(\"jsoup\", \".html\");",
+        "    Files.write(temp, \"<d>d</d>\".getBytes(StandardCharsets.UTF_8));",
+        "    File file = temp.toFile();",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"u3\";",
+        "    Parser stub = new Parser() {",
+        "      @Override",
+        "      public Document parseInput(String h, String bu) {",
+        "        Document d = new Document(bu);",
+        "        d.title(\"fp2\");",
+        "        return d;",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, stub);",
+        "  THEN",
+        "    assertEquals(\"u3\", doc.baseUri());",
+        "    assertEquals(\"fp2\", doc.title());"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(Path, charsetName, baseUri, Parser) uses DataUtil.load(Path) with parser override",
+      "path": "B0→B9→B10",
+      "precondition": "temp path exists with '<ul><li>i</li></ul>'",
+      "expectedResult": "Document from stub parser with title 'pp3' and baseUri 'bu4'",
+      "tags": [
+        "positive",
+        "path",
+        "parser",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse path with parser overload",
+        "  GIVEN",
+        "    Path path = Files.createTempFile(\"jsoup\", \".html\");",
+        "    Files.write(path, \"<ul><li>i</li></ul>\".getBytes(StandardCharsets.UTF_8));",
+        "    String charset = null;",
+        "    String baseUri = \"bu4\";",
+        "    Parser stub = new Parser() {",
+        "      @Override",
+        "      public Document parseInput(String h, String bu) {",
+        "        Document d = new Document(bu);",
+        "        d.title(\"pp3\");",
+        "        return d;",
+        "      }",
+        "    };",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, stub);",
+        "  THEN",
+        "    assertEquals(\"bu4\", doc.baseUri());",
+        "    assertEquals(\"pp3\", doc.title());"
+      ]
+    }
+  ]
+}

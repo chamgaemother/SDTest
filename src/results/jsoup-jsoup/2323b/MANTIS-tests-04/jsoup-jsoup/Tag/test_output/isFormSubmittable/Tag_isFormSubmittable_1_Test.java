@@ -1,0 +1,46 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_1_Test {
+
+    @Test
+    @DisplayName("TC03: Known submittable tag 'option' in default HTML namespace returns true (formSubmit=true branch)")
+    public void test_TC03() {
+        // 'option' is a known HTML tag that should be submittable (in SharedConstants.FormSubmitTags).
+        // Using the no‐args overload -> default namespace and settings.
+        Tag tag = Tag.valueOf("option");
+        // Expect formSubmit == true for a known submittable tag.
+        assertTrue(tag.isFormSubmittable(), "Expected 'option' tag to be form submittable");
+    }
+
+    @Test
+    @DisplayName("TC04: Unknown tag created via explicit namespace and custom ParseSettings returns false (formSubmit=false branch)")
+    public void test_TC04() {
+        // Create a custom namespace and preserve‐case settings for an unknown tag.
+        String customNs = "http://example.com/custom";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // 'myCustomTag' is not in the pre-defined FormSubmitTags, so should be non-submittable.
+        Tag tag = Tag.valueOf("myCustomTag", customNs, settings);
+        // Expect formSubmit == false for an unknown tag in custom namespace.
+        assertFalse(tag.isFormSubmittable(), "Expected unknown custom tag to not be form submittable");
+    }
+
+    @Test
+    @DisplayName("TC05: Known submittable tag with preserveTagCase true triggers clone path then returns true")
+    public void test_TC05() {
+        // 'input' is a known HTML submittable tag.
+        // Use preserveTagCase=true so that lookup by normalName finds the static tag then triggers clone.
+        ParseSettings settings = new ParseSettings(true, false);
+        String ns = Parser.NamespaceHtml;
+        // Request uppercase tagName "INPUT" with normalName "input" to hit clone-then-adjust branch.
+        Tag clonedTag = Tag.valueOf("INPUT", "input", ns, settings);
+        // The returned instance should not be the same as the static registry instance.
+        Tag staticTag = Tag.valueOf("input", settings);
+        assertNotSame(staticTag, clonedTag, "Expected preserve-case lookup to clone the known tag instance");
+        // Even on the cloned instance, formSubmit should remain true for 'input'.
+        assertTrue(clonedTag.isFormSubmittable(), "Expected cloned 'INPUT' tag to still be form submittable");
+    }
+}

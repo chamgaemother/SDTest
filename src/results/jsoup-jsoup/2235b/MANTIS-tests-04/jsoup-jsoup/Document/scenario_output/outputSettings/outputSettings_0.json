@@ -1,0 +1,57 @@
+{
+  "method": "outputSettings",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "outputSettings() returns the default OutputSettings instance after Document creation",
+      "path": "B0→B1",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // default constructor",
+      "expectedResult": "return value is the same instance as doc.outputSettings; default charset is UTF-8 and syntax is html",
+      "tags": [
+        "getter",
+        "default",
+        "no-mutation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 outputSettings default-instance",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "  WHEN",
+        "    OutputSettings settings = doc.outputSettings();",
+        "  THEN",
+        "    assert settings == doc.outputSettings();",
+        "    assert settings.charset().name().equals(\"UTF-8\");",
+        "    assert settings.syntax() == OutputSettings.Syntax.html;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "outputSettings() returns the updated OutputSettings instance after setter call",
+      "path": "B0→B1",
+      "precondition": "Document doc = new Document(\"http://example.com\"); // default constructor; newSettings mutated before set",
+      "expectedResult": "return value is the same instance as the one passed to doc.outputSettings(newSettings)",
+      "tags": [
+        "getter",
+        "after-setter",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 outputSettings after-set",
+        "  GIVEN",
+        "    Document doc = new Document(\"http://example.com\");",
+        "    OutputSettings newSettings = new OutputSettings().prettyPrint(false).syntax(OutputSettings.Syntax.xml);",
+        "    doc.outputSettings(newSettings);",
+        "  WHEN",
+        "    OutputSettings returned = doc.outputSettings();",
+        "  THEN",
+        "    assert returned == newSettings;",
+        "    assert returned.prettyPrint() == false;",
+        "    assert returned.syntax() == OutputSettings.Syntax.xml;"
+      ]
+    }
+  ]
+}

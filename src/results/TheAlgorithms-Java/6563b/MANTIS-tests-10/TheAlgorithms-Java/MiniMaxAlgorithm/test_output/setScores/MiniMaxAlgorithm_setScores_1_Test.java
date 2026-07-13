@@ -1,0 +1,42 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class MiniMaxAlgorithm_setScores_1_Test {
+
+    @Test
+    @DisplayName("setScores prints error and does not update state when scores length is odd (error branch)")
+    void test_TC04() {
+        // GIVEN: a new algorithm instance with initial valid scores and height
+        MiniMaxAlgorithm alg = new MiniMaxAlgorithm();
+        int[] beforeScores = alg.getScores().clone();
+        int beforeHeight = alg.getHeight();
+        // Use an odd-length array (length=3) which is not a power of two to drive the error path
+        int[] oddScores = new int[]{1, 2, 3}; // triggers error branch: length not a power of two
+
+        // Capture standard output to verify error message
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(baos));
+
+        // WHEN: calling setScores with invalid odd-length array
+        alg.setScores(oddScores);
+
+        // Restore original System.out
+        System.setOut(originalOut);
+
+        // THEN: scores and height remain unchanged
+        assertArrayEquals(beforeScores, alg.getScores(), "Scores should remain unchanged on error");
+        assertEquals(beforeHeight, alg.getHeight(), "Height should remain unchanged on error");
+        // AND: error message printed to stdout
+        String out = baos.toString();
+        assertTrue(out.contains("The number of scores must be a power of 2."),
+                   "Expected error message when scores length is not a power of two");
+    }
+}

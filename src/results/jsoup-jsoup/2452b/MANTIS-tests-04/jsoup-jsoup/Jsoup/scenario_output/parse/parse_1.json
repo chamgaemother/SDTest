@@ -1,0 +1,179 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parse(File, charsetName, baseUri, parser) returns Document via provided XML parser",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "temp HTML file exists with <root/> content",
+      "expectedResult": "Document contains <root/> in body and baseUri preserved",
+      "tags": [
+        "positive",
+        "file-overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parse(File,String,String,Parser) with XML parser",
+        "  GIVEN",
+        "    File f = tempFile(\"<root/>.xml\");",
+        "    String charset = \"UTF-8\";",
+        "    String base = \"http://base.test\";",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document d = Jsoup.parse(f, charset, base, xml);",
+        "  THEN",
+        "    assert d.body().html().contains(\"<root/>\");",
+        "    assert d.baseUri().equals(base);"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parse(Path, charsetName, baseUri) reads file via Path and sets baseUri from parameter",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "temp HTML file at Path with <h2>Hi</h2>",
+      "expectedResult": "Document body html is <h2>Hi</h2> and baseUri parameter applied",
+      "tags": [
+        "positive",
+        "path-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC12 parse(Path,String,String)",
+        "  GIVEN",
+        "    Path p = createTempPathFile(\"<h2>Hi</h2>\");",
+        "    String cs = null;",
+        "    String base = \"http://path.test\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p, cs, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<h2>Hi</h2>\");",
+        "    assert doc.baseUri().equals(base);"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parse(Path) loads file and uses Path.toAbsolutePath() as baseUri",
+      "path": "B0→B1→B2→B4→B6",
+      "precondition": "temp file with <p>P</p> created at Path",
+      "expectedResult": "body html <p>P</p> and baseUri equals absolute path of file",
+      "tags": [
+        "positive",
+        "path-overload",
+        "default-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC13 parse(Path) default base",
+        "  GIVEN",
+        "    Path p = createTempPathFile(\"<p>P</p>\");",
+        "  WHEN",
+        "    Document d = Jsoup.parse(p);",
+        "  THEN",
+        "    assert d.body().html().equals(\"<p>P</p>\");",
+        "    assert d.baseUri().equals(p.toAbsolutePath().toString());"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "parse(InputStream, charsetName, baseUri, parser) reads stream via XML parser",
+      "path": "B0→B1→B3→B7",
+      "precondition": "ByteArrayInputStream over \"<item/>\"",
+      "expectedResult": "Document body contains <item/> and baseUri set",
+      "tags": [
+        "positive",
+        "stream-overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 parse(InputStream,String,String,Parser)",
+        "  GIVEN",
+        "    InputStream in = new ByteArrayInputStream(\"<item/>\".getBytes());",
+        "    String cs = \"UTF-8\";",
+        "    String base = \"http://stream.test\";",
+        "    Parser xml = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, cs, base, xml);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<item/>\");",
+        "    assert doc.baseUri().equals(base);"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "parse(URL, timeout) with non-http URL throws MalformedURLException",
+      "path": "B0→B8→B9",
+      "precondition": "URL with ftp:// protocol",
+      "expectedResult": "java.net.MalformedURLException thrown",
+      "tags": [
+        "negative",
+        "url-overload",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parse(URL,int) malformed-scheme",
+        "  GIVEN",
+        "    URL u = new URL(\"ftp://example.com\");",
+        "    int t = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(u, t);",
+        "  THEN",
+        "    throws java.net.MalformedURLException;"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parse(String) with null html throws IllegalArgumentException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "IllegalArgumentException thrown",
+      "tags": [
+        "negative",
+        "null-input",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parse(String) null-html",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parse(html);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "clean(bodyHtml, baseUri, safelist) substitutes DummyUri when baseUri empty and preserveRelativeLinks true",
+      "path": "B0→B1→B2→B4",
+      "precondition": "none",
+      "expectedResult": "cleaned HTML preserves relative <a href>",
+      "tags": [
+        "positive",
+        "clean-overload",
+        "branch"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 clean with preserveRelativeLinks and empty baseUri",
+        "  GIVEN",
+        "    String src = \"<a href=foo>Link</a>\";",
+        "    Safelist sl = Safelist.basic();",
+        "    sl.preserveRelativeLinks(true);",
+        "  WHEN",
+        "    String out = Jsoup.clean(src, \"\", sl);",
+        "  THEN",
+        "    assert out.contains(\"href=foo\");"
+      ]
+    }
+  ]
+}

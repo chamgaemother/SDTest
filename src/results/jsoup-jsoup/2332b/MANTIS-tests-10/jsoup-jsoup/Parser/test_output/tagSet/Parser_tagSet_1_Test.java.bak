@@ -1,0 +1,99 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("setTrackErrors(0) disables error tracking branch and isTrackErrors returns false")
+    public void test_TC01() {
+        // GIVEN: a fresh HTML parser with default error tracking disabled
+        Parser parser = Parser.htmlParser();
+        // WHEN: disabling error tracking by setting maxErrors to 0 (hits branch B1(false)→B2)
+        parser.setTrackErrors(0);
+        // THEN: tracking is disabled and no errors are stored
+        assertFalse(parser.isTrackErrors(), "Expected isTrackErrors() to be false when maxErrors is 0");
+        assertEquals(0, parser.getErrors().getMaxSize(),
+            "Expected getErrors().getMaxSize() to be 0 when tracking is disabled");
+    }
+
+    @Test
+    @DisplayName("setTrackErrors(5) enables tracking branch and isTrackErrors returns true")
+    public void test_TC02() {
+        // GIVEN: a fresh XML parser (default no tracking)
+        Parser parser = Parser.xmlParser();
+        // WHEN: enabling error tracking by setting maxErrors to 5 (hits branch B1(true)→B4)
+        parser.setTrackErrors(5);
+        // THEN: tracking is enabled and up to 5 errors can be recorded
+        assertTrue(parser.isTrackErrors(), "Expected isTrackErrors() to be true when maxErrors > 0");
+        assertEquals(5, parser.getErrors().getMaxSize(),
+            "Expected getErrors().getMaxSize() to reflect the set maxErrors value (5)");
+    }
+
+    @Test
+    @DisplayName("setTrackPosition(true) flips trackPosition branch and isTrackPosition returns true")
+    public void test_TC03() {
+        // GIVEN: a cloned parser from htmlParser; initial trackPosition is false (branch B5)
+        Parser original = Parser.htmlParser();
+        Parser parser = original.newInstance();
+        // WHEN: enabling position tracking (hits branch B5(true))
+        parser.setTrackPosition(true);
+        // THEN: position tracking should be turned on
+        assertTrue(parser.isTrackPosition(), "Expected isTrackPosition() to be true after setTrackPosition(true)");
+    }
+
+    @Test
+    @DisplayName("clone() deep copies settings, errors, and trackPosition state")
+    public void test_TC04() {
+        // GIVEN: a parser with custom settings and enabled tracking (branch B7→B8)
+        Parser original = Parser.htmlParser()
+            .setTrackErrors(3)
+            .setTrackPosition(true)
+            .settings(ParseSettings.preserveCase);
+        // WHEN: cloning the parser (hits deep-copy branch B9)
+        Parser copy = original.clone();
+        // THEN: the copy is a different instance, with separate settings object but same state values
+        assertAll("clone deep copy validation",
+            () -> assertNotSame(original, copy, "Clone should produce a different Parser instance"),
+            () -> assertNotSame(original.settings(), copy.settings(), "Settings object should be a different instance"),
+            () -> assertEquals(original.isTrackErrors(), copy.isTrackErrors(),
+                "TrackErrors state should be equal in original and clone"),
+            () -> assertEquals(original.getErrors().getMaxSize(), copy.getErrors().getMaxSize(),
+                "Error list max size should be identical in original and clone"),
+            () -> assertEquals(original.isTrackPosition(), copy.isTrackPosition(),
+                "TrackPosition flag should be identical in original and clone")
+        );
+    }
+
+    @Test
+    @DisplayName("htmlParser() returns Parser with HtmlTreeBuilder and default HTML namespace path")
+    public void test_TC05() {
+        // WHEN: creating an HTML parser via static factory (branch B10)
+        Parser parser = Parser.htmlParser();
+        // THEN: default namespace should match the HTML namespace constant (branch B11)
+        assertEquals(Parser.NamespaceHtml, parser.defaultNamespace(),
+            "Expected defaultNamespace() to return HTML namespace URI");
+    }
+
+    @Test
+    @DisplayName("xmlParser() returns Parser with XmlTreeBuilder and default XML namespace path")
+    public void test_TC06() {
+        // WHEN: creating an XML parser via static factory (branch B12)
+        Parser parser = Parser.xmlParser();
+        // THEN: default namespace should match the XML namespace constant (branch B13)
+        assertEquals(Parser.NamespaceXml, parser.defaultNamespace(),
+            "Expected defaultNamespace() to return XML namespace URI");
+    }
+}

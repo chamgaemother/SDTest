@@ -1,0 +1,45 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_dataset_2_Test {
+
+    @Test
+    @DisplayName("Putting an existing key via dataset view updates the underlying element attribute (update-existing)")
+    void test_TC10() {
+        // GIVEN an Element with an existing data-name attribute
+        Element el = new Element("div");
+        el.attr("data-name", "old");
+        // WHEN obtaining the dataset view and updating the key "name"
+        Map<String, String> ds = el.dataset();
+        // ds.put should map to underlying attributes: branch B2(put)→B3, updating existing
+        ds.put("name", "new");
+        // THEN the Element's attribute is updated to the new value
+        assertEquals("new", el.attr("data-name"),
+            "Updating ds.put('name', 'new') should synchronize to el.attr('data-name')");
+    }
+
+    @Test
+    @DisplayName("Adding a data- attribute after obtaining dataset view is reflected when accessing the view (dynamic-view)")
+    void test_TC11() {
+        // GIVEN an Element with no initial data- attributes
+        Element el = new Element("p");
+        // WHEN obtaining the dataset view before any data attributes are set
+        Map<String, String> ds = el.dataset();
+        // THEN the view initially has no key "x"
+        assertFalse(ds.containsKey("x"),
+            "Before adding, dataset should not contain 'x'");
+        // WHEN adding a data-x attribute directly on the element (late add branch B2)
+        el.attr("data-x", "1");
+        // THEN the existing dataset view should dynamically reflect the new entry
+        assertTrue(ds.containsKey("x"),
+            "After el.attr('data-x', '1'), dataset view should contain 'x'");
+        assertEquals("1", ds.get("x"),
+            "dataset.get('x') should return the newly added value '1'");
+    }
+}

@@ -1,0 +1,95 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import io.github.cdimascio.dotenv.DotenvBuilder;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.github.cdimascio.dotenv.DotenvException;
+import io.github.cdimascio.dotenv.DotenvEntry;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+public class DotenvBuilder_load_1_Test {
+
+    @Test
+    @DisplayName("load() throws DotenvException when .env file is missing and throwIfMissing=true (default)")
+    public void test_TC06() {
+        // Given a directory path that does not exist and default throwIfMissing=true
+        String badPath = "./nonexistent_dir_for_test";
+        DotenvBuilder builder = new DotenvBuilder().directory(badPath);
+        // When / Then: loading without ignoreIfMissing should throw DotenvException about missing file
+        assertThrows(DotenvException.class, builder::load,
+            "Expected load() to throw DotenvException when .env is missing and throwIfMissing=true");
+    }
+
+    @Test
+    @DisplayName("entries(filter) returns only file-defined entries when filter is non-null")
+    public void test_TC07() throws IOException {
+        // Given a temp directory with a .env containing two entries KEY_A and KEY_B
+        Path tempDir = Files.createTempDirectory("dotenv_test");
+        Path envFile = tempDir.resolve(".env");
+        String content = "KEY_A=VAL_A\nKEY_B=VAL_B\n";
+        Files.write(envFile, content.getBytes());
+        // Filter is non-null so entries(filter) should return only file entries, not system env
+        DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString()).filename(".env");
+        Dotenv dotenv = builder.load();
+        // When
+        Set<DotenvEntry> fileEntries = dotenv.entries(entry -> { return true; }); // Changed to lambda expression
+        // Then: exactly the two keys from file
+        assertEquals(2, fileEntries.size(), "Should return exactly two entries defined in file");
+        assertTrue(fileEntries.stream().anyMatch(e -> "KEY_A".equals(e.getKey()) && "VAL_A".equals(e.getValue()),
+                   "Expected entry KEY_A=VAL_A");
+        assertTrue(fileEntries.stream().anyMatch(e -> "KEY_B".equals(e.getKey()) && "VAL_B".equals(e.getValue()),
+                   "Expected entry KEY_B=VAL_B");
+        // Clean up
+        Files.delete(envFile);
+        Files.delete(tempDir);
+    }
+
+    @Test
+    @DisplayName("get(key) returns environment variable over file value when system env contains same key")
+    public void test_TC08() throws IOException {
+        // Given an existing system env key (e.g., PATH) and a .env with the same key PATH=fromFile
+        String key = "PATH";
+        String sysValue = System.getenv(key);
+        assumeTrue(sysValue != null, "Test requires PATH environment variable set");
+        Path tempDir = Files.createTempDirectory("dotenv_test");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, ("PATH=fromFile").getBytes());
+        DotenvBuilder builder = new DotenvBuilder().directory(tempDir.toString()).filename(".env");
+        Dotenv dotenv = builder.load();
+        // When
+        String result = dotenv.get(key);
+        // Then: result must be the real environment value, not the file value
+        assertEquals(sysValue, result, "Expected get() to return system env value over file value");
+        // Clean up
+        Files.delete(envFile);
+        Files.delete(tempDir);
+    }
+
+    @Test
+    @DisplayName("get(key, defaultValue) returns defaultValue when neither system nor file entry exists")
+    public void test_TC09() throws IOException {
+        // Given ignoreIfMissing so missing .env yields empty entries, and no env var Z in system
+        String key = "Z_" + System.currentTimeMillis(); // ensure highly unlikely existing env var
+        String defaultVal = "def";
+        Path tempDir = Files.createTempDirectory("dotenv_test");
+        // no .env file created in dir
+        DotenvBuilder builder = new DotenvBuilder()
+                                    .ignoreIfMissing()
+                                    .directory(tempDir.toString())
+                                    .filename(".env");
+        Dotenv dotenv = builder.load();
+        // When
+        String result = dotenv.get(key, defaultVal);
+        // Then: since neither system nor file has key, defaultValue should be returned
+        assertEquals(defaultVal, result, "Expected default value when key is absent in both system and file");
+        // Clean up
+        Files.delete(tempDir);
+    }
+}

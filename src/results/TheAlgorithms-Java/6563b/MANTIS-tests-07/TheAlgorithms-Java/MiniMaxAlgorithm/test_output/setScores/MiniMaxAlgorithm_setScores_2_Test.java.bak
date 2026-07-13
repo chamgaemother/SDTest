@@ -1,0 +1,64 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+public class MiniMaxAlgorithm_setScores_Test {
+
+    @Test
+    @DisplayName("TC01: setScores with a valid power-of-two length array should update scores and height")
+    public void test_TC01() {
+        // Arrange: create instance and known initial scores
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        int[] newScores = {5, 10, 15, 20}; // length 4 is 2^2, valid power of two
+        
+        // Act: set new scores
+        algo.setScores(newScores);
+        
+        // Assert: the scores field should be updated to newScores and height = log2(4) = 2
+        assertArrayEquals(newScores, algo.getScores(),
+            "Expected scores to be updated to the provided array of length 4");
+        assertEquals(2, algo.getHeight(),
+            "Expected height to be log2 of 4, which is 2");
+    }
+
+    @Test
+    @DisplayName("TC02: setScores with a non-power-of-two length array should not change state and print error message")
+    public void test_TC02() {
+        // Arrange: create instance with known initial scores and height
+        int[] initialScores = {1, 2, 3, 4, 5, 6, 7, 8}; // length 8 = 2^3
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        algo.setScores(initialScores);
+        int initialHeight = algo.getHeight();
+        
+        // Prepare invalid scores of length 3, not a power of two
+        int[] invalidScores = {9, 8, 7}; // length 3 is not power of two
+        
+        // Capture System.out
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        System.setOut(new PrintStream(outContent));
+        try {
+            // Act: attempt to set invalid scores
+            algo.setScores(invalidScores);
+        } finally {
+            // Restore stdout
+            System.setOut(originalOut);
+        }
+        
+        // Assert: scores and height remain unchanged
+        assertArrayEquals(initialScores, algo.getScores(),
+            "Expected scores to remain unchanged when provided array length is not a power of two");
+        assertEquals(initialHeight, algo.getHeight(),
+            "Expected height to remain unchanged when provided array length is invalid");
+        
+        // Assert: error message printed
+        String output = outContent.toString();
+        assertTrue(output.contains("The number of scores must be a power of 2."),
+            "Expected error message about power-of-two requirement to be printed");
+    }
+}

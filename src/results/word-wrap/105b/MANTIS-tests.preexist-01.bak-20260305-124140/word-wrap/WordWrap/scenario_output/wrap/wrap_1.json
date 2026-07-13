@@ -1,0 +1,156 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "wrap() ignores carriage return chars (ch=='\\r' branch)",
+      "path": "B0→B1(loop start)→B3(\\r)→B1(loop end)→B7(end-of-stream)",
+      "precondition": "none",
+      "expectedResult": "preserves other chars and newlines correctly without extra CR",
+      "tags": [
+        "positive",
+        "newline",
+        "branch-cr"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    CharSequence text = \"A\\r\\nB\";",
+        "  WHEN",
+        "    String result = WordWrap.from(text).wrap();",
+        "  THEN",
+        "    assert result.equals(\"A\\nB\");"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "wrap() treats punctuation as non-word when not in extraWordChars and breaks line accordingly",
+      "path": "B0→B1→B4(!isWordCharacter & !word empty)→B5(punctuation branch)→B6(writeLine)→B7",
+      "precondition": "none",
+      "expectedResult": "punctuation separated and split at punctuation boundary",
+      "tags": [
+        "positive",
+        "punctuation",
+        "branch-punct"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 punctuation-boundary-split",
+        "  GIVEN",
+        "    String text = \"hello,world\";",
+        "    WordWrap.Builder b = WordWrap.from(text).maxWidth(6);",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    // comma should be treated as break point",
+        "    assert out.equals(\"hello,\\nworld\");"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "wrap() breaks a too-long word without hyphens when insertHyphens=false and word length <=2 fallback prefix branch",
+      "path": "B0→B1→B2(broken=false & tooLong→line empty)→B3(breakWords true)→B4(!insertHyphens prefix branch)→B7",
+      "precondition": "none",
+      "expectedResult": "word broken across lines without hyphens using single-char prefix",
+      "tags": [
+        "positive",
+        "broken-word",
+        "branch-writeBrokenWord"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 broken-word-no-hyphen-small",
+        "  GIVEN",
+        "    String text = \"XYZ\";",
+        "    WordWrap.Builder b = WordWrap.from(text).maxWidth(2).breakWords(true).insertHyphens(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    // prefix 'XY'-> 'X' then newline, then rest 'YZ'",
+        "    assert result.equals(\"X\\nYZ\");"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap(LineConsumer) propagates IOException as IORuntimeException",
+      "path": "B0→B1→B2(invoke wordWrap)→B3(catch IOException)→B4(throw IORuntimeException)",
+      "precondition": "LineConsumer.write throws IOException",
+      "expectedResult": "wrap(LineConsumer) throws IORuntimeException wrapping the IOException",
+      "tags": [
+        "exception",
+        "ioerror",
+        "branch-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 wrap-lineconsumer-ioexception",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"abc\");",
+        "    LineConsumer bad = new LineConsumer() {",
+        "      write(char[] c,int o,int l)throws IOException{throw new IOException(\"fail\");}",
+        "      writeNewLine()throws IOException{}",
+        "    };",
+        "    WordWrap.Builder b = WordWrap.from(r, true);",
+        "  WHEN",
+        "    call b.wrap(bad);",
+        "  THEN",
+        "    throws IORuntimeException with cause IOException"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "wrap() respects includeExtraWordChars and does not split on included char",
+      "path": "B0→B1→B2(isWordCharacter via extraWordChars include)→B6(end-of-stream)",
+      "precondition": "none",
+      "expectedResult": "dot included as word char so no wrap at dot despite width restriction",
+      "tags": [
+        "positive",
+        "extraWordChars",
+        "branch-include"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 include-extra-word-char",
+        "  GIVEN",
+        "    String text = \"a.b c\";",
+        "    WordWrap.Builder b = WordWrap.from(text).maxWidth(1).includeExtraWordChars(\".\");",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    // 'a.b' remains unsplit",
+        "    assert lines.equals(Arrays.asList(\"a.b\",\"c\"));"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "wrapUtf8(String) writes to file and reads back correctly (wrapUtf8(String) overload)",
+      "path": "B0→B1→B_wrapUtf8(filename)→B_wrap(File)→B_wrap(File,Charset)→B_write→B7",
+      "precondition": "temp directory exists",
+      "expectedResult": "writes wrapped text to UTF-8 file and file contains expected lines",
+      "tags": [
+        "positive",
+        "file",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 wrapUtf8-filename-overload",
+        "  GIVEN",
+        "    File temp = Files.createTempFile(\"tw\",\"\").toFile(); temp.deleteOnExit();",
+        "    WordWrap.Builder b = WordWrap.from(\"hello world\").maxWidth(5);",
+        "  WHEN",
+        "    b.wrapUtf8(temp.getAbsolutePath());",
+        "    byte[] data = Files.readAllBytes(Paths.get(temp.getAbsolutePath()));",
+        "    String content = new String(data, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    assert content.equals(\"hello\\nworld\");"
+      ]
+    }
+  ]
+}

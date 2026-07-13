@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "load() with a valid .env file and systemProperties=false returns DotenvImpl without setting any System properties",
+      "path": "B0→B2",
+      "precondition": "A file named .env exists in working directory containing two entries A=1 and B=2; no relevant system properties set",
+      "expectedResult": "Dotenv.entries(filter) yields two entries; System.getProperty(\"A\") and System.getProperty(\"B\") remain null",
+      "tags": [
+        "positive",
+        "branch-systemProperties-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 load with file and no systemProperties",
+        "  GIVEN",
+        "    // Arrange: write .env with two lines",
+        "    Files.write(Paths.get(\".env\"), Arrays.asList(\"A=1\",\"B=2\"));",
+        "    System.clearProperty(\"A\");",
+        "    System.clearProperty(\"B\");",
+        "    DotenvBuilder builder = Dotenv.configure();  // systemProperties=false",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assertEquals(2, dotenv.entries(entry -> true).size());",
+        "    assertNull(System.getProperty(\"A\"));",
+        "    assertNull(System.getProperty(\"B\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "load() with missing .env file and ignoreIfMissing() returns empty Dotenv without exception",
+      "path": "B0→B2",
+      "precondition": "No .env file present; throwIfMissing=false via ignoreIfMissing()",
+      "expectedResult": "Dotenv.entries(filter) yields empty set; no exception thrown",
+      "tags": [
+        "positive",
+        "branch-exception-path",
+        "ignoreIfMissing"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 load missing file with ignoreIfMissing",
+        "  GIVEN",
+        "    Files.deleteIfExists(Paths.get(\".env\"));",
+        "    DotenvBuilder builder = Dotenv.configure().ignoreIfMissing();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    assertTrue(dotenv.entries(e -> true).isEmpty());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "load() with a malformed .env entry and ignoreIfMalformed() returns DotenvImpl containing only well-formed entries",
+      "path": "B0→B2",
+      "precondition": "A file named .env exists containing malformed line \"BADLINE\" and valid line \"KEY=VAL\"; throwIfMalformed=false",
+      "expectedResult": "Dotenv.entries(filter) yields one entry KEY=VAL; no exception thrown",
+      "tags": [
+        "positive",
+        "branch-exception-path",
+        "ignoreIfMalformed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 load with malformed file and ignoreIfMalformed",
+        "  GIVEN",
+        "    Files.write(Paths.get(\".env\"), Arrays.asList(\"BADLINE\",\"KEY=VAL\"));",
+        "    DotenvBuilder builder = Dotenv.configure().ignoreIfMalformed();",
+        "  WHEN",
+        "    Dotenv dotenv = builder.load();",
+        "  THEN",
+        "    Set<DotenvEntry> entries = dotenv.entries(e -> true);",
+        "    assertEquals(1, entries.size());",
+        "    assertTrue(entries.stream().anyMatch(e -> e.getKey().equals(\"KEY\") && e.getValue().equals(\"VAL\")));",
+        "END"
+      ]
+    }
+  ]
+}

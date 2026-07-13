@@ -1,0 +1,232 @@
+{
+  "method": "parseFragmentInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseFragmentInput(String,Element,baseUri) with non-null context and simple two-element fragment returns list of two nodes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"http://example.com\").body();",
+      "expectedResult": "returned list size is 2 and contains one Element of tag \"div\" and one Element of tag \"p\"",
+      "tags": [
+        "branch-true",
+        "overload:String,Element,String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseFragmentInput string overload two nodes",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"http://example.com\").body(); String fragment = \"<div></div><p></p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 2; assert ((Element)nodes.get(0)).tagName().equals(\"div\"); assert ((Element)nodes.get(1)).tagName().equals(\"p\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseFragmentInput(String,Element,baseUri) with null context and empty fragment returns empty list",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); context = null;",
+      "expectedResult": "returned list is empty",
+      "tags": [
+        "branch-false",
+        "overload:String,Element,String",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseFragmentInput string overload empty fragment null context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = null; String fragment = \"\"; String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with non-null context and single text fragment returns one TextNode",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body();",
+      "expectedResult": "returned list size is 1 and node is a TextNode with text \"hello\"",
+      "tags": [
+        "branch-true",
+        "overload:Reader,Element,String",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parseFragmentInput reader overload single text node",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body(); Reader reader = new StringReader(\"hello\"); String baseUri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1; assert nodes.get(0).toString().equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with null context and multi-element fragment returns list of three nodes",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); context = null;",
+      "expectedResult": "returned list size is 3 and tags sequence is [\"span\",\"b\",\"i\"]",
+      "tags": [
+        "branch-false",
+        "overload:Reader,Element,String",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseFragmentInput reader overload three elements null context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = null; Reader reader = new StringReader(\"<span></span><b></b><i></i>\"); String baseUri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 3; assert ((Element)nodes.get(0)).tagName().equals(\"span\"); assert ((Element)nodes.get(1)).tagName().equals(\"b\"); assert ((Element)nodes.get(2)).tagName().equals(\"i\");"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseFragmentInput(String,Element,baseUri) with null fragment string throws NullPointerException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"http://x\").body();",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "exception",
+        "overload:String,Element,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 parseFragmentInput string overload null fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"http://x\").body(); String fragment = null; String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "parseFragmentInput(String,Element,baseUri) with null baseUri throws NullPointerException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body();",
+      "expectedResult": "throws NullPointerException; no state mutated",
+      "tags": [
+        "exception",
+        "overload:String,Element,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O1 parseFragmentInput string overload null baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body(); String fragment = \"<a></a>\"; String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with Reader that throws IOException results in UncheckedIOException",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body(); Reader reader = new Reader(){public int read(char[] cbuf,int off,int len){throw new java.io.IOException(\"fail\");}public void close(){}};",
+      "expectedResult": "throws UncheckedIOException; lock is released",
+      "tags": [
+        "exception",
+        "overload:Reader,Element,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 parseFragmentInput reader overload io error",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body(); Reader reader = faultyReader; String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC08_O2",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with null context reference returns list with single element under no context",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"<u></u>\"); Element context = null;",
+      "expectedResult": "returned list size is 1 and element tag is \"u\"",
+      "tags": [
+        "branch-false",
+        "overload:Reader,Element,String",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08_O2 parseFragmentInput reader overload null context single node",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"<u></u>\"); Element context = null; String baseUri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1; assert ((Element)nodes.get(0)).tagName().equals(\"u\");"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parseFragmentInput(String,Element,baseUri) with multi-nested tags returns correct nested structure",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body();",
+      "expectedResult": "returned list size is 1 and root element is \"ul\" containing two \"li\" children",
+      "tags": [
+        "branch-true",
+        "overload:String,Element,String",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09_O1 parseFragmentInput string overload nested list",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Element context = new Document(\"u\").body(); String fragment = \"<ul><li>1</li><li>2</li></ul>\"; String baseUri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1; Element ul = (Element)nodes.get(0); assert ul.tagName().equals(\"ul\"); assert ul.children().size() == 2;"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "parseFragmentInput(Reader,Element,baseUri) with whitespace-only fragment returns a TextNode with whitespace",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"   \\n  \"); Element context = new Document(\"u\").body();",
+      "expectedResult": "returned list size is 1 and TextNode text equals \"   \\n  \"",
+      "tags": [
+        "branch-true",
+        "overload:Reader,Element,String",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10_O2 parseFragmentInput reader overload whitespace fragment",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"   \\n  \"); Element context = new Document(\"u\").body(); String baseUri = \"u\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1; assert nodes.get(0).toString().equals(\"   \\n  \");"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parse accepts version with only pre-release metadata (branch B0→B2→B3→B4→B5)",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getPreRelease()=[\"alpha\"] and getBuild()=[]",
+      "tags": [
+        "positive",
+        "metadata",
+        "pre-release"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse-only prerelease",
+        "  GIVEN",
+        "    String version = \"1.2.3-alpha\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"1.2.3-alpha\");",
+        "    assert result.getPreRelease().equals(Arrays.asList(\"alpha\"));",
+        "    assert result.getBuild().isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parse accepts version with only build metadata (branch B0→B2→B3→B4→B5)",
+      "path": "B0→B2→B3→B4→B5",
+      "precondition": "none",
+      "expectedResult": "non-null Semver with getPreRelease()=[] and getBuild()=[\"build\",\"123\"]",
+      "tags": [
+        "positive",
+        "metadata",
+        "build"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse-only build",
+        "  GIVEN",
+        "    String version = \"1.2.3+build.123\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"1.2.3+build.123\");",
+        "    assert result.getPreRelease().isEmpty();",
+        "    assert result.getBuild().equals(Arrays.asList(\"build\",\"123\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parse returns null for a string that is only whitespace trimmed to empty (branch B0→B2→B6)",
+      "path": "B0→B2→B6",
+      "precondition": "none",
+      "expectedResult": "null return due to StrictParser exception on empty string",
+      "tags": [
+        "negative",
+        "exception",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parse-blank-string yields null",
+        "  GIVEN",
+        "    String version = \"   \";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;",
+        "END"
+      ]
+    }
+  ]
+}

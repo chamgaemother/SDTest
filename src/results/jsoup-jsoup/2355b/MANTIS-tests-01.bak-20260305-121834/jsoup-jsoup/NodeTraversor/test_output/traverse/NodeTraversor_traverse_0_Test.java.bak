@@ -1,0 +1,163 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.util.ArrayList;
+import java.util.List;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class NodeTraversor_traverse_Test {
+
+    @Test
+    @DisplayName("TC01_O1: visitor null triggers IllegalArgumentException at entry (r0 == null)")
+    public void test_TC01_O1() {
+        // Design: passing null visitor should hit Validate.notNull(visitor) and throw IllegalArgumentException
+        NodeVisitor visitor = null;
+        Element root = new Element("div");
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, (Node) root));
+    }
+
+    @Test
+    @DisplayName("TC02_O1: root null triggers IllegalArgumentException at entry (r1 == null)")
+    public void test_TC02_O1() {
+        // Design: passing null root should hit Validate.notNull(root) and throw IllegalArgumentException
+        NodeVisitor visitor = (n, d) -> {};
+        Node root = null;
+        assertThrows(IllegalArgumentException.class, () -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("TC03_O1: single node with no children calls head and tail once (childNodeSize<=0, depth 0)")
+    public void test_TC03_O1() {
+        // Design: single leaf node, no children -> one head and one tail at depth 0
+        Element root = new Element("div");
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { calls.add("head:" + depth); }
+            @Override public void tail(Node node, int depth) { calls.add("tail:" + depth); }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of("head:0", "tail:0"), calls);
+    }
+
+    @Test
+    @DisplayName("TC04_O1: two-level tree descends and ascends properly (one child, depth increments to 1)")
+    public void test_TC04_O1() {
+        // Design: root->child, childNodeSize>0 once, depth increments to 1 and decrements correctly
+        Element root = new Element("div");
+        Element child = new Element("p");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { calls.add("head:" + depth); }
+            @Override public void tail(Node node, int depth) { calls.add("tail:" + depth); }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of("head:0", "head:1", "tail:1", "tail:0"), calls);
+    }
+
+    @Test
+    @DisplayName("TC05_O1: sibling replacement inside head triggers replace branch (origSize==new size)")
+    public void test_TC05_O1() {
+        // Design: visitor.head replaces root with new Element("x"), origSize==new size -> replace branch
+        Element root = new Element("div");
+        Element a = new Element("a");
+        root.appendChild(a);
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) {
+                // replacing the node in its parent; root has no parent so replace root reference
+                if (node instanceof Element) {
+                    Element el = (Element) node;
+                    el.replaceWith(new Element("x"));
+                }
+            }
+            @Override public void tail(Node node, int depth) { }
+        };
+        NodeTraversor.traverse(visitor, root);
+        // After replacement, original 'root' variable still refers to old node, but its tagName becomes "x"
+        assertEquals("x", root.tagName());
+    }
+
+    @Test
+    @DisplayName("TC06_O1: removal in head triggers removal branch (origSize!=new size)")
+    public void test_TC06_O1() {
+        // Design: visitor.head removes the node, origSize!=new size -> removal branch, tail skipped
+        Element root = new Element("div");
+        Element a = new Element("a");
+        root.appendChild(a);
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) {
+                node.remove();
+            }
+            @Override public void tail(Node node, int depth) { }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(0, root.childNodeSize());
+    }
+
+    @Test
+    @DisplayName("TC07_O2: elements empty list yields zero iterations (hasNext false)")
+    public void test_TC07_O2() {
+        // Design: empty Elements, for-loop never enters, no exception
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { fail("head should not be called"); }
+            @Override public void tail(Node node, int depth) { fail("tail should not be called"); }
+        };
+        Elements els = new Elements();
+        NodeTraversor.traverse(visitor, els);
+        // If we reach here, no heads or tails were called
+        assertTrue(true);
+    }
+
+    @Test
+    @DisplayName("TC08_O2: elements with multiple entries invokes traverse per element until exhaustion")
+    public void test_TC08_O2() {
+        // Design: Elements contains two roots, each is a leaf -> head and tail per element
+        Element a = new Element("a");
+        Element b = new Element("b");
+        Elements els = new Elements(a, b);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { calls.add(node.nodeName() + ":head:" + depth); }
+            @Override public void tail(Node node, int depth) { calls.add(node.nodeName() + ":tail:" + depth); }
+        };
+        NodeTraversor.traverse(visitor, els);
+        assertEquals(
+            List.of("a:head:0", "a:tail:0", "b:head:0", "b:tail:0"),
+            calls
+        );
+    }
+
+    @Test
+    @DisplayName("TC09_O1: assertion disabled path avoids AssertionError when z0 true ($assertionsDisabled=true)")
+    public void test_TC09_O1() {
+        // Design: simulate assertions disabled path, leaf node only, should not throw AssertionError
+        Element root = new Element("span");
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { }
+            @Override public void tail(Node node, int depth) { }
+        };
+        // Assuming JVM assertions disabled, traversal should complete without AssertionError
+        assertDoesNotThrow(() -> NodeTraversor.traverse(visitor, root));
+    }
+
+    @Test
+    @DisplayName("TC10_O1: root=leaf triggers immediate return after tail (node==root branch in B20)")
+    public void test_TC10_O1() {
+        // Design: single leaf node, after tail at depth 0, node==root triggers break and return
+        Element leaf = new Element("span");
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override public void head(Node node, int depth) { calls.add("head:" + depth); }
+            @Override public void tail(Node node, int depth) { calls.add("tail:" + depth); }
+        };
+        NodeTraversor.traverse(visitor, leaf);
+        assertEquals(List.of("head:0", "tail:0"), calls);
+    }
+}

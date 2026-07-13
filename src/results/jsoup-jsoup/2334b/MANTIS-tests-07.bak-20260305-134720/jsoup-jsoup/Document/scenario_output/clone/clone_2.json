@@ -1,0 +1,67 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "clone() copies a Document with xml output syntax and escapeMode set to xhtml and isolates subsequent changes",
+      "path": "B0→B1→B2",
+      "precondition": "orig.outputSettings().syntax(xml).escapeMode(extended)",
+      "expectedResult": "clone().outputSettings().syntax() == xml, escapeMode == xhtml, and mutations on orig.settings do not affect clone",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "outputSettings",
+        "xml-syntax"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07 clone xml-syntax outputSettings deep copy",
+        "  GIVEN",
+        "    Document orig = new Document(\"http://example.com\");",
+        "    orig.outputSettings().syntax(Document.OutputSettings.Syntax.xml).escapeMode(Entities.EscapeMode.extended).prettyPrint(false);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.outputSettings().syntax() == Document.OutputSettings.Syntax.xml;",
+        "    assert copy.outputSettings().escapeMode() == Entities.EscapeMode.xhtml;",
+        "    assert copy.outputSettings().prettyPrint() == false;",
+        "    // mutate original settings",
+        "    orig.outputSettings().syntax(Document.OutputSettings.Syntax.html).prettyPrint(true);",
+        "    assert copy.outputSettings().syntax() == Document.OutputSettings.Syntax.xml;",
+        "    assert copy.outputSettings().prettyPrint() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "clone() copies a Document with customized indentAmount and maxPaddingWidth and preserves them independently",
+      "path": "B0→B1→B2",
+      "precondition": "orig.outputSettings().indentAmount(5).maxPaddingWidth(100)",
+      "expectedResult": "clone().outputSettings().indentAmount() == 5 and maxPaddingWidth() == 100, and changes on orig do not affect clone",
+      "tags": [
+        "positive",
+        "deep-copy",
+        "outputSettings",
+        "bounds"
+      ],
+      "priority": "P2",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 clone custom indent and padding copy",
+        "  GIVEN",
+        "    Document orig = Document.createShell(\"base\");",
+        "    orig.outputSettings().indentAmount(5).maxPaddingWidth(100);",
+        "  WHEN",
+        "    Document copy = orig.clone();",
+        "  THEN",
+        "    assert copy.outputSettings().indentAmount() == 5;",
+        "    assert copy.outputSettings().maxPaddingWidth() == 100;",
+        "    // mutate original settings beyond bounds",
+        "    orig.outputSettings().indentAmount(0).maxPaddingWidth(-1);",
+        "    assert copy.outputSettings().indentAmount() == 5;",
+        "    assert copy.outputSettings().maxPaddingWidth() == 100;",
+        "END"
+      ]
+    }
+  ]
+}

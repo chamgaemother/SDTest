@@ -1,0 +1,89 @@
+{
+  "method": "setScores",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "setScores accepts a valid power-of-2 length (4) and updates scores and height",
+      "path": "B0→B1→B3",
+      "precondition": "MiniMaxAlgorithm instance with initial scores and height known via constructor",
+      "expectedResult": "getScores() returns the newly set array [10,20,30,40] and getHeight() returns 2",
+      "tags": [
+        "branch-false",
+        "valid-length",
+        "power-of-2",
+        "boundary-length-4"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 setScores valid-power-of-2",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] newScores = new int[]{10,20,30,40};",
+        "  WHEN",
+        "    alg.setScores(newScores);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{10,20,30,40}, alg.getScores());",
+        "    assertEquals(2, alg.getHeight());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "setScores rejects a non-power-of-2 length (3) and preserves existing scores and height",
+      "path": "B0→B2→B3",
+      "precondition": "MiniMaxAlgorithm instance with initial copy of scores and height; capturing System.out for error message",
+      "expectedResult": "getScores() remains unchanged; getHeight() remains unchanged; System.out contains \"The number of scores must be a power of 2.\"",
+      "tags": [
+        "branch-true",
+        "invalid-length",
+        "non-power-of-2"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 setScores invalid-non-power-of-2",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] original = alg.getScores().clone();",
+        "    int originalHeight = alg.getHeight();",
+        "    int[] badScores = new int[]{1,2,3};",
+        "    captureSystemOut();",
+        "  WHEN",
+        "    alg.setScores(badScores);",
+        "  THEN",
+        "    assertArrayEquals(original, alg.getScores());",
+        "    assertEquals(originalHeight, alg.getHeight());",
+        "    assertOutContains(\"The number of scores must be a power of 2.\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "setScores accepts the minimal power-of-2 length (1) and updates scores and height to zero",
+      "path": "B0→B1→B3",
+      "precondition": "MiniMaxAlgorithm instance with initial scores and height",
+      "expectedResult": "getScores() returns [99]; getHeight() returns 0",
+      "tags": [
+        "branch-false",
+        "valid-length",
+        "power-of-2",
+        "boundary-length-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 setScores minimal-power-of-2",
+        "  GIVEN",
+        "    MiniMaxAlgorithm alg = new MiniMaxAlgorithm();",
+        "    int[] single = new int[]{99};",
+        "  WHEN",
+        "    alg.setScores(single);",
+        "  THEN",
+        "    assertArrayEquals(new int[]{99}, alg.getScores());",
+        "    assertEquals(0, alg.getHeight());",
+        "END"
+      ]
+    }
+  ]
+}

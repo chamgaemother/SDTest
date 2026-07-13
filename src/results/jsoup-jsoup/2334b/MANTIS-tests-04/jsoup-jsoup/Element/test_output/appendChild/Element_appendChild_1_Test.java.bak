@@ -1,0 +1,62 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("appendChild(Element) on empty parent creates NodeList and projects proper siblingIndex and parent")
+    public void test_TC05() throws Exception {
+        // GIVEN: a parent with no child nodes and a standalone child
+        Element parent = new Element("section");
+        Element child = new Element("div");
+        // WHEN: appendChild is invoked on an empty parent
+        Element result = parent.appendChild(child);
+        // THEN: the returned value should be the parent itself
+        assertSame(parent, result, "appendChild should return the parent instance");
+        // THEN: the child's parent should be set to the parent
+        assertSame(parent, child.parent(), "Child.parent() should reference the parent");
+        // THEN: parent should report exactly one child node
+        assertEquals(1, parent.childNodeSize(), "Parent.childNodeSize() should be 1 after append");
+        // THEN: the child's private siblingIndex field should be 0
+        Field siblingIndexField = Node.class.getDeclaredField("siblingIndex");
+        siblingIndexField.setAccessible(true);
+        int idx = siblingIndexField.getInt(child);
+        assertEquals(0, idx, "Child's siblingIndex should be 0 when first appended"); 
+        // (Path B0→B2→B3→B5: empty list -> ensureChildNodes() -> add -> setSiblingIndex)
+    }
+
+    @Test
+    @DisplayName("appendChild(moving Element) invalidates shadowChildrenRef cache and updates both source and target lists")
+    public void test_TC06() {
+        // GIVEN: parent1 with two element children and its shadowChildrenRef populated
+        Element parent1 = new Element("ul");
+        Element e1 = parent1.appendElement("li");
+        Element e2 = parent1.appendElement("li");
+        // populate the shadowChildrenRef cache by calling children()
+        int before = parent1.children().size();
+        assertEquals(2, before, "Precondition: parent1 should have 2 children before move");
+        // GIVEN: a second parent
+        Element parent2 = new Element("ol");
+        // WHEN: move e1 from parent1 to parent2
+        parent2.appendChild(e1);
+        // THEN: e1 should have been removed from parent1
+        assertEquals(before - 1, parent1.children().size(),
+            "After move, parent1 should have one fewer child");
+        assertFalse(parent1.children().contains(e1),
+            "parent1.children() should not contain the moved element");
+        // THEN: parent2 should have its children list updated to include e1
+        assertEquals(3, parent2.children().size(),
+            "parent2 should have received the moved child and reflect correct children count"); 
+        // THEN: e1.parent() should now reference parent2
+        assertSame(parent2, e1.parent(),
+            "After moving, child's parent() should reference the new parent"); 
+        // (Path B0→B2→B3→B5→B6: existing childNodes -> ensureChildNodes -> add -> nodelistChanged invalidates cache)
+    }
+}

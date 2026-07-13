@@ -1,0 +1,191 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseInput_Test {
+
+    /**
+     * A stub TreeBuilder that returns a sentinel Document or throws exceptions as configured.
+     */
+    private static class FakeTreeBuilder extends TreeBuilder {
+        private final Document toReturn;
+        private final RuntimeException toThrow;
+
+        FakeTreeBuilder(Document toReturn) {
+            this.toReturn = toReturn;
+            this.toThrow = null;
+        }
+
+        FakeTreeBuilder(RuntimeException toThrow) {
+            this.toReturn = null;
+            this.toThrow = toThrow;
+        }
+
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            if (toThrow != null) {
+                throw toThrow;
+            }
+            return toReturn;
+        }
+
+        // Unused in these tests
+        @Override public TreeBuilder newInstance() { return new FakeTreeBuilder(toReturn != null ? toReturn : toThrow); }
+        @Override public org.jsoup.parser.ParseSettings defaultSettings() { return org.jsoup.parser.ParseSettings.htmlDefault; }
+        @Override public java.util.List<org.jsoup.nodes.Node> parseFragment(Reader input, org.jsoup.nodes.Element context, String baseUri, Parser parser) {
+            throw new UnsupportedOperationException();
+        }
+        @Override public boolean isContentForTagData(String normalName) { return false; }
+        @Override public String defaultNamespace() { return ""; }
+        @Override public void initialiseParse(Reader input, String baseUri, Parser parser) { /* no-op */ }
+    }
+
+    @Test
+    @DisplayName("TC01_O1: parseInput(String, String) with non-empty HTML and non-null baseUri invokes treeBuilder.parse and returns Document")
+    public void test_TC01_O1() {
+        // non-empty HTML => path B1→B2→B3, use stub returning sentinel
+        Document sentinel = new Document("http://example.com");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        String html = "<p>text</p>";
+        String baseUri = "http://example.com";
+
+        Document result = parser.parseInput(html, baseUri);
+
+        assertEquals(sentinel, result, "Expected the sentinel Document from FakeTreeBuilder.parse");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: parseInput(String, String) with empty HTML string and non-null baseUri returns Document")
+    public void test_TC02_O1() {
+        // empty HTML still goes B1→B2→B3 (no special logic on content length)
+        Document sentinel = new Document("http://example.com");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        String html = "";
+        String baseUri = "http://example.com";
+
+        Document result = parser.parseInput(html, baseUri);
+
+        assertEquals(sentinel, result, "Expected the sentinel Document even for empty HTML input");
+    }
+
+    @Test
+    @DisplayName("TC03_O1: parseInput(String, String) with null html throws NullPointerException")
+    public void test_TC03_O1() {
+        // null html -> immediate NullPointerException before delegate
+        Parser parser = new Parser(new FakeTreeBuilder(new Document("u")));
+        String html = null;
+        String baseUri = "http://example.com";
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri),
+                "Expected NullPointerException when html is null");
+    }
+
+    @Test
+    @DisplayName("TC04_O1: parseInput(String, String) with null baseUri throws NullPointerException")
+    public void test_TC04_O1() {
+        // html non-null, baseUri null => constructing StringReader fine, but parse receives null baseUri => expect NPE
+        Document sentinel = new Document("dummy");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        String html = "<div/>";
+        String baseUri = null;
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(html, baseUri),
+                "Expected NullPointerException when baseUri is null");
+    }
+
+    @Test
+    @DisplayName("TC05_O2: parseInput(Reader, String) with Reader containing non-empty content and non-null baseUri returns Document")
+    public void test_TC05_O2() {
+        // Reader non-empty => path B1→B2→B3
+        Document sentinel = new Document("http://x");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<span>hi</span>");
+        String baseUri = "http://x";
+
+        Document result = parser.parseInput(reader, baseUri);
+
+        assertEquals(sentinel, result, "Expected the sentinel Document for non-empty Reader input");
+    }
+
+    @Test
+    @DisplayName("TC06_O2: parseInput(Reader, String) with Reader containing empty content returns Document")
+    public void test_TC06_O2() {
+        // empty Reader content still goes to parse -> B1→B2→B3
+        Document sentinel = new Document("base");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("");
+        String baseUri = "base";
+
+        Document result = parser.parseInput(reader, baseUri);
+
+        assertEquals(sentinel, result, "Expected the sentinel Document even for empty Reader input");
+    }
+
+    @Test
+    @DisplayName("TC07_O2: parseInput(Reader, String) with null Reader throws NullPointerException")
+    public void test_TC07_O2() {
+        // null reader -> immediate NPE
+        Parser parser = new Parser(new FakeTreeBuilder(new Document("u")));
+        Reader reader = null;
+        String baseUri = "uri";
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri),
+                "Expected NullPointerException when reader is null");
+    }
+
+    @Test
+    @DisplayName("TC08_O2: parseInput(Reader, String) with null baseUri throws NullPointerException")
+    public void test_TC08_O2() {
+        // reader non-null, baseUri null -> delegate receives null -> expect NPE
+        Document sentinel = new Document("dummy");
+        FakeTreeBuilder stub = new FakeTreeBuilder(sentinel);
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("x");
+        String baseUri = null;
+
+        assertThrows(NullPointerException.class, () -> parser.parseInput(reader, baseUri),
+                "Expected NullPointerException when baseUri is null for Reader overload");
+    }
+
+    @Test
+    @DisplayName("TC09_O1: parseInput(String, String) propagates exception thrown by treeBuilder.parse")
+    public void test_TC09_O1() {
+        // treeBuilder.parse throws IllegalStateException -> path B1→B2
+        FakeTreeBuilder stub = new FakeTreeBuilder(new IllegalStateException("parse failed"));
+        Parser parser = new Parser(stub);
+        String html = "<a>";
+        String baseUri = "u";
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+                () -> parser.parseInput(html, baseUri),
+                "Expected IllegalStateException propagated from treeBuilder.parse");
+        assertEquals("parse failed", ex.getMessage());
+    }
+
+    @Test
+    @DisplayName("TC10_O2: parseInput(Reader, String) propagates exception thrown by treeBuilder.parse")
+    public void test_TC10_O2() {
+        // treeBuilder.parse throws IllegalArgumentException -> path B1→B2
+        FakeTreeBuilder stub = new FakeTreeBuilder(new IllegalArgumentException("err"));
+        Parser parser = new Parser(stub);
+        Reader reader = new StringReader("<b>");
+        String baseUri = "u";
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                () -> parser.parseInput(reader, baseUri),
+                "Expected IllegalArgumentException propagated from treeBuilder.parse");
+        assertEquals("err", ex.getMessage());
+    }
+}

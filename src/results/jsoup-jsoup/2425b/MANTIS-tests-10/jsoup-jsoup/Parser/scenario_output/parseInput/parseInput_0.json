@@ -1,0 +1,74 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String html, String baseUri) returns a Document when given valid HTML string",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document represents parsed tree of HTML '<p>Test</p>' with baseUri 'http://example.com'",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput string-normal",
+        "  GIVEN",
+        "    String html = \"<p>Test</p>\"; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null; assert doc.body().select(\"p\").text().equals(\"Test\"); END"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "parseInput(Reader inputHtml, String baseUri) returns a Document when reader provides valid HTML",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "returned Document represents parsed tree of HTML '<div>Hello</div>' with baseUri 'base'",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput reader-normal",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<div>Hello</div>\"); String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc != null; assert doc.body().select(\"div\").text().equals(\"Hello\"); END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader inputHtml, String baseUri) throws UncheckedIOException when underlying Reader throws IOException on first read",
+      "path": "B0→B1→exception",
+      "precondition": "Reader stub that throws IOException on read (why mocking: to simulate I/O error)",
+      "expectedResult": "throws java.io.UncheckedIOException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput reader-io-error",
+        "  GIVEN",
+        "    Reader reader = new Reader(){ public int read(char[] cbuf,int off,int len)throws IOException{ throw new IOException(\"io\"); } public void close(){} }; String baseUri=\"u\";",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws java.io.UncheckedIOException; END"
+      ]
+    }
+  ]
+}

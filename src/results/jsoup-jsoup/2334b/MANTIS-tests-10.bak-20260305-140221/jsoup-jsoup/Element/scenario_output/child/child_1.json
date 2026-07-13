@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "child(index) rebuilds cached childElementsList after mutation via appendChild and returns new element",
+      "path": "B0→B3(loop×2)→B4(cache store)→B0(mutated)→B3(loop×3)→B5",
+      "precondition": "Element with two Element children, childElementsList cache built, then a third child appended",
+      "expectedResult": "child(2) returns the newly appended third element",
+      "tags": [
+        "positive",
+        "cache-invalidation",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 child rebuilds cache after appendChild",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element a = new Element(\"span\");",
+        "    Element b = new Element(\"span\");",
+        "    parent.appendChild(a);",
+        "    parent.appendChild(b);",
+        "    // first call builds shadowChildrenRef cache",
+        "    parent.child(1);",
+        "    // mutate: append a new child, triggers nodelistChanged",
+        "    Element c = new Element(\"span\");",
+        "    parent.appendChild(c);",
+        "  WHEN",
+        "    Element result = parent.child(2);",
+        "  THEN",
+        "    assert result == c;",
+        "END"
+      ]
+    }
+  ]
+}

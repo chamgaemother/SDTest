@@ -1,0 +1,101 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset returns empty map when element has no attributes (loop-0)",
+      "path": "B0→B1→B2(loop×0)→B3",
+      "precondition": "Element el = new Element(\"div\"); // no attributes set",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "loop-0",
+        "empty",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset returns single-entry map for one data- attribute (loop-1)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"data-user\",\"alice\");",
+      "expectedResult": "returned map contains exactly {\"user\"=\"alice\"}",
+      "tags": [
+        "loop-1",
+        "single-entry",
+        "branch-true"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset single data-attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"span\"); el.attr(\"data-user\",\"alice\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1 && ds.get(\"user\").equals(\"alice\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset ignores non-data attributes and returns only data entries (loop-N)",
+      "path": "B0→B1→B2(loop×3)→B3",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"class\",\"x\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\");",
+      "expectedResult": "returned map contains exactly {\"a\"=\"1\",\"b\"=\"2\"} and no key \"class\"",
+      "tags": [
+        "loop-N",
+        "multiple",
+        "filter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset filter non-data",
+        "  GIVEN",
+        "    Element el = new Element(\"p\"); el.attr(\"class\",\"x\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2 && ds.containsKey(\"a\") && ds.containsKey(\"b\") && !ds.containsKey(\"class\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset map is live view: modifying returned map updates element attributes",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "Element el = new Element(\"div\"); Map<String,String> ds0 = el.dataset(); // initial empty",
+      "expectedResult": "after put(\"k\",\"v\"), el.attr(\"data-k\",\"v\") and el.dataset().get(\"k\").equals(\"v\")",
+      "tags": [
+        "loop-1",
+        "live-view",
+        "side-effect"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset live-view",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); Map<String,String> ds = el.dataset();",
+        "  WHEN",
+        "    ds.put(\"k\",\"v\");",
+        "  THEN",
+        "    assert el.attr(\"data-k\",\"v\"); assert el.dataset().get(\"k\").equals(\"v\");",
+        "END"
+      ]
+    }
+  ]
+}

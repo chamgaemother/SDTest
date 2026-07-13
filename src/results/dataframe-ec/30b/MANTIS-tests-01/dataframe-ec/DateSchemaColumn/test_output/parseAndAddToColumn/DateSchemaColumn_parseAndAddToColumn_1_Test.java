@@ -1,0 +1,96 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
+
+public class DateSchemaColumn_parseAndAddToColumn_1_Test {
+
+    /**
+     * TC06: parseAndAddToColumn with null pattern in constructor uses default format and parses a valid date
+     * Path B0→B1(nullPattern)→B2→B4→B5: newPattern is null, parseAsLocalDate sees non-null, non-empty input
+     */
+    @Test
+    @DisplayName("parseAndAddToColumn with null pattern in constructor uses default format and parses a valid date")
+    public void test_TC06() {
+        // GIVEN: newPattern=null triggers default "uuuu-M-d"
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        DfColumn dfColumn = mock(DfColumn.class);
+        String aString = "2021-1-1"; // matches default pattern uuuu-M-d
+
+        // WHEN
+        col.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: Expect LocalDate.of(2021,1,1) added exactly once
+        verify(dfColumn, times(1)).addObject(LocalDate.of(2021, 1, 1));
+        verifyNoMoreInteractions(dfColumn);
+    }
+
+    /**
+     * TC07: parseAndAddToColumn with custom pattern dd/MM/uuuu parses matching date string
+     * Path B0→B1(customPattern)→B2→B4→B5: customPattern provided, parseAsLocalDate sees proper format
+     */
+    @Test
+    @DisplayName("parseAndAddToColumn with custom pattern dd/MM/uuuu parses matching date string")
+    public void test_TC07() {
+        // GIVEN: custom pattern "dd/MM/uuuu"
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "dd/MM/uuuu");
+        DfColumn dfColumn = mock(DfColumn.class);
+        String aString = "05/10/2022"; // day/month/year
+
+        // WHEN
+        col.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: Expect LocalDate.of(2022,10,5) added
+        verify(dfColumn, times(1)).addObject(LocalDate.of(2022, 10, 5));
+        verifyNoMoreInteractions(dfColumn);
+    }
+
+    /**
+     * TC08: parseAndAddToColumn throws DateTimeParseException for non-leap February 29
+     * Path B0→B2→B4→B6(exception): parsing "2019-2-29" strictly fails
+     */
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for non-leap February 29")
+    public void test_TC08() {
+        // GIVEN: strict resolver on pattern "uuuu-M-d"
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "uuuu-M-d");
+        DfColumn dfColumn = mock(DfColumn.class);
+        String aString = "2019-2-29"; // invalid non-leap day
+
+        // WHEN / THEN: expect exception and no addObject call
+        DateTimeParseException ex = assertThrows(DateTimeParseException.class,
+                () -> col.parseAndAddToColumn(aString, dfColumn));
+        // verify dfColumn.addObject never invoked
+        verify(dfColumn, never()).addObject(any());
+    }
+
+    /**
+     * TC09: parseAndAddToColumn with custom pattern and leading/trailing whitespace before parse
+     * Path B0→B1(customPattern)→B2→B3(trim)→B4→B5: input is trimmed before parsing
+     */
+    @Test
+    @DisplayName("parseAndAddToColumn with custom pattern and leading/trailing whitespace before parse")
+    public void test_TC09() {
+        // GIVEN: custom pattern "MM-dd-uuuu" and whitespace around date string
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "MM-dd-uuuu");
+        DfColumn dfColumn = mock(DfColumn.class);
+        String aString = " 07-04-2023 "; // whitespace to be trimmed
+
+        // WHEN
+        col.parseAndAddToColumn(aString, dfColumn);
+
+        // THEN: Expect LocalDate.of(2023,7,4) added after trim
+        verify(dfColumn, times(1)).addObject(LocalDate.of(2023, 7, 4));
+        verifyNoMoreInteractions(dfColumn);
+    }
+}

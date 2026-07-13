@@ -1,0 +1,79 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_outputSettings_0_Test {
+
+    @Test
+    @DisplayName("TC01: outputSettings() returns the default OutputSettings instance")
+    public void test_TC01() throws Exception {
+        // GIVEN a newly constructed Document with default settings
+        Document doc = new Document("http://example.com");
+        // WHEN retrieving the outputSettings via public method
+        OutputSettings settings = doc.outputSettings();
+        // THEN the returned instance is the same as the internal private field, and has default values
+        Field f = Document.class.getDeclaredField("outputSettings");
+        f.setAccessible(true);
+        Object internal = f.get(doc);
+        assertSame(internal, settings, "outputSettings() should return the internal field instance"); // identity check
+
+        // default charset UTF-8
+        assertEquals("UTF-8", settings.charset().name(), "Default charset should be UTF-8");
+        // default syntax html
+        assertEquals(OutputSettings.Syntax.html, settings.syntax(), "Default syntax should be html");
+        // default escapeMode base
+        assertEquals(Entities.EscapeMode.base, settings.escapeMode(), "Default escapeMode should be base");
+        // default prettyPrint true
+        assertTrue(settings.prettyPrint(), "Default prettyPrint should be true");
+        // default outline false
+        assertFalse(settings.outline(), "Default outline should be false");
+        // default indentAmount 1
+        assertEquals(1, settings.indentAmount(), "Default indentAmount should be 1");
+        // default maxPaddingWidth 30
+        assertEquals(30, settings.maxPaddingWidth(), "Default maxPaddingWidth should be 30");
+    }
+
+    @Test
+    @DisplayName("TC02: outputSettings() reflects a custom OutputSettings set via setter")
+    public void test_TC02() throws Exception {
+        // GIVEN a Document and a custom OutputSettings configured with non-default values
+        Document doc = new Document("http://example.com");
+        OutputSettings custom = new OutputSettings()
+                .syntax(OutputSettings.Syntax.xml)          // switch to xml syntax (sets escapeMode to xhtml)
+                .indentAmount(4)                            // non-zero indent
+                .maxPaddingWidth(-1)                        // unlimited padding
+                .prettyPrint(false)                         // disable pretty printing
+                .outline(true)                              // enable outline
+                .escapeMode(Entities.EscapeMode.extended)   // override escapeMode from xhtml to extended
+                .charset("ISO-8859-1");                     // custom charset by name
+
+        // WHEN setting this custom object into the Document
+        Document returnedDoc = doc.outputSettings(custom);
+        // THEN the setter returns the document instance for chaining
+        assertSame(doc, returnedDoc, "outputSettings(custom) should return the same Document for chaining");
+
+        // AND retrieving it reflects the same instance
+        OutputSettings result = doc.outputSettings();
+        assertSame(custom, result, "outputSettings() should return the same custom instance set earlier");
+
+        // AND the properties remain as configured
+        assertEquals(OutputSettings.Syntax.xml, result.syntax(),
+                "Syntax should remain xml as set");
+        // escapeMode should be 'extended' (overrode xml->xhtml default)
+        assertEquals(Entities.EscapeMode.extended, result.escapeMode(),
+                "EscapeMode should be extended as overridden");
+        assertEquals("ISO-8859-1", result.charset().name(),
+                "Charset should be ISO-8859-1 as set");
+        assertFalse(result.prettyPrint(), "prettyPrint should be false as set");
+        assertTrue(result.outline(), "outline should be true as set");
+        assertEquals(4, result.indentAmount(), "indentAmount should be 4 as set");
+        assertEquals(-1, result.maxPaddingWidth(), "maxPaddingWidth should be -1 as set");
+    }
+}

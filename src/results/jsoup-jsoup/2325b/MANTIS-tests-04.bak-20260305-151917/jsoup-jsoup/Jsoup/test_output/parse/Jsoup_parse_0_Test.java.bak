@@ -1,0 +1,169 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.Connection;
+import org.jsoup.helper.HttpConnection;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.Executors;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC01_O1: parse(html) returns Document with parsed body for simple HTML string")
+    public void test_TC01_O1() {
+        // simple HTML with non-empty body fragment triggers default parser with empty baseUri
+        String html = "<p>Hello</p>";
+        Document doc = Jsoup.parse(html);
+        assertEquals("<p>Hello</p>", doc.body().html());
+    }
+
+    @Test
+    @DisplayName("TC02_O2: parse(html, baseUri) returns Document resolving relative URLs when baseUri non-empty")
+    public void test_TC02_O2() {
+        // non-empty baseUri path branch: relative link should resolve against baseUri
+        String html = "<a href=\"page.html\">link</a>";
+        String baseUri = "http://example.com/";
+        Document doc = Jsoup.parse(html, baseUri);
+        String href = doc.select("a").first().attr("href");
+        assertEquals("http://example.com/page.html", href);
+    }
+
+    @Test
+    @DisplayName("TC03_O3: parse(html, parser) uses provided Parser to parse input once")
+    public void test_TC03_O3() {
+        // custom parser stub is invoked with empty baseUri
+        String html = "<div>x</div>";
+        final StringBuilder record = new StringBuilder();
+        Parser custom = new Parser() {
+            @Override
+            public Document parseInput(String in, String uri) {
+                record.append(in).append("||").append(uri);
+                return new Document(uri);
+            }
+        };
+        Document doc = Jsoup.parse(html, custom);
+        assertAll(
+            () -> assertEquals("<div>x</div>||", record.toString()),
+            () -> assertEquals("", doc.baseUri())
+        );
+    }
+
+    @Test
+    @DisplayName("TC04_O4: parse(html, baseUri, parser) uses provided Parser with baseUri for XML parsing")
+    public void test_TC04_O4() {
+        // xmlParser branch: uses provided Parser with given baseUri
+        String html = "<tag/>";
+        String baseUri = "http://test/";
+        Parser xml = Parser.xmlParser();
+        Document doc = Jsoup.parse(html, baseUri, xml);
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    @DisplayName("TC05_O5: parse(File) loads file content and returns Document with file URI as baseUri")
+    public void test_TC05_O5() throws IOException {
+        // BOM-detection branch via parse(File)
+        File temp = File.createTempFile("jsoupTest", ".html");
+        temp.deleteOnExit();
+        try (FileOutputStream fos = new FileOutputStream(temp)) {
+            fos.write("<h1>Title</h1>".getBytes(StandardCharsets.UTF_8));
+        }
+        Document doc = Jsoup.parse(temp);
+        assertAll(
+            () -> assertEquals("<h1>Title</h1>", doc.body().html()),
+            () -> assertEquals(temp.getAbsolutePath(), doc.baseUri())
+        );
+    }
+
+    @Test
+    @DisplayName("TC06_O6: parse(File, charsetName, baseUri) throws IOException when file not found")
+    public void test_TC06_O6() {
+        // missing file path should trigger IOException in DataUtil.load
+        File non = new File("nonexistent.html");
+        assertThrows(IOException.class, () -> Jsoup.parse(non, "UTF-8", "http://x/"));
+    }
+
+    @Test
+    @DisplayName("TC07_O7: parse(Path, charsetName, baseUri) returns Document for existing path with null charsetName")
+    public void test_TC07_O7() throws IOException {
+        // null charsetName branch reads BOM or meta, with explicit baseUri
+        Path path = Files.createTempFile("jsoupPathTest", ".html");
+        Files.write(path, "<span>OK</span>".getBytes(StandardCharsets.UTF_8));
+        String baseUri = "https://p/";
+        Document doc = Jsoup.parse(path, null, baseUri);
+        assertAll(
+            () -> assertEquals("<span>OK</span>", doc.body().html()),
+            () -> assertEquals(baseUri, doc.baseUri())
+        );
+    }
+
+    private static class RecordingInputStream extends FilterInputStream {
+        private boolean closed = false;
+        protected RecordingInputStream(byte[] data) {
+            super(new ByteArrayInputStream(data));
+        }
+        @Override
+        public void close() throws IOException {
+            super.close(); closed = true;
+        }
+        public boolean isClosed() { return closed; }
+    }
+
+    @Test
+    @DisplayName("TC08_O8: parse(InputStream, charsetName, baseUri) returns Document reading stream and closing it")
+    public void test_TC08_O8() throws IOException {
+        // input stream branch ensures stream closed after load
+        RecordingInputStream in = new RecordingInputStream("<i>i</i>".getBytes(StandardCharsets.UTF_8));
+        Document doc = Jsoup.parse(in, "UTF-8", "http://z/");
+        assertAll(
+            () -> assertEquals("<i>i</i>", doc.body().html()),
+            () -> assertTrue(in.isClosed())
+        );
+    }
+
+    @Test
+    @DisplayName("TC09_O9: parse(URL, timeoutMillis) throws MalformedURLException for invalid protocol")
+    public void test_TC09_O9() throws Exception {
+        // invalid protocol ftp should be rejected in HttpConnection.connect
+        URL url = new URL("ftp://example.com");
+        assertThrows(MalformedURLException.class, () -> Jsoup.parse(url, 1000));
+    }
+
+    @Test
+    @DisplayName("TC10_O9: parse(URL, timeoutMillis) returns Document via HTTP GET when valid URL and timeout")
+    public void test_TC10_O9() throws Exception {
+        // valid HTTP GET branch: start a simple HTTP server
+        com.sun.net.httpserver.HttpServer server = com.sun.net.httpserver.HttpServer.create();
+        server.bind(null, 0);
+        server.createContext("/page", exchange -> {
+            byte[] resp = "<p>ok</p>".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, resp.length);
+            exchange.getResponseBody().write(resp);
+            exchange.close();
+        });
+        server.setExecutor(Executors.newSingleThreadExecutor());
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://127.0.0.1:" + port + "/page");
+        Document doc = Jsoup.parse(url, 2000);
+        assertEquals("<p>ok</p>", doc.body().html());
+        server.stop(0);
+    }
+}

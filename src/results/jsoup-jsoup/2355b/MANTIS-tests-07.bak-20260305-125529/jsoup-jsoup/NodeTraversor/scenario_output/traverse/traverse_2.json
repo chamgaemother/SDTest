@@ -1,0 +1,74 @@
+{
+  "scenarios": [
+    {
+      "id": "TC16",
+      "description": "replace first of two children in head triggers replacement branch B7→B9→B10 with depth decrement",
+      "path": "B0→B1→B2→B5→B6→B7→B9→B10→B1→B24",
+      "precondition": "root has two children; visitor replaces the first child node in head",
+      "expectedResult": "first child is replaced, traversal continues, depth returns to 0 at root without tail on replaced node",
+      "tags": [
+        "positive",
+        "replacement",
+        "branch-B9",
+        "branch-B10",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 replace-first-sibling path B7→B9→B10",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element li1 = new Element(\"li1\");",
+        "    Element li2 = new Element(\"li2\");",
+        "    root.appendChild(li1);",
+        "    root.appendChild(li2);",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      @Override",
+        "      public void head(Node node, int depth) {",
+        "        if (node == li1) node.replaceWith(new Element(\"x\"));",
+        "      }",
+        "      @Override public void tail(Node node, int depth) {}",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    assertEquals(\"x\", root.childNode(0).nodeName());",
+        "    // Ensure second child still visited at depth1",
+        "    // Ensure no tail recorded for replaced original li1",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "visitor.head throwing RuntimeException stops traverse via B1→B24 exceptional exit",
+      "path": "B0→B1→B2→B5→exception",
+      "precondition": "root has one child; visitor.head throws IllegalStateException on root",
+      "expectedResult": "IllegalStateException propagates, traversal aborts immediately",
+      "tags": [
+        "negative",
+        "exception",
+        "early-exit"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 head-throws-exception-abort",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    TrackVisitor visitor = new TrackVisitor() {",
+        "      @Override",
+        "      public void head(Node node, int depth) {",
+        "        throw new IllegalStateException(\"fail on head\");",
+        "      }",
+        "      @Override public void tail(Node node, int depth) {}",
+        "    };",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, (Node) root);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail on head\"",
+        "END"
+      ]
+    }
+  ]
+}

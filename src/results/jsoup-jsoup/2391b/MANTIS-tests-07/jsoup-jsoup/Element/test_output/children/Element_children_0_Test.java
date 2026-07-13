@@ -1,0 +1,93 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("children() on new Element with no child nodes returns empty list (childNodeSize()==0)")
+    public void test_TC01() {
+        // Given an element with no children: triggers branch childNodeSize()==0
+        Element el = new Element("div");
+        // When retrieving children
+        Elements result = el.children();
+        // Then expect empty list
+        assertEquals(0, result.size(), "Expected no child elements for empty parent");
+    }
+
+    @Test
+    @DisplayName("children() returns single child Element (childNodeSize()>0, one Element node only)")
+    public void test_TC02() {
+        // Given a parent with exactly one Element child: branch childNodeSize()>0 and loop finds one element
+        Element parent = new Element("p");
+        parent.appendElement("span");
+        // When retrieving children
+        Elements result = parent.children();
+        // Then expect exactly that child present in order
+        assertEquals(1, result.size(), "Expected one child element");
+        assertEquals("span", result.get(0).tagName(), "Child tag should be 'span'");
+    }
+
+    @Test
+    @DisplayName("children() filters out non-Element nodes among mixed childNodes (presence of TextNode and Element nodes)")
+    public void test_TC03() {
+        // Given mixed children: text nodes and element nodes; only <a> and <b> should be returned
+        Element el = new Element("div");
+        el.appendText("txt"); // non-Element, filtered out
+        el.appendElement("a");
+        el.appendText("txt2");
+        el.appendElement("b");
+        // When retrieving children
+        Elements result = el.children();
+        // Then expect only the two element nodes in their insertion order
+        assertEquals(2, result.size(), "Expected two element children filtered from mixed nodes");
+        assertEquals("a", result.get(0).tagName(), "First element child should be 'a'");
+        assertEquals("b", result.get(1).tagName(), "Second element child should be 'b'");
+    }
+
+    @Test
+    @DisplayName("children() returns cached list on second call without modification (cachedChildren()!=null)")
+    public void test_TC04() {
+        // Given an element and first children() call caches the internal list
+        Element el = new Element("ul");
+        el.appendElement("li");
+        Elements first = el.children(); // populates cache
+        // When retrieving children again without modification
+        Elements second = el.children();
+        // Then expect same Elements instance returned for cache hit
+        assertSame(first, second, "Expected same Elements instance on cache hit");
+    }
+
+    @Test
+    @DisplayName("children() invalidates cache on modification then recomputes list (after appendChild)")
+    public void test_TC05() {
+        // Given an element with one child and cached children list
+        Element el = new Element("ol");
+        el.appendElement("li");
+        el.children(); // cache population
+        // When adding another child, cache should invalidate
+        el.appendElement("li");
+        Elements result = el.children();
+        // Then expect updated list reflecting two children
+        assertEquals(2, result.size(), "Expected two children after appending new element invalidates cache");
+    }
+
+    @Test
+    @DisplayName("children() with multiple (>2) child Elements returns correct order and count")
+    public void test_TC06() {
+        // Given an element with multiple element children: exercises loop >2 times
+        Element el = new Element("div");
+        for (int i = 0; i < 5; i++) {
+            el.appendElement("p");
+        }
+        // When retrieving children
+        Elements result = el.children();
+        // Then expect five <p> elements in order
+        assertEquals(5, result.size(), "Expected five child elements");
+        result.forEach(e -> assertEquals("p", e.tagName(), "Each child should have tagName 'p'"));
+    }
+}

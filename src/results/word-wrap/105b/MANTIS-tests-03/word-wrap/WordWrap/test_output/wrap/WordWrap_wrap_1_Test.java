@@ -1,0 +1,97 @@
+package org.davidmoten.text.utils;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+import java.util.function.Function;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.github.davidmoten.guavamini.IORuntimeException;
+
+public class WordWrap_wrap_1_Test {
+
+    @Test
+    @DisplayName("ignore carriage return '\\r' branch then process newline and character")
+    public void test_TC11() {
+        // '\r' is ignored, then 'A' appended to word and emitted on EOF
+        Reader reader = new StringReader("\rA");
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom(reader, true);
+        String result = b.wrap();
+        assertEquals("A", result);
+    }
+
+    @Test
+    @DisplayName("punctuation branch marks previousWasPunctuation and invokes non-letter branch")
+    public void test_TC12() {
+        // comma is punctuation, previousWasPunctuation=true, so comma goes through non-word branch
+        CharSequence text = "word, next";
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom(text).maxWidth(3);
+        List<String> lines = b.wrapToList();
+        // verify comma retained in output fragment
+        boolean foundComma = false;
+        for (String line : lines) {
+            if (line.contains(",")) {
+                foundComma = true;
+                break;
+            }
+        }
+        assertTrue(foundComma, "Expected at least one line to contain a comma");
+    }
+
+    @Test
+    @DisplayName("includeExtraWordChars treats comma as word character, preventing split at comma")
+    public void test_TC13() {
+        // comma included as word char, so 'a,b' is one word and should not wrap even if maxWidth<length
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom("a,b").maxWidth(2).includeExtraWordChars(",");
+        String result = b.wrap();
+        assertEquals("a,b", result);
+    }
+
+    @Test
+    @DisplayName("custom stringWidth function is used in tooLong comparison")
+    public void test_TC14() {
+        // custom stringWidth always returns 1, so no segment ever exceeds maxWidth=1
+        Function<CharSequence,Number> fw = s -> 1;
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom("longtext").stringWidth(fw).maxWidth(1);
+        String result = b.wrap();
+        assertEquals("longtext", result);
+    }
+
+    @Test
+    @DisplayName("wrap(LineConsumer) throws IORuntimeException when consumer.writeNewLine fails")
+    public void test_TC15() {
+        // consumer.writeNewLine throws IOException to trigger IORuntimeException in wrap(LineConsumer)
+        LineConsumer bad = new LineConsumer() {
+            @Override public void write(String s) throws IOException {}
+            @Override public void write(char[] chars, int offset, int length) throws IOException {}
+            @Override public void writeNewLine() throws IOException { throw new IOException("fail"); }
+        };
+        Reader r = new StringReader("a\n");
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom(r, false);
+        IORuntimeException ex = assertThrows(IORuntimeException.class, () -> b.wrap(bad));
+        // cause should be the underlying IOException
+        assertNotNull(ex.getCause());
+        assertTrue(ex.getCause() instanceof IOException);
+        assertEquals("fail", ex.getCause().getMessage());
+    }
+
+    @Test
+    @DisplayName("close(reader) throws IORuntimeException when Reader.close throws IOException")
+    public void test_TC16() {
+        // custom Reader that throws on close(), b.wrap() should propagate as IORuntimeException
+        Reader r = new Reader() {
+            @Override public int read(char[] cbuf, int off, int len) { return -1; }
+            @Override public void close() throws IOException { throw new IOException("close fail"); }
+        };
+        org.davidmoten.text.utils.WordWrap.Builder b = org.davidmoten.text.utils.WordWrap.builderFrom(r, true);
+        IORuntimeException ex = assertThrows(IORuntimeException.class, () -> b.wrap());
+        assertNotNull(ex.getCause());
+        assertTrue(ex.getCause() instanceof IOException);
+        assertEquals("close fail", ex.getCause().getMessage());
+    }
+}

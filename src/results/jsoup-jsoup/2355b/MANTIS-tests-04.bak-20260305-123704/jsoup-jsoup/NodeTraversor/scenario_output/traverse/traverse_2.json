@@ -1,0 +1,84 @@
+{
+  "scenarios": [
+    {
+      "id": "TC14_O1",
+      "description": "traverse(visitor, (Elements) null) triggers IllegalArgumentException at Validate.notNull(elements)",
+      "path": "B0→B1→B3",
+      "precondition": "RecordingVisitor visitor = new RecordingVisitor();",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "validation",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 traverse overload null-elements",
+        "  GIVEN",
+        "    NodeVisitor visitor = new RecordingVisitor();",
+        "    Elements elements = null;",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, elements);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15_O1",
+      "description": "traverse((NodeVisitor) null, elements) triggers IllegalArgumentException at Validate.notNull(visitor) in overload",
+      "path": "B0→B1→B2",
+      "precondition": "RecordingVisitor visitor = null; Elements list with one Element",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "negative",
+        "validation",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 traverse overload null-visitor",
+        "  GIVEN",
+        "    NodeVisitor visitor = null;",
+        "    Element el = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Elements list = new Elements(el);",
+        "  WHEN",
+        "    call NodeTraversor.traverse(visitor, list);",
+        "  THEN",
+        "    throws IllegalArgumentException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16_O1",
+      "description": "traverse(visitor, root) with two-level branch where first node has child and no siblings exercises inner ascend loop (node.nextSibling()==null && depth>0)",
+      "path": "B0→B1→B2→B5→B11→B12→B23→B1→B6→B11→B13→B16→B20→B22→B23→B1→B24",
+      "precondition": "none",
+      "expectedResult": "visitor.head and tail called exactly on child then root; no infinite loop",
+      "tags": [
+        "positive",
+        "iteration",
+        "ascend-loop",
+        "coverage"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 inner-ascend-loop with single-child",
+        "  GIVEN",
+        "    RecordingVisitor v = new RecordingVisitor();",
+        "    Element root = new Element(Tag.valueOf(\"div\"), \"\");",
+        "    Element child = new Element(Tag.valueOf(\"span\"), \"\");",
+        "    root.appendChild(child);",
+        "  WHEN",
+        "    NodeTraversor.traverse(v, root);",
+        "  THEN",
+        "    assert v.headCount == 2; // head0 and head1",
+        "    assert v.tailCount == 2; // tail1 and tail0",
+        "END"
+      ]
+    }
+  ]
+}

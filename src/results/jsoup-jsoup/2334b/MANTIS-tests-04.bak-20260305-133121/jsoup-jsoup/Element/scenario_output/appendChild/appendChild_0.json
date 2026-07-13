@@ -1,0 +1,113 @@
+{
+  "method": "appendChild",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "appendChild(null) throws IllegalArgumentException covering Validate.notNull(child) null check",
+      "path": "B0→B1→B6",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException; no children added; child.parentNode remains null",
+      "tags": [
+        "exception",
+        "branch-false",
+        "validate-notNull"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 appendChild null-child",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Node child = null;",
+        "  WHEN",
+        "    call parent.appendChild(child);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "appendChild(firstChild) adds child when childNodes was empty (ensureChildNodes branch true)",
+      "path": "B0→B1→B2→B3(true)→B4→B5",
+      "precondition": "none",
+      "expectedResult": "return value is the parent element; parent.childNodeSize() == 1; child.parent() == parent; child.siblingIndex == 0",
+      "tags": [
+        "branch-true",
+        "first-append",
+        "loop-0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 appendChild initial-empty",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"text\");",
+        "  WHEN",
+        "    Element result = parent.appendChild(child);",
+        "  THEN",
+        "    assert result == parent;",
+        "    assert parent.childNodeSize() == 1;",
+        "    assert child.parent() == parent;",
+        "    assert child.siblingIndex() == 0;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "appendChild(secondChild) adds child when childNodes non-empty (ensureChildNodes branch false)",
+      "path": "B0→B1→B2→B3(false)→B4→B5",
+      "precondition": "parent has one existing child: append first child",
+      "expectedResult": "parent.childNodeSize() == 2; second.parent() == parent; second.siblingIndex == 1",
+      "tags": [
+        "branch-false",
+        "subsequent-append",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 appendChild non-empty",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"one\");",
+        "    parent.appendChild(first);",
+        "    TextNode second = new TextNode(\"two\");",
+        "  WHEN",
+        "    parent.appendChild(second);",
+        "  THEN",
+        "    assert parent.childNodeSize() == 2;",
+        "    assert second.parent() == parent;",
+        "    assert second.siblingIndex() == 1;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "appendChild(existingChild) re-parents a node from old parent to new parent",
+      "path": "B0→B1→B2→B3(true)→B4→B5",
+      "precondition": "oldParent and newParent start separate; child appended to oldParent",
+      "expectedResult": "oldParent.childNodeSize() == 0; newParent.childNodeSize() == 1; child.parent() == newParent; child.siblingIndex() == 0",
+      "tags": [
+        "branch-true",
+        "reparenting",
+        "first-append"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 appendChild reparent",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"span\");",
+        "    Element newParent = new Element(\"div\");",
+        "    TextNode child = new TextNode(\"hello\");",
+        "    oldParent.appendChild(child);",
+        "  WHEN",
+        "    newParent.appendChild(child);",
+        "  THEN",
+        "    assert oldParent.childNodeSize() == 0;",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert child.parent() == newParent;",
+        "    assert child.siblingIndex() == 0;"
+      ]
+    }
+  ]
+}

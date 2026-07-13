@@ -1,0 +1,147 @@
+{
+  "scenarios": [
+    {
+      "id": "TC24",
+      "description": "Prefix operator '-' before number yields PREFIX_OPERATOR then NUMBER_LITERAL",
+      "path": "B0→B1→B2(false)→B6→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "Two tokens: '-' as PREFIX_OPERATOR and '1' as NUMBER_LITERAL",
+      "tags": [
+        "positive",
+        "prefix-operator"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 prefix minus before number",
+        "  GIVEN",
+        "    String expr = \"-1\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 2;",
+        "    assert tokens.get(0).getType() == TokenType.PREFIX_OPERATOR;",
+        "    assert tokens.get(0).getValue().equals(\"-\");",
+        "    assert tokens.get(1).getType() == TokenType.NUMBER_LITERAL;",
+        "    assert tokens.get(1).getValue().equals(\"1\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "Valid scientific notation '1e3' parsed as single NUMBER_LITERAL",
+      "path": "B0→B1→B2(false)→B6→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "One token: '1e3' as NUMBER_LITERAL",
+      "tags": [
+        "positive",
+        "iteration",
+        "scientific"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 valid scientific notation",
+        "  GIVEN",
+        "    String expr = \"1e3\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getValue().equals(\"1e3\");",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "Unmatched opening array throws 'Closing array not found' when arraysAllowed=true",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B10",
+      "precondition": "none",
+      "expectedResult": "ParseException with message 'Closing array not found'",
+      "tags": [
+        "negative",
+        "exception",
+        "array"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 unmatched opening array",
+        "  GIVEN",
+        "    String expr = \"[\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message containing \"Closing array not found\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "Number literal starting with dot '.5' parsed correctly",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "One token: '.5' as NUMBER_LITERAL",
+      "tags": [
+        "positive",
+        "boundary",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 dot-start decimal literal",
+        "  GIVEN",
+        "    String expr = \".5\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getValue().equals(\".5\");",
+        "    assert tokens.get(0).getType() == TokenType.NUMBER_LITERAL;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC28",
+      "description": "Implicit multiplication between number and '(' when allowed inserts '*'",
+      "path": "B0→B1→B2(true)→B4→B6→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "none",
+      "expectedResult": "Three tokens: '2', '*', '('",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC28 number-before-brace implicit multiplication",
+        "  GIVEN",
+        "    String expr = \"2(3)\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setImplicitMultiplicationAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getValue().equals(\"2\");",
+        "    assert tokens.get(1).getValue().equals(\"*\");",
+        "    assert tokens.get(1).getType() == TokenType.INFIX_OPERATOR;",
+        "    assert tokens.get(2).getValue().equals(\"(\");",
+        "END"
+      ]
+    }
+  ]
+}

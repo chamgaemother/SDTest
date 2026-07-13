@@ -1,0 +1,121 @@
+{
+  "scenarios": [
+    {
+      "id": "TC13",
+      "description": "clone() copies multiple root attributes and iterates attr-copy loop for N>1",
+      "path": "B0→B1→B2(attr-loop×2)→B3→B4(child-loop×0)→B6",
+      "precondition": "Document with two attributes on its root element",
+      "expectedResult": "clone has both attributes with identical values and distinct attribute instances",
+      "tags": [
+        "positive",
+        "iteration",
+        "attributes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 clone multiple root attributes",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    doc.attr(\"k1\",\"v1\").attr(\"k2\",\"v2\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertEquals(\"v1\", clone.attr(\"k1\"));",
+        "    assertEquals(\"v2\", clone.attr(\"k2\"));",
+        "    assertNotSame(doc.attributes(), clone.attributes());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "clone() deep-clones mixed child nodes preserving order across child-copy loop",
+      "path": "B0→B1→B2(attr-loop×0)→B3→B4(child-loop×3)→B6",
+      "precondition": "Document with sequence of a TextNode, a Comment, and an Element as children of root",
+      "expectedResult": "clone has three children of same types in same order, all distinct instances",
+      "tags": [
+        "positive",
+        "iteration",
+        "child-nodes"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC14 clone mixed child nodes",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    doc.appendText(\"txt\");",
+        "    doc.appendChild(new Comment(\"cmt\", \"\"));",
+        "    doc.appendElement(\"div\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    assertEquals(3, clone.childNodes().size());",
+        "    assertTrue(clone.childNode(0) instanceof TextNode);",
+        "    assertTrue(clone.childNode(1) instanceof Comment);",
+        "    assertTrue(clone.childNode(2) instanceof Element);",
+        "    assertNotSame(doc.childNode(2), clone.childNode(2));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "clone() isolation: modifying clone’s nested element attr does not affect original",
+      "path": "B0→B1→B2(attr-loop×0)→B3→B4(child-loop×2)→B6",
+      "precondition": "Document with nested a>b element hierarchy",
+      "expectedResult": "changing attribute on clone’s ‘b’ does not appear on original",
+      "tags": [
+        "positive",
+        "isolation",
+        "mutation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC15 clone isolation nested modify",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    Element a = doc.appendElement(\"a\");",
+        "    Element b = a.appendElement(\"b\");",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "    clone.selectFirst(\"b\").attr(\"x\",\"y\");",
+        "  THEN",
+        "    assertFalse(doc.selectFirst(\"b\").hasAttr(\"x\"));",
+        "    assertEquals(\"y\", clone.selectFirst(\"b\").attr(\"x\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "clone() clones XmlDeclaration child via child-copy loop when present",
+      "path": "B0→B1→B2(attr-loop×0)→B3→B4(child-loop×1)→B6",
+      "precondition": "Document with an XmlDeclaration prepended as first child",
+      "expectedResult": "clone has a distinct XmlDeclaration child with same name and attributes",
+      "tags": [
+        "positive",
+        "xml",
+        "declaration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC16 clone XmlDeclaration child",
+        "  GIVEN",
+        "    Document doc = new Document(\"u\");",
+        "    XmlDeclaration decl = new XmlDeclaration(\"xml\", false);",
+        "    decl.attr(\"encoding\",\"UTF-8\");",
+        "    doc.prependChild(decl);",
+        "  WHEN",
+        "    Document clone = doc.clone();",
+        "  THEN",
+        "    List<Node> orig = doc.childNodes();",
+        "    List<Node> cl = clone.childNodes();",
+        "    assertTrue(cl.get(0) instanceof XmlDeclaration);",
+        "    assertEquals(((XmlDeclaration)orig.get(0)).name(), ((XmlDeclaration)cl.get(0)).name());",
+        "    assertNotSame(orig.get(0), cl.get(0));",
+        "END"
+      ]
+    }
+  ]
+}

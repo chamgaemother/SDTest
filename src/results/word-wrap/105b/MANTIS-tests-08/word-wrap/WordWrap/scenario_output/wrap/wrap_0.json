@@ -1,0 +1,235 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "wrap(Writer) with empty input triggers zero-loop and writes nothing",
+      "path": "B0→B1→B2",
+      "precondition": "Reader over empty CharSequence; real BufferedReader used",
+      "expectedResult": "no writes to Writer; wrapped output is empty",
+      "tags": [
+        "loop-0",
+        "branch-false",
+        "overload:Writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 wrap empty-input",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"\")); Writer w = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(r).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "wrap(Writer) with single short line under maxWidth writes line without newline",
+      "path": "B0→B1→B3→B7",
+      "precondition": "Reader over \"hello\"; default maxWidth=80",
+      "expectedResult": "Writer receives \"hello\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "overload:Writer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 wrap short-line",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"hello\")); Writer w = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(r).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"hello\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "wrap(Writer) processes newline char branch",
+      "path": "B0→B1→B4→B5→B6→B7",
+      "precondition": "Reader over \"a\\n b\"; default settings",
+      "expectedResult": "Writer receives \"a\\n b\" preserving newline",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:Writer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 wrap newline-preservation",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"a\\n b\")); Writer w = new StringWriter();",
+        "  WHEN",
+        "    WordWrap.from(r).wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"a\\n b\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "wrap(Writer) breaks long word with hyphens when breakWords=true and insertHyphens=true",
+      "path": "B0→B1→B3→B8→B9→B10→B7",
+      "precondition": "Reader over \"abcdefghij\"; maxWidth=3",
+      "expectedResult": "Writer receives \"abc-\\nghij\" split at width with hyphen",
+      "tags": [
+        "branch-true",
+        "break-true",
+        "hyphen-true",
+        "overload:Writer"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 wrap break-with-hyphens",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"abcdefghij\")); Writer w = new StringWriter();",
+        "    WordWrap.Builder b = WordWrap.from(r).maxWidth(3);",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"abc-\\nghij\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "wrap(Writer) breaks long word without hyphens when insertHyphens=false",
+      "path": "B0→B1→B3→B8→B11→B7",
+      "precondition": "Reader over \"abcdef\"; maxWidth=2; insertHyphens=false",
+      "expectedResult": "Writer receives \"ab\\ncdef\"",
+      "tags": [
+        "break-true",
+        "hyphen-false",
+        "overload:Writer"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 wrap break-no-hyphens",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"abcdef\")); Writer w = new StringWriter();",
+        "    WordWrap.Builder b = WordWrap.from(r).maxWidth(2).insertHyphens(false);",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"ab\\ncdef\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "wrapToList returns lines list for multi-line input",
+      "path": "B0→B1→B3→B12→B13",
+      "precondition": "real CharSequenceReader",
+      "expectedResult": "List [\"one two\",\"three\"]",
+      "tags": [
+        "overload:wrapToList",
+        "loop-N"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 wrapToList multi-line",
+        "  GIVEN",
+        "    List<String> expected = Arrays.asList(\"one two\",\"three\");",
+        "  WHEN",
+        "    List<String> actual = WordWrap.from(\"one two three\").wrapToList();",
+        "  THEN",
+        "    assert actual.equals(expected);"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "wrap(LineConsumer) writes via custom consumer",
+      "path": "B0→B1→B3→B14→B15",
+      "precondition": "simple LineConsumer stub collects writes",
+      "expectedResult": "consumer receives \"xyz\" and newline",
+      "tags": [
+        "overload:LineConsumer",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 wrap custom-consumer",
+        "  GIVEN",
+        "    StringBuilder sb = new StringBuilder();",
+        "    LineConsumer c = new LineConsumer(){...};",
+        "  WHEN",
+        "    WordWrap.from(\"xyz\").wrap(c);",
+        "  THEN",
+        "    assert sb.toString().equals(\"xyz\\n\");"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "wrap(File,Charset) writes output file with UTF-16 encoding",
+      "path": "B0→B1→B16→B17→B3→B7",
+      "precondition": "temp file created; Charset=UTF-16",
+      "expectedResult": "file content equals wrapped text",
+      "tags": [
+        "overload:File,Charset",
+        "io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 wrap to-file-with-charset",
+        "  GIVEN",
+        "    File f = tempFile();",
+        "    Writer w = new OutputStreamWriter(new FileOutputStream(f), StandardCharsets.UTF_16);",
+        "  WHEN",
+        "    WordWrap.from(\"foo bar\").wrap(f, StandardCharsets.UTF_16);",
+        "  THEN",
+        "    assert readFile(f, StandardCharsets.UTF_16).equals(\"foo bar\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "wrapUtf8(String) writes UTF-8 file by filename",
+      "path": "B0→B1→B16→B18→B19→B20",
+      "precondition": "filename points to temp path",
+      "expectedResult": "UTF-8 file content matches input",
+      "tags": [
+        "overload:String,Charset",
+        "io"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 wrapUtf8 filename",
+        "  GIVEN",
+        "    String fn = tempFilename();",
+        "  WHEN",
+        "    WordWrap.from(\"abc\").wrapUtf8(fn);",
+        "  THEN",
+        "    assert readFile(new File(fn), StandardCharsets.UTF_8).equals(\"abc\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "wrap() returns wrapped text as String for default settings",
+      "path": "B0→B1→B3→B21",
+      "precondition": "CharSequenceReader over \"hello world\"",
+      "expectedResult": "returned String equals \"hello world\"",
+      "tags": [
+        "overload:noArgs",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 wrap return-String",
+        "  GIVEN",
+        "    String s = \"hello world\";",
+        "  WHEN",
+        "    String result = WordWrap.from(s).wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello world\");"
+      ]
+    }
+  ]
+}

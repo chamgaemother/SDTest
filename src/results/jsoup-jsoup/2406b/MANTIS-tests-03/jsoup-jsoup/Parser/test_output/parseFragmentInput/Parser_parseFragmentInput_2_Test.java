@@ -1,0 +1,137 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_2_Test {
+
+    /**
+     * Stub TreeBuilder that returns an empty list for parseFragment.
+     */
+    static class StubTreeBuilderReturningEmpty extends TreeBuilder {
+        @Override
+        public List<Node> parseFragment(Reader fragment, Element context, String baseUri) throws IOException {
+            // Always return empty list, fulfilling path B2→B3→unlock
+            process(null); // Call process with null token
+            return Collections.emptyList();
+        }
+
+        // Other methods to satisfy interface / abstract class
+        @Override public org.jsoup.nodes.Document parse(Reader input, String baseUri) throws IOException { return null; }
+        @Override public TreeBuilder newInstance() { return this; }
+        @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }
+        @Override public TagSet defaultTagSet() { return TagSet.html(); }
+        @Override public String defaultNamespace() { return ""; }
+        @Override public void initialiseParse(Reader input, String baseUri) {}
+        @Override public void process(org.jsoup.parser.Token token) {} // Corrected method signature
+    }
+
+    /**
+     * Stub TreeBuilder that throws IOException for parseFragment.
+     */
+    static class StubTreeBuilderThrowingIOException extends TreeBuilder {
+        @Override
+        public List<Node> parseFragment(Reader fragment, Element context, String baseUri) throws IOException {
+            // Simulate I/O failure, fulfilling exception path B3→exception→unlock
+            process(null); // Call process with null token
+            throw new IOException("simulated I/O error");
+        }
+
+        // Other methods to satisfy interface / abstract class
+        @Override public org.jsoup.nodes.Document parse(Reader input, String baseUri) throws IOException { return null; }
+        @Override public TreeBuilder newInstance() { return this; }
+        @Override public ParseSettings defaultSettings() { return new ParseSettings(ParseSettings.preserveCase); }
+        @Override public TagSet defaultTagSet() { return TagSet.html(); }
+        @Override public String defaultNamespace() { return ""; }
+        @Override public void initialiseParse(Reader input, String baseUri) {}
+        @Override public void process(org.jsoup.parser.Token token) {} // Corrected method signature
+    }
+
+    @Test
+    @DisplayName("TC16: String overload with xmlParser and non-null context appends parsed node to context")
+    void test_TC16() {
+        // GIVEN: an XML parser and a non-null context for fragment "<a/>"
+        String fragment = "<a/>";
+        Element context = new Element("div");
+        Parser parser = Parser.xmlParser();
+
+        // WHEN: parsing the fragment string
+        // This follows B0→B3→B4→B7→B8: reader converted, parseFragment invoked, non-empty result
+        List<Node> result = parser.parseFragmentInput(fragment, context, "base");
+
+        // THEN: exactly one node returned and appended to context
+        assertEquals(1, result.size(), "Expected one node parsed from '<a/>'");
+        Node node = result.get(0);
+        assertTrue(node instanceof Element, "Parsed node should be an Element");
+        Element el = (Element) node;
+        assertEquals("a", el.tagName(), "Parsed element should have tag name 'a'");
+        assertTrue(context.children().contains(el),
+                "Context's children should contain the newly parsed element");
+    }
+
+    @Test
+    @DisplayName("TC17: Reader overload with stub TreeBuilderReturningEmpty and non-null context returns empty result and leaves context unchanged")
+    void test_TC17() {
+        // GIVEN: stub builder that returns empty list, and a context element
+        Reader fragmentReader = new StringReader("anything");
+        StubTreeBuilderReturningEmpty stub = new StubTreeBuilderReturningEmpty();
+        Parser parser = new Parser(stub);
+        Element context = new Element("div");
+
+        // WHEN: parsing via reader overload
+        // Follows B0→B1→B2→B3→unlock: stub returns empty list
+        List<Node> result = parser.parseFragmentInput(fragmentReader, context, "base");
+
+        // THEN: result empty and context children unchanged
+        assertTrue(result.isEmpty(), "Expected no nodes from stub builder");
+        assertTrue(context.children().isEmpty(), "Context should have no children after empty parse");
+    }
+
+    @Test
+    @DisplayName("TC18: Reader overload with stub TreeBuilderThrowingIOException and non-null context throws UncheckedIOException")
+    void test_TC18() {
+        // GIVEN: stub builder that throws IOException, and a context element
+        Reader fragmentReader = new StringReader("any");
+        StubTreeBuilderThrowingIOException stub = new StubTreeBuilderThrowingIOException();
+        Parser parser = new Parser(stub);
+        Element context = new Element("div");
+
+        // WHEN & THEN: parsing should wrap IOException as UncheckedIOException
+        // Follows B0→lock→B3→exception→unlock
+        UncheckedIOException thrown = assertThrows(UncheckedIOException.class, () ->
+                parser.parseFragmentInput(fragmentReader, context, "base"),
+                "Expected UncheckedIOException when underlying builder throws IOException");
+        // Optionally check message stability if needed
+        assertTrue(thrown.getCause() instanceof IOException, "Cause should be the original IOException");
+    }
+
+    @Test
+    @DisplayName("TC19: String overload with xmlParser and empty fragment returns empty list and leaves context unchanged")
+    void test_TC19() {
+        // GIVEN: xmlParser and empty fragment string
+        String fragment = "";
+        Element context = new Element("p");
+        Parser parser = Parser.xmlParser();
+
+        // WHEN: parsing leads to no fragment content
+        // Follows B0→B3→B4→B7(empty)→unlock: empty result path
+        List<Node> result = parser.parseFragmentInput(fragment, context, "base");
+
+        // THEN: no nodes returned and context remains unchanged
+        assertTrue(result.isEmpty(), "Expected empty result for empty fragment");
+        assertTrue(context.children().isEmpty(), "Context should have no children after empty fragment parse");
+    }
+}

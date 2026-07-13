@@ -1,0 +1,213 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssErrorCode;
+import org.idpf.epubcheck.util.css.CssContentHandler;
+import org.idpf.epubcheck.util.css.CssErrorHandler;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+
+public class CssParser_parse_Test {
+
+  @Test
+  @DisplayName("TC01 Empty input yields no rules (hasNext==false)")
+  public void test_TC01() throws Exception {
+    // EMPTY input triggers no loop iterations (iter.hasNext false)
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // startDocument and endDocument exactly once, no other interactions
+    verify(doc, times(1)).startDocument();
+    verify(doc, times(1)).endDocument();
+    verifyNoMoreInteractions(doc);
+    verifyNoInteractions(err);
+  }
+
+  @Test
+  @DisplayName("TC02 Single ruleset input exercises non-ATKEYWORD branch (branch-false) once")
+  public void test_TC02() throws Exception {
+    // Input "h1 { color:red; }" leads to one ruleset: non-ATKEYWORD branch
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("h1 { color:red; }");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // verify selectors and declaration events
+    verify(doc).startDocument();
+    verify(doc).selectors(anyList());
+    verify(doc).declaration(any());
+    verify(doc).endSelectors(anyList());
+    verify(doc).endDocument();
+    verifyNoMoreInteractions(doc);
+    verifyNoInteractions(err);
+  }
+
+  @Test
+  @DisplayName("TC03 Single at-rule without block exercises ATKEYWORD branch (branch-true) once")
+  public void test_TC03() throws Exception {
+    // Input "@import 'a.css';" triggers ATKEYWORD branch, at-rule without block
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("@import 'a.css';");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // verify startAtRule and endAtRule calls for "import"
+    verify(doc).startDocument();
+    verify(doc).startAtRule(eq("import"));
+    verify(doc).endAtRule(eq("import"));
+    verify(doc).endDocument();
+    verifyNoMoreInteractions(doc);
+    verifyNoInteractions(err);
+  }
+
+  @Test
+  @DisplayName("TC04 Mixed two iterations: first ruleset then at-rule")
+  public void test_TC04() throws Exception {
+    // Mixed ruleset then at-rule: "h1{} @charset 'utf-8';"
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("h1{} @charset 'utf-8';");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // first selectors, then at-rule start/end
+    verify(doc).startDocument();
+    verify(doc).selectors(anyList());
+    verify(doc).endSelectors(anyList());
+    verify(doc).startAtRule(eq("charset"));
+    verify(doc).endAtRule(eq("charset"));
+    verify(doc).endDocument();
+    verifyNoMoreInteractions(doc);
+    verifyNoInteractions(err);
+  }
+
+  @Test
+  @DisplayName("TC05 scan() throws IOException propagates up")
+  public void test_TC05() throws Exception {
+    // Custom Reader that throws IOException on read() triggers propagation
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new Reader() {
+      @Override public int read(char[] cbuf, int off, int len) throws IOException {
+        throw new IOException("fail");
+      }
+      @Override public void close() throws IOException {}
+    };
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    assertThrows(IOException.class, () -> parser.parse(reader, "id", err, doc));
+    // no startDocument on exception
+    verify(doc, never()).startDocument();
+  }
+
+  @Test
+  @DisplayName("TC06 scan() throws CssException propagates up")
+  public void test_TC06() throws Exception {
+    // Use subclass to override scan() to throw CssGrammarException
+    CssParser parser = new CssParser(Locale.ROOT) {
+      @Override
+      @SuppressWarnings("unused")
+      private CssTokenIterator scan(Reader reader, String systemID, CssErrorHandler err)
+          throws IOException, CssException {
+        throw new CssGrammarException(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN, null, Locale.ROOT, "x");
+      }
+    };
+    Reader reader = new StringReader("irrelevant");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    assertThrows(CssException.class, () -> parser.parse(reader, "id", err, doc));
+    verify(doc, never()).startDocument();
+  }
+
+  @Test
+  @DisplayName("TC07 Premature EOF in ruleset breaks loop (NoSuchElementException→PrematureEOFException)")
+  public void test_TC07() throws Exception {
+    // Missing closing brace causes PrematureEOFException in handleRuleSet
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("h1 { color:red;");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // startDocument and endDocument called, error signaled
+    verify(doc).startDocument();
+    verify(err).error(argThat(ex -> ex.getCode() == CssErrorCode.GRAMMAR_PREMATURE_EOF));
+    verify(doc).endDocument();
+  }
+
+  @Test
+  @DisplayName("TC08 Premature EOF in at-rule breaks loop")
+  public void test_TC08() throws Exception {
+    // Missing braces in at-rule causes PrematureEOFException in handleAtRule
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("@media screen { h1 { color:red;");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    verify(doc).startDocument();
+    verify(err).error(argThat(ex -> ex.getCode() == CssErrorCode.GRAMMAR_PREMATURE_EOF));
+    verify(doc).endDocument();
+  }
+
+  @Test
+  @DisplayName("TC09 Multiple rulesets (N>2) all non-ATKEYWORD")
+  public void test_TC09() throws Exception {
+    // Three simple rulesets: h1{},p{},div{}
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("h1{}p{}div{}");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    // selectors should be invoked three times
+    verify(doc).startDocument();
+    verify(doc, times(3)).selectors(anyList());
+    verify(doc, times(3)).endSelectors(anyList());
+    verify(doc).endDocument();
+    verifyNoInteractions(err);
+  }
+
+  @Test
+  @DisplayName("TC10 Multiple at-rules (N>1) all ATKEYWORD")
+  public void test_TC10() throws Exception {
+    // Two at-rules: @a;@b;
+    CssParser parser = new CssParser(Locale.ROOT);
+    Reader reader = new StringReader("@a;@b;");
+    CssErrorHandler err = mock(CssErrorHandler.class);
+    CssContentHandler doc = mock(CssContentHandler.class);
+
+    parser.parse(reader, "id", err, doc);
+
+    verify(doc).startDocument();
+    verify(doc).startAtRule(eq("a"));
+    verify(doc).endAtRule(eq("a"));
+    verify(doc).startAtRule(eq("b"));
+    verify(doc).endAtRule(eq("b"));
+    verify(doc).endDocument();
+    verifyNoInteractions(err);
+  }
+}

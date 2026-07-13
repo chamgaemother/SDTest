@@ -1,0 +1,52 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_attr_Test {
+
+    @Test
+    @DisplayName("TC11: attr(String key, boolean true) sets a boolean attribute with empty value")
+    void test_TC11() {
+        // GIVEN an Element with no pre-existing attributes
+        Element el = new Element("input");
+        // WHEN setting a boolean attribute to true (branch B2 true path)
+        el.attr("checked", true);
+        // THEN the attribute 'checked' should exist with an empty string value
+        assertEquals("", el.attributes().get("checked"),
+            "Expected boolean attribute 'checked' to be stored with empty string value");
+        // AND the attribute value should be empty, indicating boolean attribute
+        assertTrue(el.attributes().get("checked").isEmpty(),
+            "Expected the boolean attribute value to be an empty string");
+    }
+
+    @Test
+    @DisplayName("TC12: attr(String key, boolean false) removes an existing boolean attribute")
+    void test_TC12() {
+        // GIVEN an Element with an existing boolean attribute 'selected'
+        Element el = new Element("option");
+        el.attr("selected", true); // establish the attribute first
+        assertTrue(el.attributes().hasKey("selected"),
+            "Precondition failed: 'selected' should be present after setting true");
+        // WHEN setting the boolean attribute to false (branch B2 false leads to removal)
+        el.attr("selected", false);
+        // THEN the attribute 'selected' should no longer be present
+        assertFalse(el.attributes().hasKey("selected"),
+            "Expected 'selected' attribute to be removed when set to false");
+    }
+
+    @Test
+    @DisplayName("TC13: attr(String key, boolean false) on non-existent attribute does nothing")
+    void test_TC13() {
+        // GIVEN an Element without any 'selected' attribute
+        Element el = new Element("option");
+        assertEquals(0, el.attributes().size(),
+            "Precondition failed: attributes should initially be empty");
+        // WHEN attempting to remove a non-existent boolean attribute (branch B2 false but no removal)
+        el.attr("selected", false);
+        // THEN no exception is thrown and attributes remain empty
+        assertEquals(0, el.attributes().size(),
+            "Expected attributes to remain empty after removing non-existent attribute");
+    }
+}

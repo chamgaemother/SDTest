@@ -1,0 +1,73 @@
+package software.amazon.event.ruler;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class ComparableNumber_generate_0_Test {
+
+    @Test
+    @DisplayName("generate(f) throws IllegalArgumentException when f is less than -5e9 (lower bound violation)")
+    void test_TC01() throws Exception {
+        // branch: f < -5e9 so first if-condition true, should throw IllegalArgumentException
+        double f = -5000000000.1;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            try {
+                generate.invoke(null, f);
+            } catch (InvocationTargetException ite) {
+                // unwrap the cause to let assertThrows see the IllegalArgumentException
+                throw ite.getCause();
+            }
+        });
+        assertEquals("Value must be between -5000000000.0 and 5000000000.0, inclusive", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("generate(f) throws IllegalArgumentException when f is greater than 5e9 (upper bound violation)")
+    void test_TC02() throws Exception {
+        // branch: f > 5e9 so first if-condition true at upper bound check, should throw IllegalArgumentException
+        double f = 5000000000.1;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> {
+            try {
+                generate.invoke(null, f);
+            } catch (InvocationTargetException ite) {
+                throw ite.getCause();
+            }
+        });
+        assertEquals("Value must be between -5000000000.0 and 5000000000.0, inclusive", thrown.getMessage());
+    }
+
+    @Test
+    @DisplayName("generate(f) returns all-zero hex string when f is exactly -5e9 (lower boundary inclusive)")
+    void test_TC03() throws Exception {
+        // branch: f == -5e9 so skip exception and compute valueOffset = 0, hex of 0 is all zeros
+        double f = -5000000000.0;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+
+        String result = (String) generate.invoke(null, f);
+        assertEquals("00000000000000", result);
+    }
+
+    @Test
+    @DisplayName("generate(f) returns correct hex string when f is exactly 5e9 (upper boundary inclusive)")
+    void test_TC04() throws Exception {
+        // branch: f == +5e9 so skip exception and compute max offset, expect hex representation of (1e9+5e9)*1e6
+        double f = 5000000000.0;
+        Method generate = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+
+        String result = (String) generate.invoke(null, f);
+        assertEquals("C7230489E80000", result);
+    }
+}

@@ -1,0 +1,79 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "convexHullRecursive with all interior points strictly left of baseline exercises only upperHull recursion path",
+      "path": "B0→B7→(B1→B2→B5)×n→B7→B1→B2→B5→B7→B6",
+      "precondition": "list of 5 non-colinear points all above line from leftmost to rightmost",
+      "expectedResult": "returns hull containing endpoints and all intermediate extreme points in ascending order",
+      "tags": [
+        "positive",
+        "upper-only",
+        "iteration",
+        "branch-det>0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 convexHullRecursive all points on left side",
+        "  GIVEN",
+        "    List<Point> points = [(0,0),(1,2),(2,3),(3,2),(4,0)];",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() > 2;",
+        "    assert result.get(0).equals(new Point(0,0));",
+        "    assert result.get(result.size()-1).equals(new Point(4,0));"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "convexHullRecursive with all interior points strictly right of baseline exercises only lowerHull recursion path",
+      "path": "B0→B7→(B1→B3→B4→B5)×n→B7→B6",
+      "precondition": "list of 4 non-colinear points all below line from leftmost to rightmost",
+      "expectedResult": "returns hull containing only endpoints, as all others processed in lowerHull",
+      "tags": [
+        "positive",
+        "lower-only",
+        "iteration",
+        "branch-det<0"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 convexHullRecursive all points on right side",
+        "  GIVEN",
+        "    List<Point> points = [(0,0),(1,-2),(2,-3),(3,0)];",
+        "  WHEN",
+        "    List<Point> result = ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.contains(new Point(0,0));",
+        "    assert result.contains(new Point(3,0));"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "convexHullRecursive throws NullPointerException when a null element is in the list",
+      "path": "B0→NullPointerException",
+      "precondition": "list of size>=3 containing a null point among valid points",
+      "expectedResult": "NullPointerException is thrown during orientation computation",
+      "tags": [
+        "negative",
+        "exception",
+        "null-element"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 convexHullRecursive null-element throws NPE",
+        "  GIVEN",
+        "    List<Point> points = [(0,0), null, (1,1)];",
+        "  WHEN",
+        "    call ConvexHull.convexHullRecursive(points);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

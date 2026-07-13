@@ -1,0 +1,238 @@
+{
+  "method": "wrap",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "wrap() on empty input yields empty string (loop zero iterations)",
+      "path": "B0→B1",
+      "precondition": "Builder.from(\"\") using default settings",
+      "expectedResult": "return value is \"\"",
+      "tags": [
+        "loop-0",
+        "overload:wrap()",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-input",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "wrap() text shorter than maxWidth remains unbroken (tooLong false)",
+      "path": "B0→B2→B8→B10",
+      "precondition": "Builder.from(\"hello world\") default maxWidth=80",
+      "expectedResult": "return value is \"hello world\"",
+      "tags": [
+        "branch-false",
+        "overload:wrap()",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 short-text",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hello world\");",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"hello world\");"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "wrap() splits on space when line > maxWidth (branch-true split)",
+      "path": "B0→B2→B3→B5→B6→B8→B10",
+      "precondition": "Builder.from(\"alpha beta gamma\").maxWidth(6)",
+      "expectedResult": "return value is \"alpha\\nbeta gamma\"",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 split-on-space",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"alpha beta gamma\").maxWidth(6);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"alpha\\nbeta gamma\");"
+      ]
+    },
+    {
+      "id": "TC04_O1",
+      "description": "wrap() preserves existing newline (ch=='\\n' branch)",
+      "path": "B0→B2→B4→B8→B10",
+      "precondition": "Builder.from(\"one\\ntwo\").maxWidth(5)",
+      "expectedResult": "return value is \"one\\ntwo\"",
+      "tags": [
+        "branch-newline",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 preserve-newline",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"one\\ntwo\").maxWidth(5);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"one\\ntwo\");"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "wrap() breaks long word with hyphens when breakWords true",
+      "path": "B0→B2→B3→B5→B7→B9→B11→B13",
+      "precondition": "Builder.from(\"abcdefgh\").maxWidth(3).breakWords(true).insertHyphens(true)",
+      "expectedResult": "return value is \"ab-\\ncd-\\nef-\\ngh\"",
+      "tags": [
+        "breakWords-true",
+        "insertHyphens-true",
+        "loop-N",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 hyphenated-break",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdefgh\").maxWidth(3).breakWords(true).insertHyphens(true);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"ab-\\ncd-\\nef-\\ngh\");"
+      ]
+    },
+    {
+      "id": "TC06_O1",
+      "description": "wrap() does not break long word when breakWords false (broken flag set)",
+      "path": "B0→B2→B3→B5→B7→B8→B10",
+      "precondition": "Builder.from(\"abcdef\").maxWidth(3).breakWords(false)",
+      "expectedResult": "return value is \"abcdef\"",
+      "tags": [
+        "breakWords-false",
+        "branch-false",
+        "overload:wrap()"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 no-break-long-word",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"abcdef\").maxWidth(3).breakWords(false);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"abcdef\");"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "wrap(Writer) writes wrapped text to Writer and closes reader",
+      "path": "B0→B2→B3→B5→B6→B8→B12",
+      "precondition": "StringReader stub and StringWriter real, why stub: isolate Reader close",
+      "expectedResult": "Writer contains \"foo\\nbar\"",
+      "tags": [
+        "overload:wrap(Writer)",
+        "branch-true",
+        "resource-close"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 writer-output-close",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"foo bar\");",
+        "    StringWriter w = new StringWriter();",
+        "    Builder b = WordWrap.from(r, true).maxWidth(3);",
+        "  WHEN",
+        "    b.wrap(w);",
+        "  THEN",
+        "    assert w.toString().equals(\"foo\\nbar\");"
+      ]
+    },
+    {
+      "id": "TC08_O3",
+      "description": "wrapToList() returns list of lines for multi-line input",
+      "path": "B0→B2→B3→B5→B6→B8→B14",
+      "precondition": "Builder.from(\"x y z\").maxWidth(1)",
+      "expectedResult": "return list equals [\"x\",\"y\",\"z\"]",
+      "tags": [
+        "overload:wrapToList()",
+        "loop-N",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 toList-multiple-lines",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"x y z\").maxWidth(1);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"x\",\"y\",\"z\"));"
+      ]
+    },
+    {
+      "id": "TC09_O4",
+      "description": "wrap(File,Charset) writes UTF-16 encoded file",
+      "path": "B0→B2→B3→B5→B6→B15→B16",
+      "precondition": "temp file path, why file: integration test real IO",
+      "expectedResult": "file content equals \"hi\\nthere\" in UTF-16",
+      "tags": [
+        "overload:wrap(File,Charset)",
+        "IO",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 file-output",
+        "  GIVEN",
+        "    File f = tempFile();",
+        "    Builder b = WordWrap.from(\"hi there\").maxWidth(2);",
+        "  WHEN",
+        "    b.wrap(f, StandardCharsets.UTF_16);",
+        "  THEN",
+        "    assert readFile(f, UTF_16).equals(\"hi\\nthere\");"
+      ]
+    },
+    {
+      "id": "TC10_O5",
+      "description": "wrap(String,Charset) with non-existent directory throws IORuntimeException",
+      "path": "B0→B17→exception",
+      "precondition": "filename in non-existent dir",
+      "expectedResult": "throws IORuntimeException; cause is FileNotFoundException",
+      "tags": [
+        "overload:wrap(String,Charset)",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 missing-file-dir",
+        "  GIVEN",
+        "    String filename = \"/nonexistent/dir/out.txt\";",
+        "    Builder b = WordWrap.from(\"text\");",
+        "  WHEN",
+        "    call b.wrap(filename, StandardCharsets.UTF_8);",
+        "  THEN",
+        "    throws IORuntimeException;"
+      ]
+    }
+  ]
+}

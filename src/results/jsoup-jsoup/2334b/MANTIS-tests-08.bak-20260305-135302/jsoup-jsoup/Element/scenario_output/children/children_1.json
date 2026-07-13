@@ -1,0 +1,57 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() on element with only non-Element nodes returns empty list and populates cache",
+      "path": "B1→B2(loop×2)→B3",
+      "precondition": "Element has two TextNode children",
+      "expectedResult": "returns empty Elements list",
+      "tags": [
+        "filter",
+        "no-elements",
+        "cache-build"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children filters no element nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"one\"));",
+        "    el.appendChild(new TextNode(\"two\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() second call without mutation reuses shadowChildrenRef cache path",
+      "path": "B1→B4",
+      "precondition": "Element has two Element children and cache built",
+      "expectedResult": "second call returns same Elements instance without rebuilding",
+      "tags": [
+        "cache-reuse",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 children reuses cache when unmodified",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    el.appendChild(new Element(\"li\"));",
+        "    el.appendChild(new Element(\"li\"));",
+        "    Elements first = el.children();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assertSame(first, second);",
+        "    assertEquals(2, second.size());",
+        "END"
+      ]
+    }
+  ]
+}

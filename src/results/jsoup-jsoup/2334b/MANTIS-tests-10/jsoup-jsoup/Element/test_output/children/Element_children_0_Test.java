@@ -1,0 +1,79 @@
+package org.jsoup.nodes;
+
+import org.jsoup.select.Elements;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_children_0_Test {
+
+    @Test
+    @DisplayName("element with no childNodes returns an empty Elements list (childNodeSize()==0 branch)")
+    public void test_TC01() {
+        // GIVEN an element with no child nodes, so childNodeSize()==0 triggers the empty shortcut branch
+        Element el = new Element("div");
+        // WHEN
+        Elements result = el.children();
+        // THEN expect an empty Elements (size == 0)
+        assertEquals(0, result.size(), "Expected no children when none were appended");
+    }
+
+    @Test
+    @DisplayName("element with childNodes but no Element instances returns empty list after one filter iteration")
+    public void test_TC02() {
+        // GIVEN an element with a childNode that is a TextNode only, so the filter loop runs once but finds no Element
+        Element el = new Element("div");
+        el.appendChild(new TextNode("text"));
+        // WHEN
+        Elements result = el.children();
+        // THEN no Elements instances should be returned (size == 0)
+        assertEquals(0, result.size(), "Expected no element children when only TextNodes are present");
+    }
+
+    @Test
+    @DisplayName("element with multiple mixed childNodes filters only Element instances over N iterations")
+    public void test_TC03() {
+        // GIVEN an element with mixed child nodes: TextNode, Element(span), DataNode, Element(p)
+        Element parent = new Element("div");
+        parent.appendChild(new TextNode("t1"));      // non-Element
+        parent.appendChild(new Element("span"));     // Element
+        parent.appendChild(new DataNode("d"));       // non-Element
+        parent.appendChild(new Element("p"));        // Element
+        // WHEN
+        Elements result = parent.children();
+        // THEN only the two Element children in insertion order
+        assertEquals(2, result.size(), "Expected exactly two element children");
+        assertEquals("span", result.get(0).tagName(), "First child should be the <span> element");
+        assertEquals("p", result.get(1).tagName(), "Second child should be the <p> element");
+    }
+
+    @Test
+    @DisplayName("consecutive children() call uses cached shadowChildrenRef when available")
+    public void test_TC04() {
+        // GIVEN an element with two child Elements; first call builds and caches the shadowChildrenRef list
+        Element el = new Element("div");
+        el.appendChild(new Element("a"));
+        el.appendChild(new Element("b"));
+        // WHEN first call
+        Elements first = el.children();
+        // WHEN second call should reuse cache (no filtering loop)
+        Elements second = el.children();
+        // THEN both references should be identical (cache hit)
+        assertSame(first, second, "Expected the same Elements instance on consecutive calls due to cache hit");
+    }
+
+    @Test
+    @DisplayName("after node list change, cache is invalidated and children() rebuilds list (nodelistChanged branch)")
+    public void test_TC05() {
+        // GIVEN an element with one <li> child; children() builds cache of size 1
+        Element el = new Element("ul");
+        el.appendChild(new Element("li"));
+        Elements before = el.children();
+        assertEquals(1, before.size(), "Initial children size should be 1");
+        // WHEN a new <li> is appended, which triggers nodelistChanged and invalidates cache, then children() rebuilds
+        el.appendChild(new Element("li"));
+        Elements after = el.children();
+        // THEN the new children list should reflect two items
+        assertEquals(2, after.size(), "Expected children size to update to 2 after appending another li");
+    }
+}

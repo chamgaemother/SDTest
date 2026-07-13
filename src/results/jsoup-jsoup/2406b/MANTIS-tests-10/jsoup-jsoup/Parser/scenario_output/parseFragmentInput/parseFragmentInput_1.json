@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseFragmentInput(Reader, context) propagates UncheckedIOException when TreeBuilder.parseFragment throws",
+      "path": "B0→B1→B2(ex)→B3",
+      "precondition": "Parser constructed with StubTreeBuilderFail",
+      "expectedResult": "UncheckedIOException is thrown",
+      "tags": [
+        "exception",
+        "reader-overload",
+        "treebuilder-fail"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseFragmentInput reader-overload treebuilder exception",
+        "  GIVEN",
+        "    // Arrange stub builder that fails in parseFragment",
+        "    Parser parser = new Parser(new StubTreeBuilderFail());",
+        "    Reader reader = new StringReader(\"<tag>\");",
+        "    Element context = new Element(\"div\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    // Act & Assert",
+        "    call parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    // Expect",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseFragmentInput(String, baseUri) throws NullPointerException when html input is null",
+      "path": "B0→B1(ex)",
+      "precondition": "none",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "string-overload",
+        "null-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseFragmentInput string-overload null-html",
+        "  GIVEN",
+        "    Parser parser = new Parser(new StubTreeBuilderEmpty());",
+        "    String fragment = null;",
+        "    Element context = null;",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

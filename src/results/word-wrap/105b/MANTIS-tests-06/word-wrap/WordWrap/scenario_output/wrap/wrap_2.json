@@ -1,0 +1,130 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "wrap() on InputStream+charset source exercises from(InputStream,Charset) overload and default breakWords behavior",
+      "path": "B0→B3→B6→B14→B17→B19→B24→B28→B34",
+      "precondition": "none",
+      "expectedResult": "returns wrapped content correctly from InputStream reader",
+      "tags": [
+        "overload",
+        "positive",
+        "inputstream"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 wrap InputStream+Charset overload",
+        "  GIVEN",
+        "    byte[] bytes = \"one two three\".getBytes(StandardCharsets.UTF_8);",
+        "    InputStream in = new ByteArrayInputStream(bytes);",
+        "    WordWrap.Builder b = WordWrap.from(in, StandardCharsets.UTF_8).maxWidth(3);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"one\\ntwo\\nthr\\nee\", result);"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "wrap() with includeExtraWordChars treating punctuation as word char skips punctuation split branch",
+      "path": "B0→B3→B6→B11→B12→B14→B17→B19→B24→B28→B34",
+      "precondition": "none",
+      "expectedResult": "string preserves punctuation by including it as word char",
+      "tags": [
+        "branch",
+        "extraWordChars",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 includeExtraWordChars allows punctuation in words",
+        "  GIVEN",
+        "    String input = \"a!b\";",
+        "    WordWrap.Builder b = WordWrap.from(new StringReader(input))",
+        "      .includeExtraWordChars(\"!\")",
+        "      .maxWidth(5);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"a!b\", result);"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "wrap(LineConsumer) writes directly to custom consumer without closing reader when closeReader=false",
+      "path": "B0→B3→B6→B23→B25→B34",
+      "precondition": "use Builder.from(CharSequence) which sets closeReader=false",
+      "expectedResult": "consumer receives letters and new lines as list entries",
+      "tags": [
+        "overload",
+        "lineconsumer",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 wrap with LineConsumer overload",
+        "  GIVEN",
+        "    String text = \"ab cd\";",
+        "    WordWrap.Builder b = WordWrap.from(text).maxWidth(2);",
+        "    List<String> received = new ArrayList<>();",
+        "    LineConsumer consumer = new LineConsumer() { ...collect chars and newline into received... };",
+        "  WHEN",
+        "    b.wrap(consumer);",
+        "  THEN",
+        "    assert received equals Arrays.asList(\"ab\",\"cd\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "wrapUtf8(String) writes to file via wrapUtf8(File) and wrap(File,Charset)",
+      "path": "B0→B3→B6→B30→B31→B32→B33→B34",
+      "precondition": "temp file path available",
+      "expectedResult": "file contains wrapped lines in UTF-8",
+      "tags": [
+        "overload",
+        "file",
+        "utf8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 wrapUtf8 String filename",
+        "  GIVEN",
+        "    File temp = File.createTempFile(\"w\",\".txt\"); temp.deleteOnExit();",
+        "    WordWrap.Builder b = WordWrap.from(new StringReader(\"hello world\")).maxWidth(5);",
+        "  WHEN",
+        "    b.wrapUtf8(temp.getAbsolutePath());",
+        "    String out = new String(Files.readAllBytes(temp.toPath()), StandardCharsets.UTF_8);",
+        "  THEN",
+        "    assertEquals(\"hello\\nworld\", out);"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "wrap() on input with trailing spaces and newline triggers rightTrim branch to remove trailing whitespace",
+      "path": "B0→B3→B6→B8→B9→B10→B14→B17→B19→B24→B28→B34",
+      "precondition": "none",
+      "expectedResult": "trailing spaces before newline are trimmed in output",
+      "tags": [
+        "branch",
+        "rightTrim",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 trailing spaces before newline are removed",
+        "  GIVEN",
+        "    String input = \"ab   \\ncd\";",
+        "    WordWrap.Builder b = WordWrap.from(new StringReader(input));",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assertEquals(\"ab\\ncd\", result);"
+      ]
+    }
+  ]
+}

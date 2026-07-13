@@ -1,0 +1,61 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "clone() preserves and deep-copies document-level attributes",
+      "path": "B0→super.clone→B1→B2",
+      "precondition": "Document original has attributes set on root",
+      "expectedResult": "clone has same attribute key/value and modifying clone’s attributes does not affect original’s",
+      "tags": [
+        "positive",
+        "attributes",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 clone preserves and isolates attributes",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    original.attr(\"data-test\",\"123\");",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    assertEquals(\"123\", clone.attr(\"data-test\"));",
+        "    clone.attr(\"data-test\",\"456\");",
+        "    assertEquals(\"123\", original.attr(\"data-test\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "clone() deep-copies a Document with a DocumentType child node",
+      "path": "B0→super.clone→B1→B2",
+      "precondition": "Document original contains a DocumentType node as first child",
+      "expectedResult": "clone.childNodes() includes a DocumentType distinct instance and original unaffected by clone mutations",
+      "tags": [
+        "positive",
+        "doctype",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 clone with DocumentType child preserved",
+        "  GIVEN",
+        "    Document original = new Document(\"http://base\");",
+        "    DocumentType dt = new DocumentType(\"html\",\"pubid\",\"sysid\");",
+        "    original.prependChild(dt);",
+        "  WHEN",
+        "    Document clone = original.clone();",
+        "  THEN",
+        "    Node clonedFirst = clone.childNode(0);",
+        "    assertTrue(clonedFirst instanceof DocumentType);",
+        "    assertNotSame(dt, clonedFirst);",
+        "    ((DocumentType)clonedFirst).attr(\"some\",\"value\");",
+        "    assertNull(dt.attr(\"some\"));",
+        "END"
+      ]
+    }
+  ]
+}

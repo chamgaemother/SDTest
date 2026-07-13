@@ -1,0 +1,131 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset returns empty map when no attributes present (attributes()==null branch false, loop-0)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "new Element(\"div\") with no attributes",
+      "expectedResult": "returned Map is empty",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0",
+        "Java 8"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset returns single entry for one data- attribute (loop-1, include data- prefix filtering)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "new Element(\"span\") then el.attr(\"data-foo\",\"bar\")",
+      "expectedResult": "returned Map size is 1 and ds.get(\"foo\")==\"bar\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset one-data-attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data-foo\",\"bar\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1;",
+        "    assert ds.get(\"foo\").equals(\"bar\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset filters out non-data- attributes and returns multiple data entries (loop-N)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el has attrs id=\"x\", data-a=\"1\", data-b=\"2\", title=\"t\"",
+      "expectedResult": "returned Map size is 2, contains keys \"a\",\"b\" with values \"1\",\"2\"",
+      "tags": [
+        "branch-false",
+        "loop-N",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset filter-multiple",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"id\",\"x\"); el.attr(\"data-a\",\"1\"); el.attr(\"data-b\",\"2\"); el.attr(\"title\",\"t\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2;",
+        "    assert ds.get(\"a\").equals(\"1\"); assert ds.get(\"b\").equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset view is live: modifying returned map updates underlying attributes (loop-1, mutation)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el with data-x=\"y\"; using real Attributes implementation",
+      "expectedResult": "after ds.put(\"z\",\"v\"), el.attr(\"data-z\")==\"v\" and ds.get(\"z\")==\"v\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "mutation",
+        "P2",
+        "Java 8"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset live-view-mutation",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.attr(\"data-x\",\"y\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset(); ds.put(\"z\",\"v\");",
+        "  THEN",
+        "    assert el.attr(\"data-z\").equals(\"v\"); assert ds.get(\"z\").equals(\"v\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset respects data-attribute casing and trimmed keys (loop-1 mixed case)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el with attr(\"data-FooBar\",\"baz\")",
+      "expectedResult": "returned Map contains key \"FooBar\" with value \"baz\"",
+      "tags": [
+        "branch-false",
+        "loop-1",
+        "boundary",
+        "P1",
+        "Java 8"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset case-preserve-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\"); el.attr(\"data-FooBar\",\"baz\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1; assert ds.containsKey(\"FooBar\"); assert ds.get(\"FooBar\").equals(\"baz\");"
+      ]
+    }
+  ]
+}

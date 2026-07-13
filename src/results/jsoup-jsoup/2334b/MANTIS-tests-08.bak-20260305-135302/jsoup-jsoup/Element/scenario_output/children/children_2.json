@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "children() after emptying element clears cache and short-circuits on zero childNodeSize",
+      "path": "B0→B1→B2",
+      "precondition": "element has two <span> children, children() called once, then element.empty()",
+      "expectedResult": "second children() returns empty list via short-circuit",
+      "tags": [
+        "boundary",
+        "cache-invalidation",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 children after empty resets to no children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"span\"));",
+        "    el.appendChild(new Element(\"span\"));",
+        "    el.children();                     // builds cache, B0→B2→B3",
+        "    el.empty();                        // clears childNodes",
+        "  WHEN",
+        "    Elements result = el.children();  // should short-circuit B1→B2",
+        "  THEN",
+        "    assert result.isEmpty();"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "children() rebuilds list when shadowChildrenRef.get() returns null (simulate GC)",
+      "path": "B0→B1→B2(loop×1)→B3",
+      "precondition": "element has one <p> child, children() called once, then shadowChildrenRef cleared via reflection",
+      "expectedResult": "subsequent children() rebuilds list of one <p>",
+      "tags": [
+        "exception-path",
+        "reflection",
+        "cache-rebuild"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 children reparses when cache referent lost",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new Element(\"p\"));",
+        "    el.children();                                       // builds cache",
+        "    // Invalidate cache: shadowChildrenRef.get() == null",
+        "    reflectSet(el, \"shadowChildrenRef\", new WeakReference<List<Element>>(null));",
+        "  WHEN",
+        "    Elements result = el.children();                     // rebuilds via loop",
+        "  THEN",
+        "    assertEquals(1, result.size());",
+        "    assertEquals(\"p\", result.get(0).tagName());"
+      ]
+    }
+  ]
+}

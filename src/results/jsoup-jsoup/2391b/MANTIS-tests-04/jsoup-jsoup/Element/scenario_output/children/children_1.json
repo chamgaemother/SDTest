@@ -1,0 +1,58 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() returns empty when only non-Element nodes present (childNodeSize>0, filter yields none)",
+      "path": "B0→B2→B4→B6→B8",
+      "precondition": "Element with one TextNode child",
+      "expectedResult": "Elements.size() is 0",
+      "tags": [
+        "positive",
+        "filter",
+        "non-element"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children filters out only-non-element nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendText(\"text only\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() rebuilds list when cache modCount mismatches after mutation (cachedChildren present but stale)",
+      "path": "B0→B2→B4(cachedChildren != null)→B5(modMismatch)→B6",
+      "precondition": "Element with dynamic child additions",
+      "expectedResult": "Second children() returns updated list size 2",
+      "tags": [
+        "positive",
+        "cache",
+        "invalidation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children cache invalidation on modCount change",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    Element li1 = parent.appendElement(\"li\");",
+        "    Elements first = parent.children();",
+        "    // first call builds cache with modCount for one child",
+        "  WHEN",
+        "    Element li2 = parent.appendElement(\"li\");",
+        "    Elements second = parent.children();",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert second.size() == 2;",
+        "END"
+      ]
+    }
+  ]
+}

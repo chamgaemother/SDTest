@@ -1,0 +1,85 @@
+{
+  "scenarios": [
+    {
+      "id": "TC10",
+      "description": "parseInput(Reader,String) propagates unchecked exception from custom TreeBuilder.parse",
+      "path": "B0→B3→(exception)",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse throws IllegalStateException",
+      "expectedResult": "IllegalStateException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "reader-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput reader-propagates-exception",
+        "  GIVEN",
+        "    DummyTreeBuilderEx stub = new DummyTreeBuilderEx(); // parse() throws IllegalStateException",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<html></html>\");",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "xmlParser.parseInput(Reader,String) delegates to XmlTreeBuilder.parse and returns Document",
+      "path": "B0→B3→B5",
+      "precondition": "none",
+      "expectedResult": "Document contains <Item> and preserves case-sensitive structure",
+      "tags": [
+        "positive",
+        "reader-overload",
+        "xml"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 xmlParser reader-overload",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<Item TYPE=\\\"X\\\">val</Item>\");",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Parser.xmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    assertNotNull(doc.selectFirst(\"Item\"));",
+        "    assertEquals(\"X\", doc.selectFirst(\"Item\").attr(\"TYPE\"));",
+        "    assertEquals(\"val\", doc.selectFirst(\"Item\").text());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseInput(String,String) propagates unchecked exception from custom TreeBuilder.parse on string overload",
+      "path": "B0→B1→B3→(exception)",
+      "precondition": "Parser constructed with stub TreeBuilder whose parse(StringReader) throws IllegalArgumentException",
+      "expectedResult": "IllegalArgumentException is thrown",
+      "tags": [
+        "exception",
+        "negative",
+        "string-overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 parseInput string-propagates-exception",
+        "  GIVEN",
+        "    DummyTreeBuilderEx stub = new DummyTreeBuilderEx(); // parse() throws IllegalArgumentException",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<p></p>\";",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws IllegalArgumentException",
+        "END"
+      ]
+    }
+  ]
+}

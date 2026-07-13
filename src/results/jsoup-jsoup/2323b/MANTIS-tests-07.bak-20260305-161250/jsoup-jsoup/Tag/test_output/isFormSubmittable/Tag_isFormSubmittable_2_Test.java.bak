@@ -1,0 +1,44 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.parser.ParseSettings;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_valueOf_Test {
+
+    @Test
+    @DisplayName("valueOf(tagName,namespace,settings) throws on null tagName")
+    void test_TC07() {
+        // Scenario TC07: provide null tagName to exercise B0→B1 null-check path
+        String tagName = null;
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // Expect NullPointerException due to Validate.notNull(tagName)
+        assertThrows(NullPointerException.class, () -> Tag.valueOf(tagName, namespace, settings));
+    }
+
+    @Test
+    @DisplayName("valueOf(tagName,namespace,settings) throws on empty tagName after trim")
+    void test_TC08() {
+        // Scenario TC08: tagName is whitespace-only, trim yields empty, exercises B0→B1→B2 empty check
+        String tagName = "   ";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // Expect IllegalArgumentException due to Validate.notEmpty after trim
+        assertThrows(IllegalArgumentException.class, () -> Tag.valueOf(tagName, namespace, settings));
+    }
+
+    @Test
+    @DisplayName("Direct lookup path returns static known form-submittable tag without clone")
+    void test_TC09() {
+        // Scenario TC09: use pre-registered "textarea" tag, should follow B0→B3→B4 direct map hit
+        String tagName = "textarea";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        // Call valueOf for a known form-submittable tag
+        Tag tag = Tag.valueOf(tagName, namespace, settings);
+        // The static registry should define textarea as form-submittable
+        assertTrue(tag.isFormSubmittable(), "Expected 'textarea' to be recognized as form-submittable");
+    }
+}

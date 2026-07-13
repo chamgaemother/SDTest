@@ -1,0 +1,42 @@
+{
+  "scenarios": [
+    {
+      "id": "TC08",
+      "description": "child(1) after inserting new node invalidates shadowChildrenRef cache and rebuilds list",
+      "path": "B0→B3→B5→B6→B8 (first call) → nodelistChanged → B5→B6→B8 (second call)",
+      "precondition": "Element parent with two element children, cache built, then one more child inserted",
+      "expectedResult": "second child(1) still returns correct element, but uses a newly rebuilt cache instance",
+      "tags": [
+        "cache",
+        "rebuild",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child cache invalidation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element e1 = new Element(\"span\");",
+        "    Element e2 = new Element(\"p\");",
+        "    parent.appendChild(e1);",
+        "    parent.appendChild(e2);",
+        "  WHEN",
+        "    // First call builds and caches element list",
+        "    Element first = parent.child(1);",
+        "    // Insert a new non-element node to trigger nodelistChanged and clear cache",
+        "    parent.appendChild(new TextNode(\"new\"));",
+        "    // Second call should rebuild cache",
+        "    Element second = parent.child(1);",
+        "  THEN",
+        "    assert first == e2;",
+        "    assert second == e2;",
+        "    // Verify that the cache instance was invalidated and a new list created",
+        "    Field refField = Element.class.getDeclaredField(\"shadowChildrenRef\");",
+        "    refField.setAccessible(true);",
+        "    WeakReference<List<Element>> afterRef = (WeakReference<List<Element>>) refField.get(parent);",
+        "    assert afterRef.get() != null;"
+      ]
+    }
+  ]
+}

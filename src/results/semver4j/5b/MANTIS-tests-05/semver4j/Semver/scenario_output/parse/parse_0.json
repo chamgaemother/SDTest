@@ -1,0 +1,148 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parse(null) returns null when input is null (r0 == null branch)",
+      "path": "B0→B1(true)→B7",
+      "precondition": "none",
+      "expectedResult": "return value is null",
+      "tags": [
+        "branch-true",
+        "exception?",
+        "priority-critical"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse null-input",
+        "  GIVEN",
+        "    String version = null;",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parse(\"\") returns null when trimmed input is empty and invalid format triggers exception",
+      "path": "B0→B1(false)→B2→B5→B7",
+      "precondition": "none",
+      "expectedResult": "return value is null",
+      "tags": [
+        "branch-false",
+        "exception",
+        "boundary-empty"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse empty-string",
+        "  GIVEN",
+        "    String version = \"\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parse(\"1.2.3\") returns Semver instance for valid simple version",
+      "path": "B0→B1(false)→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned Semver.getVersion() equals \"1.2.3\"",
+      "tags": [
+        "branch-false",
+        "normal",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse simple-version",
+        "  GIVEN",
+        "    String version = \"1.2.3\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"1.2.3\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parse(\" 1.2.3 \") trims whitespace and returns valid Semver",
+      "path": "B0→B1(false)→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned Semver.getVersion() equals \"1.2.3\"",
+      "tags": [
+        "branch-false",
+        "normal",
+        "boundary-whitespace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse trimmed-version",
+        "  GIVEN",
+        "    String version = \" 1.2.3 \";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getVersion().equals(\"1.2.3\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parse(\"1.2.3-alpha.1+build.5\") returns Semver with pre-release and build tokens",
+      "path": "B0→B1(false)→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "returned Semver.getPreRelease() contains [\"alpha\",\"1\"] and getBuild() contains [\"build\",\"5\"]",
+      "tags": [
+        "branch-false",
+        "normal",
+        "pre-release",
+        "build"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse pre-release-and-build",
+        "  GIVEN",
+        "    String version = \"1.2.3-alpha.1+build.5\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result != null;",
+        "    assert result.getPreRelease().equals(Arrays.asList(\"alpha\",\"1\"));",
+        "    assert result.getBuild().equals(Arrays.asList(\"build\",\"5\"));"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parse(\"1.2\") returns null on invalid semver format (missing patch)",
+      "path": "B0→B1(false)→B2→B5→B7",
+      "precondition": "none",
+      "expectedResult": "return value is null",
+      "tags": [
+        "branch-false",
+        "exception",
+        "invalid-format"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse missing-patch",
+        "  GIVEN",
+        "    String version = \"1.2\";",
+        "  WHEN",
+        "    Semver result = Semver.parse(version);",
+        "  THEN",
+        "    assert result == null;"
+      ]
+    }
+  ]
+}

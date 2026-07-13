@@ -1,0 +1,69 @@
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Element_dataset_Test {
+
+    @Test
+    @DisplayName("TC07: dataset().clear() removes all data- attributes from element (clear loop removes multiple entries)")
+    public void test_TC07() {
+        // GIVEN an element with two data-* and one non-data attribute
+        Element el = new Element("div");
+        el.attr("data-a", "1");
+        el.attr("data-b", "2");
+        el.attr("id", "x");
+        // WHEN we get the dataset view and clear it (should iterate over all data-* keys)
+        Map<String, String> ds = el.dataset();
+        ds.clear(); // loop × N path: clear removes each data-* attribute
+        // THEN no data-* attributes remain, non-data attribute is intact, and view is empty
+        assertFalse(el.hasAttr("data-a"), "data-a should be removed after clear");
+        assertFalse(el.hasAttr("data-b"), "data-b should be removed after clear");
+        assertTrue(el.hasAttr("id"), "non-data attribute 'id' should remain");
+        assertTrue(ds.isEmpty(), "dataset view should be empty after clear");
+    }
+
+    @Test
+    @DisplayName("TC08: dataset().put(\"a\",\"new\") overrides existing data-* attribute (put path update existing)")
+    public void test_TC08() {
+        // GIVEN an element with existing data-a=old
+        Element el = new Element("span");
+        el.attr("data-a", "old");
+        // WHEN we get the dataset view and put a new value for key "a"
+        Map<String, String> ds = el.dataset();
+        String prev = ds.put("a", "new"); // B3 path: override existing
+        // THEN underlying attribute and dataset view reflect updated value
+        assertEquals("old", prev, "put should return the previous value 'old'");
+        assertEquals("new", el.attr("data-a"), "element attribute data-a should be updated to 'new'");
+        assertEquals("new", ds.get("a"), "dataset.get(\"a\") should return 'new'");
+    }
+
+    @Test
+    @DisplayName("TC09: dataset().put(null, \"v\") throws NullPointerException due to null key")
+    public void test_TC09() {
+        // GIVEN a fresh element and its dataset
+        Element el = new Element("p");
+        Map<String, String> ds = el.dataset();
+        // WHEN putting a null key, THEN NPE is thrown
+        assertThrows(NullPointerException.class, () -> ds.put(null, "v"),
+                "Putting a null key into dataset should throw NullPointerException");
+    }
+
+    @Test
+    @DisplayName("TC10: dataset() handles attribute named exactly \"data-\" producing empty-string key")
+    public void test_TC10() {
+        // GIVEN an element with attribute named exactly "data-" (boundary case: key becomes empty string)
+        Element el = new Element("div");
+        el.attr("data-", "x"); // loop ×1 path: should produce key ""
+        // WHEN we retrieve the dataset
+        Map<String, String> ds = el.dataset();
+        // THEN dataset contains key "" with value "x"
+        assertTrue(ds.containsKey(""), "dataset should contain empty string key for attribute 'data-'");
+        assertEquals("x", ds.get(""), "dataset.get(\"\") should return the attribute value 'x'");
+    }
+}

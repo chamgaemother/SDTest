@@ -1,0 +1,103 @@
+{
+  "scenarios": [
+    {
+      "id": "TC09",
+      "description": "parseInput(Reader,String) releases lock and propagates IllegalStateException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser constructed with stub TreeBuilder that throws IllegalStateException in parse(Reader,String,Parser)",
+      "expectedResult": "IllegalStateException is thrown and lock is not held after call",
+      "tags": [
+        "exception",
+        "lock-release",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput reader-overload stub exception",
+        "  GIVEN",
+        "    // Arrange a stub TreeBuilder that always throws",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser parser) {",
+        "        throw new IllegalStateException(\"stub-fail\");",
+        "      }",
+        "      @Override public void process(Token token) {}",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.preserveCase(); }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.Html(); }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    Reader reader = new StringReader(\"<html></html>\");",
+        "  WHEN",
+        "    call parser.parseInput(reader, \"http://example.com\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub-fail\";",
+        "    assert parser.lock.isLocked() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "parseInput(String,String) releases lock and propagates IllegalStateException from TreeBuilder.parse",
+      "path": "B0→B1→B2→B3→B4→B5",
+      "precondition": "Parser constructed with stub TreeBuilder that throws IllegalStateException in parse(Reader,String,Parser)",
+      "expectedResult": "IllegalStateException is thrown and lock is not held after call",
+      "tags": [
+        "exception",
+        "lock-release",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput string-overload stub exception",
+        "  GIVEN",
+        "    // Arrange a stub TreeBuilder that always throws",
+        "    TreeBuilder stub = new TreeBuilder() {",
+        "      @Override public Document parse(Reader in, String uri, Parser parser) {",
+        "        throw new IllegalStateException(\"stub-fail-str\");",
+        "      }",
+        "      @Override public void process(Token token) {}",
+        "      @Override public TreeBuilder newInstance() { return this; }",
+        "      @Override public ParseSettings defaultSettings() { return ParseSettings.preserveCase(); }",
+        "      @Override public TagSet defaultTagSet() { return TagSet.Html(); }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<p>x</p>\";",
+        "  WHEN",
+        "    call parser.parseInput(html, \"http://example.com\");",
+        "  THEN",
+        "    throws IllegalStateException with message \"stub-fail-str\";",
+        "    assert parser.lock.isLocked() == false;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC11",
+      "description": "parseInput(Reader,null) via Reader overload throws NullPointerException inside TreeBuilder.parse",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Parser constructed with real HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown and lock is not held after call",
+      "tags": [
+        "negative",
+        "exception",
+        "null-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 parseInput reader-overload null-baseUri",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    Reader reader = new StringReader(\"<div>t</div>\");",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "    assert parser.lock.isLocked() == false;",
+        "END"
+      ]
+    }
+  ]
+}

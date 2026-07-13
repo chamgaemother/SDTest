@@ -1,0 +1,59 @@
+{
+  "scenarios": [
+    {
+      "id": "TC15",
+      "description": "parseInput(String,baseUri) with null HTML string throws NullPointerException at StringReader construction",
+      "path": "B0→B2→B3",
+      "precondition": "Parser created with HtmlTreeBuilder",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "argument-validation"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 parseInput null-html-string",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    String html = null;",
+        "    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "parseInput(Reader,baseUri) with stubbed TreeBuilder throwing IllegalStateException propagates exception",
+      "path": "B0→B2→B4",
+      "precondition": "Parser created with StubTreeBuilder extending HtmlTreeBuilder",
+      "expectedResult": "IllegalStateException(\"fail\") is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "stub"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 parseInput reader-overload stub-failure",
+        "  GIVEN",
+        "    class StubTreeBuilder extends HtmlTreeBuilder {",
+        "      @Override public Document parse(Reader in, String uri, Parser p) { throw new IllegalStateException(\"fail\"); }",
+        "    }",
+        "    Parser parser = new Parser(new StubTreeBuilder());",
+        "    Reader input = new StringReader(\"<p/>\");",
+        "    String baseUri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws IllegalStateException with message \"fail\";",
+        "END"
+      ]
+    }
+  ]
+}

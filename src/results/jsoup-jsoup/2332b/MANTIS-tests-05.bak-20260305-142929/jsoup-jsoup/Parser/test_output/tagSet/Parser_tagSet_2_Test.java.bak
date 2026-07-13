@@ -1,0 +1,76 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_tagSet_Test {
+
+    @Test
+    @DisplayName("Custom TreeBuilder stub with mixed-case duplicate tags; preserveCase=false yields lowercase unique tag names")
+    public void test_TC05() throws Exception {
+        // GIVEN: stub TreeBuilder that returns duplicate mixed-case tags and parser settings without case preservation
+        TreeBuilder dupStub = new TreeBuilder() {
+            @Override public Set<String> getSupportedTags() { return Set.of("AbC", "AbC", "XyZ"); }
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(false, false); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) { return null; }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return List.of(); }
+            @Override public boolean isContentForTagData(String normalName) { return false; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public void initialiseParse(Reader reader, String baseUri, Parser parser) { }
+            @Override public void process(org.jsoup.parser.Token token) { }
+        };
+        Parser parser = new Parser(dupStub).settings(new ParseSettings(false, false));
+
+        // Use reflection to access the (likely private) tagSet method
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet");
+        tagSetMethod.setAccessible(true);
+        // WHEN: invoke tagSet to collect supported tags
+        @SuppressWarnings("unchecked")
+        Set<String> tags = (Set<String>) tagSetMethod.invoke(parser);
+
+        // THEN: lowercase and deduplicate the tags (expected abc, xyz)
+        assertEquals(Set.of("abc", "xyz"), tags);
+    }
+
+    @Test
+    @DisplayName("Custom TreeBuilder stub returns null supported tags causing NullPointerException")
+    public void test_TC06() throws Exception {
+        // GIVEN: stub TreeBuilder that returns null for supported tags
+        TreeBuilder nullStub = new TreeBuilder() {
+            @Override public Set<String> getSupportedTags() { return null; }
+            @Override public ParseSettings defaultSettings() { return new ParseSettings(false, false); }
+            @Override public TreeBuilder newInstance() { return this; }
+            @Override public Document parse(Reader in, String baseUri, Parser parser) { return null; }
+            @Override public List<Node> parseFragment(Reader in, Element context, String baseUri, Parser parser) { return List.of(); }
+            @Override public boolean isContentForTagData(String normalName) { return false; }
+            @Override public String defaultNamespace() { return ""; }
+            @Override public void initialiseParse(Reader reader, String baseUri, Parser parser) { }
+            @Override public void process(org.jsoup.parser.Token token) { }
+        };
+        Parser parser = new Parser(nullStub).settings(new ParseSettings(false, false));
+
+        // Access tagSet via reflection
+        Method tagSetMethod = Parser.class.getDeclaredMethod("tagSet");
+        tagSetMethod.setAccessible(true);
+
+        // WHEN & THEN: invoking should wrap a NullPointerException in an InvocationTargetException
+        InvocationTargetException thrown = assertThrows(InvocationTargetException.class,
+            () -> tagSetMethod.invoke(parser));
+        // verify the cause is NullPointerException as expected
+        assertTrue(thrown.getCause() instanceof NullPointerException,
+            "Expected a NullPointerException cause when supported tags is null");
+    }
+}

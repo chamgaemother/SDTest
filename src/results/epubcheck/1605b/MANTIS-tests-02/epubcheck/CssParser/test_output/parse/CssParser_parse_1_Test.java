@@ -1,0 +1,152 @@
+package org.idpf.epubcheck.util.css;
+
+import org.idpf.epubcheck.util.css.CssException;
+import org.idpf.epubcheck.util.css.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssSource;
+import org.idpf.epubcheck.util.css.CssToken;
+import org.idpf.epubcheck.util.css.CssTokenList;
+import org.idpf.epubcheck.util.css.CssErrorHandler;
+import org.idpf.epubcheck.util.css.CssContentHandler;
+import org.idpf.epubcheck.util.css.CssDeclaration;
+import org.idpf.epubcheck.util.css.CssSelector;
+import org.idpf.epubcheck.util.css.CssAtRule;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class CssParser_parse_1_Test {
+
+  private static class TestErrorHandler implements CssErrorHandler {
+    final List<CssException> errors = new ArrayList<>();
+    @Override
+    public void error(CssException exception) {
+      errors.add(exception);
+    }
+  }
+
+  private static class TestContentHandler implements CssContentHandler {
+    final List<List<String>> selectorsCalled = new ArrayList<>();
+    final List<List<String>> declarations = new ArrayList<>();
+    final List<String> startAtRules = new ArrayList<>();
+    final List<String> endAtRules = new ArrayList<>();
+    boolean docStarted = false;
+    boolean docEnded = false;
+
+    @Override
+    public void startDocument() {
+      docStarted = true;
+    }
+
+    @Override
+    public void endDocument() {
+      docEnded = true;
+    }
+
+    @Override
+    public void selectors(List<CssSelector> selectors) {
+      List<String> names = new ArrayList<>();
+      for (CssSelector sel : selectors) {
+        names.add(sel.toString());
+      }
+      selectorsCalled.add(names);
+    }
+
+    @Override
+    public void declaration(CssDeclaration declaration) {
+      // record "name:value" style
+      declarations
+        .computeIfAbsent(selectorsCalled.size() - 1, k -> new ArrayList<>())
+        .add(declaration.toCssString());
+    }
+
+    @Override
+    public void startAtRule(CssAtRule rule) {
+      startAtRules.add(rule.getName().orElse(null));
+    }
+
+    @Override
+    public void endAtRule(String name) {
+      endAtRules.add(name);
+    }
+
+    @Override
+    public void endSelectors(List<CssSelector> selectors) {
+      // Implementing required method
+    }
+  }
+
+  @Test
+  @DisplayName("parse handles a rule‐set with a declaration (non‐ATKEYWORD → has declarations path)")
+  public void test_TC06() throws IOException, CssException {
+    // input has one rule-set p{color:red;} so iter.hasNext->true, type!=ATKEYWORD path
+    Reader reader = new StringReader("p{color:red;}");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+
+    new CssParser(Locale.ENGLISH).parse(reader, "sys", err, doc);
+
+    // no errors recorded
+    assertTrue(err.errors.isEmpty(), "Expected no parsing errors");
+    // one selector group "p"
+    assertEquals(1, doc.selectorsCalled.size(), "Should have one selectors invocation");
+    assertEquals("p", doc.selectorsCalled.get(0).get(0));
+    // one declaration recorded for that selector group
+    assertEquals(1, doc.declarations.get(0).size());
+    assertTrue(doc.declarations.get(0).get(0).contains("color:red"), "Expected declaration color:red");
+    // endDocument called
+    assertTrue(doc.docEnded, "Expected endDocument to be called");
+  }
+
+  @Test
+  @DisplayName("parse handles an at‐rule with block containing declarations (ATKEYWORD→hasBlock true→declarationBlock path)")
+  public void test_TC07() throws IOException, CssException {
+    // input @page { margin:1px; } triggers ATKEYWORD and hasBlock->declarationBlock
+    Reader reader = new StringReader("@page { margin:1px; }");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+
+    new CssParser(Locale.ENGLISH).parse(reader, "id", err, doc);
+
+    assertTrue(err.errors.isEmpty(), "Expected no errors on at-rule with declaration block");
+    // startAtRule recorded "page"
+    assertEquals(1, doc.startAtRules.size());
+    assertEquals("page", doc.startAtRules.get(0));
+    // declaration recorded inside at-rule context (selectorsCalled remains empty)
+    assertEquals(1, doc.declarations.size());
+    assertTrue(doc.declarations.get(0).get(0).contains("margin:1px"), "Expected margin:1px declaration");
+    // endAtRule recorded "page"
+    assertEquals(1, doc.endAtRules.size());
+    assertEquals("page", doc.endAtRules.get(0));
+  }
+
+  @Test
+  @DisplayName("parse handles an at‐rule with block containing nested rule‐set (ATKEYWORD→hasBlock true→hasRuleSet true path)")
+  public void test_TC08() throws IOException, CssException {
+    // input @media all { h1{} } triggers nested ruleset inside at-rule block
+    Reader reader = new StringReader("@media all { h1{} }");
+    TestErrorHandler err = new TestErrorHandler();
+    TestContentHandler doc = new TestContentHandler();
+
+    new CssParser(Locale.ENGLISH).parse(reader, "url", err, doc);
+
+    assertTrue(err.errors.isEmpty(), "No errors expected for nested rule-set");
+    // startAtRule first element "media"
+    assertEquals(1, doc.startAtRules.size());
+    assertEquals("media", doc.startAtRules.get(0));
+    // nested selectorsCalled should record "h1"
+    assertEquals(1, doc.selectorsCalled.size());
+    assertEquals("h1", doc.selectorsCalled.get(0).get(0));
+    // endAtRule recorded "media"
+    assertEquals(1, doc.endAtRules.size());
+    assertEquals("media", doc.endAtRules.get(0));
+  }
+}

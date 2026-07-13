@@ -1,0 +1,45 @@
+package com.thealgorithms.others;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MiniMaxAlgorithm_setScores_Test {
+
+    @Test
+    @DisplayName("setScores with 16-element array (2^4) sets scores and height=4 via log2 recursion")
+    public void test_TC04() {
+        // GIVEN a fresh instance of MiniMaxAlgorithm
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        // AND an input array whose length is 16 (a power of two) to traverse B0→B1 path
+        int[] input = new int[16];
+        for (int i = 0; i < input.length; i++) {
+            input[i] = i * 2;
+        }
+
+        // WHEN setting the scores with a valid power-of-two length
+        algo.setScores(input);
+
+        // THEN the internal scores should be replaced by the provided array
+        assertArrayEquals(input, algo.getScores(), 
+            "The internal scores array should match the provided 16-element array");
+        // AND the height should be computed as log2(16) = 4 via recursion
+        assertEquals(4, algo.getHeight(), 
+            "Height should be updated to 4 for a 16-element scores array");
+    }
+
+    @Test
+    @DisplayName("setScores with zero-length array triggers StackOverflowError in log2 recursion")
+    public void test_TC05() {
+        // GIVEN a fresh instance of MiniMaxAlgorithm
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        // AND an input array of length 0 to cause infinite recursion in log2 (0 % 1 == 0 leads into B1)
+        int[] input = new int[0];
+
+        // WHEN calling setScores with zero-length array
+        // THEN a StackOverflowError should be thrown due to infinite log2 recursion
+        assertThrows(StackOverflowError.class, () -> {
+            algo.setScores(input);
+        }, "Expected a StackOverflowError when computing log2(0) recursively");
+    }
+}

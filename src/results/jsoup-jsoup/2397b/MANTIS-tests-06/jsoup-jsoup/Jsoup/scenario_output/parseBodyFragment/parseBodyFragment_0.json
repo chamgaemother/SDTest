@@ -1,0 +1,212 @@
+{
+  "method": "parseBodyFragment",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "parseBodyFragment(html,baseUri) with non-empty bodyHtml and absolute baseUri returns fragment wrapped and unchanged",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"<p>text</p>\"",
+      "tags": [
+        "positive",
+        "overload:String,String",
+        "branch-baseUri-nonempty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseBodyFragment with non-empty HTML and non-empty baseUri",
+        "  GIVEN",
+        "    String html = \"<p>text</p>\";\n    String baseUri = \"http://example.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>text</p>\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "parseBodyFragment(html) uses empty baseUri alias overload and returns fragment unchanged",
+      "path": "B0→B1→B4",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"<span>ok</span>\"",
+      "tags": [
+        "positive",
+        "overload:String",
+        "branch-baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseBodyFragment overload without baseUri",
+        "  GIVEN",
+        "    String html = \"<span>ok</span>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<span>ok</span>\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "parseBodyFragment(html,baseUri) resolves relative link to absolute URL when baseUri non-empty",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"<a href=\\\"http://ex.com/page.html\\\">link</a>\"",
+      "tags": [
+        "positive",
+        "overload:String,String",
+        "branch-resolve-relative"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 relative link resolution",
+        "  GIVEN",
+        "    String html = \"<a href='page.html'>link</a>\";\n    String baseUri = \"http://ex.com/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<a href=\\\"http://ex.com/page.html\\\">link</a>\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "parseBodyFragment(html,baseUri) retains relative link when baseUri is empty string",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"<a href=\\\"page.html\\\">link</a>\"",
+      "tags": [
+        "positive",
+        "overload:String,String",
+        "branch-baseUri-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 relative link without baseUri resolution",
+        "  GIVEN",
+        "    String html = \"<a href='page.html'>link</a>\";\n    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<a href=\\\"page.html\\\">link</a>\");"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "parseBodyFragment(emptyBody,baseUri) returns empty body for empty input string",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"\"",
+      "tags": [
+        "boundary",
+        "overload:String,String",
+        "branch-empty-body"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 empty bodyHtml returns empty",
+        "  GIVEN",
+        "    String html = \"\";\n    String baseUri = \"http://x/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "parseBodyFragment(unclosedTag,baseUri) closes unclosed tags in output fragment",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() == \"<div>foo</div>\"",
+      "tags": [
+        "positive",
+        "overload:String,String",
+        "branch-unclosed-tag"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 auto-close unclosed tags",
+        "  GIVEN",
+        "    String html = \"<div>foo\";\n    String baseUri = \"\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>foo</div>\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseBodyFragment(null,baseUri) throws NullPointerException for null html parameter",
+      "path": "B0→B1→B5",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String,String",
+        "branch-null-html"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 null bodyHtml throws NPE",
+        "  GIVEN",
+        "    String html = null;\n    String baseUri = \"http://ex/\";",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseBodyFragment(html,null) throws NullPointerException for null baseUri parameter",
+      "path": "B0→B1→B5",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String,String",
+        "branch-null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 null baseUri throws NPE",
+        "  GIVEN",
+        "    String html = \"<p>x</p>\";\n    String baseUri = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseBodyFragment(null) throws NullPointerException for null html in single-arg overload",
+      "path": "B0→B1→B4→B5",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String",
+        "branch-null-html"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 null html single-arg overload",
+        "  GIVEN",
+        "    String html = null;",
+        "  WHEN",
+        "    call Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    }
+  ]
+}

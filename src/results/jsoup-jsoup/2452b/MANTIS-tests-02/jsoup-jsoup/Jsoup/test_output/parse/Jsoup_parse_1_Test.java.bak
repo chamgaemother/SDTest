@@ -1,0 +1,145 @@
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC10: parse(String html, String baseUri, Parser parser) uses supplied parser and resolves baseUri")
+    void test_TC10() {
+        // Use a html parser to ensure branch of parse(html, baseUri, parser) is exercised
+        String html = "<img src=\"pic.png\"/>";
+        String baseUri = "https://host/dir/";
+        Parser parser = Parser.htmlParser();
+        Document doc = Jsoup.parse(html, baseUri, parser);
+        // The document should reflect the parser input and baseUri argument
+        assertEquals(baseUri, doc.baseUri(), "baseUri should match the supplied value");
+        assertTrue(doc.body().html().contains("<img src=\"pic.png\""),
+            "Body HTML should contain the supplied image tag");
+    }
+
+    @Test
+    @DisplayName("TC11: parse(File file, String charsetName) loads file content with charset and file path as baseUri")
+    void test_TC11() throws IOException {
+        // Create temporary HTML file to test DataUtil.load(file, charset, filePath)
+        File temp = File.createTempFile("jsoup-test", ".html");
+        temp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(temp, false)) {
+            fw.write("<div>X</div>");
+        }
+        String charset = "UTF-8";
+        Document doc = Jsoup.parse(temp, charset);
+        // Expect the text content 'X' and baseUri as file absolute path
+        assertEquals("X", doc.body().text(), "Body text should match the div content");
+        assertEquals(temp.getAbsolutePath(), doc.baseUri(), "baseUri should be the file's absolute path");
+    }
+
+    @Test
+    @DisplayName("TC12: parse(File file, String charsetName, String baseUri, Parser parser) invokes DataUtil with parser override")
+    void test_TC12() throws IOException {
+        // Test parsing with custom parser (xmlParser) and explicit baseUri
+        File temp = File.createTempFile("jsoup-test2", ".html");
+        temp.deleteOnExit();
+        try (FileWriter fw = new FileWriter(temp, false)) {
+            fw.write("<br>");
+        }
+        String charset = null;
+        String baseUri = "http://a/";
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(temp, charset, baseUri, parser);
+        // xmlParser normalizes <br> to <br/>, and baseUri from argument
+        assertEquals(baseUri, doc.baseUri(), "baseUri should match the supplied argument");
+        assertTrue(doc.body().html().contains("<br/>)".replace(")", ""),
+            "Body HTML should contain self-closing br tag per xmlParser");
+        // The above replace hack ensures we check '<br/>' exists
+    }
+
+    @Test
+    @DisplayName("TC13: parse(Path path, String charsetName, String baseUri) loads HTML via Path")
+    void test_TC13() throws IOException {
+        // Use Files.write to create HTML at Path for parse(path, charset, baseUri)
+        Path path = Files.createTempFile("jsoup-test3", ".html");
+        path.toFile().deleteOnExit();
+        String content = "<span>Y</span>";
+        Files.write(path, content.getBytes());
+        String charset = "UTF-8";
+        String baseUri = "https://x/";
+        Document doc = Jsoup.parse(path, charset, baseUri);
+        assertEquals("Y", doc.body().text(), "Body text should match the span content");
+        assertEquals(baseUri, doc.baseUri(), "baseUri should match the supplied argument");
+    }
+
+    @Test
+    @DisplayName("TC14: parse(Path path, String charsetName) infers baseUri from path and reads charset")
+    void test_TC14() throws IOException {
+        // parse(Path, charset) should default baseUri to path.toAbsolutePath().toString()
+        Path path = Files.createTempFile("jsoup-test4", ".html");
+        path.toFile().deleteOnExit();
+        String content = "<i>Z</i>";
+        Files.write(path, content.getBytes());
+        String charset = null;
+        Document doc = Jsoup.parse(path, charset);
+        assertEquals("Z", doc.body().text(), "Body text should match the italic content");
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri(),
+            "baseUri should be the path's absolute path string");
+    }
+
+    @Test
+    @DisplayName("TC15: parse(Path path) auto-detects charset and uses absolute path as baseUri")
+    void test_TC15() throws IOException {
+        // parse(Path) should call parse(path, null, absolutePath)
+        Path path = Files.createTempFile("jsoup-test5", ".html");
+        path.toFile().deleteOnExit();
+        String content = "<b>W</b>";
+        Files.write(path, content.getBytes());
+        Document doc = Jsoup.parse(path);
+        assertEquals("W", doc.body().text(), "Body text should match the bold content");
+        assertEquals(path.toAbsolutePath().toString(), doc.baseUri(),
+            "baseUri should be the path's absolute path string");
+    }
+
+    @Test
+    @DisplayName("TC16: parse(InputStream in, String charsetName, String baseUri) reads and closes stream")
+    void test_TC16() throws IOException {
+        // parse(InputStream, charset, baseUri) reads from stream and sets baseUri
+        byte[] data = "<p>Q</p>".getBytes();
+        try (InputStream in = new ByteArrayInputStream(data)) {
+            String charset = "UTF-8";
+            String baseUri = "http://s/";
+            Document doc = Jsoup.parse(in, charset, baseUri);
+            assertEquals("Q", doc.body().text(), "Body text should match the paragraph content");
+            assertEquals(baseUri, doc.baseUri(), "baseUri should match the supplied argument");
+        }
+    }
+
+    @Test
+    @DisplayName("TC17: parse(InputStream in, String charsetName, String baseUri, Parser parser) applies parser to InputStream")
+    void test_TC17() throws IOException {
+        // parse(InputStream, charset, baseUri, parser) uses parser xmlParser to normalize tags
+        byte[] data = "<hr>".getBytes();
+        try (InputStream in = new ByteArrayInputStream(data)) {
+            String charset = null;
+            String baseUri = "https://t/";
+            Parser parser = Parser.xmlParser();
+            Document doc = Jsoup.parse(in, charset, baseUri, parser);
+            assertTrue(doc.body().html().contains("<hr/>") ,
+                "Body HTML should contain normalized self-closing hr tag per xmlParser");
+            assertEquals(baseUri, doc.baseUri(), "baseUri should match the supplied argument");
+        }
+    }
+}

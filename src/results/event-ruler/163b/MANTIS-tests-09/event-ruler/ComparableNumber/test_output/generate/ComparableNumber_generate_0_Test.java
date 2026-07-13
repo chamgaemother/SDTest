@@ -1,0 +1,101 @@
+package software.amazon.event.ruler;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class ComparableNumber_generate_0_Test {
+
+    @Test
+    @DisplayName("generate throws IllegalArgumentException when f < -5e9 (lower bound violation)")
+    void test_TC01() throws Exception {
+        // f < -5e9 ensures the lower-bound check (f < -Constants.FIVE_BILLION) is true
+        double f = -5_000_000_000.1;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> generate.invoke(null, f)
+        );
+        String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+        assertTrue(
+            msg.contains("Value must be between -5000000000.0 and 5000000000.0, inclusive"),
+            "Exception message should mention the valid range"
+        );
+    }
+
+    @Test
+    @DisplayName("generate throws IllegalArgumentException when f > 5e9 (upper bound violation)")
+    void test_TC02() throws Exception {
+        // f > 5e9 ensures the upper-bound check (f > Constants.FIVE_BILLION) is true
+        double f = 5_000_000_000.1;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> generate.invoke(null, f)
+        );
+        String msg = ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage();
+        assertTrue(
+            msg.contains("Value must be between -5000000000.0 and 5000000000.0, inclusive"),
+            "Exception message should mention the valid range"
+        );
+    }
+
+    @Test
+    @DisplayName("generate returns correct hex string at lower bound f = -5e9")
+    void test_TC03() throws Exception {
+        // f == -5e9 makes the bound check false and results in value zero after adjustment
+        double f = -5_000_000_000.0;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        // zero produces 14 zero hex digits
+        assertEquals("00000000000000", result);
+    }
+
+    @Test
+    @DisplayName("generate returns correct hex string at upper bound f = 5e9")
+    void test_TC04() throws Exception {
+        // f == 5e9 makes the bound check false and yields max adjusted value
+        double f = 5_000_000_000.0;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        // expected hex string for maximum long value after adjustment
+        assertEquals("1fffffffffffff", result);
+    }
+
+    @Test
+    @DisplayName("generate returns correct hex string for typical positive fractional f = 123.456")
+    void test_TC05() throws Exception {
+        // f within bounds, positive fractional case exercises normal path
+        double f = 123.456;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        // expected hex string as per specification, padded to 14 chars
+        assertEquals("00012b1e0c9c0", result);
+    }
+
+    @Test
+    @DisplayName("generate returns correct hex string for typical negative fractional f = -123.456")
+    void test_TC06() throws Exception {
+        // f within bounds, negative fractional case exercises normal path
+        double f = -123.456;
+        Class<?> cls = Class.forName("software.amazon.event.ruler.ComparableNumber");
+        Method generate = cls.getDeclaredMethod("generate", double.class);
+        generate.setAccessible(true);
+        String result = (String) generate.invoke(null, f);
+        // expected hex string as per specification, padded to 14 chars
+        assertEquals("00012aff1f37c0", result);
+    }
+}

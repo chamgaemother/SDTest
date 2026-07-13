@@ -1,0 +1,110 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "clone() preserves child element structure and baseUri",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Document with one child element appended",
+      "expectedResult": "Cloned Document has a distinct instance with identical child structure and same baseUri",
+      "tags": [
+        "positive",
+        "structure",
+        "deep-copy"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 clone preserves children",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://example.com\");",
+        "    original.appendElement(\"div\").attr(\"id\",\"test\");",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assertEquals(original.baseUri(), copy.baseUri());",
+        "    assertEquals(1, copy.select(\"div#test\").size());",
+        "    assertNotSame(original.selectFirst(\"div\"), copy.selectFirst(\"div\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "clone() retains an explicitly set non-null connection reference",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Document.connection(Connection) has been set with a test Connection instance",
+      "expectedResult": "Cloned Document.connection() returns the same Connection instance",
+      "tags": [
+        "positive",
+        "connection",
+        "reference-preserve"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 clone retains connection",
+        "  GIVEN",
+        "    Connection session = Jsoup.newSession();",
+        "    Document original = Document.createShell(\"http://example.com\").connection(session);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assertSame(session, copy.connection());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "clone() preserves a non-default quirksMode setting",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Original Document has quirksMode set to limitedQuirks",
+      "expectedResult": "Clone.quirksMode() equals the original limitedQuirks value",
+      "tags": [
+        "positive",
+        "quirksMode",
+        "state-preserve"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 clone preserves quirksMode",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://example.com\").quirksMode(Document.QuirksMode.limitedQuirks);",
+        "  WHEN",
+        "    Document copy = original.clone();",
+        "  THEN",
+        "    assertNotSame(original, copy);",
+        "    assertEquals(Document.QuirksMode.limitedQuirks, copy.quirksMode());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "clone() deep isolates parser and outputSettings when clone is mutated",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Original Document is default",
+      "expectedResult": "Modifying clone.parser and clone.charset() does not affect original",
+      "tags": [
+        "positive",
+        "deep-isolation",
+        "mutation"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 clone isolation reverse",
+        "  GIVEN",
+        "    Document original = Document.createShell(\"http://test\");",
+        "    Document copy = original.clone();",
+        "  WHEN",
+        "    copy.parser(Parser.xmlParser());",
+        "    copy.charset(Charset.forName(\"ISO-8859-1\"));",
+        "  THEN",
+        "    assertNotEquals(original.parser().getClass(), copy.parser().getClass());",
+        "    assertNotEquals(original.charset(), copy.charset());",
+        "END"
+      ]
+    }
+  ]
+}

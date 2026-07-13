@@ -1,0 +1,111 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.lang.ref.WeakReference;
+import java.util.Collections;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicReference;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+/**
+ * JUnit 5 tests for Element.children() cache behavior and concurrency (TC07, TC08).
+ */
+public class Element_children_Test {
+
+    @Test
+    @DisplayName("TC07 children() handles concurrent access: first thread populates cache, second sees cache hit under synchronization")
+    public void test_TC07() throws InterruptedException {
+        // GIVEN: an Element with attributes initialized and two children appended
+        Element el = new Element("div");
+        el.attributes(); // create attributes so caching can occur
+        el.appendElement("span"); // first child
+        el.appendElement("em");   // second child
+
+        // Use latches to start both threads at the same time
+        CountDownLatch ready = new CountDownLatch(2);
+        CountDownLatch start = new CountDownLatch(1);
+        AtomicReference<Integer> resultA = new AtomicReference<>();
+        AtomicReference<Integer> resultB = new AtomicReference<>();
+        AtomicReference<Throwable> errorA = new AtomicReference<>();
+        AtomicReference<Throwable> errorB = new AtomicReference<>();
+
+        Runnable r1 = () -> {
+            try {
+                ready.countDown();
+                start.await();
+                // call children(): first invocation populates cache (childNodeSize > 0, no cachedChildren)
+                resultA.set(el.children().size());
+            } catch (Throwable t) {
+                errorA.set(t);
+            }
+        };
+        Runnable r2 = () -> {
+            try {
+                ready.countDown();
+                start.await();
+                // call children(): second thread should see cache populated by first and still return size 2
+                resultB.set(el.children().size());
+            } catch (Throwable t) {
+                errorB.set(t);
+            }
+        };
+
+        Thread t1 = new Thread(r1);
+        Thread t2 = new Thread(r2);
+        t1.start();
+        t2.start();
+        // wait for both threads ready
+        ready.await();
+        // start both simultaneously
+        start.countDown();
+        t1.join();
+        t2.join();
+
+        // THEN: both threads should observe size == 2, and no exceptions occurred
+        assertAll("concurrent children size and no errors",
+            () -> assertNull(errorA.get(), "Thread A threw exception"),
+            () -> assertNull(errorB.get(), "Thread B threw exception"),
+            () -> assertEquals(2, resultA.get(), "Thread A saw incorrect children size"),
+            () -> assertEquals(2, resultB.get(), "Thread B saw incorrect children size")
+        );
+    }
+
+    @Test
+    @DisplayName("TC08 children() re-stashes cache when modCount mismatch in cachedChildren (attributes.userData stale entry)")
+    public void test_TC08() throws Exception {
+        // GIVEN: Element with attributes initialized and one child appended
+        Element el = new Element("ul");
+        el.attributes(); // ensure attributes() and userData exist
+        Element li = el.appendElement("li"); // one child element
+
+        // Inject stale cache: put a WeakReference to a list containing li, but with wrong modCount
+        Map<String, Object> userData = el.attributes().userData();
+        WeakReference<?> staleRef = new WeakReference<>(Collections.singletonList(li));
+        userData.put("jsoup.childEls", staleRef);
+        userData.put("jsoup.childElsMod", -999); // obviously stale since childNodes.modCount >= 0
+
+        // WHEN: call children(), should detect modCount mismatch and rebuild cache
+        Elements result = el.children();
+
+        // THEN: result list should have exactly the single li and cache updated
+        assertAll("fresh children list and updated modCount",
+            () -> assertEquals(1, result.size(), "children() should return one element"),
+            () -> assertSame(li, result.get(0), "children() should return the same child instance"),
+            () -> {
+                // after rebuild, jsoup.childElsMod should equal current modCount
+                Object modObj = el.attributes().userData().get("jsoup.childElsMod");
+                assertTrue(modObj instanceof Integer, "modCount entry should be Integer");
+                int storedMod = (Integer) modObj;
+                // childNodeSize equals modCount in this context
+                assertEquals(el.childNodeSize(), storedMod,
+                    "cached modCount should match childNodes.modCount after rebuilding cache");
+            }
+        );
+    }
+}

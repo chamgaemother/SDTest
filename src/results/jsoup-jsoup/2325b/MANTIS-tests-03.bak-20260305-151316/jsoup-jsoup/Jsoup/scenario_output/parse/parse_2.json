@@ -1,0 +1,114 @@
+{
+  "scenarios": [
+    {
+      "id": "TC20",
+      "description": "parse(InputStream, charsetName, baseUri) without Parser returns parsed Document and closes stream",
+      "path": "B0→B1→B2→B5→B6",
+      "precondition": "ByteArrayInputStream in containing \"<p>In</p>\", charsetName=\"UTF-8\", baseUri=\"http://base/\"",
+      "expectedResult": "return Document with baseUri=\"http://base/\" and body HTML \"<p>In</p>\", stream closed",
+      "tags": [
+        "positive",
+        "overload",
+        "resource-management"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parse input stream without parser",
+        "  GIVEN",
+        "    ByteArrayInputStream in = new ByteArrayInputStream(\"<p>In</p>\".getBytes(UTF_8));",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"http://base/\");",
+        "    assert doc.body().html().equals(\"<p>In</p>\");",
+        "    assertThrows(IOException.class, () -> in.read());"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(InputStream, null charsetName, baseUri) auto-detects charset and returns parsed Document",
+      "path": "B0→B1→B2→B3→B6",
+      "precondition": "ByteArrayInputStream in containing UTF-8 BOM and \"<div>BOM</div>\", charsetName=null, baseUri=\"base\"",
+      "expectedResult": "return Document with baseUri=\"base\" and body HTML \"<div>BOM</div>\", stream closed",
+      "tags": [
+        "positive",
+        "boundary",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parse input stream with null charset to trigger auto-detect",
+        "  GIVEN",
+        "    ByteArrayInputStream in = new ByteArrayInputStream(new byte[]{(byte)0xEF,(byte)0xBB,(byte)0xBF}.concat(\"<div>BOM</div>\".getBytes(UTF_8)));",
+        "    String charset = null;",
+        "    String baseUri = \"base\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, charset, baseUri);",
+        "  THEN",
+        "    assert doc.baseUri().equals(\"base\");",
+        "    assert doc.body().html().equals(\"<div>BOM</div>\");",
+        "    assertThrows(IOException.class, () -> in.read());"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(URL, timeoutMillis) throws HttpStatusException when HTTP status is non-OK",
+      "path": "B0→B7→B8→B9→B10",
+      "precondition": "Mocked HttpConnection.connect(URL) returns Connection stub whose get() throws HttpStatusException",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parse URL throws HttpStatusException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://error.test\");",
+        "    Connection mockCon = mock(Connection.class);",
+        "    when(mockCon.timeout(1000)).thenReturn(mockCon);",
+        "    when(mockCon.get()).thenThrow(new HttpStatusException(\"404 not OK\", 404, \"http://error.test\"));",
+        "    MockedStatic<HttpConnection> httpConnMock = Mockito.mockStatic(HttpConnection.class);",
+        "    httpConnMock.when(() -> HttpConnection.connect(url)).thenReturn(mockCon);",
+        "  WHEN",
+        "    Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws HttpStatusException"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(URL, timeoutMillis) throws UnsupportedMimeTypeException when response mime type unsupported",
+      "path": "B0→B7→B8→B9→B11",
+      "precondition": "Mocked HttpConnection.connect(URL) returns Connection stub whose get() throws UnsupportedMimeTypeException",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "overload"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse URL throws UnsupportedMimeTypeException",
+        "  GIVEN",
+        "    URL url = new URL(\"http://bad.mime\");",
+        "    Connection mockCon = mock(Connection.class);",
+        "    when(mockCon.timeout(500)).thenReturn(mockCon);",
+        "    when(mockCon.get()).thenThrow(new UnsupportedMimeTypeException(\"application/zip\", \"http://bad.mime\"));",
+        "    MockedStatic<HttpConnection> httpConnMock = Mockito.mockStatic(HttpConnection.class);",
+        "    httpConnMock.when(() -> HttpConnection.connect(url)).thenReturn(mockCon);",
+        "  WHEN",
+        "    Jsoup.parse(url, 500);",
+        "  THEN",
+        "    throws UnsupportedMimeTypeException"
+      ]
+    }
+  ]
+}

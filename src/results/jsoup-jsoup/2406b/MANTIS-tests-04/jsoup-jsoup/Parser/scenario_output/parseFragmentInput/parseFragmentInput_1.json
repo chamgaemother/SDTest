@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "parseFragmentInput(String, Element, baseUri) with non-null context and plain text returns a TextNode",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "returns list with one text node whose text equals the input",
+      "tags": [
+        "positive",
+        "overload",
+        "text-fragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC11 parseFragmentInput string-overload text-node",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String fragment = \"plain text\";",
+        "    Element context = new Document(\"http://x\").body();",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);",
+        "  THEN",
+        "    assert nodes.size() == 1;",
+        "    assert nodes.get(0).toString().equals(\"plain text\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "parseFragmentInput(Reader, Element, baseUri) with null baseUri throws NullPointerException",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "NullPointerException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "null-baseUri"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC12 parseFragmentInput reader-overload null-baseUri",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = new StringReader(\"<a></a>\");",
+        "    Element context = new Document(\"http://x\").body();",
+        "    String baseUri = null;",
+        "  WHEN",
+        "    call parser.parseFragmentInput(reader, context, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "parseFragmentInput(Reader, null, baseUri) with Reader that throws IOException results in UncheckedIOException",
+      "path": "B0→B1→B2→B3→exception",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "UncheckedIOException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "io-error",
+        "null-context"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC13 parseFragmentInput io-error null-context",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader faulty = new Reader() {",
+        "      read(...) throws IOException { throw new IOException(\"fail\"); }",
+        "      close() {}",
+        "    };",
+        "    Element context = null;",
+        "    String baseUri = \"http://x\";",
+        "  WHEN",
+        "    call parser.parseFragmentInput(faulty, context, baseUri);",
+        "  THEN",
+        "    throws UncheckedIOException;",
+        "END"
+      ]
+    }
+  ]
+}

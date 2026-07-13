@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "child(1) returns second Element using cached shadowChildrenRef on subsequent call (cache-hit branch)",
+      "path": "B0→B1→B2(loop×2)→B3(cache-store)→B5(cache-hit)",
+      "precondition": "Element has two Element children and shadowChildrenRef empty",
+      "expectedResult": "first call populates cache, second call returns same second element without rebuilding",
+      "tags": [
+        "positive",
+        "cache",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 child cache-hit path",
+        "  GIVEN",
+        "    Element parent = new Element(\"list\");",
+        "    parent.appendElement(\"item1\");",
+        "    Element second = parent.appendElement(\"item2\");",
+        "  WHEN",
+        "    // first access populates cache",
+        "    Element firstCall = parent.child(1);",
+        "    // second access should use cache",
+        "    Element secondCall = parent.child(1);",
+        "  THEN",
+        "    assert firstCall == second;",
+        "    assert secondCall == second;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "child(0) rebuilds shadowChildrenRef after tree mutation (cache-invalidate branch)",
+      "path": "B0→B1→B2(loop×1)→B3(cache-store)→B4(nodelistChanged)→B3(rebuild)",
+      "precondition": "Element has one Element child and cached shadowChildrenRef",
+      "expectedResult": "after adding a new Element, cache is invalidated and child(0) still returns original first element",
+      "tags": [
+        "positive",
+        "cache",
+        "mutation"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 child cache-invalidate on mutation",
+        "  GIVEN",
+        "    Element parent = new Element(\"div\");",
+        "    Element first = parent.appendElement(\"span\");",
+        "    // populate cache",
+        "    parent.child(0);",
+        "  WHEN",
+        "    // mutate childNodes to trigger nodelistChanged",
+        "    parent.appendElement(\"p\");",
+        "    Element result = parent.child(0);",
+        "  THEN",
+        "    assert result == first;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,186 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.idpf.epubcheck.util.css.CssContentHandler;
+import org.idpf.epubcheck.util.css.CssErrorHandler;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class CssParser_parse_1_Test {
+
+  /**
+   * A simple stub error handler that just collects errors.
+   */
+  static class StubErrorHandler implements CssErrorHandler {
+    final List<Exception> errors = new ArrayList<>();
+    @Override
+    public void error(Exception e) {
+      errors.add(e);
+    }
+  }
+
+  /**
+   * A content handler that counts the various events.
+   */
+  static class CountingContentHandler implements CssContentHandler {
+    final AtomicInteger start = new AtomicInteger();
+    final AtomicInteger end = new AtomicInteger();
+    final AtomicInteger selectorsCount = new AtomicInteger();
+    final AtomicInteger declarationsCount = new AtomicInteger();
+    final AtomicInteger endSelectorsCount = new AtomicInteger();
+    final List<String> startAtRuleNames = new ArrayList<>();
+    final List<String> endAtRuleNames = new ArrayList<>();
+
+    @Override
+    public void startDocument() {
+      start.incrementAndGet();
+    }
+
+    @Override
+    public void endDocument() {
+      end.incrementAndGet();
+    }
+
+    @Override
+    public void selectors(List<?> selectors) {
+      selectorsCount.incrementAndGet();
+    }
+
+    @Override
+    public void declaration(Object decl) {
+      declarationsCount.incrementAndGet();
+    }
+
+    @Override
+    public void endSelectors(List<?> selectors) {
+      endSelectorsCount.incrementAndGet();
+    }
+
+    @Override
+    public void startAtRule(Object atRule) {
+      // atRule is CssAtRule, name().get() gives the name
+      try {
+        String name = ((org.idpf.epubcheck.util.css.CssGrammar.CssAtRule) atRule).getName().get();
+        startAtRuleNames.add(name);
+      } catch (Exception ignore) {
+      }
+    }
+
+    @Override
+    public void endAtRule(String name) {
+      endAtRuleNames.add(name);
+    }
+  }
+
+  @Test
+  @DisplayName("Empty CSS (only whitespace) results in only startDocument and endDocument")
+  public void test_TC11() throws Exception {
+    Reader reader = new StringReader("   \n  ");
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // whitespace has no tokens, so hasNext(FILTER_S_CMNT_CDO_CDC) is false immediately
+    new CssParser().parse(reader, "id", err, doc);
+    assertAll(
+      () -> assertEquals(1, doc.start.get()),    // startDocument called exactly once
+      () -> assertEquals(1, doc.end.get()),      // endDocument called exactly once
+      () -> assertEquals(0, doc.selectorsCount.get()),
+      () -> assertEquals(0, doc.declarationsCount.get()),
+      () -> assertEquals(0, doc.endSelectorsCount.get())
+    );
+  }
+
+  @Test
+  @DisplayName("One ruleset with one declaration triggers selectors, declaration, endSelectors")
+  public void test_TC12() throws Exception {
+    String css = "h1 { color: blue; }";
+    Reader reader = new StringReader(css);
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // first iteration: hasNext true, token type != ATKEYWORD => handleRuleSet path
+    new CssParser().parse(reader, "id", err, doc);
+    assertAll(
+      () -> assertEquals(1, doc.start.get()),              // document wrapper start
+      () -> assertEquals(1, doc.end.get()),                // document wrapper end
+      () -> assertEquals(1, doc.selectorsCount.get()),     // one selectors() call
+      () -> assertEquals(1, doc.declarationsCount.get()),  // one declaration() call
+      () -> assertEquals(1, doc.endSelectorsCount.get())   // one endSelectors() call
+    );
+  }
+
+  @Test
+  @DisplayName("One at-rule without block (@charset) triggers startAtRule and endAtRule")
+  public void test_TC13() throws Exception {
+    String css = "@charset \"UTF-8\";";
+    Reader reader = new StringReader(css);
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // first token is ATKEYWORD => handleAtRule without block
+    new CssParser().parse(reader, "id", err, doc);
+    assertAll(
+      () -> assertEquals(1, doc.start.get()),            // document wrapper start
+      () -> assertEquals(1, doc.end.get()),              // document wrapper end
+      () -> assertTrue(doc.startAtRuleNames.contains("charset")),
+      () -> assertTrue(doc.endAtRuleNames.contains("charset"))
+    );
+  }
+
+  @Test
+  @DisplayName("IOException during scan propagates without calling handlers")
+  public void test_TC14() {
+    Reader reader = new Reader() {
+      @Override
+      public int read(char[] cbuf, int off, int len) throws IOException {
+        throw new IOException("fail");
+      }
+      @Override
+      public void close() throws IOException {}
+    };
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // scan(reader, ...) will throw IOException before startDocument
+    IOException ex = assertThrows(IOException.class,
+      () -> new CssParser().parse(reader, "id", err, doc));
+    assertEquals("fail", ex.getMessage());
+    assertEquals(0, doc.start.get());  // no events on IO failure
+    assertEquals(0, doc.end.get());
+  }
+
+  @Test
+  @DisplayName("CssException from scan propagates without calling handlers")
+  public void test_TC15() {
+    // provoke CssException: an at-rule with bad charset value triggers grammar exception in scan
+    Reader reader = new StringReader("@charset \"bad\";");
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // depending on implementation, scan or parse will throw a CssException
+    assertThrows(CssException.class,
+      () -> new CssParser().parse(reader, "id", err, doc));
+    assertEquals(0, doc.start.get());  // no startDocument if scan fails
+    assertEquals(0, doc.end.get());
+  }
+
+  @Test
+  @DisplayName("Premature EOF in a ruleset declaration triggers break and endDocument")
+  public void test_TC16() throws Exception {
+    String css = "h1 { color:";
+    Reader reader = new StringReader(css);
+    CountingContentHandler doc = new CountingContentHandler();
+    StubErrorHandler err = new StubErrorHandler();
+    // truncated declaration causes PrematureEOFException inside loop, breaks to endDocument
+    new CssParser().parse(reader, "id", err, doc);
+    assertAll(
+      () -> assertEquals(1, doc.start.get()),  // startDocument always called
+      () -> assertEquals(1, doc.end.get())     // endDocument after EOF break
+    );
+  }
+
+}

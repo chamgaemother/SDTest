@@ -1,0 +1,210 @@
+{
+  "method": "search",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "empty matrix returns [-1,-1] (rowPointer>=length branch)",
+      "path": "B0→B9→B8",
+      "precondition": "none",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-true:B9",
+        "loop-0",
+        "boundary",
+        "no-elements"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = new Integer[0][] and target = 5",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "single-element matrix where comp==0 returns its coordinates",
+      "path": "B0→B9→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is [0, 0]",
+      "tags": [
+        "branch-false:B9",
+        "branch-false:B1",
+        "branch-false:B2",
+        "direct-hit",
+        "loop-1"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = [[5]] and target = 5",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN assertArrayEquals(new int[]{0, 0}, result)"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "single-element matrix comp>0 increments row then not found",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B8",
+      "precondition": "none",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false:B1",
+        "branch-false:B2",
+        "branch-true:B4",
+        "loop-1",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = [[3]] and target = 5",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "single-element matrix comp<0 decrements col then not found",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B8",
+      "precondition": "none",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "branch-false:B1",
+        "branch-false:B2",
+        "branch-false:B4",
+        "loop-1",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = [[7]] and target = 5",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "multi-iteration search finds target 28 at (2,1) after mixed moves",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is [2, 1]",
+      "tags": [
+        "loop-N",
+        "branch-false:B1",
+        "branch-false:B2",
+        "branch-false:B4",
+        "branch-true:B4",
+        "branch-false:B4",
+        "branch-false:B2",
+        "direct-hit"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix as {{10,20,30,40},{15,25,35,45},{18,28,38,48},{21,31,41,51}} and target = 28",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 28)",
+        "THEN assertArrayEquals(new int[]{2, 1}, result)"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "multi-iteration search for absent target returns [-1,-1] after exiting bounds",
+      "path": "B0→B9→B1→B2→B4→B5→B7→B9→B1→B8",
+      "precondition": "none",
+      "expectedResult": "return value is [-1, -1]",
+      "tags": [
+        "loop-N",
+        "branch-false:B1",
+        "branch-false:B2",
+        "branch-true:B4",
+        "branch-true:B9",
+        "not-found"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix as {{1,2,3},{4,5,6},{7,8,9}} and target = 100",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 100)",
+        "THEN assertArrayEquals(new int[]{-1, -1}, result)"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "null matrix input throws NullPointerException at length access",
+      "path": "B0",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-matrix"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = null and target = 5",
+        "WHEN call RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN throws NullPointerException"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "null target throws NullPointerException at compareTo",
+      "path": "B0→B9→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-target"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = [[1,2]] and target = null",
+        "WHEN call RowColumnWiseSorted2dArrayBinarySearch.search(matrix, null)",
+        "THEN throws NullPointerException"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "null element in matrix throws NullPointerException during compareTo",
+      "path": "B0→B9→B1→B2",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "null-element"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = [[1,null]] and target = 5",
+        "WHEN call RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 5)",
+        "THEN throws NullPointerException"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "2x2 matrix finds bottom-left element 3 at (1,0) via one decrement then one increment",
+      "path": "B0→B9→B1→B2→B4→B6→B7→B9→B1→B2→B4→B5→B7→B9→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "return value is [1, 0]",
+      "tags": [
+        "loop-N",
+        "branch-false:B1",
+        "branch-false:B2",
+        "branch-false:B4",
+        "branch-true:B4",
+        "direct-hit"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "GIVEN matrix = {{1,2},{3,4}} and target = 3",
+        "WHEN result = RowColumnWiseSorted2dArrayBinarySearch.search(matrix, 3)",
+        "THEN assertArrayEquals(new int[]{1, 0}, result)"
+      ]
+    }
+  ]
+}

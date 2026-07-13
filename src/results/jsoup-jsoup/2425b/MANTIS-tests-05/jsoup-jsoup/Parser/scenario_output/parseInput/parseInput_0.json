@@ -1,0 +1,103 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String,baseUri) with valid HTML returns a Document containing expected elements",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "Document returned where document.select(\"p\").text() equals \"Hello\"",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput string overload valid HTML",
+        "  GIVEN",
+        "    String html = \"<p>Hello</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"p\").text().equals(\"Hello\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String,baseUri) with empty HTML returns an empty Document body",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "Document returned where document.body().children().size() is 0",
+      "tags": [
+        "overload:String,String",
+        "branch-normal",
+        "boundary",
+        "empty-input"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput string overload empty HTML",
+        "  GIVEN",
+        "    String html = \"\";",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc.body().children().size() == 0;"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader,baseUri) with valid Reader returns same content Document",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "none",
+      "expectedResult": "Document returned where document.select(\"div\").attr(\"id\") equals \"test\"",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal",
+        "positive"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput reader overload valid HTML",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<div id='test'></div>\");",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = new Parser(new HtmlTreeBuilder()).parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"div#test\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader,baseUri) wraps IOException from Reader into UncheckedIOException",
+      "path": "B0→B1→B2→B3→B5",
+      "precondition": "Reader stub throws IOException on read to simulate I/O error",
+      "expectedResult": "throws java.io.UncheckedIOException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "IOException",
+        "branch-exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput reader overload reader error",
+        "  GIVEN",
+        "    Reader reader = new Reader(){ public int read(char[] c, int off, int len) throws IOException { throw new IOException(\"fail\"); } public void close(){} };",
+        "    String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call new Parser(new HtmlTreeBuilder()).parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws java.io.UncheckedIOException;"
+      ]
+    }
+  ]
+}

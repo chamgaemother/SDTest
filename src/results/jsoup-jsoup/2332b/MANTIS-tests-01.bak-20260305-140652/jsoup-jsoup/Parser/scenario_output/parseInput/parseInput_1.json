@@ -1,0 +1,90 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "parseInput(String,String) with real HtmlTreeBuilder returns Document with parsed elements",
+      "path": "B1→B2→B4→B5",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "Document contains a <p> element with text 'ok'; baseUri set correctly",
+      "tags": [
+        "positive",
+        "integration",
+        "htmlParser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 parseInput real HTML",
+        "  GIVEN",
+        "    String html = \"<p>ok</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.select(\"p\").size() == 1;",
+        "    assert doc.select(\"p\").first().text().equals(\"ok\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "parseInput(String,String) with real XmlTreeBuilder returns Document with root element",
+      "path": "B1→B2→B4→B5",
+      "precondition": "Parser created via Parser.xmlParser()",
+      "expectedResult": "Document contains a <root> element with nested <child>; baseUri set to empty string",
+      "tags": [
+        "positive",
+        "integration",
+        "xmlParser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput real XML",
+        "  GIVEN",
+        "    String xml = \"<root><child>value</child></root>\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(xml, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.childNodeSize() > 0;",
+        "    assert doc.select(\"child\").first().text().equals(\"value\");",
+        "    assert doc.baseUri().equals(baseUri);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(Reader,String) with real HtmlTreeBuilder and null baseUri returns Document without exception",
+      "path": "B4→B5",
+      "precondition": "Parser created via Parser.htmlParser()",
+      "expectedResult": "Document returned; baseUri on doc is null",
+      "tags": [
+        "positive",
+        "integration",
+        "null-baseUri"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput Reader overload null baseUri",
+        "  GIVEN",
+        "    Reader reader = new java.io.StringReader(\"<div>text</div>\");",
+        "    String baseUri = null;",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert doc != null;",
+        "    assert doc.select(\"div\").first().text().equals(\"text\");",
+        "    assert doc.baseUri() == null;",
+        "END"
+      ]
+    }
+  ]
+}

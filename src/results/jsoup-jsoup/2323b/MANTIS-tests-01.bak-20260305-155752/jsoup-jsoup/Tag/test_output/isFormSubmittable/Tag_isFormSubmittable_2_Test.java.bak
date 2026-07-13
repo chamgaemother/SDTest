@@ -1,0 +1,74 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Tag_valueOf_Test {
+
+    @Test
+    @DisplayName("TC06: valueOf throws NullPointerException when tagName is null")
+    public void test_TC06() {
+        // inline setup: tagName null should trigger Validate.notNull -> NPE at B1
+        String tagName = null;
+        String normalName = "anything";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        assertThrows(NullPointerException.class, () -> {
+            Tag.valueOf(tagName, normalName, namespace, settings);
+        }, "Expected NullPointerException when tagName is null");
+    }
+
+    @Test
+    @DisplayName("TC07: valueOf throws IllegalArgumentException when tagName is empty or blank")
+    public void test_TC07() {
+        // inline setup: tagName blank after trim -> Validate.notEmpty -> IAE at B2
+        String tagName = "   ";
+        String normalName = "";
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.preserveCase;
+        assertThrows(IllegalArgumentException.class, () -> {
+            Tag.valueOf(tagName, normalName, namespace, settings);
+        }, "Expected IllegalArgumentException when tagName is empty or blank");
+    }
+
+    @Test
+    @DisplayName("TC08: valueOf throws NullPointerException when namespace is null")
+    public void test_TC08() {
+        // inline setup: namespace null should trigger Validate.notNull(namespace) -> NPE at B3
+        String tagName = "foo";
+        String normalName = "foo";
+        String namespace = null;
+        ParseSettings settings = ParseSettings.preserveCase;
+        assertThrows(NullPointerException.class, () -> {
+            Tag.valueOf(tagName, normalName, namespace, settings);
+        }, "Expected NullPointerException when namespace is null");
+    }
+
+    @Test
+    @DisplayName("TC09: Known non-submit tag \"div\" returns same static instance with formSubmit=false")
+    public void test_TC09() {
+        // inline: "div" is predefined block, formSubmit flag false by static init
+        Tag base = Tag.valueOf("div");
+        Tag t = Tag.valueOf("div");
+        // same static instance for known tags -> identity equality
+        assertSame(base, t, "Expected same static instance for known non-submit tag");
+        assertFalse(t.isFormSubmittable(), "Expected formSubmit to be false for <div>");
+    }
+
+    @Test
+    @DisplayName("TC10: Uppercase known submit tag with preserveTagCase=false returns static instance formSubmit=true via second-lookup path")
+    public void test_TC10() {
+        // inline: "input" is predefined form submit tag. HTML default settings do not preserve case
+        Tag base = Tag.valueOf("input");
+        String name = "INPUT";
+        String normal = ParseSettings.normalName(name); // yields "input"
+        String namespace = Parser.NamespaceHtml;
+        ParseSettings settings = ParseSettings.htmlDefault; // preserveTagCase() == false
+        // valueOf should pick up predefined tag via lowercase normalName
+        Tag t = Tag.valueOf(name, normal, namespace, settings);
+        assertSame(base, t, "Expected same static instance for known submit tag regardless of case when not preserving");
+        assertTrue(t.isFormSubmittable(), "Expected formSubmit to be true for <input>");
+    }
+}

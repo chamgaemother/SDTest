@@ -1,0 +1,183 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "setTrackErrors(5) enables error tracking and getErrors reflects max size >0 branch-true",
+      "path": "B0→B1→B3→B5",
+      "precondition": "Parser created with default no-tracking errors",
+      "expectedResult": "isTrackErrors() returns true and getErrors().getMaxSize() == 5",
+      "tags": [
+        "positive",
+        "branch",
+        "errors",
+        "setter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 setTrackErrors enables tracking",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    assertFalse(parser.isTrackErrors());",
+        "  WHEN",
+        "    parser.setTrackErrors(5);",
+        "  THEN",
+        "    assertTrue(parser.isTrackErrors());",
+        "    assertEquals(5, parser.getErrors().getMaxSize());"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "setTrackErrors(0) disables error tracking branch-false",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Parser with errors tracking initially enabled",
+      "expectedResult": "isTrackErrors() returns false and getErrors().getMaxSize() == 0",
+      "tags": [
+        "negative",
+        "branch",
+        "errors",
+        "setter"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC04 setTrackErrors disables tracking",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder()).setTrackErrors(3);",
+        "    assertTrue(parser.isTrackErrors());",
+        "  WHEN",
+        "    parser.setTrackErrors(0);",
+        "  THEN",
+        "    assertFalse(parser.isTrackErrors());",
+        "    assertEquals(0, parser.getErrors().getMaxSize());"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "newInstance produces a deep copy independent of original settings and errors",
+      "path": "B0→B4→B6→B7",
+      "precondition": "Parser with non-default settings and errors tracked",
+      "expectedResult": "copy.isTrackErrors() equals original, settings equal but not same instance, treeBuilder newInstance differs",
+      "tags": [
+        "positive",
+        "copy",
+        "deep-copy",
+        "newInstance"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 newInstance deep copy",
+        "  GIVEN",
+        "    Parser orig = new Parser(new HtmlTreeBuilder())",
+        "      .setTrackErrors(2)",
+        "      .setTrackPosition(true)",
+        "      .settings(ParseSettings.preserveCase);",
+        "  WHEN",
+        "    Parser copy = orig.newInstance();",
+        "  THEN",
+        "    assertNotSame(orig, copy);",
+        "    assertEquals(orig.isTrackErrors(), copy.isTrackErrors());",
+        "    assertNotSame(orig.getErrors(), copy.getErrors());",
+        "    assertEquals(orig.settings(), copy.settings());",
+        "    assertNotSame(orig.getTreeBuilder(), copy.getTreeBuilder());"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "settings(ParseSettings) updates and settings() returns new settings branch",
+      "path": "B0→B8→B9",
+      "precondition": "Parser created with default HtmlTreeBuilder",
+      "expectedResult": "settings() returns provided ParseSettings instance",
+      "tags": [
+        "positive",
+        "settings",
+        "getter-setter"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 settings getter-setter",
+        "  GIVEN",
+        "    Parser parser = new Parser(new HtmlTreeBuilder());",
+        "    ParseSettings custom = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    parser.settings(custom);",
+        "  THEN",
+        "    assertSame(custom, parser.settings());"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "static htmlParser() returns Parser with HtmlTreeBuilder instance",
+      "path": "B0→B10→B11",
+      "precondition": "none",
+      "expectedResult": "parser.getTreeBuilder() is instance of HtmlTreeBuilder",
+      "tags": [
+        "static",
+        "factory",
+        "positive"
+      ],
+      "priority": "P3",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 htmlParser factory method",
+        "  GIVEN",
+        "    // none",
+        "  WHEN",
+        "    Parser parser = Parser.htmlParser();",
+        "  THEN",
+        "    assertTrue(parser.getTreeBuilder() instanceof HtmlTreeBuilder);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "static xmlParser() returns Parser with XmlTreeBuilder instance",
+      "path": "B0→B12→B13",
+      "precondition": "none",
+      "expectedResult": "parser.getTreeBuilder() is instance of XmlTreeBuilder",
+      "tags": [
+        "static",
+        "factory",
+        "positive"
+      ],
+      "priority": "P3",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 xmlParser factory method",
+        "  GIVEN",
+        "    // none",
+        "  WHEN",
+        "    Parser parser = Parser.xmlParser();",
+        "  THEN",
+        "    assertTrue(parser.getTreeBuilder() instanceof XmlTreeBuilder);"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "unescapeEntities returns correct unescaped string in strict mode and non-strict mode",
+      "path": "B0→B14→B15→B16",
+      "precondition": "none",
+      "expectedResult": "unescapeEntities(\"&amp;lt; &lt;\",false) == \"&lt; <\" and ... inAttribute true escapes differently",
+      "tags": [
+        "static",
+        "utility",
+        "positive",
+        "entities"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC09 unescapeEntities variations",
+        "  GIVEN",
+        "    String input = \"&amp;lt;&amp;gt;\";",
+        "  WHEN",
+        "    String out1 = Parser.unescapeEntities(input, false);",
+        "    String out2 = Parser.unescapeEntities(input, true);",
+        "  THEN",
+        "    assertEquals(\"<>\", out1);",
+        "    assertEquals(\"<>\", out2);"
+      ]
+    }
+  ]
+}

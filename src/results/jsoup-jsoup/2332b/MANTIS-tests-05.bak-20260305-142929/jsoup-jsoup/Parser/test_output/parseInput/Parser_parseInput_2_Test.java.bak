@@ -1,0 +1,67 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class Parser_parseInput_Test {
+
+    @Test
+    @DisplayName("String overload propagates RuntimeException from TreeBuilder.parse")
+    public void test_TC10() {
+        // Arrange: create a stub TreeBuilder whose parse method throws RuntimeException
+        TreeBuilder stubBuilder = new TreeBuilder() {
+            @Override
+            public Parser newInstance() {
+                // newInstance used by Parser.newInstance/clone; not needed in this path
+                return new Parser(this);
+            }
+
+            @Override
+            public Document parse(Reader input, String baseUri, Parser parser) {
+                // Trigger the RuntimeException as per scenario
+                throw new RuntimeException("stub fail");
+            }
+
+            @Override
+            public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public ParseSettings defaultSettings() {
+                return new ParseSettings(ParseSettings.preserveCase);
+            }
+
+            @Override
+            public boolean isContentForTagData(String normalName) {
+                return false;
+            }
+
+            @Override
+            public String defaultNamespace() {
+                return "";
+            }
+
+            @Override
+            public void process(org.jsoup.parser.Token token) {
+                // Not used in this test
+            }
+        };
+        Parser parser = new Parser(stubBuilder);
+        String html = "<div/>";
+        String baseUri = "http://example.com";
+
+        // Act & Assert: calling the String overload should propagate the stubbed RuntimeException
+        // Branch B0->B1->B2->B3: parseInput(String, String) -> parseInput(Reader, String) -> treeBuilder.parse -> exception
+        assertThrows(RuntimeException.class, () -> parser.parseInput(html, baseUri), "Expected stub RuntimeException to be propagated");
+    }
+}

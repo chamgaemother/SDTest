@@ -1,0 +1,49 @@
+package com.thealgorithms.others;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.thealgorithms.others.MiniMaxAlgorithm;
+public class MiniMaxAlgorithm_setScores_2_Test {
+
+    @Test
+    @DisplayName("TC08: setScores prints rejection and leaves state unchanged when called with an odd-length array (length % 1 != 0) branch")
+    void test_TC08() {
+        // GIVEN: instantiate algorithm and capture its original state
+        MiniMaxAlgorithm algo = new MiniMaxAlgorithm();
+        int[] beforeScores = algo.getScores();
+        int beforeHeight = algo.getHeight();
+
+        // Prepare an odd-length array to trigger rejection branch (5 % 1 != 0)
+        int[] invalidScores = new int[5]; // odd length triggers B0 true branch
+
+        // Capture System.out
+        PrintStream originalOut = System.out;
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        // WHEN: call with invalid scores
+        algo.setScores(invalidScores);
+
+        // THEN: state unchanged
+        assertArrayEquals(beforeScores, algo.getScores(), 
+            "Scores should remain unchanged when provided an invalid (odd-length) array");
+        assertEquals(beforeHeight, algo.getHeight(),
+            "Height should remain unchanged when provided an invalid (odd-length) array");
+
+        // AND: output contains the expected rejection message
+        String output = outContent.toString();
+        assertTrue(output.contains("The number of scores must be a power of 2."),
+            "Expected rejection message when setting odd-length scores");
+
+        // Restore original System.out
+        System.setOut(originalOut);
+    }
+}

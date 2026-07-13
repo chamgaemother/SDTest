@@ -1,0 +1,85 @@
+package org.jsoup.nodes;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Element_child_0_Test {
+    @Test
+    @DisplayName("TC01: child(0) on element with no child nodes throws IndexOutOfBoundsException (childNodeSize()==0 branch)")
+    void test_TC01() {
+        // GIVEN an element with no children => childNodeSize() == 0 triggers EmptyChildren shortcut
+        Element el = new Element("div");
+        // WHEN & THEN: accessing any index should throw IndexOutOfBoundsException
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+
+    @Test
+    @DisplayName("TC02: child(0) returns the single child element (one-element list branch)")
+    void test_TC02() {
+        // GIVEN an element with exactly one Element child => filtered list size == 1
+        Element el = new Element("div");
+        Element p = el.appendElement("p");
+        // WHEN retrieving index 0, should return that child
+        Element result = el.child(0);
+        // THEN
+        assertEquals(p, result, "Expected the only child element to be returned");
+    }
+
+    @Test
+    @DisplayName("TC03: child(1) on element with multiple element children returns second element (filtered list size>1)")
+    void test_TC03() {
+        // GIVEN an element with two Element children => filtered list built in loop ×2
+        Element el = new Element("div");
+        Element a = el.appendElement("a");
+        Element span = el.appendElement("span");
+        // WHEN retrieving index 1, should return second element (span)
+        Element result = el.child(1);
+        // THEN
+        assertEquals(span, result, "Expected the second child element to be returned");
+    }
+
+    @Test
+    @DisplayName("TC04: child(0) ignores non-element nodes: one TextNode then one Element and returns Element at filtered index 0")
+    void test_TC04() {
+        // GIVEN an element with a TextNode then an Element => filtered list will contain only the Element
+        Element el = new Element("div");
+        el.appendText("text");          // non-element node, should be filtered out
+        Element c = el.appendElement("c"); // only element in children
+        // WHEN retrieving index 0 on filtered list => should return c
+        Element result = el.child(0);
+        // THEN
+        assertEquals(c, result, "Expected the element child at filtered index 0");
+    }
+
+    @Test
+    @DisplayName("TC05: child(2) with two element children throws IndexOutOfBoundsException (filtered list length=2, index=2)")
+    void test_TC05() {
+        // GIVEN an element with two Element children => filtered list size 2
+        Element el = new Element("div");
+        el.appendElement("x");
+        el.appendElement("y");
+        // WHEN accessing index equal to size (2) => should throw
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(2));
+    }
+
+    @Test
+    @DisplayName("TC06: child(-1) on element with one element child throws IndexOutOfBoundsException (negative index)")
+    void test_TC06() {
+        // GIVEN an element with one Element child => filtered list size 1
+        Element el = new Element("div");
+        el.appendElement("p");
+        // WHEN using negative index => should throw before retrieval
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(-1));
+    }
+
+    @Test
+    @DisplayName("TC07: child(0) on element with non-element children only throws IndexOutOfBoundsException (filtered empty)")
+    void test_TC07() {
+        // GIVEN an element with only TextNode children => filtered list empty after loop×1
+        Element el = new Element("div");
+        el.appendText("t");
+        // WHEN retrieving any index => no elements remain => should throw
+        assertThrows(IndexOutOfBoundsException.class, () -> el.child(0));
+    }
+}

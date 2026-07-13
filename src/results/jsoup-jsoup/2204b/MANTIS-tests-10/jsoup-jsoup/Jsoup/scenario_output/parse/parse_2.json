@@ -1,0 +1,236 @@
+{
+  "scenarios": [
+    {
+      "id": "TC17",
+      "description": "parse(File, charsetName, baseUri, Parser) with xmlParser preserves tag case from file",
+      "path": "B0→B1→B2(parser-overload-file)→B3→B5",
+      "precondition": "temp HTML file containing <Tag>Value</Tag>",
+      "expectedResult": "body HTML contains <Tag>Value</Tag> with case preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC17 parse(File,charset,baseUri,parser) xmlParser-case",
+        "  GIVEN",
+        "    File file = tempFileWithContent(\"<Tag>Value</Tag>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<Tag>Value</Tag>\");"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "parse(Path, charsetName, baseUri, Parser) with xmlParser preserves tag case from path",
+      "path": "B0→B1→B2(parser-overload-path)→B3→B6",
+      "precondition": "temp Path file containing <X>1</X>",
+      "expectedResult": "body HTML contains <X>1</X> with case preserved",
+      "tags": [
+        "positive",
+        "overload",
+        "path",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC18 parse(Path,charset,baseUri,parser) xmlParser-case",
+        "  GIVEN",
+        "    Path path = tempPathWithContent(\"<X>1</X>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"\";",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(path, charset, baseUri, parser);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<X>1</X>\");"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parseBodyFragment(String) with default baseUri yields correct body element",
+      "path": "B0→B1→B2(body-fragment-no-base)→B4",
+      "precondition": "none",
+      "expectedResult": "body().html() equals input fragment",
+      "tags": [
+        "positive",
+        "fragment",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC19 parseBodyFragment default-base",
+        "  GIVEN",
+        "    String html = \"<div>f</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<div>f</div>\");"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parseBodyFragment(String, baseUri) resolves relative links in fragment",
+      "path": "B0→B1→B3(body-fragment-with-base)→B4",
+      "precondition": "none",
+      "expectedResult": "absUrl on <a> resolves against provided baseUri",
+      "tags": [
+        "positive",
+        "fragment",
+        "relative",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC20 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String html = \"<a href=\\\"p.html\\\">p</a>\";",
+        "    String baseUri = \"http://host/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(html, baseUri);",
+        "  THEN",
+        "    assert doc.select(\"a\").first().absUrl(\"href\").equals(\"http://host/p.html\");"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "clean(String, Safelist.none()) escapes HTML entities and removes tags",
+      "path": "B0→B1→B2(clean-two-arg)→B5",
+      "precondition": "none",
+      "expectedResult": "returns escaped text without tags",
+      "tags": [
+        "positive",
+        "clean",
+        "safelist",
+        "entities"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 clean(html, safelist.none) escapes-and-strips",
+        "  GIVEN",
+        "    String html = \"<p>5 &lt; 6</p>\";",
+        "    Safelist safelist = Safelist.none();",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, safelist);",
+        "  THEN",
+        "    assert out.contains(\"5 &amp;lt; 6\") && !out.contains(\"<p>\");"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "clean(String, baseUri, Safelist, OutputSettings) applies output settings prettyPrint=false",
+      "path": "B0→B1→B2(clean-4-arg)→B7",
+      "precondition": "none",
+      "expectedResult": "output has no newline for prettyPrint=false",
+      "tags": [
+        "positive",
+        "clean",
+        "outputSettings",
+        "overload"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 clean(html, baseUri, safelist, settings) no-pretty",
+        "  GIVEN",
+        "    String html = \"<div>a</div>\";",
+        "    String baseUri = \"\";",
+        "    Safelist safelist = Safelist.basic();",
+        "    Document.OutputSettings os = new Document.OutputSettings().prettyPrint(false);",
+        "  WHEN",
+        "    String out = Jsoup.clean(html, baseUri, safelist, os);",
+        "  THEN",
+        "    assert !out.contains(\"\\n\");"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "isValid(String, Safelist) returns false for disallowed tags and true for safe content",
+      "path": "B0→B1→B2(isValid)→B3/B4",
+      "precondition": "none",
+      "expectedResult": "false for <script>, true for <p>",
+      "tags": [
+        "positive",
+        "validation",
+        "safelist"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 isValid unsafe-and-safe",
+        "  GIVEN",
+        "    String bad = \"<script>alert(1)</script>\";",
+        "    String good = \"<p>ok</p>\";",
+        "    Safelist safelist = Safelist.basic();",
+        "  WHEN",
+        "    boolean vBad = Jsoup.isValid(bad, safelist);",
+        "    boolean vGood = Jsoup.isValid(good, safelist);",
+        "  THEN",
+        "    assert !vBad && vGood;"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(File, charsetName, baseUri) with invalid charsetName throws IOException",
+      "path": "B0→B1→B2(file-load-invalid-charset)→B6",
+      "precondition": "temp HTML file exists",
+      "expectedResult": "IOException is thrown for unsupported charset",
+      "tags": [
+        "negative",
+        "exception",
+        "file",
+        "charset"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse(file,invalid-charset,baseUri)",
+        "  GIVEN",
+        "    File file = tempFileWithContent(\"<div>ok</div>\");",
+        "    String charset = \"INVALID-CHARSET\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(file, charset, baseUri);",
+        "  THEN",
+        "    throws IOException;"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(URL, timeoutMillis) happy path uses HttpConnection stub to return parsed Document",
+      "path": "B0→B1→B2(connect-url)→B3(timeout)→B4(get)",
+      "precondition": "mock HttpConnection.connect to return stub with get() returning known Document",
+      "expectedResult": "returned Document matches stub content",
+      "tags": [
+        "positive",
+        "network",
+        "overload",
+        "mock"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse(URL,timeout) success-stub",
+        "  GIVEN",
+        "    URL url = new URL(\"http://example.com/\");",
+        "    stubConnection = stub(HttpConnection.connect(url));",
+        "    stubConnection.get() returns Document.parse(\"<b>ok</b>\", \"\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(url, 5000);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<b>ok</b>\");"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,136 @@
+{
+  "scenarios": [
+    {
+      "id": "TC21",
+      "description": "parseBodyFragment(String html, String baseUri) returns Document with fragment in body and respects provided baseUri",
+      "path": "B0→B1→B2",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals fragment; Document.baseUri() equals provided baseUri",
+      "tags": [
+        "positive",
+        "overload",
+        "parseBodyFragment"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC21 parseBodyFragment with baseUri",
+        "  GIVEN",
+        "    String fragment = \"<span>Example</span>\";",
+        "    String base = \"http://fragment.example/\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment, base);",
+        "  THEN",
+        "    assert doc.body().html().equals(fragment);",
+        "    assert doc.baseUri().equals(base);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parseBodyFragment(String html) returns Document with fragment and empty baseUri",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals fragment; Document.baseUri() is empty string",
+      "tags": [
+        "positive",
+        "overload",
+        "default-baseUri"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC22 parseBodyFragment default-baseUri",
+        "  GIVEN",
+        "    String fragment = \"<div>Test</div>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parseBodyFragment(fragment);",
+        "  THEN",
+        "    assert doc.body().html().equals(fragment);",
+        "    assert doc.baseUri().equals(\"\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(File file, String charsetName) uses explicit charset and file absolute path as baseUri",
+      "path": "B0→B4→B5",
+      "precondition": "temp file exists with UTF-16 content",
+      "expectedResult": "Document.body().html() contains file content; baseUri equals file.getAbsolutePath()",
+      "tags": [
+        "positive",
+        "overload",
+        "file",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC23 parse(File, charsetName) explicit charset",
+        "  GIVEN",
+        "    File file = createTempHtmlFileWithCharset(\"<p>UTF16</p>\", \"UTF-16\");",
+        "    String charset = \"UTF-16\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(file, charset);",
+        "  THEN",
+        "    assert doc.body().html().contains(\"<p>UTF16</p>\");",
+        "    assert doc.baseUri().equals(file.getAbsolutePath());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(URL url, int timeout) throws HttpStatusException on non-OK HTTP response",
+      "path": "B0→B6→B7",
+      "precondition": "local HTTP server returns 404 for GET /",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "HTTP",
+        "parse(URL)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC24 parse(URL, timeout) 404 response",
+        "  GIVEN",
+        "    startLocalHttpServer(status=404);",
+        "    URL url = new URL(\"http://localhost:<port>/\");",
+        "    int timeout = 1000;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws org.jsoup.HttpStatusException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(URL url, int timeout) throws SocketTimeoutException when read times out",
+      "path": "B0→B6→B8",
+      "precondition": "local HTTP server delays response beyond timeout",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout",
+        "parse(URL)"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC25 parse(URL, timeout) socket timeout",
+        "  GIVEN",
+        "    startLocalHttpServer(delayMillis=2000);",
+        "    URL url = new URL(\"http://localhost:<port>/\");",
+        "    int timeout = 500;",
+        "  WHEN",
+        "    call Jsoup.parse(url, timeout);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.ParseSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_tagSet_1_Test {
+
+    @Test
+    @DisplayName("settings(ParseSettings) replaces the parser’s settings and settings() returns the new instance")
+    void test_TC01() {
+        // GIVEN a default HTML parser
+        Parser parser = Parser.htmlParser();
+        // AND a custom settings instance
+        ParseSettings custom = new ParseSettings(true, false);
+        // WHEN we replace the parser settings (B0→B1→B2→B3 path enters setter branch and returns self)
+        parser.settings(custom);
+        // THEN settings() must return exactly the same custom instance
+        assertSame(custom, parser.settings());
+    }
+
+    @Test
+    @DisplayName("setTrackErrors(5) enables error tracking and isTrackErrors() returns true and getErrors().getMaxSize()==5")
+    void test_TC02() {
+        // GIVEN an XML parser (trackErrors initially disabled)
+        Parser parser = Parser.xmlParser();
+        // WHEN we set trackErrors to 5 (B0→B1→B2(true)→B4 chooses tracking)
+        parser.setTrackErrors(5);
+        // THEN isTrackErrors() reflects that tracking is enabled
+        assertTrue(parser.isTrackErrors());
+        // AND the internal error list max size equals 5
+        assertEquals(5, parser.getErrors().getMaxSize());
+    }
+
+    @Test
+    @DisplayName("setTrackErrors(0) disables tracking: isTrackErrors() returns false and getErrors().getMaxSize()==0")
+    void test_TC03() {
+        // GIVEN a new instance cloned from an HTML parser (initial trackErrors disabled)
+        Parser original = Parser.htmlParser();
+        Parser parser = original.newInstance();
+        // WHEN we disable tracking by setting to 0 (B0→B1→B2(false)→B3 picks noTracking())
+        parser.setTrackErrors(0);
+        // THEN isTrackErrors() is false
+        assertFalse(parser.isTrackErrors());
+        // AND the internal error list max size equals 0
+        assertEquals(0, parser.getErrors().getMaxSize());
+    }
+
+    @Test
+    @DisplayName("setTrackPosition(true) and then setTrackPosition(false) toggles trackPosition flag correctly")
+    void test_TC04() {
+        // GIVEN a fresh parser with default trackPosition=false
+        Parser parser = Parser.htmlParser(); // Corrected to use htmlParser()
+        // WHEN enabling tracking (first branch B5(true)→B6)
+        parser.setTrackPosition(true);
+        // THEN isTrackPosition() must be true
+        assertTrue(parser.isTrackPosition());
+        // WHEN disabling tracking (second branch B5(false)→B6)
+        parser.setTrackPosition(false);
+        // THEN isTrackPosition() must be false
+        assertFalse(parser.isTrackPosition());
+    }
+
+    @Test
+    @DisplayName("clone() produces independent copy: modifying original’s trackPosition does not affect clone")
+    void test_TC05() {
+        // GIVEN an HTML parser with trackPosition=false
+        Parser parser = Parser.htmlParser();
+        parser.setTrackPosition(false);
+        // WHEN we clone the parser (C0→C1→C2 deep-copy constructor)
+        Parser copy = parser.clone();
+        // THEN the clone must have trackPosition == false
+        assertFalse(copy.isTrackPosition());
+        // WHEN we modify the original's trackPosition
+        parser.setTrackPosition(true);
+        // THEN clone remains unchanged (independence)
+        assertFalse(copy.isTrackPosition());
+    }
+
+    @Test
+    @DisplayName("unescapeEntities converts &lt;tag&gt; correctly in attribute mode")
+    void test_TC06() {
+        // GIVEN an escaped attribute string: in attribute mode ; strict path U0(strict)→U1
+        String input = "&lt;tag&gt;";
+        // WHEN unescaping in attribute mode
+        String output = Parser.unescapeEntities(input, true);
+        // THEN it must yield the literal <tag>
+        assertEquals("<tag>", output);
+    }
+
+    @Test
+    @DisplayName("unescapeEntities preserves unknown &zz; sequences in non-attribute mode")
+    void test_TC07() {
+        // GIVEN an unknown entity in lax (non-attribute) mode ; path U0(lax)→U2
+        String input = "&zz;";
+        // WHEN unescaping in non-attribute mode
+        String output = Parser.unescapeEntities(input, false);
+        // THEN unknown entity should be left intact
+        assertEquals("&zz;", output);
+    }
+}

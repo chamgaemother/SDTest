@@ -1,0 +1,35 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_0_Test {
+
+    @Test
+    @DisplayName("TC01: Known submittable tag 'input' returns true for formSubmit flag")
+    public void test_TC01() {
+        // 'input' is listed in SharedConstants.FormSubmitTags, so isFormSubmittable should be true (branch-true)
+        Tag tag = Tag.valueOf("input");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(true, result, "Expected 'input' to be submittable with formSubmit=true");
+    }
+
+    @Test
+    @DisplayName("TC02: Known non-submittable tag 'div' returns false for formSubmit flag")
+    public void test_TC02() {
+        // 'div' is a block tag but not in formSubmit list, so isFormSubmittable should be false (branch-false)
+        Tag tag = Tag.valueOf("div");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Expected 'div' to not be submittable with formSubmit=false");
+    }
+
+    @Test
+    @DisplayName("TC03: Unknown tag 'custom' returns false for formSubmit flag")
+    public void test_TC03() {
+        // 'custom' is not pre-registered, so formSubmit flag remains default false (branch-false)
+        Tag tag = Tag.valueOf("custom");
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Expected unknown tag 'custom' to not be submittable with formSubmit=false");
+    }
+}

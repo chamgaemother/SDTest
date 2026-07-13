@@ -1,0 +1,111 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "Overload parseInput(String, String) delegates to treeBuilder.parse with non-null html and baseUri",
+      "path": "B0→B1",
+      "precondition": "Parser parser = new Parser(fakeBuilder); fakeBuilder.parse returns a dummy Document instance; using real implementation for delegation",
+      "expectedResult": "return value is the dummy Document instance returned by fakeBuilder.parse",
+      "tags": [
+        "overload:String,String",
+        "delegate",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput String overload delegation",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeBuilder);",
+        "    String html = \"<p>Test</p>\";",
+        "    String baseUri = \"http://example.com\";",
+        "    fakeBuilder.parse(new StringReader(html), baseUri, parser) returns dummyDoc;",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == dummyDoc;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O2",
+      "description": "Overload parseInput(Reader, String) delegates to treeBuilder.parse with non-null Reader and baseUri",
+      "path": "B0→B1",
+      "precondition": "Parser parser = new Parser(fakeBuilder); fakeBuilder.parse returns a DocumentX; using StringReader stub as Reader",
+      "expectedResult": "return value is the DocumentX instance returned by fakeBuilder.parse",
+      "tags": [
+        "overload:Reader,String",
+        "delegate",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O2 parseInput Reader overload delegation",
+        "  GIVEN",
+        "    Parser parser = new Parser(fakeBuilder);",
+        "    Reader reader = new StringReader(\"<div/>\");",
+        "    String baseUri = \"http://site/\";",
+        "    fakeBuilder.parse(reader, baseUri, parser) returns docX;",
+        "  WHEN",
+        "    Document result = parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert result == docX;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) throws NullPointerException when html parameter is null",
+      "path": "B0→B2",
+      "precondition": "Parser parser = new Parser(new HtmlTreeBuilder()); using real builder implementation",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "null-html"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O1 parseInput null-html exception",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    String html = null;",
+        "    String baseUri = \"http://a/\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when Reader is null",
+      "path": "B0→B2",
+      "precondition": "Parser parser = Parser.htmlParser(); using real builder implementation",
+      "expectedResult": "throws NullPointerException; no Document returned",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "null-reader"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput null-reader exception",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader reader = null;",
+        "    String baseUri = \"http://b/\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    }
+  ]
+}

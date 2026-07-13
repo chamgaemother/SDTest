@@ -1,0 +1,234 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Handles carriage return characters by ignoring '\\r' (branch ch=='\\r')",
+      "path": "B0→B3(loop start)→B4(ch!='\\n')→B5(ch=='\\r')→loop end→B0",
+      "precondition": "none",
+      "expectedResult": "concatenates 'a' and 'b' into 'ab' without errors",
+      "tags": [
+        "branch",
+        "carriage-return",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new StringReader(\"a\\rb\"));",
+        "    StringWriter out = new StringWriter();",
+        "    Builder b = WordWrap.from(r);",
+        "  WHEN",
+        "    b.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"ab\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Treats punctuation as boundary, flushing word on encountering punctuation (previousWasPunctuation path)",
+      "path": "B0→B3→isWordCharacter=false→appendWordToLine→writeLine on tooLong→B0",
+      "precondition": "default maxWidth small to force flush, e.g. maxWidth=3",
+      "expectedResult": "splits 'hi,there' into 'hi,' newline 'there'",
+      "tags": [
+        "branch",
+        "punctuation",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 punctuation-boundary",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"hi,there\").maxWidth(3);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"hi,\",\"there\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Breaks long word at start of line with hyphens when insertHyphens=true and line is empty",
+      "path": "B0→B3→isWordCharacter&&tooLong with line.length()==0→writeBrokenWord hyphen branch→B0→final write",
+      "precondition": "maxWidth=4, insertHyphens=true, breakWords=true",
+      "expectedResult": "word 'ABCDEFG' splits into 'ABCDE-' newline 'FG'",
+      "tags": [
+        "iteration",
+        "word-break",
+        "hyphen"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 break-at-line-start-with-hyphen",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"ABCDEFG\").maxWidth(4).insertHyphens(true).breakWords(true);",
+        "  WHEN",
+        "    String result = b.wrap();",
+        "  THEN",
+        "    assert result.equals(\"ABCDE-\\nFG\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Uses custom newline string '\\r\\n' in output (newLine override)",
+      "path": "B0→B3→ch=='\\n'→writeNewLine outputs custom newLine→B0→final",
+      "precondition": "set newLine to CRLF",
+      "expectedResult": "honors '\\r\\n' delimiters in output",
+      "tags": [
+        "overload",
+        "newline",
+        "boundary"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 custom-newline",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"x\\nY\").newLine(\"\\r\\n\");",
+        "  WHEN",
+        "    String out = b.wrap();",
+        "  THEN",
+        "    assert out.equals(\"x\\r\\nY\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Custom stringWidth function triggers tooLong immediately (branch tooLong true at start)",
+      "path": "B0→B3→tooLong →writeLine then broken flag→final write",
+      "precondition": "stringWidth returns large value always, maxWidth default",
+      "expectedResult": "each character is on its own line because tooLong always true",
+      "tags": [
+        "exception-path",
+        "custom-function",
+        "iteration"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 always-tooLong custom-width",
+        "  GIVEN",
+        "    Function<CharSequence,Number> wide = s->Double.MAX_VALUE;",
+        "    Builder b = WordWrap.from(\"ABC\").stringWidth(wide);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"A\",\"B\",\"C\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Exercises wrap(LineConsumer) overload directly (LineConsumer path)",
+      "path": "B0→Builder.wrap(LineConsumer)→static wordWrap Reader→consumer.writeNewLine on newline→final",
+      "precondition": "none",
+      "expectedResult": "LineConsumer receives correct lines for '1 2'",
+      "tags": [
+        "overload",
+        "lineconsumer",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 direct-lineconsumer-overload",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"1 2\");",
+        "    List<String> captured = new ArrayList<>();",
+        "    LineConsumer lc = new LineConsumer(){",
+        "      StringBuilder sb=new StringBuilder();",
+        "      public void write(char[] c,int off,int len){sb.append(c,off,len);}",
+        "      public void writeNewLine(){captured.add(sb.toString()); sb.setLength(0);}        ",
+        "    };",
+        "  WHEN",
+        "    b.wrap(lc);",
+        "  THEN",
+        "    assert captured.equals(Arrays.asList(\"1 2\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "wrap(Writer) throws IORuntimeException when Reader.close() fails (close exception path)",
+      "path": "B0→wrap→finally→close(reader)→IOException→throw IORuntimeException",
+      "precondition": "Reader whose close() throws IOException",
+      "expectedResult": "wrap() invocation throws IORuntimeException",
+      "tags": [
+        "exception",
+        "close",
+        "negative"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 reader-close-exception",
+        "  GIVEN",
+        "    Reader r = new StringReader(\"x\"){public void close() throws IOException{throw new IOException(\"fail\");}};",
+        "    StringWriter out = new StringWriter();",
+        "    Builder b = WordWrap.from(r, true);",
+        "  WHEN",
+        "    b.wrap(out);",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Include and exclude extra word chars so '?' is treated as normal letter (extraWordChars mutation path)",
+      "path": "B0→prepareExtraWordCharsForMutation→isWordCharacter true→append to word→final",
+      "precondition": "include '?' then exclude ','",
+      "expectedResult": "treats '?' as word, ',' as punctuation, output 'a?b,'",
+      "tags": [
+        "mutation",
+        "extraWordChars",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 custom-extra-word-chars",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"a?b,\")",
+        "      .includeExtraWordChars(\"?\")",
+        "      .excludeExtraWordChars(\",\");",
+        "    StringWriter out = new StringWriter();",
+        "  WHEN",
+        "    b.wrap(out);",
+        "  THEN",
+        "    assert out.toString().equals(\"a?b,\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "WriteBrokenWord else-branch when insertHyphens=true but word length<=2 (prefix whitespace path)",
+      "path": "B0→B3→tooLong→writeBrokenWord else-path→B0→final",
+      "precondition": "maxWidth=1, insertHyphens=true, breakWords=true, word length=2",
+      "expectedResult": "splits 'AB' into 'A' newline 'B'",
+      "tags": [
+        "word-break",
+        "hyphen-edge",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 small-word-broken-else-branch",
+        "  GIVEN",
+        "    Builder b = WordWrap.from(\"AB\").maxWidth(1).insertHyphens(true).breakWords(true);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"A\",\"B\"));",
+        "END"
+      ]
+    }
+  ]
+}

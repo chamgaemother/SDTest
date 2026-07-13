@@ -1,0 +1,86 @@
+{
+  "scenarios": [
+    {
+      "id": "TC05",
+      "description": "children() on element with only non-Element childNodes goes through build path and returns empty list",
+      "path": "B0→B2→(loop×1 zero matches)→B5",
+      "precondition": "Element el has one TextNode child",
+      "expectedResult": "returns empty Elements list",
+      "tags": [
+        "build-path",
+        "no-element-children",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC05 children no element children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.appendChild(new TextNode(\"text\"));",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "children() with multiple Element childNodes iterates loop more than once and returns all children",
+      "path": "B0→B2→(loop×2 matches)→B5",
+      "precondition": "Element el has two Element children",
+      "expectedResult": "returns Elements list of size 2 in correct order",
+      "tags": [
+        "build-path",
+        "iteration",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC06 children two element children",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li1 = new Element(\"li\");",
+        "    Element li2 = new Element(\"li\");",
+        "    el.appendChild(li1);",
+        "    el.appendChild(li2);",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0) == li1;",
+        "    assert result.get(1) == li2;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "children() second call returns cached list via shadowChildrenRef without rebuilding",
+      "path": "B0→B2→B6",
+      "precondition": "Element el has one Element child; children() called once before",
+      "expectedResult": "second children() call returns same Elements instance (cache hit)",
+      "tags": [
+        "cache-hit",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 children cache hit on second call",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    el.appendChild(child);",
+        "    Elements first = el.children();",
+        "  WHEN",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert second == first;",
+        "    assert second.size() == 1;",
+        "END"
+      ]
+    }
+  ]
+}

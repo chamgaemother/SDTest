@@ -1,0 +1,89 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "entries(filter) with non-null filter returns only file entries (cover entries(filter)!=null branch)",
+      "path": "load:B0→B1→B2; entries(filter):F1→F2",
+      "precondition": "DotenvParserStubControl.stubList contains multiple entries; builder created with defaults",
+      "expectedResult": "entries(filter) returns unmodifiable set of only those entries originally read from file",
+      "tags": [
+        "positive",
+        "method-entries",
+        "branch-filter-not-null"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 entries_with_filter_returns_file_entries",
+        "  GIVEN",
+        "    // Arrange stub to return two entries",
+        "    DotenvParserStubControl.stubList = Arrays.asList(new DotenvEntry(\"X\",\"1\"), new DotenvEntry(\"Y\",\"2\"));",
+        "    DotenvParserStubControl.toThrow = null;",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    Dotenv dotenv = builder.load();",
+        "    Dotenv.Filter filter = entrySet -> true; // non-null filter",
+        "  WHEN",
+        "    Set<DotenvEntry> filtered = dotenv.entries(filter);",
+        "  THEN",
+        "    assertEquals(2, filtered.size());",
+        "    assertTrue(filtered.containsAll(DotenvParserStubControl.stubList));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "get(key, default) returns user default when key missing in both system and file",
+      "path": "load:B0→B1→B2; get(key,default):G1→G3",
+      "precondition": "DotenvParserStubControl.stubList = emptyList; no system env variable for 'MISSING'",
+      "expectedResult": "get(\"MISSING\",\"DEF\") returns \"DEF\"",
+      "tags": [
+        "positive",
+        "method-get-default",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 get_with_default_when_missing",
+        "  GIVEN",
+        "    DotenvParserStubControl.stubList = Collections.emptyList();",
+        "    DotenvParserStubControl.toThrow = null;",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    Dotenv dotenv = builder.load();",
+        "  WHEN",
+        "    String result = dotenv.get(\"MISSING\", \"DEF\");",
+        "  THEN",
+        "    assertEquals(\"DEF\", result);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "get(key, default) returns file value when key present and system getenv returns null (cover fallback to envVars)",
+      "path": "load:B0→B1→B2; get(key,default):G1→G2→G3",
+      "precondition": "DotenvParserStubControl.stubList contains entry (\"K\",\"V\"); System.getenv(\"K\") == null",
+      "expectedResult": "get(\"K\",\"DEF\") returns \"V\"",
+      "tags": [
+        "positive",
+        "method-get",
+        "branch-fallback"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 get_returns_file_value_over_default",
+        "  GIVEN",
+        "    DotenvParserStubControl.stubList = Collections.singletonList(new DotenvEntry(\"K\",\"V\"));",
+        "    DotenvParserStubControl.toThrow = null;",
+        "    // Ensure no real system var for K",
+        "    DotenvBuilder builder = new DotenvBuilder();",
+        "    Dotenv dotenv = builder.load();",
+        "  WHEN",
+        "    String result = dotenv.get(\"K\", \"DEF\");",
+        "  THEN",
+        "    assertEquals(\"V\", result);",
+        "END"
+      ]
+    }
+  ]
+}

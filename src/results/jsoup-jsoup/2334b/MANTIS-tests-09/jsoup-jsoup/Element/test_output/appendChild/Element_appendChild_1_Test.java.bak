@@ -1,0 +1,51 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+
+public class Element_appendChild_Test {
+
+    @Test
+    @DisplayName("Appending the same child twice to the same parent triggers reparent removal and adds at end")
+    public void test_TC05() {
+        // GIVEN a parent <div> and a child <span> already appended once
+        Element parent = new Element("div");
+        Element child = new Element("span");
+        parent.appendChild(child);
+        // precondition: child is at index 0, and childNodeSize is 1
+        assertEquals(1, parent.childNodeSize(), "Precondition: one child after first append");
+        assertEquals(0, child.siblingIndex(), "Precondition: child index should be 0 initially");
+
+        // WHEN appending the same child again – should remove old reference and re-add at end
+        parent.appendChild(child);  
+        // THEN only one child should exist (removed then re-added)
+        assertEquals(1, parent.childNodeSize(), "Child list should still have exactly one node");
+        // siblingIndex resets to 0 as it's the only child
+        assertEquals(0, child.siblingIndex(), "After reparenting and adding at end, sole child index is 0");
+    }
+
+    @Test
+    @DisplayName("appendChild(TextNode) on empty childNodes creates NodeList and sets correct text node parent and index")
+    public void test_TC06() {
+        // GIVEN a fresh <p> element with no children
+        Element parent = new Element("p");
+        TextNode text = new TextNode("hello");
+        // precondition: no children and text has no parent
+        assertEquals(0, parent.childNodeSize(), "Precondition: parent has no children");
+        assertSame(null, text.parent(), "Precondition: text node has no parent yet");
+
+        // WHEN appending a TextNode to empty parent – should create child list via ensureChildNodes()
+        Element result = parent.appendChild(text);
+        // THEN the childNodes list should now have exactly one entry
+        assertEquals(1, parent.childNodeSize(), "After appendChild, one child node should be present");
+        // TextNode parent must be set to the Element
+        assertSame(parent, text.parent(), "TextNode.parent() should reference the parent element");
+        // siblingIndex should be 0 for the first (and only) child
+        assertEquals(0, text.siblingIndex(), "TextNode siblingIndex should be 0 when first added");
+        // appendChild should return the parent element
+        assertSame(parent, result, "appendChild should return the parent instance for chaining");
+    }
+}

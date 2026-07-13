@@ -1,0 +1,237 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "attr(String key, String value) with normal non-empty key and value sets attribute and returns this",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attributes == null",
+      "expectedResult": "el.attr(\"data-test\",\"123\") returns same instance; el.attributes().get(\"data-test\") == \"123\"",
+      "tags": [
+        "positive",
+        "branch-false",
+        "initial-attributes-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 attr normal-key-value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Element returned = el.attr(\"data-test\",\"123\");",
+        "  THEN",
+        "    assert returned == el;",
+        "    assert el.attributes().get(\"data-test\").equals(\"123\");"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "attr(String key, String value) updates an existing attribute value",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"title\",\"old\");",
+      "expectedResult": "el.attr(\"title\",\"new\") returns same instance; el.attributes().get(\"title\") == \"new\"",
+      "tags": [
+        "positive",
+        "update",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 attr update-existing",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"title\",\"old\");",
+        "  WHEN",
+        "    Element returned = el.attr(\"title\",\"new\");",
+        "  THEN",
+        "    assert returned == el;",
+        "    assert el.attributes().get(\"title\").equals(\"new\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "attr(String key, String value) with empty key throws IllegalArgumentException",
+      "path": "B0→Validate.notEmptyParam(key)→EX",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "key-empty",
+        "branch-validate"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 attr empty-key",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "  WHEN",
+        "    call el.attr(\"\", \"value\");",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "attr(String key, String value) with key containing only whitespace throws IllegalArgumentException",
+      "path": "B0→Validate.notEmptyParam(key)→EX",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "key-blank",
+        "branch-validate"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 attr blank-key",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "  WHEN",
+        "    call el.attr(\"   \", \"v\");",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "attr(String key, String value) with empty value sets attribute to empty string",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "el.attr(\"empty\",\"\") stores \"\"; el.attributes().get(\"empty\").equals(\"\")",
+      "tags": [
+        "boundary",
+        "value-empty"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 attr empty-value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    el.attr(\"empty\",\"\"\");",
+        "  THEN",
+        "    assert el.attributes().get(\"empty\").equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "attr(String key, String value) with whitespace value preserves whitespace",
+      "path": "B0→B2→B3",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "el.attr(\"x\",\"  \") stores \"  \"; el.attributes().get(\"x\").equals(\"  \")",
+      "tags": [
+        "boundary",
+        "value-blank"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 attr blank-value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    el.attr(\"x\",\"  \");",
+        "  THEN",
+        "    assert el.attributes().get(\"x\").equals(\"  \");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "attr(String key, String value) with null key throws IllegalArgumentException",
+      "path": "B0→Validate.notNull(key)→EX",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "key-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 attr null-key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.attr(null, \"v\");",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "attr(String key, String value) with null value throws NullPointerException",
+      "path": "B0→B2→attributes().put(key,null)→NPE",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "value-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 attr null-value",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    call el.attr(\"k\", null);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "attr(String key, String value) on element with pre-existing attributes object uses existing Attributes instance",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"div\"); el.attributes(); // instantiate attributes",
+      "expectedResult": "el.attr(\"k\",\"v\"); el.attributes() remains same instance; get(\"k\")==\"v\"",
+      "tags": [
+        "positive",
+        "reuse",
+        "branch-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 attr reuse-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Attributes before = el.attributes();",
+        "  WHEN",
+        "    el.attr(\"k\",\"v\");",
+        "  THEN",
+        "    assert el.attributes() == before;",
+        "    assert before.get(\"k\").equals(\"v\");"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "attr(String key, String value) supports method chaining to set multiple attributes",
+      "path": "B0→B2→B3→B2→B3",
+      "precondition": "Element el = new Element(\"div\");",
+      "expectedResult": "el.attr(\"a\",\"1\").attr(\"b\",\"2\"); el.attributes().get(\"a\")==\"1\"; el.attributes().get(\"b\")==\"2\"",
+      "tags": [
+        "positive",
+        "chaining",
+        "loop-1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 attr chaining",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    el.attr(\"a\",\"1\").attr(\"b\",\"2\");",
+        "  THEN",
+        "    assert el.attributes().get(\"a\").equals(\"1\");",
+        "    assert el.attributes().get(\"b\").equals(\"2\");"
+      ]
+    }
+  ]
+}

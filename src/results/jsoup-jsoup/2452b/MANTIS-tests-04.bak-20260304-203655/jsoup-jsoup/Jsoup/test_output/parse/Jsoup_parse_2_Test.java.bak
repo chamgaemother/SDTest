@@ -1,0 +1,101 @@
+package org.jsoup;
+
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Entities;
+import org.jsoup.safety.Safelist;
+import org.jsoup.HttpStatusException;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
+import java.net.URL;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("clean(String, \"\", Safelist.none()) skips DummyUri branch when preserveRelativeLinks is false")
+    public void test_TC19() {
+        // Given: empty baseUri and Safelist.none() does not preserve relative links (preserveRelativeLinks=false)
+        String html = "<a href='/r'>R</a>";
+        String base = "";
+        Safelist safelist = Safelist.none();
+        // When
+        String result = Jsoup.clean(html, base, safelist);
+        // Then: the href attribute should be removed as relative links are not preserved
+        assertEquals("<a>R</a>", result);
+    }
+
+    @Test
+    @DisplayName("clean(String, baseUri, Safelist.basic(), custom OutputSettings) applies outputSettings")
+    public void test_TC20() {
+        // Given: html with paragraph, non-empty baseUri triggers DummyUri branch skipped, basic Safelist allows <p>
+        String html = "<p>Line</p>";
+        String base = "http://u/";
+        Safelist safelist = Safelist.basic();
+        Document.OutputSettings settings = new Document.OutputSettings()
+            .prettyPrint(false)
+            .escapeMode(Entities.EscapeMode.xhtml);
+        // When: using overload with outputSettings
+        String result = Jsoup.clean(html, base, safelist, settings);
+        // Then: output should include the original <p> tag without pretty printing alterations
+        assertTrue(result.contains("<p>Line</p>"));
+    }
+
+    @Test
+    @DisplayName("parseBodyFragment(String) returns Document with empty baseUri and fragment in body")
+    public void test_TC21() {
+        // Given: a simple span fragment
+        String fragment = "<span>X</span>";
+        // When: parsing body fragment without baseUri
+        Document doc = Jsoup.parseBodyFragment(fragment);
+        // Then: body.html() should equal the fragment and baseUri should be empty
+        assertAll(
+            () -> assertEquals(fragment, doc.body().html()),
+            () -> assertEquals("", doc.baseUri())
+        );
+    }
+
+    @Test
+    @DisplayName("parse(String, Parser) with null html throws IllegalArgumentException")
+    public void test_TC22() {
+        // Given: null html input and a valid html parser
+        String html = null;
+        Parser parser = Parser.htmlParser();
+        // When / Then: passing null should trigger an IllegalArgumentException
+        assertThrows(IllegalArgumentException.class, () -> Jsoup.parse(html, parser));
+    }
+
+    @Test
+    @DisplayName("parse(URL, int) with HTTP 404 returns HttpStatusException")
+    public void test_TC23() throws IOException {
+        // Given: an embedded HTTP server that always responds 404
+        HttpServer server = HttpServer.create(new InetSocketAddress(0), 0);
+        server.createContext("/notfound", new HttpHandler() {
+            @Override
+            public void handle(HttpExchange exchange) throws IOException {
+                byte[] resp = "Not Found".getBytes();
+                exchange.sendResponseHeaders(404, resp.length);
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(resp);
+                }
+            }
+        });
+        server.start();
+        int port = server.getAddress().getPort();
+        URL url = new URL("http://localhost:" + port + "/notfound");
+        try {
+            // When / Then: parsing a 404 response should throw HttpStatusException
+            assertThrows(HttpStatusException.class, () -> Jsoup.parse(url, 1000));
+        } finally {
+            server.stop(0);
+        }
+    }
+}

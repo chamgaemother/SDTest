@@ -1,0 +1,123 @@
+package io.github.vmzakharov.ecdataframe.dataset;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DataFrame;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class DateSchemaColumn_parseAndAddToColumn_1_Test {
+
+    // A simple stub for DfColumn to capture added objects and count
+    private static class StubDfColumn implements DfColumn {
+        Object lastAdded;
+        int addCount = 0;
+
+        @Override
+        public void addObject(Object obj) {
+            this.lastAdded = obj;
+            this.addCount++;
+        }
+
+        @Override public String getName() { throw new UnsupportedOperationException(); }
+        @Override public void clear() { throw new UnsupportedOperationException(); }
+        @Override public int size() { throw new UnsupportedOperationException(); }
+        @Override public Object getObject(int rowIndex) { throw new UnsupportedOperationException(); }
+        @Override public void addAllFrom(DfColumn other) { throw new UnsupportedOperationException(); }
+        // Implementing the missing copyTo method to match DfColumn interface
+        @Override public void copyTo(DataFrame df) { throw new UnsupportedOperationException(); }
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when input string is null (aString == null branch)")
+    public void test_TC01() {
+        // Input string is null to trigger first null-check branch
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn stub = new StubDfColumn();
+        String aString = null;
+
+        col.parseAndAddToColumn(aString, stub);
+
+        // Expect that stub.addObject was called once with null
+        assertEquals(null, stub.lastAdded);
+        assertEquals(1, stub.addCount);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when trimmed input is empty (trimmed.isEmpty() == true branch)")
+    public void test_TC02() {
+        // Input string is whitespace, after trim becomes empty to trigger empty-check branch
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn stub = new StubDfColumn();
+        String aString = "   ";
+
+        col.parseAndAddToColumn(aString, stub);
+
+        // Expect that stub.addObject was called once with null
+        assertEquals(null, stub.lastAdded);
+        assertEquals(1, stub.addCount);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses valid date string with default pattern after trim (successful parse branch)")
+    public void test_TC03() {
+        // Input " 2023-12-5 " when trimmed matches default pattern 'uuuu-M-d'
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn stub = new StubDfColumn();
+        String aString = " 2023-12-5 ";
+
+        col.parseAndAddToColumn(aString, stub);
+
+        // Expect correct LocalDate parsed and added once
+        assertEquals(LocalDate.of(2023, 12, 5), stub.lastAdded);
+        assertEquals(1, stub.addCount);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for malformed date (parse error branch)")
+    public void test_TC04() {
+        // Input "2023-02-29" is invalid date under default pattern, expecting parse exception
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn stub = new StubDfColumn();
+        String aString = "2023-02-29";
+
+        // Expect exception and no additions on stub
+        assertThrows(DateTimeParseException.class, () -> col.parseAndAddToColumn(aString, stub));
+        assertEquals(0, stub.addCount);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses with custom pattern and adds correct LocalDate (custom-pattern parse branch)")
+    public void test_TC05() {
+        // Custom pattern 'd/MM/uuuu' to parse "7/03/2021"
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", "d/MM/uuuu");
+        StubDfColumn stub = new StubDfColumn();
+        String aString = "7/03/2021";
+
+        col.parseAndAddToColumn(aString, stub);
+
+        // Expect LocalDate.of(2021,3,7) parsed under custom pattern
+        assertEquals(LocalDate.of(2021, 3, 7), stub.lastAdded);
+        assertEquals(1, stub.addCount);
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses Feb 29 on a leap year with default pattern (boundary-date leap-year branch)")
+    public void test_TC06() {
+        // Valid leap-year date "2020-2-29" under default pattern
+        DateSchemaColumn col = new DateSchemaColumn(null, "d", null);
+        StubDfColumn stub = new StubDfColumn();
+        String aString = "2020-2-29";
+
+        col.parseAndAddToColumn(aString, stub);
+
+        // Expect LocalDate.of(2020,2,29) correctly parsed
+        assertEquals(LocalDate.of(2020, 2, 29), stub.lastAdded);
+        assertEquals(1, stub.addCount);
+    }
+}

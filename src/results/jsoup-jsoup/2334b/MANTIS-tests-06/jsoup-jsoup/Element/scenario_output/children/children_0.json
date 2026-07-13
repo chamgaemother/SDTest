@@ -1,0 +1,138 @@
+{
+  "method": "children",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "children() on new element with no child nodes returns empty list (childNodeSize()==0 branch)",
+      "path": "B0→childElementsList",
+      "precondition": "Element el created via new Element(\"div\"); no modifications",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 children no-children",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "children() on element with one text node returns empty list (childNodeSize()>0 but no Element instances)",
+      "path": "B0→childElementsList→B1(loop×1)→B2→B3",
+      "precondition": "Element el = new Element(\"p\"); el.appendText(\"text\");",
+      "expectedResult": "returned Elements is empty (size 0)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 children only-text-node",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.appendText(\"hello\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 0;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "children() on element with one child Element returns list containing that element (single match)",
+      "path": "B0→childElementsList→B1(loop×1)→B4→B3",
+      "precondition": "Element el = new Element(\"ul\"); Element li = el.appendElement(\"li\");",
+      "expectedResult": "returned Elements contains exactly li (size 1 and element at index 0 is li)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "match-true",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 children single-element-child",
+        "  GIVEN",
+        "    Element el = new Element(\"ul\");",
+        "    Element li = el.appendElement(\"li\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 1;",
+        "    assert result.get(0) == li;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "children() on element with mixed child nodes filters out non-elements and returns only child Elements",
+      "path": "B0→childElementsList→B1(loop×3)→B4×2→B2×1→B3",
+      "precondition": "Element el = new Element(\"div\"); el.appendElement(\"span\"); el.appendText(\"t\"); el.appendElement(\"a\");",
+      "expectedResult": "returned Elements contains two children in order: first \"span\", second \"a\"",
+      "tags": [
+        "branch-true",
+        "loop-3",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 children mixed-nodes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element s = el.appendElement(\"span\");",
+        "    el.appendText(\"t\");",
+        "    Element a = el.appendElement(\"a\");",
+        "  WHEN",
+        "    Elements result = el.children();",
+        "  THEN",
+        "    assert result.size() == 2;",
+        "    assert result.get(0) == s;",
+        "    assert result.get(1) == a;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "children() uses cached shadowChildrenRef on second call without rebuilding list",
+      "path": "B0→childElementsList→B1(loop×1)→B4→B3→(call again) childElementsList",
+      "precondition": "Element el = new Element(\"div\"); Element c = el.appendElement(\"p\");",
+      "expectedResult": "first call result contains p; second call returns same instance (cache)",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "cache-hit",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 children caching-behavior",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    Element c = el.appendElement(\"p\");",
+        "  WHEN",
+        "    Elements first = el.children();",
+        "    Elements second = el.children();",
+        "  THEN",
+        "    assert first.size() == 1;",
+        "    assert second == first;",
+        "END"
+      ]
+    }
+  ]
+}

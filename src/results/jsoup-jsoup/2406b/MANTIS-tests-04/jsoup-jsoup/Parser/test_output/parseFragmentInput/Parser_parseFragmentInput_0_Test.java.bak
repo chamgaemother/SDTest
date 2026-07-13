@@ -1,0 +1,176 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_Test {
+
+    @Test
+    @DisplayName("parseFragmentInput(String,Element,baseUri) with non-null context and simple two-element fragment returns list of two nodes")
+    public void test_TC01_O1() {
+        // branch-true: non-null context leads to B2->B3 path
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("http://example.com").body();
+        String fragment = "<div></div><p></p>";
+        String baseUri = "http://example.com";
+
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+
+        assertEquals(2, nodes.size());
+        assertTrue(nodes.get(0) instanceof Element);
+        assertEquals("div", ((Element) nodes.get(0)).tagName());
+        assertTrue(nodes.get(1) instanceof Element);
+        assertEquals("p", ((Element) nodes.get(1)).tagName());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(String,Element,baseUri) with null context and empty fragment returns empty list")
+    public void test_TC02_O1() {
+        // branch-false: context null takes B1->B2->B3 but no element context
+        Parser parser = Parser.htmlParser();
+        Element context = null;
+        String fragment = "";
+        String baseUri = "http://x";
+
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+
+        assertTrue(nodes.isEmpty());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader,Element,baseUri) with non-null context and single text fragment returns one TextNode")
+    public void test_TC03_O2() {
+        // branch-true: non-null context ensures parsing in context, reader overload
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("u").body();
+        Reader reader = new StringReader("hello");
+        String baseUri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);
+
+        assertEquals(1, nodes.size());
+        // TextNode toString returns its text
+        assertEquals("hello", nodes.get(0).toString());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader,Element,baseUri) with null context and multi-element fragment returns list of three nodes")
+    public void test_TC04_O2() {
+        // branch-false: null context, reader overload
+        Parser parser = Parser.htmlParser();
+        Element context = null;
+        Reader reader = new StringReader("<span></span><b></b><i></i>");
+        String baseUri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);
+
+        assertEquals(3, nodes.size());
+        assertEquals("span", ((Element) nodes.get(0)).tagName());
+        assertEquals("b", ((Element) nodes.get(1)).tagName());
+        assertEquals("i", ((Element) nodes.get(2)).tagName());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(String,Element,baseUri) with null fragment string throws NullPointerException")
+    public void test_TC05_O1() {
+        // exception path: passing null fragment should throw NPE
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("http://x").body();
+        String fragment = null;
+        String baseUri = "http://x";
+
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(fragment, context, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(String,Element,baseUri) with null baseUri throws NullPointerException")
+    public void test_TC06_O1() {
+        // exception path: passing null baseUri should throw NPE
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("u").body();
+        String fragment = "<a></a>";
+        String baseUri = null;
+
+        assertThrows(NullPointerException.class, () -> parser.parseFragmentInput(fragment, context, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader,Element,baseUri) with Reader that throws IOException results in UncheckedIOException")
+    public void test_TC07_O2() {
+        // exception path: reader.read throws IOException leads to UncheckedIOException
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("u").body();
+        Reader faultyReader = new Reader() {
+            @Override
+            public int read(char[] cbuf, int off, int len) throws IOException {
+                throw new IOException("fail");
+            }
+            @Override
+            public void close() throws IOException {
+                // no-op
+            }
+        };
+        String baseUri = "u";
+
+        assertThrows(UncheckedIOException.class, () -> parser.parseFragmentInput(faultyReader, context, baseUri));
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader,Element,baseUri) with null context reference returns list with single element under no context")
+    public void test_TC08_O2() {
+        // branch-false: null context, single element
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("<u></u>");
+        Element context = null;
+        String baseUri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);
+
+        assertEquals(1, nodes.size());
+        assertEquals("u", ((Element) nodes.get(0)).tagName());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(String,Element,baseUri) with multi-nested tags returns correct nested structure")
+    public void test_TC09_O1() {
+        // branch-true: nested elements with non-null context
+        Parser parser = Parser.htmlParser();
+        Element context = new Document("u").body();
+        String fragment = "<ul><li>1</li><li>2</li></ul>";
+        String baseUri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(fragment, context, baseUri);
+
+        assertEquals(1, nodes.size());
+        Element ul = (Element) nodes.get(0);
+        assertEquals("ul", ul.tagName());
+        assertEquals(2, ul.children().size());
+    }
+
+    @Test
+    @DisplayName("parseFragmentInput(Reader,Element,baseUri) with whitespace-only fragment returns a TextNode with whitespace")
+    public void test_TC10_O2() {
+        // branch-true: whitespace treated as text node under non-null context
+        Parser parser = Parser.htmlParser();
+        Reader reader = new StringReader("   \n  ");
+        Element context = new Document("u").body();
+        String baseUri = "u";
+
+        List<Node> nodes = parser.parseFragmentInput(reader, context, baseUri);
+
+        assertEquals(1, nodes.size());
+        assertEquals("   \n  ", nodes.get(0).toString());
+    }
+}

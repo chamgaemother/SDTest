@@ -1,0 +1,257 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty input leads to startDocument and endDocument with zero iterations (hasNext false)",
+      "path": "B0→B1→B8",
+      "precondition": "Reader supplies no tokens (empty CSS). No stubs or mocks needed.",
+      "expectedResult": "doc.startDocument() called once; doc.endDocument() called once; no other handler methods invoked",
+      "tags": [
+        "loop-0",
+        "branch-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 empty-css zero-iteration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1;",
+        "    assert doc.endDocumentCount == 1;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single simple rule-set triggers handleRuleSet (branch false) and one iteration",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"h1{}\". Real parser used.",
+      "expectedResult": "doc.startDocument(); doc.selectors(...) once; doc.endSelectors(...) once; doc.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-false"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 single-ruleset one-iteration",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.selectorsCount == 1;",
+        "    assert doc.endSelectorsCount == 1;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single at-rule without block triggers handleAtRule path (branch true, hasBlock false)",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"@import url('a.css');\". Real parser and real handlers.",
+      "expectedResult": "doc.startAtRule(...) called; doc.endAtRule(...) called; doc.endDocument();",
+      "tags": [
+        "loop-1",
+        "branch-true",
+        "at-rule-no-block"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 at-rule-no-block",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@import url('a.css');\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"import\");",
+        "    assert doc.endAtRuleNames.contains(\"import\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Incomplete rule-set (missing '}') throws PrematureEOFException inside handleRuleSet then breaks loop",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "Reader supplies \"h1{\" causing NoSuchElementException in handleRuleSet. Real handlers.",
+      "expectedResult": "Throws PrematureEOFException; doc.startDocument() and err.error(GRAMMAR_PREMATURE_EOF) invoked; doc.endDocument() still called afterwards",
+      "tags": [
+        "loop-1",
+        "branch-false",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 incomplete-ruleset-premature-eof",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"h1{\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    catch (PrematureEOFException e) { new CssParser().parse(reader, \"id\", err, doc);} ",
+        "  THEN",
+        "    assert err.hasErrorCode(GRAMMAR_PREMATURE_EOF);"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Multiple rule-sets triggers two iterations and handles branch false twice",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"a{} b{}\". Real parser.",
+      "expectedResult": "doc.selectorsCount == 2; doc.endSelectorsCount == 2; doc.endDocument();",
+      "tags": [
+        "loop-N",
+        "branch-false",
+        "multi-iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 multiple-rulesets",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"a{} b{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.selectorsCount == 2;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "IOException thrown by Reader is propagated by scan",
+      "path": "B0",
+      "precondition": "Reader stub throws IOException on read",
+      "expectedResult": "IOException is thrown; no content handler methods invoked",
+      "tags": [
+        "exception",
+        "io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 reader-ioexception-propagation",
+        "  GIVEN",
+        "    Reader reader = new Reader(){public int read(char[]c,int o,int l) throws IOException{throw new IOException(\"fail\");}};",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "Overload parse(CssSource) delegates to parse(reader) with one simple rule-set",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "CssSource stub returns a Reader over \"p{}\" and systemID; light fake used to avoid mocking",
+      "expectedResult": "doc.selectorsCount == 1; uses systemID from source",
+      "tags": [
+        "overload:CssSource",
+        "loop-1",
+        "branch-false"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 overload-csssource",
+        "  GIVEN",
+        "    CssSource source = new FakeCssSource(\"p{}\", \"sys\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(source, err, doc);",
+        "  THEN",
+        "    assert doc.selectorsCount == 1;"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "At-rule with block and nested rule-set triggers hasRuleSet true branch",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"@media{h1{}}\". Real parser.",
+      "expectedResult": "doc.startAtRule(\"media\"); doc.selectorsCount==1 inside block; doc.endAtRule(\"media\");",
+      "tags": [
+        "branch-true",
+        "hasBlock",
+        "hasRuleSet-true"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 media-nested-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media{h1{}}\"\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"media\");"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "At-rule with block and declarations triggers hasRuleSet false branch",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"@media{color:red;}\". Real parser.",
+      "expectedResult": "doc.startAtRule(\"media\"); doc.declarationCountInside(\"media\")==1; doc.endAtRule(\"media\");",
+      "tags": [
+        "branch-true",
+        "hasBlock",
+        "hasRuleSet-false"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 media-declarations",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@media{color:red;}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.declarationsByAtRule(\"media\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "Mixed at-rule and rule-set in one document iterates twice with both branches",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "Reader supplies \"@x{} h1{}\". Real parser.",
+      "expectedResult": "One atRule and one selector handled; total selectors==1; total startAtRuleNames contains \"x\"",
+      "tags": [
+        "loop-N",
+        "branch-true",
+        "branch-false",
+        "mixed"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 mixed-atrule-and-ruleset",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"@x{} h1{}\");",
+        "    RecordingErrorHandler err = new RecordingErrorHandler();",
+        "    RecordingContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new CssParser().parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startAtRuleNames.contains(\"x\");",
+        "    assert doc.selectorsCount == 1;"
+      ]
+    }
+  ]
+}

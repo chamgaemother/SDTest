@@ -1,0 +1,105 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "descends into single child: triggers B11→B12 twice for depth-first traversal",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B11→B12→B23→B1→B20→B22→B23→B1→B24",
+      "precondition": "Element root has one child",
+      "expectedResult": "visitor.head/tail called in order: head:div:0, head:span:1, tail:span:1, tail:div:0",
+      "tags": [
+        "positive",
+        "descend",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 depth-first single-child traverse",
+        "  GIVEN",
+        "    Element root = new Element(\"div\");",
+        "    Element child = new Element(\"span\");",
+        "    root.appendChild(child);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = (node, d) -> { // record calls",
+        "      if (d == node.siblingIndex()) calls.add((calls.size()%2==0?\"head\":\"tail\")+\":\"+node.nodeName()+\":\"+d);",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.equals(List.of(\"head:div:0\",\"head:span:1\",\"tail:span:1\",\"tail:div:0\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "removes first of two siblings in head: executes removal path B7→B9→B10 when nextSibling exists",
+      "path": "B0→B1→B2→B3→B5→B6→B7→B9→B10→B1→B11→B12→B23→B1→B11→B12→B23→B1→B20→B21→B24",
+      "precondition": "Element root has two children; visitor.head on first child calls remove()",
+      "expectedResult": "first child visited & removed; traversal continues to second child; tails called on second and root",
+      "tags": [
+        "positive",
+        "removal",
+        "sibling"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 removal with nextSibling traverse",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element li1 = new Element(\"li\");",
+        "    Element li2 = new Element(\"li\");",
+        "    root.appendChild(li1); root.appendChild(li2);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) {",
+        "        calls.add(\"head:\"+node.nodeName()+\":\"+depth);",
+        "        if (node == li1) node.remove();",
+        "      }",
+        "      public void tail(Node node, int depth) { calls.add(\"tail:\"+node.nodeName()+\":\"+depth); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.contains(\"head:li:1\"); // removed",
+        "    assert calls.contains(\"head:li:1\") && calls.contains(\"tail:li:1\");",
+        "    assert calls.get(calls.size()-1).equals(\"tail:ul:0\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "visits multiple siblings sequentially: triggers B16→B20→B22 for two child nodes",
+      "path": "B0→B1→B2→B3→B5→B11→B12→B23→B1→B11→B12→B23→B1→B20→B22→B23→B1→B20→B22→B23→B1→B24",
+      "precondition": "Element root has two child elements without children of their own",
+      "expectedResult": "calls: head:ul:0, head:li:1, tail:li:1, head:li:1, tail:li:1, tail:ul:0",
+      "tags": [
+        "positive",
+        "sibling",
+        "sequence"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 sequential-siblings traverse",
+        "  GIVEN",
+        "    Element root = new Element(\"ul\");",
+        "    Element a = new Element(\"li\");",
+        "    Element b = new Element(\"li\");",
+        "    root.appendChild(a); root.appendChild(b);",
+        "    List<String> calls = new ArrayList<>();",
+        "    NodeVisitor visitor = new NodeVisitor() {",
+        "      public void head(Node node, int depth) { calls.add(\"head:\"+node.nodeName()+\":\"+depth); }",
+        "      public void tail(Node node, int depth) { calls.add(\"tail:\"+node.nodeName()+\":\"+depth); }",
+        "    };",
+        "  WHEN",
+        "    NodeTraversor.traverse(visitor, root);",
+        "  THEN",
+        "    assert calls.equals(List.of(",
+        "      \"head:ul:0\",\"head:li:1\",\"tail:li:1\",\"head:li:1\",\"tail:li:1\",\"tail:ul:0\"",
+        "    ));",
+        "END"
+      ]
+    }
+  ]
+}

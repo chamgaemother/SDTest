@@ -1,0 +1,146 @@
+package org.idpf.epubcheck.util.css;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import org.idpf.epubcheck.util.css.CssExceptions.CssException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssGrammarException;
+import org.idpf.epubcheck.util.css.CssExceptions.CssErrorCode;
+import org.idpf.epubcheck.util.css.CssGrammar.CssAtRule;
+import org.idpf.epubcheck.util.css.CssGrammar.CssSelector;
+import org.idpf.epubcheck.util.css.CssGrammar.CssDeclaration;
+import org.idpf.epubcheck.util.css.CssParser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Generated tests for CssParser#parse(Reader, String, CssErrorHandler, CssContentHandler)
+ */
+public class epubcheck_CssParser_Test {
+
+  /**
+   * A simple error handler that records all error codes passed to it.
+   */
+  static class RecordingErrorHandler implements CssErrorHandler {
+    final List<CssErrorCode> errors = new ArrayList<>();
+
+    @Override
+    public void error(CssGrammarException ex) {
+      errors.add(ex.getErrorCode());
+    }
+  }
+
+  /**
+   * A simple content handler that records invocations.
+   */
+  static class RecordingContentHandler implements CssContentHandler {
+    int startDocCount = 0;
+    int endDocCount = 0;
+    int selectorsCount = 0;
+    int endSelectorsCount = 0;
+    final List<String> startAtRuleNames = new ArrayList<>();
+    final List<String> endAtRuleNames = new ArrayList<>();
+
+    @Override
+    public void startDocument() {
+      startDocCount++;
+    }
+
+    @Override
+    public void endDocument() {
+      endDocCount++;
+    }
+
+    @Override
+    public void selectors(List<CssSelector> selectors) {
+      selectorsCount++;
+    }
+
+    @Override
+    public void endSelectors(List<CssSelector> selectors) {
+      endSelectorsCount++;
+    }
+
+    @Override
+    public void startAtRule(CssAtRule rule) {
+      if (rule.getName().isPresent()) {
+        startAtRuleNames.add(rule.getName().get());
+      }
+    }
+
+    @Override
+    public void endAtRule(String name) {
+      endAtRuleNames.add(name);
+    }
+
+    // Other methods no-op
+    @Override public void declaration(CssDeclaration decl) {}
+    @Override public void startProperty(String name) {}
+    @Override public void endProperty(String name) {}
+  }
+
+  @Test
+  @DisplayName("CSS document starts with a CDO comment token which is skipped by FILTER_S_CMNT_CDO_CDC before parsing a rule-set")
+  void test_TC11() throws IOException, CssException {
+    // Input begins with <!-- which is a CDO comment, FILTER_S_CMNT_CDO_CDC should skip it
+    Reader reader = new StringReader("<!-- foo -->h1{}");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    new CssParser(Locale.ENGLISH).parse(reader, "sys", err, doc);
+
+    // Expect exactly one document start/end, one selectors and endSelectors, no errors
+    assertEquals(1, doc.startDocCount, "startDocument should be called once");
+    assertEquals(1, doc.selectorsCount, "One selectors() invocation for h1{}");
+    assertEquals(1, doc.endSelectorsCount, "One endSelectors() invocation for h1{}");
+    assertEquals(1, doc.endDocCount, "endDocument should be called once");
+    assertTrue(err.errors.isEmpty(), "No errors should have been recorded");
+  }
+
+  @Test
+  @DisplayName("At-rule param returns null causing UNEXPECTED_TOKEN error and skipping to matching '}' without emitting startAtRule")
+  void test_TC12() throws IOException {
+    // Input "@foo 123 ;" where 123 is not valid at-rule param -> handleAtRuleParam returns null
+    Reader reader = new StringReader("@foo 123 ;");
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    // We don't expect a CssException to be thrown; parse should consume and finish
+    assertDoesNotThrow(() -> new CssParser(Locale.ENGLISH).parse(reader, "sys", err, doc));
+
+    // One UNEXPECTED_TOKEN error should have been recorded
+    assertEquals(1, err.errors.size(), "One error expected");
+    assertEquals(CssErrorCode.GRAMMAR_UNEXPECTED_TOKEN, err.errors.get(0),
+        "Error code should be GRAMMAR_UNEXPECTED_TOKEN");
+    // No at-rule should have been started or ended
+    assertTrue(doc.startAtRuleNames.isEmpty(), "No startAtRule should be invoked");
+    assertTrue(doc.endAtRuleNames.isEmpty(), "No endAtRule should be invoked");
+  }
+
+  @Test
+  @DisplayName("Nested at-rule inside a block triggers hasRuleSet true branch and recursive handleAtRule invocation")
+  void test_TC13() throws IOException, CssException {
+    // Input has @media block containing @import then a ruleset h1{}
+    String css = "@media{@import url('a.css');h1{}}";
+    // The '{' after @media triggers a block, hasRuleSet should detect nested @import
+    Reader reader = new StringReader(css);
+    RecordingErrorHandler err = new RecordingErrorHandler();
+    RecordingContentHandler doc = new RecordingContentHandler();
+
+    new CssParser(Locale.ENGLISH).parse(reader, "sys", err, doc);
+
+    // We expect startAtRule for media and import, matching endAtRule in reverse order
+    assertTrue(doc.startAtRuleNames.contains("media"), "media at-rule should start");
+    assertTrue(doc.startAtRuleNames.contains("import"), "@import at-rule should start inside media");
+    assertTrue(doc.endAtRuleNames.contains("import"), "@import at-rule should end");
+    assertTrue(doc.endAtRuleNames.contains("media"), "media at-rule should end");
+    // Also one selectors() invocation for h1{}
+    assertEquals(1, doc.selectorsCount, "One selectors() invocation for nested h1{}");
+  }
+}

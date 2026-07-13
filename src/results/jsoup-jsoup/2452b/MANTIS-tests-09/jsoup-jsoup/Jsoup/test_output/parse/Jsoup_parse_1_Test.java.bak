@@ -1,0 +1,164 @@
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Safelist;
+import org.jsoup.nodes.Element;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.SocketTimeoutException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Jsoup_parse_Test {
+
+    @Test
+    @DisplayName("TC10: parse(File) with missing file throws IOException")
+    public void test_TC10() {
+        // GIVEN a File that does not exist to force the IOException branch
+        File missing = new File("nonexistent.html");
+        // WHEN/THEN expect IOException due to file not found
+        assertThrows(IOException.class, () -> Jsoup.parse(missing));
+    }
+
+    @Test
+    @DisplayName("TC11: parse(File,charset,baseUri,parser) uses xmlParser to parse custom input")
+    public void test_TC11() throws Exception {
+        // GIVEN a temp XML file to hit xmlParser branch
+        Path tmp = Files.createTempFile("jsoup", ".xml");
+        Files.write(tmp, "<root><tag/></root>".getBytes(StandardCharsets.UTF_8));
+        File file = tmp.toFile();
+        Parser xmlParser = Parser.xmlParser();
+        // WHEN parsing with xmlParser
+        Document doc = Jsoup.parse(file, "UTF-8", "http://base", xmlParser);
+        // THEN the <tag/> element is present exactly once
+        assertEquals(1, doc.select("tag").size());
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC12: parse(Path,charset,baseUri) reads from Path and resolves baseUri")
+    public void test_TC12() throws Exception {
+        // GIVEN a temp HTML file to hit Path overload branch
+        Path tmp = Files.createTempFile("jsoup", ".html");
+        Files.write(tmp, "<p>Path</p>".getBytes(StandardCharsets.UTF_8));
+        // WHEN parsing via Path
+        Document doc = Jsoup.parse(tmp, "UTF-8", "http://base");
+        // THEN the <p> text should be 'Path'
+        assertEquals("Path", doc.body().select("p").text());
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC13: parse(Path,charset) reads from Path and infers baseUri")
+    public void test_TC13() throws Exception {
+        // GIVEN a temp HTML file and null charset to hit BOM/meta detection branch
+        Path tmp = Files.createTempFile("jsoup", ".html");
+        Files.write(tmp, "<h2>Hdr</h2>".getBytes(StandardCharsets.UTF_8));
+        // WHEN parsing with null charset
+        Document doc = Jsoup.parse(tmp, null);
+        // THEN the <h2> text should be 'Hdr'
+        assertEquals("Hdr", doc.body().select("h2").text());
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC14: parse(Path) reads from Path with default settings")
+    public void test_TC14() throws Exception {
+        // GIVEN a temp HTML file to hit default Path overload branch
+        Path tmp = Files.createTempFile("jsoup", ".html");
+        Files.write(tmp, "<em>Imp</em>".getBytes(StandardCharsets.UTF_8));
+        // WHEN parsing with only Path
+        Document doc = Jsoup.parse(tmp);
+        // THEN the <em> text should be 'Imp'
+        assertEquals("Imp", doc.body().select("em").text());
+        Files.deleteIfExists(tmp);
+    }
+
+    @Test
+    @DisplayName("TC15: parse(InputStream,charset,baseUri) reads and closes stream")
+    public void test_TC15() throws Exception {
+        // GIVEN an InputStream over HTML to test stream-close behavior branch
+        class TrackingInputStream extends ByteArrayInputStream {
+            boolean closed = false;
+            TrackingInputStream(byte[] buf) { super(buf); }
+            @Override public void close() throws IOException { closed = true; super.close(); }
+        }
+        TrackingInputStream in = new TrackingInputStream("<span>S</span>".getBytes(StandardCharsets.UTF_8));
+        // WHEN parsing the stream
+        Document doc = Jsoup.parse(in, "UTF-8", "http://b");
+        // THEN content is parsed and stream is closed
+        assertEquals("S", doc.body().select("span").text());
+        assertTrue(in.closed, "InputStream should be closed after parse");
+    }
+
+    @Test
+    @DisplayName("TC16: parse(InputStream,charset,baseUri,parser) with xmlParser reads custom fragment")
+    public void test_TC16() throws Exception {
+        // GIVEN XML fragment stream and xmlParser to hit parser branch
+        byte[] xml = "<items><item/></items>".getBytes(StandardCharsets.UTF_8);
+        InputStream in = new ByteArrayInputStream(xml);
+        Parser xmlParser = Parser.xmlParser();
+        // WHEN parsing with xmlParser
+        Document doc = Jsoup.parse(in, null, "", xmlParser);
+        // THEN one <item> element is present
+        assertEquals(1, doc.select("item").size());
+    }
+
+    @Test
+    @DisplayName("TC17: clean(html,baseUri,safelist) with empty baseUri and preserveRelativeLinks true uses DummyUri branch")
+    public void test_TC17() {
+        // GIVEN HTML with relative link and safelist preserving relative links to hit DummyUri branch
+        String html = "<a href=\"/x\">X</a>";
+        Safelist sl = Safelist.basic();
+        sl.preserveRelativeLinks(true);
+        // WHEN cleaning with empty baseUri
+        String out = Jsoup.clean(html, "", sl);
+        // THEN href should be resolved via DummyUri placeholder
+        assertTrue(out.contains("href=\"http://x\"") || out.contains("href=\"/x\""),
+                "Relative link should be preserved or resolved via DummyUri");
+    }
+
+    @Test
+    @DisplayName("TC18: clean(html,baseUri,safelist,outputSettings) applies outputSettings prettyPrint off")
+    public void test_TC18() {
+        // GIVEN HTML and OutputSettings with prettyPrint(false) to hit no line break branch
+        String html = "<div><p>One</p></div>";
+        org.jsoup.nodes.Document.OutputSettings os =
+                new org.jsoup.nodes.Document.OutputSettings().prettyPrint(false);
+        // WHEN cleaning with prettyPrint off
+        String out = Jsoup.clean(html, "http://b", Safelist.relaxed(), os);
+        // THEN output should not contain line breaks
+        assertFalse(out.contains("\n"), "Output should not contain line breaks when prettyPrint is off");
+    }
+
+    @Test
+    @DisplayName("TC19: isValid(html,safelist) returns false when tag not allowed")
+    public void test_TC19() {
+        // GIVEN HTML with <script> tag and default basic Safelist to hit invalid branch
+        String html = "<script>alert(1)</script>";
+        Safelist sl = Safelist.basic();
+        // WHEN validating
+        boolean valid = Jsoup.isValid(html, sl);
+        // THEN should be invalid
+        assertFalse(valid, "Script tags are not allowed by basic Safelist");
+    }
+
+    @Test
+    @DisplayName("TC20: parse(URL,timeoutMillis) with unreachable host triggers SocketTimeoutException")
+    public void test_TC20() throws Exception {
+        // GIVEN a URL to a non-routable IP and minimal timeout to hit timeout branch
+        URL url = new URL("http://10.255.255.1/");
+        int timeout = 1;
+        // WHEN/THEN expect a SocketTimeoutException
+        assertThrows(SocketTimeoutException.class, () -> Jsoup.parse(url, timeout));
+    }
+}

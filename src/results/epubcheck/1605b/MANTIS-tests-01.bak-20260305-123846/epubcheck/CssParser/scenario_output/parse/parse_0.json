@@ -1,0 +1,191 @@
+{
+  "method": "parse",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "Empty token stream results in startDocument then endDocument without any rules",
+      "path": "B0→B1→B8",
+      "precondition": "Custom CssTokenIterator stub with hasNext(FILTER_S_CMNT_CDO_CDC) returning false; no mocking framework used",
+      "expectedResult": "doc.startDocument() is called once; doc.endDocument() is called once; no handleAtRule or handleRuleSet invoked",
+      "tags": [
+        "loop-0",
+        "branch-hasNext-false",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parse empty-stream",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = spy(new RecordingContentHandler());",
+        "  WHEN",
+        "    new TestableCssParser(iterEmpty).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.startDocumentCount == 1 && doc.endDocumentCount == 1;"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Single ATKEYWORD token triggers handleAtRule once and loops exit",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B8",
+      "precondition": "CssTokenIterator stub returns one ATKEYWORD token then hasNext false; TestableCssParser overrides handleAtRule to record invocation",
+      "expectedResult": "handleAtRule invoked exactly once with the ATKEYWORD token; startDocument and endDocument each invoked once",
+      "tags": [
+        "loop-1",
+        "branch-hasNext-true",
+        "branch-ATKEYWORD-true",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parse single-atrule",
+        "  GIVEN",
+        "    TokenSequence seq = seqOf(ATKEYWORD);",
+        "    Reader reader = new StringReader(\"@rule;\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = spy(new RecordingContentHandler());",
+        "  WHEN",
+        "    new TestableCssParser(iterFrom(seq)).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert record.handleAtRuleCount == 1;"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Single non-ATKEYWORD token triggers handleRuleSet once and loops exit",
+      "path": "B0→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "CssTokenIterator stub returns one IDENT token then hasNext false; TestableCssParser overrides handleRuleSet to record invocation",
+      "expectedResult": "handleRuleSet invoked exactly once with the non-ATKEYWORD token; startDocument and endDocument each invoked once",
+      "tags": [
+        "loop-1",
+        "branch-hasNext-true",
+        "branch-ATKEYWORD-false",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parse single-ruleset",
+        "  GIVEN",
+        "    TokenSequence seq = seqOf(IDENT);",
+        "    Reader reader = new StringReader(\"div {};\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = spy(new RecordingContentHandler());",
+        "  WHEN",
+        "    new TestableCssParser(iterFrom(seq)).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert record.handleRuleSetCount == 1;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Two tokens (ATKEYWORD then IDENT) trigger handleAtRule then handleRuleSet before exit",
+      "path": "B0→B1→B2→B4→B5→B7→B1→B2→B3→B5→B7→B1→B8",
+      "precondition": "CssTokenIterator stub returns ATKEYWORD then IDENT then hasNext false; TestableCssParser records both handlers",
+      "expectedResult": "handleAtRule invoked once then handleRuleSet invoked once; overall two iterations; startDocument and endDocument each invoked once",
+      "tags": [
+        "loop-N",
+        "branch-hasNext-true",
+        "branch-ATKEYWORD-true",
+        "branch-ATKEYWORD-false",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parse mixed-two",
+        "  GIVEN",
+        "    TokenSequence seq = seqOf(ATKEYWORD, IDENT);",
+        "    Reader reader = new StringReader(\"@a; div {};\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = spy(new RecordingContentHandler());",
+        "  WHEN",
+        "    new TestableCssParser(iterFrom(seq)).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert record.handleAtRuleCount == 1 && record.handleRuleSetCount == 1;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "IOException thrown by scan propagates out of parse",
+      "path": "B0",
+      "precondition": "Custom CssParser subclass overrides scan to throw IOException(\"fail\");",
+      "expectedResult": "throws IOException with message \"fail\"",
+      "tags": [
+        "exception",
+        "IOException",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parse scan-ioexception",
+        "  GIVEN",
+        "    CssParser parser = new TestableCssParserThrowsIO();",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws IOException(\"fail\");"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "CssException thrown by scan propagates out of parse",
+      "path": "B0",
+      "precondition": "Custom CssParser subclass overrides scan to throw CssException(\"err\");",
+      "expectedResult": "throws CssException with message \"err\"",
+      "tags": [
+        "exception",
+        "CssException",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parse scan-cssexception",
+        "  GIVEN",
+        "    CssParser parser = new TestableCssParserThrowsCss();",
+        "    Reader reader = new StringReader(\"\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    call parser.parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    throws CssException(\"err\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "PrematureEOFException in handleAtRule breaks loop and ends document",
+      "path": "B0→B1→B2→B4→B6→B8",
+      "precondition": "TestableCssParser overrides handleAtRule to throw PrematureEOFException; CssTokenIterator stub returns one ATKEYWORD",
+      "expectedResult": "loop breaks on PrematureEOFException; doc.endDocument() invoked; no rethrow",
+      "tags": [
+        "loop-1",
+        "exception",
+        "PrematureEOFException",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parse premature-eof-in-atrule",
+        "  GIVEN",
+        "    TokenSequence seq = seqOf(ATKEYWORD);",
+        "    Reader reader = new StringReader(\"@a;\");",
+        "    CssErrorHandler err = new RecordingErrorHandler();",
+        "    CssContentHandler doc = new RecordingContentHandler();",
+        "  WHEN",
+        "    new TestableCssParserThrowsEOF(iterFrom(seq)).parse(reader, \"id\", err, doc);",
+        "  THEN",
+        "    assert doc.endDocumentCount == 1;"
+      ]
+    }
+  ]
+}

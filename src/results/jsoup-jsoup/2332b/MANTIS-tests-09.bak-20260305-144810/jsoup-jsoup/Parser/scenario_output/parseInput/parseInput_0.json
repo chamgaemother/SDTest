@@ -1,0 +1,173 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) throws NullPointerException when html is null",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String,String",
+        "branch-html-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01_O1 parseInput null-html",
+        "  GIVEN",
+        "    String html = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B1→B3",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:String,String",
+        "branch-baseUri-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02_O1 parseInput null-baseUri",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\"; String baseUri = null;",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(html, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when reader is null",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:Reader,String",
+        "branch-reader-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03_O2 parseInput null-reader",
+        "  GIVEN",
+        "    Reader reader = null; String baseUri = \"http://example.com\";",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) throws NullPointerException when baseUri is null",
+      "path": "B0→B2→B4",
+      "precondition": "none",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "exception",
+        "overload:Reader,String",
+        "branch-baseUri-null"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04_O2 parseInput reader null-baseUri",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<p>x</p>\"); String baseUri = null;",
+        "  WHEN",
+        "    call Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05_O1",
+      "description": "parseInput(String, String) delegates to treeBuilder.parse and returns its Document instance",
+      "path": "B0→B1→B2→B5",
+      "precondition": "Use a stub TreeBuilder that returns a fixed Document instance to isolate parseInput behavior",
+      "expectedResult": "return value is the stub Document instance",
+      "tags": [
+        "positive",
+        "delegation",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05_O1 parseInput delegation",
+        "  GIVEN",
+        "    DummyTreeBuilder stub = new DummyTreeBuilder(docStub); Parser p = new Parser(stub); String html = \"<tag/>\"; String baseUri = \"base\";",
+        "  WHEN",
+        "    Document result = p.parseInput(html, baseUri);",
+        "  THEN",
+        "    assert result == docStub;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) delegates to treeBuilder.parse and returns its Document instance",
+      "path": "B0→B2→B5",
+      "precondition": "Use a stub TreeBuilder stub that returns a fixed Document instance to isolate method",
+      "expectedResult": "return value is the stub Document instance",
+      "tags": [
+        "positive",
+        "delegation",
+        "overload:Reader,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06_O2 parseInput delegation",
+        "  GIVEN",
+        "    DummyTreeBuilder stub = new DummyTreeBuilder(docStub); Parser p = new Parser(stub); Reader reader = new StringReader(\"<t></t>\"); String baseUri = \"base\";",
+        "  WHEN",
+        "    Document result = p.parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert result == docStub;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07_O2",
+      "description": "parseInput(Reader, String) with HtmlTreeBuilder parses simple HTML fragment into Document body text",
+      "path": "B0→B2→B5",
+      "precondition": "none (uses real HtmlTreeBuilder)",
+      "expectedResult": "result.body().text() equals \"hello\" and baseUri on Document is \"http://u\"",
+      "tags": [
+        "positive",
+        "integration",
+        "overload:Reader,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07_O2 parseInput real-html-parser",
+        "  GIVEN",
+        "    Reader reader = new StringReader(\"<p>hello</p>\"); String baseUri = \"http://u\";",
+        "  WHEN",
+        "    Document result = Parser.htmlParser().parseInput(reader, baseUri);",
+        "  THEN",
+        "    assert result.body().text().equals(\"hello\"); assert result.baseUri().equals(\"http://u\");",
+        "END"
+      ]
+    }
+  ]
+}

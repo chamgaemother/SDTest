@@ -1,0 +1,334 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "Implicit multiplication inserted between ')' and '(' when allowed",
+      "path": "B0→B1→B2(true)→B3(false)→B4→B6×2→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with implicitMultiplicationAllowed=true",
+      "expectedResult": "Tokens: BRACE_CLOSE ')', INFIX_OPERATOR '*', BRACE_OPEN '('",
+      "tags": [
+        "positive",
+        "implicit-multiplication",
+        "brace"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 implicit multiplication between braces",
+        "  GIVEN",
+        "    String expr = \")(\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setImplicitMultiplicationAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    // Expect ')', '*', '('",
+        "    assert tokens.get(0).getType() == TokenType.BRACE_CLOSE;",
+        "    assert tokens.get(1).getType() == TokenType.INFIX_OPERATOR;",
+        "    assert tokens.get(1).getValue().equals(\"*\");",
+        "    assert tokens.get(2).getType() == TokenType.BRACE_OPEN;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Array open '[' throws when arrays not allowed",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B10",
+      "precondition": "ExpressionConfiguration with arraysAllowed=false",
+      "expectedResult": "ParseException with message 'Array open not allowed here'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 array open disallowed",
+        "  GIVEN",
+        "    String expr = \"[\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(false);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Array open not allowed here\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Array close ']' at start throws when arrays allowed",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B10",
+      "precondition": "ExpressionConfiguration with arraysAllowed=true",
+      "expectedResult": "ParseException with message 'Array close not allowed here'",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 array close disallowed at start",
+        "  GIVEN",
+        "    String expr = \"]\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Array close not allowed here\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Proper single-element array '[1]' parsed with open, literal, close",
+      "path": "B0→B1→B2(false)→B6×3→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with arraysAllowed=true",
+      "expectedResult": "Tokens: ARRAY_OPEN '[', NUMBER_LITERAL '1', ARRAY_CLOSE ']'",
+      "tags": [
+        "positive",
+        "array"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 single-element array parsing",
+        "  GIVEN",
+        "    String expr = \"[1]\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == TokenType.ARRAY_OPEN;",
+        "    assert tokens.get(1).getType() == TokenType.NUMBER_LITERAL;",
+        "    assert tokens.get(2).getType() == TokenType.ARRAY_CLOSE;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Valid structure separator '.' between variables when allowed",
+      "path": "B0→B1→B2(false)→B6×3→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with structuresAllowed=true",
+      "expectedResult": "Tokens: VARIABLE 'a', STRUCTURE_SEPARATOR '.', VARIABLE 'b'",
+      "tags": [
+        "positive",
+        "structure"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 valid structure separator",
+        "  GIVEN",
+        "    String expr = \"a.b\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setStructuresAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == TokenType.VARIABLE_OR_CONSTANT;",
+        "    assert tokens.get(1).getType() == TokenType.STRUCTURE_SEPARATOR;",
+        "    assert tokens.get(2).getType() == TokenType.VARIABLE_OR_CONSTANT;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Undefined operator '$' throws undefined operator exception",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "ParseException with message \"Undefined operator '$'\"",
+      "tags": [
+        "negative",
+        "operator",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 undefined operator",
+        "  GIVEN",
+        "    String expr = \"$\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Undefined operator '$'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Undefined function call 'foo()' throws undefined function exception",
+      "path": "B0→B1→B2(false)→B6×2→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with no 'foo' in functionDictionary",
+      "expectedResult": "ParseException with message \"Undefined function 'foo'\"",
+      "tags": [
+        "negative",
+        "function",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 undefined function call",
+        "  GIVEN",
+        "    String expr = \"foo()\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    // config.functionDictionary has no foo",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Undefined function 'foo'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "User-defined function 'bar()' parsed as FUNCTION token",
+      "path": "B0→B1→B2(false)→B6×2→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with functionDictionary containing foo and bar",
+      "expectedResult": "TokenType.FUNCTION 'bar'",
+      "tags": [
+        "positive",
+        "function"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 valid function recognition",
+        "  GIVEN",
+        "    String expr = \"bar()\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.getFunctionDictionary().addFunction(\"bar\", args -> 0);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == TokenType.FUNCTION;",
+        "    assert tokens.get(0).getValue().equals(\"bar\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "String literal with escape sequences parsed correctly",
+      "path": "B0→B1→B2(false)→B6×2→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "STRING_LITERAL token with embedded '\\n'",
+      "tags": [
+        "positive",
+        "string",
+        "escape"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse string literal with escapes",
+        "  GIVEN",
+        "    String expr = \"'a\\\\nb'\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(0).getType() == TokenType.STRING_LITERAL;",
+        "    assert tokens.get(0).getValue().equals(\"a\\nb\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "String literal missing closing quote throws exception",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "ParseException with message \"Closing quote not found\"",
+      "tags": [
+        "negative",
+        "string",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 missing closing quote",
+        "  GIVEN",
+        "    String expr = \"'abc\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Closing quote not found\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "Unknown escape character in string literal throws exception",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "ParseException with message \"Unknown escape character\"",
+      "tags": [
+        "negative",
+        "string",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 unknown escape in string",
+        "  GIVEN",
+        "    String expr = \"'\\\\z'\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Unknown escape character\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "Decimal number with multiple dots throws exception",
+      "path": "B0→B1→B2(false)→B6→B1→B7→B9→B11",
+      "precondition": "ExpressionConfiguration default",
+      "expectedResult": "ParseException with message \"Number contains more than one decimal point\"",
+      "tags": [
+        "negative",
+        "number",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 multiple decimal dots",
+        "  GIVEN",
+        "    String expr = \"1.2.3\";",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(expr, config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException containing \"Number contains more than one decimal point\";",
+        "END"
+      ]
+    }
+  ]
+}

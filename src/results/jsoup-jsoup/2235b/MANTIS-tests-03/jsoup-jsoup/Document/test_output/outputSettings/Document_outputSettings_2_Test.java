@@ -1,0 +1,47 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document.OutputSettings;
+import org.jsoup.nodes.Entities.EscapeMode;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_outputSettings_2_Test {
+
+    @Test
+    @DisplayName("TC04: outputSettings() returns live internal instance that reflects subsequent mutations")
+    public void test_TC04() {
+        // GIVEN a new empty Document
+        Document doc = new Document("http://x/");
+        // B0→B3: call getter branch to retrieve live reference
+        OutputSettings settings = doc.outputSettings();
+        // WHEN mutating the returned settings
+        settings.prettyPrint(false)  // disable pretty printing
+                .indentAmount(5);     // set indent amount
+        // THEN the internal settings instance should reflect those mutations
+        assertFalse(doc.outputSettings().prettyPrint(), 
+                "Mutating the returned OutputSettings should update the Document's internal state");
+        assertEquals(5, doc.outputSettings().indentAmount(), 
+                "Indent amount set on the returned OutputSettings should be visible via getter");
+    }
+
+    @Test
+    @DisplayName("TC05: outputSettings(custom) replaces internal settings instance allowing new settings object mutation")
+    public void test_TC05() {
+        // GIVEN a new empty Document and a custom settings instance
+        Document doc = new Document("http://y/");
+        OutputSettings custom = new OutputSettings().outline(true);
+        // B0→B3: call setter branch to replace internal instance
+        Document returned = doc.outputSettings(custom);
+        // THEN the setter should return the same Document (fluent chaining)
+        assertSame(doc, returned, "outputSettings(custom) should return the document itself");
+        // AND the internal reference should now be the custom instance
+        assertSame(custom, doc.outputSettings(), 
+                "After setting custom OutputSettings, getter should return the same instance");
+        // WHEN mutating the custom instance further
+        custom.escapeMode(EscapeMode.extended);
+        // THEN those mutations should be visible through the document's getter
+        assertEquals(EscapeMode.extended, doc.outputSettings().escapeMode(), 
+                "Mutations on the supplied custom OutputSettings should reflect in the Document");
+    }
+}

@@ -1,0 +1,40 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.HtmlTreeBuilder;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Parser_setTrackPosition_1_Test {
+
+    @Test
+    @DisplayName("TC03: setTrackPosition(false) when already false leaves tracking disabled and returns same parser instance")
+    public void test_TC03() {
+        // GIVEN: a new Parser with default trackPosition=false ensures the branch B1 (trackPosition is false) is taken
+        Parser p = new Parser(new HtmlTreeBuilder());
+        assertFalse(p.isTrackPosition(), "Precondition: trackPosition should be false by default");
+        
+        // WHEN: calling setTrackPosition(false) again should be a no-op (branch B2 remains false)
+        Parser result = p.setTrackPosition(false);
+        
+        // THEN: should return the same instance and trackPosition remains false
+        assertSame(p, result, "Chaining: should return the same Parser instance");
+        assertFalse(result.isTrackPosition(), "After setting to false again, trackPosition should remain false");
+    }
+
+    @Test
+    @DisplayName("TC04: setTrackPosition(true) when already true leaves tracking enabled and returns same parser instance")
+    public void test_TC04() {
+        // GIVEN: a Parser with trackPosition=true forces branch B1 to set trackPosition true
+        Parser p = new Parser(new HtmlTreeBuilder()).setTrackPosition(true);
+        assertTrue(p.isTrackPosition(), "Precondition: trackPosition should be true after initial set");
+        
+        // WHEN: calling setTrackPosition(true) again should be a no-op (branch B2 remains true)
+        Parser result = p.setTrackPosition(true);
+        
+        // THEN: should return the same instance and trackPosition remains true
+        assertSame(p, result, "Chaining: should return the same Parser instance");
+        assertTrue(result.isTrackPosition(), "After setting to true again, trackPosition should remain true");
+    }
+}

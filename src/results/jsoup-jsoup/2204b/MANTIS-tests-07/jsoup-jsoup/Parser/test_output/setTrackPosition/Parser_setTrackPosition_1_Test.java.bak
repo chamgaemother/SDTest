@@ -1,0 +1,43 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Test class for Parser#setTrackPosition and newInstance behavior.
+ */
+public class Parser_setTrackPosition_Test {
+
+    @Test
+    @DisplayName("newInstance() after setTrackPosition(true) carries over enabled tracking")
+    public void test_TC03() {
+        // GIVEN: default htmlParser has trackPosition=false, then enabled via setTrackPosition(true)
+        Parser original = Parser.htmlParser().setTrackPosition(true);
+        assertTrue(original.isTrackPosition(), "Original parser should have tracking enabled");
+
+        // WHEN: creating a new instance (branch B0->B1->B2->B4; trackPosition copied)
+        Parser copy = original.newInstance();
+
+        // THEN: ensure a separate object and trackPosition state carried over
+        assertNotSame(original, copy, "newInstance should return a different Parser object");
+        assertTrue(copy.isTrackPosition(), "Copied parser should retain tracking enabled");
+    }
+
+    @Test
+    @DisplayName("newInstance() without prior setTrackPosition() retains default disabled tracking")
+    public void test_TC04() {
+        // GIVEN: default htmlParser has trackPosition=false
+        Parser original = Parser.htmlParser();
+        assertFalse(original.isTrackPosition(), "Original parser should have tracking disabled by default");
+
+        // WHEN: creating a new instance (branch B0->B1->B2->B4; default trackPosition copied)
+        Parser copy = original.newInstance();
+
+        // THEN: ensure a separate object and default trackPosition state carried over
+        assertNotSame(original, copy, "newInstance should return a different Parser object");
+        assertFalse(copy.isTrackPosition(), "Copied parser should retain tracking disabled by default");
+    }
+}

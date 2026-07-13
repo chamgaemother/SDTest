@@ -1,0 +1,244 @@
+{
+  "scenarios": [
+    {
+      "id": "TC12",
+      "description": "Valid variable structure access a.b produces VARIABLE, STRUCTURE_SEPARATOR, VARIABLE when structures allowed",
+      "path": "B0→B1(loop×3)→B7→B9→B11",
+      "precondition": "configuration with structuresAllowed=true",
+      "expectedResult": "returns three tokens: VARIABLE_OR_CONSTANT, STRUCTURE_SEPARATOR, VARIABLE_OR_CONSTANT",
+      "tags": [
+        "positive",
+        "structure",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 valid structure access",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setStructuresAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"a.b\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == VARIABLE_OR_CONSTANT;",
+        "    assert tokens.get(1).getType() == STRUCTURE_SEPARATOR;",
+        "    assert tokens.get(2).getType() == VARIABLE_OR_CONSTANT;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Unexpected closing array ']' at start throws \"Unexpected closing array\" when arraysAllowed",
+      "path": "B0→B1→B7→B9→B10",
+      "precondition": "configuration with arraysAllowed=true",
+      "expectedResult": "ParseException with message containing \"Unexpected closing array\"",
+      "tags": [
+        "negative",
+        "array",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 unexpected closing array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"]\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing array\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "Hexadecimal literal 0x1A parsed as single NUMBER_LITERAL token",
+      "path": "B0→B1(loop×1)→B6→B1→B2→B3→B4→B6→B1→B7→B9→B11",
+      "precondition": "configuration default",
+      "expectedResult": "returns one token of type NUMBER_LITERAL with value \"0x1A\"",
+      "tags": [
+        "positive",
+        "hex",
+        "literal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 hex number literal",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"0x1A\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 1;",
+        "    assert tokens.get(0).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(0).getTokenValue().equals(\"0x1A\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Undefined function foo(1) throws \"Undefined function 'foo'\" when function not in dictionary",
+      "path": "B0→B1(loop×1)→B6→B1(loop×next)→...→parseIdentifier→exception",
+      "precondition": "configuration default with no foo function",
+      "expectedResult": "ParseException with message containing \"Undefined function 'foo'\"",
+      "tags": [
+        "negative",
+        "function",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 undefined function",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"foo(1)\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined function 'foo'\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Unknown escape in single-quoted string '\\\\q' throws \"Unknown escape character\"",
+      "path": "B0→B1(loop×1)→parseStringLiteral→escapeCharacter→exception",
+      "precondition": "configuration with singleQuoteStringLiteralsAllowed=true",
+      "expectedResult": "ParseException with message containing \"Unknown escape character\"",
+      "tags": [
+        "negative",
+        "string",
+        "escape",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 unknown escape character",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setSingleQuoteStringLiteralsAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"'\\\\q'\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unknown escape character\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC17",
+      "description": "Balanced array [1] returns ARRAY_OPEN, NUMBER_LITERAL, ARRAY_CLOSE when arraysAllowed",
+      "path": "B0→B1(loop×3)→B6→B1→B7→B9→B11",
+      "precondition": "configuration with arraysAllowed=true",
+      "expectedResult": "returns three tokens: ARRAY_OPEN, NUMBER_LITERAL, ARRAY_CLOSE",
+      "tags": [
+        "positive",
+        "array",
+        "iteration"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC17 balanced array",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setArraysAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"[1]\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.size() == 3;",
+        "    assert tokens.get(0).getType() == ARRAY_OPEN;",
+        "    assert tokens.get(1).getType() == NUMBER_LITERAL;",
+        "    assert tokens.get(2).getType() == ARRAY_CLOSE;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC18",
+      "description": "Implicit multiplication between NUMBER_LITERAL and BRACE_OPEN in \"1(2)\" inserts '*' when allowed",
+      "path": "B0→B1(loop×1)→B6(loop iteration implicitMultiplicationPossible true →B4)→B6→...→B7→B9→B11",
+      "precondition": "configuration with implicitMultiplicationAllowed=true",
+      "expectedResult": "tokens sequence includes '*' infix operator between 1 and (",
+      "tags": [
+        "positive",
+        "implicit",
+        "multiplication"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 implicit multiplication numeric then brace",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    config.setImplicitMultiplicationAllowed(true);",
+        "    Tokenizer tokenizer = new Tokenizer(\"1(2)\", config);",
+        "  WHEN",
+        "    List<Token> tokens = tokenizer.parse();",
+        "  THEN",
+        "    assert tokens.get(1).getType() == INFIX_OPERATOR;",
+        "    assert tokens.get(1).getTokenValue().equals(\"*\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "Standalone closing brace ')' at start throws \"Unexpected closing brace\"",
+      "path": "B0→B1→B7→B8",
+      "precondition": "configuration default",
+      "expectedResult": "ParseException with message \"Unexpected closing brace\"",
+      "tags": [
+        "negative",
+        "brace",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 unexpected closing brace",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\")\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Unexpected closing brace\";",
+        "END"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "Undefined single-character operator '@' throws \"Undefined operator '@'\"",
+      "path": "B0→B1(loop×1)→parseOperator→exception",
+      "precondition": "configuration default",
+      "expectedResult": "ParseException with message \"Undefined operator '@'\"",
+      "tags": [
+        "negative",
+        "operator",
+        "exception"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 undefined operator",
+        "  GIVEN",
+        "    ExpressionConfiguration config = new ExpressionConfiguration();",
+        "    Tokenizer tokenizer = new Tokenizer(\"@\", config);",
+        "  WHEN",
+        "    call tokenizer.parse();",
+        "  THEN",
+        "    throws ParseException with message \"Undefined operator '@'\";",
+        "END"
+      ]
+    }
+  ]
+}

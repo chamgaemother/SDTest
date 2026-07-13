@@ -1,0 +1,199 @@
+{
+  "scenarios": [
+    {
+      "id": "TC18",
+      "description": "parse(File, charsetName, baseUri, parser) invokes custom Parser.parseInput overload",
+      "path": "B0→B10→B24→B25",
+      "precondition": "has a temporary HTML file",
+      "expectedResult": "returns the Document produced by stub parser",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC18 parse file with custom parser",
+        "  GIVEN",
+        "    // Arrange",
+        "    File tmp = createTempFile(\"jsoup\", \".html\");",
+        "    write(tmp, \"<u>under</u>\");",
+        "    String charset = \"UTF-8\";",
+        "    String baseUri = \"http://base/\";",
+        "    class StubParser extends Parser {",
+        "      Document doc = new Document(\"stub\");",
+        "      String inHtml, inBase;",
+        "      StubParser() { super(null); }",
+        "      @Override public Document parseInput(String html, String uri) {",
+        "        inHtml = html; inBase = uri; return doc;",
+        "      }",
+        "    }",
+        "    Parser parser = new StubParser();",
+        "  WHEN",
+        "    Document result = Jsoup.parse(tmp, charset, baseUri, parser);",
+        "  THEN",
+        "    // Assert",
+        "    assertSame(((StubParser)parser).doc, result);",
+        "    assertEquals(\"<u>under</u>\", ((StubParser)parser).inHtml);",
+        "    assertEquals(baseUri, ((StubParser)parser).inBase);"
+      ]
+    },
+    {
+      "id": "TC19",
+      "description": "parse(Path, charsetName, baseUri, parser) invokes custom Parser.parseInput overload",
+      "path": "B0→B20→B24→B25",
+      "precondition": "has a temporary HTML Path",
+      "expectedResult": "returns the Document produced by stub parser",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC19 parse path with custom parser",
+        "  GIVEN",
+        "    Path p = createTempFilePath(\"jsoup\", \".html\");",
+        "    write(p, \"<em>it</em>\");",
+        "    String charset = null;",
+        "    String baseUri = \"http://uri/\";",
+        "    class StubParser extends Parser {",
+        "      Document doc = new Document(\"stub\");",
+        "      String inHtml, inBase;",
+        "      StubParser() { super(null); }",
+        "      @Override public Document parseInput(String html, String uri) {",
+        "        inHtml = html; inBase = uri; return doc;",
+        "      }",
+        "    }",
+        "    Parser parser = new StubParser();",
+        "  WHEN",
+        "    Document result = Jsoup.parse(p, charset, baseUri, parser);",
+        "  THEN",
+        "    assertSame(((StubParser)parser).doc, result);",
+        "    assertEquals(\"<em>it</em>\", ((StubParser)parser).inHtml);",
+        "    assertEquals(baseUri, ((StubParser)parser).inBase);"
+      ]
+    },
+    {
+      "id": "TC20",
+      "description": "parse(InputStream, charsetName, baseUri, parser) invokes custom Parser.parseInput overload",
+      "path": "B0→B17→B26→B27",
+      "precondition": "provides a non-empty InputStream",
+      "expectedResult": "returns the Document produced by stub parser and closes stream",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "resource"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC20 parse stream with custom parser",
+        "  GIVEN",
+        "    byte[] data = \"<i>one</i>\".getBytes(\"UTF-8\");",
+        "    class TrackStream extends ByteArrayInputStream {",
+        "      boolean closed = false;",
+        "      TrackStream(byte[] b) { super(b); }",
+        "      @Override public void close() throws IOException { super.close(); closed=true; }",
+        "    }",
+        "    TrackStream in = new TrackStream(data);",
+        "    String charset = null;",
+        "    String baseUri = \"\";",
+        "    class StubParser extends Parser {",
+        "      Document doc = new Document(\"stub\");",
+        "      String inHtml, inBase;",
+        "      StubParser() { super(null); }",
+        "      @Override public Document parseInput(String html, String uri) {",
+        "        inHtml = html; inBase = uri; return doc;",
+        "      }",
+        "    }",
+        "    Parser parser = new StubParser();",
+        "  WHEN",
+        "    Document result = Jsoup.parse(in, charset, baseUri, parser);",
+        "  THEN",
+        "    assertSame(((StubParser)parser).doc, result);",
+        "    assertTrue(in.closed);",
+        "    assertEquals(\"<i>one</i>\", ((StubParser)parser).inHtml);"
+      ]
+    },
+    {
+      "id": "TC21",
+      "description": "parse(File) on a .gz compressed HTML file reads and parses content",
+      "path": "B0→B10→B11",
+      "precondition": "create a temp .gz file with gzipped HTML payload",
+      "expectedResult": "parses inner HTML and sets baseUri to file path",
+      "tags": [
+        "positive",
+        "boundary",
+        "gzipped"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC21 parse gzipped file",
+        "  GIVEN",
+        "    File gz = createTempFile(\"test\",\".html.gz\");",
+        "    gzipWrite(gz, \"<b>zip</b>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(gz);",
+        "  THEN",
+        "    assertEquals(\"zip\", doc.select(\"b\").text());",
+        "    assertEquals(gz.getAbsolutePath(), doc.baseUri());"
+      ]
+    },
+    {
+      "id": "TC22",
+      "description": "parse(File, invalid charsetName) throws IOException for unsupported charset",
+      "path": "B0→B10→B11",
+      "precondition": "file exists with valid HTML",
+      "expectedResult": "IOException due to invalid charset",
+      "tags": [
+        "negative",
+        "exception",
+        "charset"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse file with invalid charset",
+        "  GIVEN",
+        "    File tmp = createTempFile(\"jsoup\",\".html\");",
+        "    write(tmp, \"<p>x</p>\");",
+        "    String charset = \"INVALID-CHARSET\";",
+        "    String baseUri = \"\";",
+        "  WHEN",
+        "    call Jsoup.parse(tmp, charset, baseUri);",
+        "  THEN",
+        "    throws IOException"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(Path) on a .z compressed HTML file reads and parses content",
+      "path": "B0→B20→B21",
+      "precondition": "create a temp .z file with gzipped HTML payload",
+      "expectedResult": "parses inner HTML and sets baseUri to path absolute path",
+      "tags": [
+        "positive",
+        "boundary",
+        "gzipped"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse compressed path .z",
+        "  GIVEN",
+        "    Path p = createTempFilePath(\"test\",\".html.z\");",
+        "    gzipWrite(p.toFile(), \"<span>z</span>\");",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(p);",
+        "  THEN",
+        "    assertEquals(\"z\", doc.select(\"span\").text());",
+        "    assertEquals(p.toAbsolutePath().toString(), doc.baseUri());"
+      ]
+    }
+  ]
+}

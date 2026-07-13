@@ -1,0 +1,75 @@
+package software.amazon.event.ruler;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import java.lang.reflect.Method;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+public class ComparableNumber_generate_0_Test {
+
+    @Test
+    @DisplayName("TC01: generate throws IllegalArgumentException when f < -5e9 (lower bound violation)")
+    void test_TC01() throws Exception {
+        // Using reflection to access package-private static method ComparableNumber.generate(double)
+        Method generateMethod = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generateMethod.setAccessible(true);
+        double f = -5_000_000_000.000001; // just below lower bound to force the f < -5e9 branch
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> generateMethod.invoke(null, f),
+            "Expected IllegalArgumentException for f < -5e9"
+        );
+        // Verify the exception message exactly matches the specified inclusive boundary text
+        assertEquals(
+            "Value must be between -5000000000.0 and 5000000000.0, inclusive",
+            ex.getMessage()
+        );
+    }
+
+    @Test
+    @DisplayName("TC02: generate throws IllegalArgumentException when f > 5e9 (upper bound violation)")
+    void test_TC02() throws Exception {
+        // Using reflection to access package-private static method ComparableNumber.generate(double)
+        Method generateMethod = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generateMethod.setAccessible(true);
+        double f = 5_000_000_000.000001; // just above upper bound to force the f > 5e9 branch
+        IllegalArgumentException ex = assertThrows(
+            IllegalArgumentException.class,
+            () -> generateMethod.invoke(null, f),
+            "Expected IllegalArgumentException for f > 5e9"
+        );
+        // Verify the exception message exactly matches the specified inclusive boundary text
+        assertEquals(
+            "Value must be between -5000000000.0 and 5000000000.0, inclusive",
+            ex.getMessage()
+        );
+    }
+
+    @Test
+    @DisplayName("TC03: generate returns all-zero hex string for f = -5e9 (minimum allowed value)")
+    void test_TC03() throws Exception {
+        // Using reflection to access package-private static method ComparableNumber.generate(double)
+        Method generateMethod = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generateMethod.setAccessible(true);
+        double f = -5_000_000_000.0; // equal to lower bound; skip exception branch
+        Object result = generateMethod.invoke(null, f);
+        assertTrue(result instanceof String, "Result should be a String");
+        // At the minimum allowed value, TEN_E_SIX*(5e9 + f) == 0, so hex string of 0 in 14 chars is 14 '0's
+        assertEquals("00000000000000", result);
+    }
+
+    @Test
+    @DisplayName("TC04: generate returns hex string \"00000000000001\" for f = -5e9 + 1e-6 (smallest increment above min)")
+    void test_TC04() throws Exception {
+        // Using reflection to access package-private static method ComparableNumber.generate(double)
+        Method generateMethod = ComparableNumber.class.getDeclaredMethod("generate", double.class);
+        generateMethod.setAccessible(true);
+        double f = -5_000_000_000.0 + 0.000001; // one micro above lower bound; should map to 1 in hex string
+        Object result = generateMethod.invoke(null, f);
+        assertTrue(result instanceof String, "Result should be a String");
+        // After offset and scaling, value==1, its hex representation padded to 14 chars should be ...0001
+        assertEquals("00000000000001", result);
+    }
+}

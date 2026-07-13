@@ -1,0 +1,317 @@
+package com.ezylang.evalex.parser;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import com.ezylang.evalex.config.ExpressionConfiguration;
+import com.ezylang.evalex.config.FunctionDictionaryIfc;
+import com.ezylang.evalex.config.OperatorDictionaryIfc;
+import com.ezylang.evalex.functions.FunctionIfc;
+import com.ezylang.evalex.operators.OperatorIfc;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+/**
+ * Comprehensive tests for Tokenizer.parse() covering all scenarios TC01–TC12.
+ * We use a minimal inline stub for ExpressionConfiguration with pluggable booleans
+ * and operator/function dictionaries to precisely control parser behavior.
+ */
+public class Tokenizer_parse_Test {
+
+  /**
+   * Minimal stub for OperatorDictionaryIfc that allows us to configure which
+   * infix or prefix or postfix operators are recognized.
+   */
+  private static class StubOperatorDictionary implements OperatorDictionaryIfc {
+    private final Map<String, OperatorIfc> infix = new HashMap<>();
+    private final Map<String, OperatorIfc> prefix = new HashMap<>();
+    private final Map<String, OperatorIfc> postfix = new HashMap<>();
+
+    public StubOperatorDictionary onInfix(String op) {
+      infix.put(op, new OperatorIfc() {});
+      return this;
+    }
+
+    public StubOperatorDictionary onPrefix(String op) {
+      prefix.put(op, new OperatorIfc() {});
+      return this;
+    }
+
+    public StubOperatorDictionary onPostfix(String op) {
+      postfix.put(op, new OperatorIfc() {});
+      return this;
+    }
+
+    @Override
+    public boolean hasInfixOperator(String op) {
+      return infix.containsKey(op);
+    }
+
+    @Override
+    public OperatorIfc getInfixOperator(String op) {
+      return infix.get(op);
+    }
+
+    @Override
+    public boolean hasPrefixOperator(String op) {
+      return prefix.containsKey(op);
+    }
+
+    @Override
+    public OperatorIfc getPrefixOperator(String op) {
+      return prefix.get(op);
+    }
+
+    @Override
+    public boolean hasPostfixOperator(String op) {
+      return postfix.containsKey(op);
+    }
+
+    @Override
+    public OperatorIfc getPostfixOperator(String op) {
+      return postfix.get(op);
+    }
+  }
+
+  /**
+   * Minimal stub for FunctionDictionaryIfc that always reports no functions.
+   */
+  private static class StubFunctionDictionary implements FunctionDictionaryIfc {
+    @Override
+    public boolean hasFunction(String name) {
+      return false;
+    }
+
+    @Override
+    public FunctionIfc getFunction(String name) {
+      return null;
+    }
+  }
+
+  /**
+   * Builds an ExpressionConfiguration stub with toggles for implicit multiplication,
+   * structures, arrays, and single‐quote strings, as well as the operator/function dicts.
+   */
+  private static class StubConfig implements ExpressionConfiguration {
+    boolean implicitMul = false;
+    boolean structures = false;
+    boolean arrays = false;
+    boolean singleQuotes = false;
+    final StubOperatorDictionary ops = new StubOperatorDictionary();
+    final StubFunctionDictionary funcs = new StubFunctionDictionary();
+
+    StubConfig allowImplicitMul(boolean v) {
+      this.implicitMul = v;
+      return this;
+    }
+
+    StubConfig allowStructures(boolean v) {
+      this.structures = v;
+      return this;
+    }
+
+    StubConfig allowArrays(boolean v) {
+      this.arrays = v;
+      return this;
+    }
+
+    StubConfig allowSingleQuotes(boolean v) {
+      this.singleQuotes = v;
+      return this;
+    }
+
+    StubConfig withInfix(String op) {
+      ops.onInfix(op);
+      return this;
+    }
+
+    @Override
+    public OperatorDictionaryIfc getOperatorDictionary() {
+      return ops;
+    }
+
+    @Override
+    public FunctionDictionaryIfc getFunctionDictionary() {
+      return funcs;
+    }
+
+    @Override
+    public boolean isImplicitMultiplicationAllowed() {
+      return implicitMul;
+    }
+
+    @Override
+    public boolean isStructuresAllowed() {
+      return structures;
+    }
+
+    @Override
+    public boolean isArraysAllowed() {
+      return arrays;
+    }
+
+    @Override
+    public boolean isSingleQuoteStringLiteralsAllowed() {
+      return singleQuotes;
+    }
+  }
+
+  @Test
+  @DisplayName("TC01: Empty input returns empty token list (r14 == null at first check)")
+  public void test_TC01() throws Exception {
+    // GIVEN an empty expression and default config (no operators at all)
+    StubConfig config = new StubConfig();
+    Tokenizer tokenizer = new Tokenizer("", config);
+    // WHEN parsing empty string (no first token => immediate return)
+    List<Token> tokens = tokenizer.parse();
+    // THEN result should be empty
+    assertTrue(tokens.isEmpty(), "Expected no tokens for empty input");
+  }
+
+  @Test
+  @DisplayName("TC02: Single number literal yields one NUMBER_LITERAL token")
+  public void test_TC02() throws Exception {
+    // GIVEN "123" and only number parsing (no operators needed)
+    StubConfig config = new StubConfig().withInfix("+"); // + irrelevant here
+    Tokenizer tokenizer = new Tokenizer("123", config);
+    // WHEN parsing a lone number (implicitMul false so no insert)
+    List<Token> tokens = tokenizer.parse();
+    // THEN exactly one NUMBER_LITERAL "123"
+    assertEquals(1, tokens.size(), "Should produce exactly one token");
+    Token t = tokens.get(0);
+    assertEquals(Token.TokenType.NUMBER_LITERAL, t.getType());
+    assertEquals("123", t.getTokenString());
+  }
+
+  @Test
+  @DisplayName("TC03: Implicit multiplication inserted between number and variable when allowed")
+  public void test_TC03() throws Exception {
+    // GIVEN "2x", allow implicit multiplication, no '+' operator but '*' inserted
+    StubConfig config = new StubConfig()
+        .allowImplicitMul(true)
+        .allowStructures(false)
+        .withInfix("+"); // ensure dictionary non‐empty
+    Tokenizer tokenizer = new Tokenizer("2x", config);
+    // WHEN parsing number then letter => implicitMul true triggers '*' insertion
+    List<Token> tokens = tokenizer.parse();
+    // THEN tokens: [ "2" NUMBER_LITERAL, "*" INFIX_OPERATOR, "x" VARIABLE_OR_CONSTANT ]
+    assertEquals(3, tokens.size(), "Expect 3 tokens: number, '*', variable");
+    assertEquals("2", tokens.get(0).getTokenString());
+    assertEquals(Token.TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+    assertEquals("*", tokens.get(1).getTokenString());
+    assertEquals(Token.TokenType.VARIABLE_OR_CONSTANT, tokens.get(2).getType());
+    assertEquals("x", tokens.get(2).getTokenString());
+  }
+
+  @Test
+  @DisplayName("TC04: Missing operator exception when implicit multiplication not allowed")
+  public void test_TC04() {
+    // GIVEN "2x", but implicit multiplication disabled
+    StubConfig config = new StubConfig()
+        .allowImplicitMul(false)
+        .withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("2x", config);
+    // WHEN parsing, expect ParseException "Missing operator"
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Missing operator", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC05: Misplaced structure separator at start throws exception")
+  public void test_TC05() {
+    // GIVEN "." and structures allowed (but at start no previous token)
+    StubConfig config = new StubConfig()
+        .allowStructures(true)
+        .withInfix("+");
+    Tokenizer tokenizer = new Tokenizer(".", config);
+    // WHEN parsing, first token is STRUCTURE_SEPARATOR with no previous => error
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Misplaced structure operator", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC06: Unexpected token after infix operator throws exception")
+  public void test_TC06() {
+    // GIVEN "2+)" default config, '+' recognized, then ')' illegal after infix
+    StubConfig config = new StubConfig().withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("2+)", config);
+    // WHEN parsing, error at validateToken for ')' after INFIX_OPERATOR
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Unexpected token after infix operator", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC07: Unclosed brace throws exception at end")
+  public void test_TC07() {
+    // GIVEN "(" default config, no closing ')'
+    StubConfig config = new StubConfig().withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("(", config);
+    // WHEN parsing, braceBalance=1 leads to "Closing brace not found"
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing brace not found", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC08: Unclosed array throws exception at end")
+  public void test_TC08() {
+    // GIVEN "[" and arrays allowed => open increments arrayBalance
+    StubConfig config = new StubConfig()
+        .allowArrays(true)
+        .withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("[", config);
+    // WHEN parsing, arrayBalance=1 leads to "Closing array not found"
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Closing array not found", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC09: Array close without open throws exception in parseArrayClose")
+  public void test_TC09() {
+    // GIVEN "]" and arrays allowed, first token is ARRAY_CLOSE at start => not allowed
+    StubConfig config = new StubConfig()
+        .allowArrays(true)
+        .withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("]", config);
+    // WHEN parsing, parseArrayClose sees no previous => error "Array close not allowed here"
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Array close not allowed here", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC10: Number literal with two decimal points throws numeric format exception")
+  public void test_TC10() {
+    // GIVEN "1.2.3" default config, parseDecimal sees two dots => error
+    StubConfig config = new StubConfig().withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("1.2.3", config);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Number contains more than one decimal point", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC11: Illegal scientific notation without digits after exponent throws exception")
+  public void test_TC11() {
+    // GIVEN "1e+" default config, last char '+' after 'e' => illegal scientific format
+    StubConfig config = new StubConfig().withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("1e+", config);
+    ParseException ex = assertThrows(ParseException.class, tokenizer::parse);
+    assertEquals("Illegal scientific format", ex.getMessage());
+  }
+
+  @Test
+  @DisplayName("TC12: Simple addition yields three tokens: number, infix '+', number")
+  public void test_TC12() throws Exception {
+    // GIVEN "1+2" with '+' in the operator dictionary
+    StubConfig config = new StubConfig().withInfix("+");
+    Tokenizer tokenizer = new Tokenizer("1+2", config);
+    // WHEN parsing simple infix expression
+    List<Token> tokens = tokenizer.parse();
+    // THEN three tokens and middle is the '+' INFIX_OPERATOR
+    assertEquals(3, tokens.size(), "Expect three tokens for 1+2");
+    assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(0).getType());
+    assertEquals(Token.TokenType.INFIX_OPERATOR, tokens.get(1).getType());
+    assertEquals("+", tokens.get(1).getTokenString());
+    assertEquals(Token.TokenType.NUMBER_LITERAL, tokens.get(2).getType());
+  }
+}

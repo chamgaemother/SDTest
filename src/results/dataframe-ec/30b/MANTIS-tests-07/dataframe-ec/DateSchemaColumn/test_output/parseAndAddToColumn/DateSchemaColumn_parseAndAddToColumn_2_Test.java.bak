@@ -1,0 +1,186 @@
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
+
+import io.github.vmzakharov.ecdataframe.dataset.DateSchemaColumn;
+import io.github.vmzakharov.ecdataframe.dataframe.DfColumn;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class DateSchemaColumn_parseAndAddToColumn_Test {
+
+    /**
+     * A simple stub implementing DfColumn to capture the last added object.
+     */
+    static class StubDfColumn implements DfColumn {
+        private Object lastAdded;
+
+        @Override
+        public void addObject(Object obj) {
+            this.lastAdded = obj;
+        }
+
+        public Object getLastAdded() {
+            return this.lastAdded;
+        }
+
+        // All other DfColumn methods are not used in parseAndAddToColumn and can remain unimplemented.
+        // They will throw if accidentally invoked.
+        @Override public int size() { throw new UnsupportedOperationException(); }
+        @Override public Object getRawObject(int index) { throw new UnsupportedOperationException(); }
+        @Override public Class<?> getTypedClass() { throw new UnsupportedOperationException(); }
+        @Override public void addRawObject(Object obj) { throw new UnsupportedOperationException(); }
+        @Override public void clear() { throw new UnsupportedOperationException(); }
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when input string is null (branch aString==null)")
+    public void test_TC01() {
+        // GIVEN: input is null => triggers the aString==null branch (B1)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = null;
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN: null should be added
+        assertNull(stub.getLastAdded(), "Expected null to be added when input is null");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn adds null when input trims to empty (branch trimmed.isEmpty()==true)")
+    public void test_TC02() {
+        // GIVEN: input "   " => non-null but trimmed is empty (B2)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "   ";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN: null should be added
+        assertNull(stub.getLastAdded(), "Expected null to be added when trimmed input is empty");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn correctly parses valid date matching default pattern")
+    public void test_TC03() {
+        // GIVEN: valid default pattern date "2021-12-5" => trimmed non-empty and parseable (B3→B5)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "2021-12-5";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN: the parsed LocalDate should be added
+        assertEquals(LocalDate.of(2021, 12, 5),
+                     stub.getLastAdded(),
+                     "Expected LocalDate.of(2021,12,5) added for valid default-pattern input");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn trims whitespace and parses valid date")
+    public void test_TC04() {
+        // GIVEN: input has leading/trailing spaces => trimmed to "2021-1-1", parseable under default pattern (B3→B5)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = " 2021-1-1 ";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN
+        assertEquals(LocalDate.of(2021, 1, 1),
+                     stub.getLastAdded(),
+                     "Expected LocalDate.of(2021,1,1) after trimming whitespace");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws DateTimeParseException for non-matching format")
+    public void test_TC05() {
+        // GIVEN: input "12/31/2020" does not match "uuuu-M-d", should cause parse error at B4
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "12/31/2020";
+        // WHEN & THEN: exception thrown, no value added
+        DateTimeParseException ex = assertThrows(
+            DateTimeParseException.class,
+            () -> col.parseAndAddToColumn(input, stub),
+            "Expected DateTimeParseException for invalid format"
+        );
+        assertNull(stub.getLastAdded(), "No value should be added when parsing fails");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn parses valid date with custom pattern dd/MM/uuuu")
+    public void test_TC06() {
+        // GIVEN: custom pattern "dd/MM/uuuu", input "31/01/2020" matches it (B3→B5)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "dd/MM/uuuu");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "31/01/2020";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN
+        assertEquals(LocalDate.of(2020, 1, 31),
+                     stub.getLastAdded(),
+                     "Expected LocalDate.of(2020,1,31) with custom pattern dd/MM/uuuu");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn with null pattern in constructor uses default and parses valid date")
+    public void test_TC07() {
+        // GIVEN: constructor pattern null => default "uuuu-M-d" set, input "2021-12-5" parseable (B3→B5)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", null);
+        StubDfColumn stub = new StubDfColumn();
+        String input = "2021-12-5";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN
+        assertEquals(LocalDate.of(2021, 12, 5),
+                     stub.getLastAdded(),
+                     "Expected default-pattern parsing when constructor pattern is null");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn with null-constructor-pattern throws on invalid leap date under strict resolver")
+    public void test_TC08() {
+        // GIVEN: default pattern strict resolver, input "2021-02-29" is invalid date (B4)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", null);
+        StubDfColumn stub = new StubDfColumn();
+        String input = "2021-02-29";
+        // WHEN & THEN
+        assertThrows(
+            DateTimeParseException.class,
+            () -> col.parseAndAddToColumn(input, stub),
+            "Expected DateTimeParseException for invalid leap date"
+        );
+        assertNull(stub.getLastAdded(), "No value should be added on invalid leap date");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn correctly parses leap-year date under default pattern")
+    public void test_TC09() {
+        // GIVEN: input "2020-2-29" is valid under strict resolver (leap year) (B3→B5)
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "2020-2-29";
+        // WHEN
+        col.parseAndAddToColumn(input, stub);
+        // THEN
+        assertEquals(LocalDate.of(2020, 2, 29),
+                     stub.getLastAdded(),
+                     "Expected leap-year date to parse correctly under strict resolver");
+    }
+
+    @Test
+    @DisplayName("parseAndAddToColumn throws for out-of-range month under strict resolver")
+    public void test_TC10() {
+        // GIVEN: input "2021-13-1" month 13 is out-of-range => parse error at B4
+        DateSchemaColumn col = new DateSchemaColumn(null, "name", "uuuu-M-d");
+        StubDfColumn stub = new StubDfColumn();
+        String input = "2021-13-1";
+        // WHEN & THEN
+        assertThrows(
+            DateTimeParseException.class,
+            () -> col.parseAndAddToColumn(input, stub),
+            "Expected DateTimeParseException for out-of-range month"
+        );
+        assertNull(stub.getLastAdded(), "No value should be added when month is out-of-range");
+    }
+}

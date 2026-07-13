@@ -1,0 +1,99 @@
+package io.github.cdimascio.dotenv;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class DotenvBuilder_load_1_Test {
+
+    @Test
+    @DisplayName("TC11: load() with empty .env file and default flags (systemProperties=false, throwIfMissing=false path, loop-zero entries)")
+    void test_TC11() throws IOException {
+        // Arrange: create a temp directory and empty .env file to hit B0→B1 (systemProperties=false) then B2
+        Path tempDir = Files.createTempDirectory("envtest");
+        Path envFile = tempDir.resolve(".env");
+        Files.createFile(envFile);
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .filename(".env");
+        // Act
+        Dotenv result = builder.load();
+        // Assert: no file entries present (loop zero), so entries(filter->true) is empty
+        Set<DotenvEntry> fileOnly = result.entries(entry -> true);
+        assertTrue(fileOnly.isEmpty(), "Expected no entries from empty .env file");
+        // Assert: entries() should at least include current system env
+        Set<DotenvEntry> expectedSystem = System.getenv().entrySet().stream()
+                .map(e -> new DotenvEntry(e.getKey(), e.getValue()))
+                .collect(Collectors.toSet());
+        assertTrue(result.entries().containsAll(expectedSystem), "Expected all system environment entries included");
+    }
+
+    @Test
+    @DisplayName("TC12: load() with one valid entry and default flags (systemProperties=false, loop-one entry)")
+    void test_TC12() throws IOException {
+        // Arrange: one line in .env to traverse B1 once then B2
+        Path tempDir = Files.createTempDirectory("envtest");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, "A=1\n".getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .filename(".env");
+        // Act
+        Dotenv result = builder.load();
+        // Assert: get("A") should return the file value "1"
+        assertEquals("1", result.get("A"), "Expected to retrieve the value from the .env file");
+        // entries(filter->true) should contain exactly the file entry
+        Set<DotenvEntry> fileOnly = result.entries(entry -> true);
+        assertEquals(1, fileOnly.size(), "Expected exactly one file entry");
+        assertTrue(fileOnly.contains(new DotenvEntry("A", "1")), "Expected the entry A=1 present");
+    }
+
+    @Test
+    @DisplayName("TC13: load() with two valid entries and default flags (systemProperties=false, loop-two entries)")
+    void test_TC13() throws IOException {
+        // Arrange: two lines in .env for two iterations of B1 then B2
+        Path tempDir = Files.createTempDirectory("envtest");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, ("X=Y\n" + "Z=W\n").getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .filename(".env");
+        // Act
+        Dotenv result = builder.load();
+        // Assert: get correct values
+        assertEquals("Y", result.get("X"), "Expected X to map to Y");
+        assertEquals("W", result.get("Z"), "Expected Z to map to W");
+        // entries(filter->true) should contain two file entries
+        Set<DotenvEntry> fileOnly = result.entries(entry -> true);
+        assertEquals(2, fileOnly.size(), "Expected two file entries");
+        assertTrue(fileOnly.contains(new DotenvEntry("X", "Y")), "Expected entry X=Y");
+        assertTrue(fileOnly.contains(new DotenvEntry("Z", "W")), "Expected entry Z=W");
+    }
+
+    @Test
+    @DisplayName("TC14: load() ignores malformed lines when ignoreIfMalformed() is set (throwIfMalformed=false branch)")
+    void test_TC14() throws IOException {
+        // Arrange: one good and one malformed line, use ignoreIfMalformed to traverse malformed-ignore path
+        Path tempDir = Files.createTempDirectory("envtest");
+        Path envFile = tempDir.resolve(".env");
+        Files.write(envFile, ("GOOD=V\n" + "BADLINE\n").getBytes());
+        DotenvBuilder builder = new DotenvBuilder()
+                .directory(tempDir.toString())
+                .filename(".env")
+                .ignoreIfMalformed();
+        // Act
+        Dotenv result = builder.load();
+        // Assert: only GOOD entry is loaded
+        assertEquals("V", result.get("GOOD"), "Expected GOOD to map to V");
+        Set<DotenvEntry> fileOnly = result.entries(entry -> true);
+        assertEquals(1, fileOnly.size(), "Expected only one valid entry after ignoring malformed");
+        assertTrue(fileOnly.contains(new DotenvEntry("GOOD", "V")), "Expected the valid GOOD=V entry present");
+    }
+}

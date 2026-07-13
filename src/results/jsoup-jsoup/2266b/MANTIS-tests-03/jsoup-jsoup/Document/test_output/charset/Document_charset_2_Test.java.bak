@@ -1,0 +1,65 @@
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.XmlDeclaration;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Document.OutputSettings;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_charset_Test {
+
+    @Test
+    @DisplayName("charset(html syntax) removes all obsolete meta[name=charset] when multiple present and appends or updates only one meta[charset]")
+    public void test_TC11() {
+        // GIVEN a shell document with updateMetaCharset enabled and head containing two obsolete meta[name=charset]
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true); // enable meta charset updates (B0→B3)
+        // add two obsolete charset definitions: name=charset
+        doc.head().appendElement("meta").attr("name", "charset");
+        doc.head().appendElement("meta").attr("name", "charset");
+        // WHEN setting charset should append a single meta[charset] and remove obsolete ones
+        doc.charset(Charset.forName("UTF-8")); // invokes ensureMetaCharsetElement path B4->B5->B6
+        // THEN only one meta[charset] exists, and no meta[name=charset]
+        List<Element> newMeta = doc.head().select("meta[charset]");
+        assertEquals(1, newMeta.size(), "Expected exactly one meta[charset] element after charset() call");
+        // verify obsolete definitions removed
+        List<Element> obsolete = doc.head().select("meta[name=charset]");
+        assertTrue(obsolete.isEmpty(), "Expected no meta[name=charset] elements to remain");
+    }
+
+    @Test
+    @DisplayName("charset(xml syntax) updates existing XmlDeclaration missing encoding but having version attr to insert encoding and preserve version")
+    public void test_TC12() throws Exception {
+        // GIVEN a shell document with xml syntax, updateMetaCharset enabled, and stubbed first child as XmlDeclaration with version only
+        Document doc = Document.createShell("http://example.com");
+        doc.updateMetaCharsetElement(true); // enable meta charset updates (B0→B3)
+        // switch to xml syntax to trigger xml branch
+        doc.outputSettings().syntax(OutputSettings.Syntax.xml);
+        // create a declaration with version only
+        XmlDeclaration decl = new XmlDeclaration("xml", false);
+        decl.attr("version", "2.0"); // no encoding attribute yet
+        // use reflection to set the protected Node.childNodes list to contain only our declaration
+        Field childNodesField = Document.class.getSuperclass() // Document -> Element
+                .getSuperclass() // Element -> Node
+                .getDeclaredField("childNodes");
+        childNodesField.setAccessible(true);
+        childNodesField.set(doc, Arrays.asList((org.jsoup.nodes.Node) decl));
+        // WHEN setting charset should update existing declaration's encoding but keep version intact (B7->B8->B9)
+        Charset cs = Charset.forName("US-ASCII");
+        doc.charset(cs);
+        // THEN declaration retains version and has encoding set to displayName
+        List<org.jsoup.nodes.Node> nodes = doc.childNodes();
+        assertFalse(nodes.isEmpty(), "Expected childNodes not to be empty");
+        Object first = nodes.get(0);
+        assertTrue(first instanceof XmlDeclaration, "First child should be XmlDeclaration");
+        XmlDeclaration updated = (XmlDeclaration) first;
+        assertEquals("2.0", updated.attr("version"), "Version attribute should be preserved unchanged");
+        assertEquals(cs.displayName(), updated.attr("encoding"), "Encoding attribute should be set to charset displayName");
+    }
+}

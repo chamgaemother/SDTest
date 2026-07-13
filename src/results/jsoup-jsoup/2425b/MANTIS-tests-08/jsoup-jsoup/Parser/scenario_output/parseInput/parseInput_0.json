@@ -1,0 +1,232 @@
+{
+  "method": "parseInput",
+  "scenarios": [
+    {
+      "id": "TC01_O1",
+      "description": "parseInput(String, String) with simple HTML returns Document with corresponding p element (normal branch)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = Parser.htmlParser(); using real HtmlTreeBuilder",
+      "expectedResult": "Document.result.select(\"p\").text() equals \"test\"; Document.baseUri() equals \"http://example.com\"",
+      "tags": [
+        "overload:String,String",
+        "branch-normal"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 parseInput simple HTML",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = \"<p>test</p>\"; String uri = \"http://example.com\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert doc.select(\"p\").text().equals(\"test\"); assert doc.baseUri().equals(\"http://example.com\");"
+      ]
+    },
+    {
+      "id": "TC02_O1",
+      "description": "parseInput(String, String) with empty HTML returns empty body (boundary empty input)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = Parser.htmlParser(); using real HtmlTreeBuilder",
+      "expectedResult": "Document.body().children().isEmpty() is true",
+      "tags": [
+        "overload:String,String",
+        "boundary-empty",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 parseInput empty HTML",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = \"\"; String uri = \"base\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert doc.body().children().isEmpty();"
+      ]
+    },
+    {
+      "id": "TC03_O1",
+      "description": "parseInput(String, String) with null html throws NullPointerException on StringReader constructor (exception branch)",
+      "path": "B0→B1→Exception",
+      "precondition": "Parser parser = Parser.htmlParser(); html = null",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:String,String",
+        "exception",
+        "branch-null-html"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 parseInput null HTML",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html = null; String uri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(html, uri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC04_O2",
+      "description": "parseInput(Reader, String) with simple HTML Reader returns Document containing p (normal branch)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"<p>rdr</p>\");",
+      "expectedResult": "Document.select(\"p\").text() equals \"rdr\"",
+      "tags": [
+        "overload:Reader,String",
+        "branch-normal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 parseInput Reader simple HTML",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = new StringReader(\"<p>rdr</p>\"); String uri = \"u\";",
+        "  WHEN",
+        "    Document doc = parser.parseInput(reader, uri);",
+        "  THEN",
+        "    assert doc.select(\"p\").text().equals(\"rdr\");"
+      ]
+    },
+    {
+      "id": "TC05_O2",
+      "description": "parseInput(Reader, String) with null Reader throws NullPointerException when lock and parse called (exception branch)",
+      "path": "B0→B1→Exception",
+      "precondition": "Parser parser = Parser.htmlParser(); Reader reader = null;",
+      "expectedResult": "throws NullPointerException",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-null-reader"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 parseInput null Reader",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = null; String uri = \"u\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, uri);",
+        "  THEN",
+        "    throws NullPointerException;"
+      ]
+    },
+    {
+      "id": "TC06_O2",
+      "description": "parseInput(Reader, String) with Reader throwing IOException causes UncheckedIOException (exception branch)",
+      "path": "B0→B1→B2→Exception",
+      "precondition": "Parser parser = Parser.htmlParser(); Reader reader = stub that throws IOException on read (to simulate I/O error)",
+      "expectedResult": "throws UncheckedIOException",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-io-error"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 parseInput Reader throws IOException",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); Reader reader = new Reader(){public int read(char[] c,int o,int l){throw new IOException(\"io\");}public void close(){} }; String uri=\"u\";",
+        "  WHEN",
+        "    call parser.parseInput(reader, uri);",
+        "  THEN",
+        "    throws UncheckedIOException;"
+      ]
+    },
+    {
+      "id": "TC07_O1",
+      "description": "sequential parseInput(String,String) calls reuse same Parser produce distinct Documents (branch-reentrant)",
+      "path": "B0→B1→B2→B3→B4→B1→B2→B3→B4",
+      "precondition": "Parser parser = Parser.htmlParser(); using real HtmlTreeBuilder",
+      "expectedResult": "firstDoc != secondDoc; both docs have correct p text",
+      "tags": [
+        "overload:String,String",
+        "branch-reentrant",
+        "repeat-2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 parseInput sequential calls distinct docs",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser(); String html1=\"<p>1</p>\"; String html2=\"<p>2</p>\"; String uri=\"u\";",
+        "  WHEN",
+        "    Document d1 = parser.parseInput(html1, uri); Document d2 = parser.parseInput(html2, uri);",
+        "  THEN",
+        "    assert d1 != d2; assert d1.select(\"p\").text().equals(\"1\"); assert d2.select(\"p\").text().equals(\"2\");"
+      ]
+    },
+    {
+      "id": "TC08_O1",
+      "description": "parseInput(String,String) does not change trackPosition setting (branch-state)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "Parser parser = Parser.htmlParser().setTrackPosition(true);",
+      "expectedResult": "parser.isTrackPosition() remains true after call",
+      "tags": [
+        "overload:String,String",
+        "branch-state"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 parseInput preserves trackPosition",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser().setTrackPosition(true); String html=\"\"; String uri=\"b\";",
+        "  WHEN",
+        "    parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert parser.isTrackPosition();"
+      ]
+    },
+    {
+      "id": "TC09_O1",
+      "description": "parseInput(String,String) with custom stub TreeBuilder returns stub Document (branch-custom-builder)",
+      "path": "B0→B1→B2→B3→B4",
+      "precondition": "TreeBuilder stubBuilder returns fixed Document dummyDoc from parse; Parser parser = new Parser(stubBuilder);",
+      "expectedResult": "returned Document is same dummyDoc instance",
+      "tags": [
+        "overload:String,String",
+        "branch-custom-builder",
+        "mock-minimal"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 parseInput with stubbed TreeBuilder",
+        "  GIVEN",
+        "    Document dummy = new Document(\"\"); TreeBuilder stubBuilder = stub with parse(...) returns dummy; Parser parser = new Parser(stubBuilder); String html=\"x\"; String uri=\"u\";",
+        "  WHEN",
+        "    Document result = parser.parseInput(html, uri);",
+        "  THEN",
+        "    assert result == dummy;"
+      ]
+    },
+    {
+      "id": "TC10_O2",
+      "description": "parseInput(Reader,String) with stub TreeBuilder.parse throwing RuntimeException propagates same exception (exception branch)",
+      "path": "B0→B1→B2→Exception",
+      "precondition": "TreeBuilder stubBuilder throws IllegalStateException from parse; Parser parser = new Parser(stubBuilder); Reader rdr=new StringReader(\"x\");",
+      "expectedResult": "throws IllegalStateException",
+      "tags": [
+        "overload:Reader,String",
+        "exception",
+        "branch-custom-builder"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 parseInput stub builder throws unchecked",
+        "  GIVEN",
+        "    TreeBuilder stubBuilder = stub with parse(...) throws new IllegalStateException(\"fail\"); Parser parser = new Parser(stubBuilder); Reader rdr = new StringReader(\"x\"); String uri=\"u\";",
+        "  WHEN",
+        "    call parser.parseInput(rdr, uri);",
+        "  THEN",
+        "    throws IllegalStateException;"
+      ]
+    }
+  ]
+}

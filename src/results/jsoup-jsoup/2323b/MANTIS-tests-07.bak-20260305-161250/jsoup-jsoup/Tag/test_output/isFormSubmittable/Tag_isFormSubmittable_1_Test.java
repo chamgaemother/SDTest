@@ -1,0 +1,45 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+public class Tag_isFormSubmittable_1_Test {
+
+    @Test
+    @DisplayName("valueOf with uppercase known submittable tag and preserveTagCase=true returns a cloned tag preserving formSubmit=true")
+    public void test_TC04() {
+        // Use uppercase to force clone branch when preserveCase=true and existing normalName match
+        String tagName = "INPUT";
+        ParseSettings settings = ParseSettings.preserveCase;
+        // Parser.NamespaceHtml is the default HTML namespace
+        Tag tag = Tag.valueOf(tagName, Parser.NamespaceHtml, settings);
+        // The original 'input' tag is known and formSubmit=true; clone should preserve that
+        boolean result = tag.isFormSubmittable();
+        assertEquals(true, result, "Cloned tag should retain formSubmit=true");
+    }
+
+    @Test
+    @DisplayName("valueOf with known submittable tag but different namespace returns new generic tag with formSubmit=false")
+    public void test_TC05() {
+        // Provide known tagName but a custom namespace to hit generic creation path
+        String tagName = "input";
+        String customNS = "customNS";
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(tagName, customNS, settings);
+        // Because namespace mismatches registered 'input', a new generic tag is created with formSubmit default false
+        boolean result = tag.isFormSubmittable();
+        assertEquals(false, result, "Generic tag in custom namespace should have formSubmit=false");
+    }
+
+    @Test
+    @DisplayName("valueOf overload (tagName, ParseSettings) on known form-submittable tag returns static tag with formSubmit=true")
+    public void test_TC06() {
+        // Use overload that defaults to HTML namespace; 'option' is pre-registered with formSubmit=true
+        String tagName = "option";
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf(tagName, settings);
+        // Static tag returned should have formSubmit=true
+        boolean result = tag.isFormSubmittable();
+        assertEquals(true, result, "Static 'option' tag should have formSubmit=true");
+    }
+}

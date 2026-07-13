@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "TC06",
+      "description": "appendChild invalidates pre-populated shadowChildrenRef cache (nodelistChanged) on Element children list",
+      "path": "B0→B1→B2",
+      "precondition": "parent Element has had children() called to populate shadowChildrenRef",
+      "expectedResult": "shadowChildrenRef is cleared and childElementsList recomputes fresh list containing only real Element children",
+      "tags": [
+        "cache",
+        "shadowChildrenRef",
+        "post-condition"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 appendChild invalidates shadow cache",
+        "  GIVEN",
+        "    Element parent = new Element(\"ul\");",
+        "    // warm up the shadow cache with children() on empty",
+        "    parent.children();",
+        "    Element child = new Element(\"li\");",
+        "  WHEN",
+        "    parent.appendChild(child);",
+        "  THEN",
+        "    // reflectively invoke childElementsList to force recompute",
+        "    List<Element> list = invokeHidden(parent, \"childElementsList\");",
+        "    assert list.size() == 1;",
+        "    assert list.get(0) == child;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "appendChild reparenting from old parent with multiple children removes only that child and updates siblingIndex",
+      "path": "B0→B1→B2",
+      "precondition": "oldParent has two existing children before moving one to newParent",
+      "expectedResult": "oldParent childNodes size decrements by one, newParent gets the moved child at index 0, siblingIndex reset",
+      "tags": [
+        "reparenting",
+        "multi-child",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 appendChild reparent from multi-child parent",
+        "  GIVEN",
+        "    Element oldParent = new Element(\"div\");",
+        "    TextNode first = new TextNode(\"A\");",
+        "    TextNode toMove = new TextNode(\"B\");",
+        "    TextNode last = new TextNode(\"C\");",
+        "    oldParent.appendChild(first);",
+        "    oldParent.appendChild(toMove);",
+        "    oldParent.appendChild(last);",
+        "    Element newParent = new Element(\"span\");",
+        "  WHEN",
+        "    newParent.appendChild(toMove);",
+        "  THEN",
+        "    // oldParent loses only the moved child",
+        "    assert oldParent.childNodeSize() == 2;",
+        "    assert oldParent.child(0) == first && oldParent.child(1) == last;",
+        "    // newParent has exactly the moved child",
+        "    assert newParent.childNodeSize() == 1;",
+        "    assert newParent.child(0) == toMove;",
+        "    // siblingIndex reset to 0",
+        "    assert toMove.siblingIndex() == 0;",
+        "END"
+      ]
+    }
+  ]
+}

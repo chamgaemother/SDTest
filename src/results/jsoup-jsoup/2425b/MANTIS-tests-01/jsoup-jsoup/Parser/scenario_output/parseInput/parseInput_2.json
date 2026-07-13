@@ -1,0 +1,63 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "parseInput(Reader, String) with null Reader throws NullPointerException and releases lock",
+      "path": "B0→B1→B2→B3(exception)→B4",
+      "precondition": "Parser created via Parser.htmlParser(), Reader input is null",
+      "expectedResult": "NullPointerException is thrown and lock is not held",
+      "tags": [
+        "negative",
+        "exception",
+        "lock-release"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC07 parseInput null-Reader throws NPE",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Reader input = null;",
+        "    String baseUri = \"http://example\";",
+        "  WHEN",
+        "    call parser.parseInput(input, baseUri);",
+        "  THEN",
+        "    throws NullPointerException;",
+        "    // reflectively verify parser.lock.isLocked() == false",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseInput(String, String) when TreeBuilder.parse throws Error propagates Error and releases lock",
+      "path": "B0→B1→B2→B3(error)→B4",
+      "precondition": "Parser created with stub TreeBuilder that throws OutOfMemoryError in parse",
+      "expectedResult": "OutOfMemoryError is thrown and lock is not held",
+      "tags": [
+        "negative",
+        "error",
+        "lock-release"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC08 parseInput stub-throws-Error unlocks",
+        "  GIVEN",
+        "    TreeBuilder stub = new HtmlTreeBuilder() {",
+        "      @Override public Document parse(Reader in, String baseUri, Parser p) {",
+        "        throw new OutOfMemoryError(\"oom\");",
+        "      }",
+        "    };",
+        "    Parser parser = new Parser(stub);",
+        "    String html = \"<x/>\";",
+        "    String baseUri = \"uri\";",
+        "  WHEN",
+        "    call parser.parseInput(html, baseUri);",
+        "  THEN",
+        "    throws OutOfMemoryError with message \"oom\";",
+        "    // reflectively verify parser.lock.isLocked() == false",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,155 @@
+{
+  "scenarios": [
+    {
+      "id": "TC11",
+      "description": "Handles carriage return chars by ignoring '\\r' without breaking lines",
+      "path": "B0→B3(\\r)→B0→B3(ch!='\\n' && ch!='\\r')→...→exit",
+      "precondition": "none",
+      "expectedResult": "returns \"foocd\" for input \"foo\\rcd\" without inserting newlines",
+      "tags": [
+        "positive",
+        "edge-case",
+        "carriage-return"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC11 ignore-carriage-return",
+        "  GIVEN",
+        "    Reader r = new BufferedReader(new CharSequenceReader(\"foo\\rcd\"));",
+        "  WHEN",
+        "    String result = WordWrap.from(r, true).wrap();",
+        "  THEN",
+        "    assert result.equals(\"foocd\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC12",
+      "description": "Skips lines that are purely whitespace (isWhitespace true path)",
+      "path": "B0→loop→B? word len>0→final else branch writing nothing",
+      "precondition": "none",
+      "expectedResult": "returns empty string for input of only spaces",
+      "tags": [
+        "boundary",
+        "whitespace",
+        "positive"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC12 skip-whitespace-only",
+        "  GIVEN",
+        "    String spaces = \"    \";",
+        "  WHEN",
+        "    String result = WordWrap.from(spaces).wrap();",
+        "  THEN",
+        "    assert result.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC13",
+      "description": "Treats punctuation not in extraWordChars as word boundary (isPunctuation path)",
+      "path": "B0→B3(ch='.')→B7→else branch→append punctuation to word→boundary logic",
+      "precondition": "extraWordChars set to empty",
+      "expectedResult": "wraps \".a b\" into [\".a\",\"b\"] when extraWordChars is empty and maxWidth 2",
+      "tags": [
+        "negative",
+        "punctuation",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC13 punctuation-boundary",
+        "  GIVEN",
+        "    Set<Character> extras = new HashSet<>();",
+        "    Builder b = WordWrap.from(\".a b\").extraWordChars(extras).maxWidth(2);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\".a\",\"b\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC14",
+      "description": "wrap(File,Charset) writes to and reads from a temporary file correctly",
+      "path": "Bwrap(File)→FileOutputStream→wrap(writer)→exit",
+      "precondition": "temporary writable file available",
+      "expectedResult": "file contains wrapped content matching wrap() return",
+      "tags": [
+        "positive",
+        "io",
+        "file"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC14 wrap-to-file-and-readback",
+        "  GIVEN",
+        "    File tmp = File.createTempFile(\"w\",\".txt\");",
+        "  WHEN",
+        "    WordWrap.from(\"alpha beta gamma\").maxWidth(6).wrap(tmp, StandardCharsets.UTF_8);",
+        "    String fileContent = new String(Files.readAllBytes(tmp.toPath()), StandardCharsets.UTF_8);",
+        "    String direct = WordWrap.from(\"alpha beta gamma\").maxWidth(6).wrap();",
+        "  THEN",
+        "    assert fileContent.equals(direct);",
+        "END"
+      ]
+    },
+    {
+      "id": "TC15",
+      "description": "Uses custom stringWidth that doubles length causing earlier breaks (tooLong on concatRightTrim)",
+      "path": "B0→loop→tooLong true when doubled width→writeLine→exit",
+      "precondition": "stringWidth returns double the char count",
+      "expectedResult": "wraps \"ab cd\" into [\"ab\",\"cd\"] with maxWidth 2 and doubled width",
+      "tags": [
+        "positive",
+        "custom-function",
+        "boundary"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC15 custom-stringWidth-breaks",
+        "  GIVEN",
+        "    Function<CharSequence,Number> dbl = s -> s.length()*2;",
+        "    Builder b = WordWrap.from(\"ab cd\").stringWidth(dbl).maxWidth(2);",
+        "  WHEN",
+        "    List<String> lines = b.wrapToList();",
+        "  THEN",
+        "    assert lines.equals(Arrays.asList(\"ab\",\"cd\"));",
+        "END"
+      ]
+    },
+    {
+      "id": "TC16",
+      "description": "Throws IORuntimeException when Reader.close() fails in finally block",
+      "path": "B0→wrap→wordWrap→finally→close(reader) throws IOException→catch→IORuntimeException",
+      "precondition": "Reader that always throws IOException on close",
+      "expectedResult": "wrap() invocation throws IORuntimeException",
+      "tags": [
+        "negative",
+        "exception",
+        "io"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC16 reader-close-exception",
+        "  GIVEN",
+        "    Reader r = new Reader() {",
+        "      public int read(char[] c, int off, int len) { return -1; }",
+        "      public void close() throws IOException { throw new IOException(\"fail\"); }",
+        "    };",
+        "  WHEN",
+        "    call WordWrap.from(r, true).wrap();",
+        "  THEN",
+        "    throws IORuntimeException;",
+        "END"
+      ]
+    }
+  ]
+}

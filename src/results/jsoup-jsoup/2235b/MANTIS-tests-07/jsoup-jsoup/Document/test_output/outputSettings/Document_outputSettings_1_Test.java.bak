@@ -1,0 +1,39 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Document_outputSettings_Test {
+
+    @Test
+    @DisplayName("outputSettings(null) throws IllegalArgumentException on null argument")
+    public void test_TC02() {
+        // GIVEN a fresh Document
+        Document doc = new Document("http://example.com");
+        Document.OutputSettings settings = null;
+        // WHEN & THEN: passing null should trigger the Validate.notNull check and throw IllegalArgumentException (path B0→B1→B2)
+        assertThrows(IllegalArgumentException.class, () -> {
+            doc.outputSettings(settings);
+        });
+    }
+
+    @Test
+    @DisplayName("outputSettings returns this Document allowing call chaining")
+    public void test_TC03() {
+        // GIVEN a fresh Document and a non-null OutputSettings
+        Document doc = new Document("http://example.com");
+        Document.OutputSettings s1 = new Document.OutputSettings();
+        // WHEN: calling outputSettings with a valid settings should follow the non-null branch (path B0→B1→B3)
+        Document returned = doc.outputSettings(s1);
+        // THEN: the returned object must be the same instance for chaining
+        assertSame(doc, returned, "Expected outputSettings to return the same Document instance for chaining");
+
+        // AND WHEN: chaining another call with a new OutputSettings
+        Document returned2 = returned.outputSettings(new Document.OutputSettings());
+        // THEN: still the same Document instance
+        assertSame(doc, returned2, "Chaining outputSettings should still return the original Document instance");
+    }
+}

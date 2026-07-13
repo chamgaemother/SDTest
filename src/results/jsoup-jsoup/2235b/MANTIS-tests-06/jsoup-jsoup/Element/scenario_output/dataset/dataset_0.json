@@ -1,0 +1,135 @@
+{
+  "method": "dataset",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "dataset() returns empty map when no attributes set (attributes==null branch)",
+      "path": "B0→B1→B3",
+      "precondition": "Element el = new Element(\"div\"); // attributes==null",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-false",
+        "loop-0",
+        "empty",
+        "P0"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 dataset empty-when-no-attributes",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "dataset() returns empty map when attributes exist but no data- entries (attributes!=null, loop 0)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"span\"); el.attr(\"class\",\"foo\"); // only non-data attr",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "empty",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 dataset empty-when-no-data-attrs",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"class\",\"foo\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "dataset() returns single entry for one data-attribute (loop 1)",
+      "path": "B0→B1→B2→B4→B5",
+      "precondition": "Element el = new Element(\"p\"); el.attr(\"data-key\",\"value\");",
+      "expectedResult": "returned map contains exactly {\"key\":\"value\"}",
+      "tags": [
+        "branch-true",
+        "loop-1",
+        "single-entry",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 dataset single-data-attr",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    el.attr(\"data-key\",\"value\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 1 && ds.get(\"key\").equals(\"value\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "dataset() returns multiple entries for several data-attributes (loop N)",
+      "path": "B0→B1→B2→B4→B5→B4→B5",
+      "precondition": "Element el = new Element(\"div\"); el.attr(\"data-one\",\"1\"); el.attr(\"data-two\",\"2\");",
+      "expectedResult": "returned map contains exactly {\"one\":\"1\",\"two\":\"2\"}",
+      "tags": [
+        "branch-true",
+        "loop-N",
+        "multi-entry",
+        "P1"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 dataset multiple-data-attrs",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    el.attr(\"data-one\",\"1\");",
+        "    el.attr(\"data-two\",\"2\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.size() == 2 && ds.get(\"one\").equals(\"1\") && ds.get(\"two\").equals(\"2\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "dataset() ignores attributes with prefix case mismatch (Data- uppercase)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "Element el = new Element(\"a\"); el.attributes().put(\"Data-Key\",\"v\"); // direct Attributes stub to set uppercase prefix",
+      "expectedResult": "returned map is empty",
+      "tags": [
+        "branch-true",
+        "loop-0",
+        "case-sensitive",
+        "P2"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 dataset ignore-case-data-prefix",
+        "  GIVEN",
+        "    Element el = new Element(\"a\");",
+        "    el.attributes().put(\"Data-Key\",\"v\");",
+        "  WHEN",
+        "    Map<String,String> ds = el.dataset();",
+        "  THEN",
+        "    assert ds.isEmpty();",
+        "END"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,79 @@
+{
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "First invocation when internal cache is null initializes and returns non-empty unmodifiable tag set",
+      "path": "B0→B1(cacheNull)→B2(initSet)→B3(return)",
+      "precondition": "no prior calls to Parser.tagSet() in this JVM",
+      "expectedResult": "non-empty Set<String> containing known HTML tags (e.g. 'div'), unmodifiable",
+      "tags": [
+        "positive",
+        "initialization",
+        "unmodifiable"
+      ],
+      "priority": "P0",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC01 initial tagSet initializes cache",
+        "  GIVEN",
+        "    // Ensure no previous call: fresh ClassLoader/clear static field via reflection",
+        "  WHEN",
+        "    Set<String> tags = Parser.tagSet();",
+        "  THEN",
+        "    assert tags != null;",
+        "    assert tags.contains(\"div\");",
+        "    throws UnsupportedOperationException when tags.add(\"newTag\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "Second invocation when cache is populated returns same contents without reinitializing",
+      "path": "B0→B1(cacheNotNull)→B3(return)",
+      "precondition": "Parser.tagSet() has been called once already",
+      "expectedResult": "Set<String> equal to first result, identity may be same or cached copy, unmodifiable",
+      "tags": [
+        "positive",
+        "caching",
+        "idempotent"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC02 subsequent tagSet returns cached set",
+        "  GIVEN",
+        "    Set<String> first = Parser.tagSet();",
+        "  WHEN",
+        "    Set<String> second = Parser.tagSet();",
+        "  THEN",
+        "    assert second.equals(first);",
+        "    throws UnsupportedOperationException when second.remove(\"html\");",
+        "END"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "Attempt to modify returned set triggers UnsupportedOperationException for remove() path",
+      "path": "B0→B1(cacheNotNull)→B3(return)→B4(removeException)",
+      "precondition": "Parser.tagSet() has been called, returned set is unmodifiable",
+      "expectedResult": "UnsupportedOperationException thrown on remove() call",
+      "tags": [
+        "negative",
+        "exception",
+        "unmodifiable"
+      ],
+      "priority": "P1",
+      "environment": "Java 8+",
+      "pseudocode": [
+        "TEST TC03 remove on tagSet throws",
+        "  GIVEN",
+        "    Set<String> tags = Parser.tagSet();",
+        "  WHEN",
+        "    call tags.remove(\"div\");",
+        "  THEN",
+        "    throws UnsupportedOperationException;",
+        "END"
+      ]
+    }
+  ]
+}

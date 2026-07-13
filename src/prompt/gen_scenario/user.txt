@@ -1,0 +1,52 @@
+[INPUT]
+- Library name → { LIBRARY_NAME }
+- Class name → { CLASS_NAME }
+- Class body → { CLASS_BODY }
+- Target Method → { METHOD_NAME }
+- Target Method Infomations :
+{ METHOD_INFOMATIONs } 
+
+[TASK]
+Return one top-level JSON object containing only a key named scenarios.
+scenarios must be a JSON object whose only key is exactly the target method name { METHOD_NAME }, and whose value is an array of scenario objects that thoroughly exercise the target method.
+- The set of method keys under scenarios must be exactly one key: { METHOD_NAME } (no more, no less).
+- If { METHOD_NAME } is overloaded, generate scenarios for all overload variants but merge them into the same array under the single method-name key. Each scenario must clearly indicate which overload it targets using id and tags (see Requirements).
+- Do not invent methods or output scenarios for any method other than { METHOD_NAME }.
+
+[EMPHASIS]
+- Write a variety of scenarios to maximize branch and path coverage for the target method.
+- Include scenarios that explicitly cover loop behaviors: zero iterations, one iteration, and multiple iterations (use multiple N cases when behavior differs).
+- Use the provided CC (cyclomatic complexity) value to generate at least CC+1 unique execution paths for the target method, unless the CFG explicitly shows fewer reachable distinct paths. If there are duplicate tests, keep the scenario whose path explores more unique branches. (e.g., “Generated 12 scenarios for CC=11”)
+- Ensure each exit point (normal return, exception throw) is exercised by at least one scenario.
+- For each scenario, mention which branch conditions (e.g. “r0 == null”, “hasMoreElements == false”, etc.) are being tested in the description field.
+- Visibility Handling — Pay special attention to private and package-private methods or fields; use reflection or appropriate test-only accessors to invoke and verify them when necessary.
+- Be considerate of constructor and function argument types.
+- Exclude any theoretically possible but practically untestable scenarios (e.g., infinite loops, unbounded recursion, or extremely long-running cases). Focus only on reachable, finite, and realistic execution paths.
+
+Branch coverage maximization rules (must-follow):
+- For every conditional predicate in the CFG, include scenarios that force both outcomes (true/false) at least once, unless one outcome is unreachable per CFG.
+- Prefer boundary-driven inputs that flip predicates (e.g., null vs non-null, empty vs non-empty, min/max, off-by-one, negative/zero/positive, “just below/at/just above” thresholds).
+- When multiple conditions are combined (AND/OR / nested ifs), include scenarios that isolate each condition’s effect by toggling one condition at a time where feasible (do not rely only on “all-true” and “all-false”).
+- For multi-branch constructs (else-if chains, switch), include at least one scenario per reachable case and ensure a scenario reaches the default/fallthrough path when reachable.
+- For exception branches, include scenarios that trigger the exception at different decision points if the CFG shows distinct throw sites.
+
+Important principle:
+- The code's current implementation is NOT always correct.
+- The intended behavior (what the method is supposed to do) may differ from what the code actually does.
+
+Your task:
+1. Read the method name, comments, and parameters to infer its intended purpose.
+2. Do NOT assume the code is correct. The implementation might be wrong or incomplete.
+3. Decide the expected result based on the intended behavior, not on what the code currently returns.
+4. Write scenarios such that a unit test would FAIL if the implementation does not match the intended behavior.
+
+Forbidden patterns:
+- Do NOT use the method’s actual output or execution result to define the expected value.
+- Do NOT write tests that always pass, regardless of correctness.
+- Do NOT assume the existing code represents the right logic.
+- The method key inside scenarios must exactly match { METHOD_NAME }.
+- Do not include any other top-level keys.
+
+** Never abbreviate or omit absolute paths. **
+** The pseudocode must strictly follow the example style and be non-narrative. **
+** Return nothing else — no preamble, no code block tags, no additional keys. **

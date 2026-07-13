@@ -1,0 +1,73 @@
+package org.jsoup.nodes;
+
+import org.jsoup.Connection;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+public class Document_clone_2_Test {
+
+    @Test
+    @DisplayName("clone() produces a parser instance independent of original when trackErrors is modified on clone")
+    public void test_TC07() {
+        // GIVEN a fresh Document with default parser (no tracked errors)
+        Document original = new Document("http://test");
+        assertTrue(original.parser().getErrors().isEmpty(),
+            "Precondition: original parser starts with no errors");
+        // WHEN we clone and modify the clone's parser trackErrors count
+        Document clone = original.clone(); // Changed to use clone method
+        // inline: .clone() should clone parser internally, so setting trackErrors on clone does not affect original
+        clone.parser().setTrackErrors(10);
+        // THEN original parser trackErrors remains zero and clone has the new count
+        assertAll(
+            () -> assertEquals(0, original.parser().getTrackErrors(),
+                "Original parser trackErrors should remain at default 0"),
+            () -> assertEquals(10, clone.parser().getTrackErrors(),
+                "Clone parser trackErrors should reflect the set value 10")
+        );
+    }
+
+    @Test
+    @DisplayName("clone() on document with null connection yields clone.connection() as new session not same as original")
+    public void test_TC08() {
+        // GIVEN a Document created via constructor without setting connection (so connection field null)
+        Document original = new Document("http://example.com");
+        // inline: original.connection() returns a new session each time when field is null
+        Connection conn1 = original.connection();
+        assertNotNull(conn1, "Precondition: original.connection() must return a valid session");
+        // WHEN we clone the document and get connections
+        Document clone = original.clone(); // Changed to use clone method
+        Connection conn2 = clone.connection();
+        // THEN the two sessions must not be the same object, and clone.session should be usable
+        assertNotSame(conn1, conn2,
+            "Clone.connection() should create a different session object than original.connection()");
+        assertNotNull(conn2.newRequest(),
+            "The new session from clone should produce a valid Connection.Request");
+    }
+
+    @Test
+    @DisplayName("clone() yields deep childNodes independence: modifying clone children does not affect original")
+    public void test_TC09() {
+        // GIVEN a Document shell with one <p> in body
+        Document original = Document.createShell("u");
+        original.body().appendElement("p");
+        assertEquals(1, original.select("p").size(),
+            "Precondition: original should have exactly one <p> child");
+        // WHEN we clone and append <div> to clone's body
+        Document clone = original.clone(); // Changed to use clone method
+        clone.body().appendElement("div");
+        // THEN original still has only its original <p> and no <div>, while clone has both
+        assertAll(
+            () -> assertEquals(1, original.select("p").size(),
+                "Original should still have one <p> after clone modification"),
+            () -> assertEquals(1, clone.select("p").size(),
+                "Clone should inherit the one <p> from original on clone"),
+            () -> assertTrue(original.select("div").isEmpty(),
+                "Original should have no <div> because clone modification must not affect it"),
+            () -> assertEquals(1, clone.select("div").size(),
+                "Clone should have exactly one <div> as appended")
+        );
+    }
+}

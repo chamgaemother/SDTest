@@ -1,0 +1,215 @@
+package org.jsoup.select;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Elements;
+import org.jsoup.select.NodeFilter.FilterResult;
+import org.jsoup.select.NodeVisitor; // Added import for NodeVisitor
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// Test class for NodeTraversor traverse method
+public class NodeTraversor_traverse_0_Test {
+
+    @Test
+    @DisplayName("TC01_O1: visitor is null causes IllegalArgumentException at Validate.notNull(visitor)")
+    void test_TC01_O1() {
+        // B1 false: visitor null triggers exception before any traversal
+        NodeVisitor visitor = null;
+        Node root = new Element("div");
+        assertThrows(IllegalArgumentException.class,
+            () -> NodeTraversor.traverse(visitor, root),
+            "Expected exception when visitor is null");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: root is null causes IllegalArgumentException at Validate.notNull(root)")
+    void test_TC02_O1() {
+        // B1 true → B2 false: visitor ok, root null triggers exception
+        NodeVisitor visitor = (n, d) -> { /* no-op */ };
+        Node root = null;
+        assertThrows(IllegalArgumentException.class,
+            () -> NodeTraversor.traverse(visitor, root),
+            "Expected exception when root is null");
+    }
+
+    @Test
+    @DisplayName("TC03_O1: single-node tree yields head and tail once with depth 0")
+    void test_TC03_O1() {
+        // single root has no children → enters head then tail immediately at depth 0
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("head:" + depth);
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + depth);
+            }
+        };
+        Node root = new Element("p");
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of("head:0", "tail:0"), calls,
+            "Should call head and tail exactly once at depth 0");
+    }
+
+    @Test
+    @DisplayName("TC04_O1: root with one child descends then ascends covering child loop-1")
+    void test_TC04_O1() {
+        // root has one child → B11 true, descend to child at depth 1, then ascend
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("head:" + node.nodeName() + "#" + depth);
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("tail:" + node.nodeName() + "#" + depth);
+            }
+        };
+        Element root = new Element("div");
+        Element child = new Element("span");
+        root.appendChild(child);
+        NodeTraversor.traverse(visitor, root);
+        assertEquals(List.of(
+            "head:div#0",
+            "head:span#1",
+            "tail:span#1",
+            "tail:div#0"),
+            calls,
+            "Traversal should visit child depth-first then ascend back");
+    }
+
+    @Test
+    @DisplayName("TC05_O1: two-sibling children exercises sibling traversal at same depth (loop-N)")
+    void test_TC05_O1() {
+        // two children → after first child tail, sibling exists so loop siblings at depth 1
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("h:" + node.nodeName() + depth);
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("t:" + node.nodeName() + depth);
+            }
+        };
+        Element root = new Element("ul");
+        root.appendChild(new Element("li"));
+        root.appendChild(new Element("li"));
+        NodeTraversor.traverse(visitor, root);
+        assertTrue(calls.get(0).equals("h:ul0"),
+            "First call should be head of root at depth 0");
+        // ensure both li visited
+        boolean sawFirstLi = calls.contains("h:li1") && calls.contains("t:li1");
+        boolean sawSecondLi = calls.contains("h:li1") && calls.lastIndexOf("h:li1") != calls.indexOf("h:li1");
+        assertTrue(sawFirstLi, "Should visit first li");
+        assertTrue(sawSecondLi, "Should visit second li");
+    }
+
+    @Test
+    @DisplayName("TC06_O1: visitor.head removes a child triggers removal branch and skips tail for removed")
+    void test_TC06_O1() {
+        // in head, child removes itself → at B6 true, removal branch, skip tail for removed node
+        Element root = new Element("div");
+        Element child = new Element("b");
+        root.appendChild(child);
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("h:" + node.nodeName());
+                if (node.nodeName().equals("b")) {
+                    node.remove(); // simulate removal in head
+                }
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("t:" + node.nodeName());
+            }
+        };
+        NodeTraversor.traverse(visitor, root);
+        assertTrue(calls.contains("h:b"), "Should head the child before removal");
+        assertFalse(calls.contains("t:b"), "Should not tail removed child");
+        assertTrue(calls.contains("t:div"), "Should still tail the root");
+    }
+
+    @Test
+    @DisplayName("TC07_O2: elements list empty causes no traversal")
+    void test_TC07_O2() {
+        // empty list → for-loop zero iterations, no head/tail
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                fail("head should not be called on empty elements");
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                fail("tail should not be called on empty elements");
+            }
+        };
+        Elements elements = new Elements();
+        // no exception and no calls
+        NodeTraversor.traverse(visitor, elements);
+        assertTrue(elements.isEmpty(), "Elements list remains empty");
+    }
+
+    @Test
+    @DisplayName("TC08_O2: single-element list delegates to Node overload once")
+    void test_TC08_O2() {
+        // one element in list → delegate to single-node traverse once, produce two calls
+        List<String> calls = new ArrayList<>();
+        NodeVisitor visitor = new NodeVisitor() {
+            @Override
+            public void head(Node node, int depth) {
+                calls.add("h");
+            }
+            @Override
+            public void tail(Node node, int depth) {
+                calls.add("t");
+            }
+        };
+        Element el = new Element("span");
+        Elements elements = new Elements(el);
+        NodeTraversor.traverse(visitor, elements);
+        assertEquals(2, calls.size(), "Should call head and tail once each for single element");
+    }
+
+    @Test
+    @DisplayName("TC09_O2: multiple-elements stops on STOP filter in filter overload stops iteration early")
+    void test_TC09_O2() {
+        // second element's head returns STOP → break out of elements loop early
+        class CountingFilter implements NodeFilter {
+            boolean sawP = false;
+            @Override
+            public FilterResult head(Node node, int depth) {
+                if ("p".equals(node.nodeName())) {
+                    sawP = true;
+                    return FilterResult.STOP;
+                }
+                return FilterResult.CONTINUE;
+            }
+            @Override
+            public FilterResult tail(Node node, int depth) {
+                return FilterResult.CONTINUE;
+            }
+        }
+        CountingFilter filter = new CountingFilter();
+        Elements elements = new Elements(
+            new Element("div"),
+            new Element("p"),
+            new Element("span")
+        );
+        NodeTraversor.filter(filter, elements);
+        assertTrue(filter.sawP, "Filter should have been called on 'p' and then stopped");
+    }
+}

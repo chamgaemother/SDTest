@@ -1,0 +1,36 @@
+package org.jsoup.parser;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
+public class Tag_isFormSubmittable_0_Test {
+
+    @Test
+    @DisplayName("TC01: Unknown tag created via valueOf(String) returns false for form submittable (branch: not in formSubmitTags)")
+    void test_TC01() {
+        // Create an unknown tag 'custom'; it is not in the static formSubmitTags list, so formSubmit stays false
+        Tag tag = Tag.valueOf("custom");
+        boolean result = tag.isFormSubmittable();
+        assertFalse(result, "Expected unknown tags to not be form-submittable");
+    }
+
+    @Test
+    @DisplayName("TC02: Known submit tag \"input\" returns true for form submittable (branch: in formSubmitTags)")
+    void test_TC02() {
+        // 'input' is a known submit tag initialized in static formSubmitTags, so formSubmit is true
+        Tag tag = Tag.valueOf("input");
+        boolean result = tag.isFormSubmittable();
+        assertTrue(result, "Expected 'input' tag to be form-submittable");
+    }
+
+    @Test
+    @DisplayName("TC03: Known submit tag with preserved case returns true for form submittable after clone (branch: preserveTagCase true)")
+    void test_TC03() {
+        // Use preserveCase settings so that 'INPUT' returns a cloned Tag preserving case,
+        // clone copies formSubmit=true from the original 'input' tag
+        ParseSettings settings = ParseSettings.preserveCase;
+        Tag tag = Tag.valueOf("INPUT", "html", settings);
+        boolean result = tag.isFormSubmittable();
+        assertTrue(result, "Expected preserved-case 'INPUT' tag to be form-submittable after clone");
+    }
+}

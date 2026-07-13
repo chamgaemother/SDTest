@@ -1,0 +1,91 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "Invoking tagSet twice replaces the parser.settings and updates treeBuilder.parser reference each time",
+      "path": "B0→B1→B2→B4 (first call) then B0→B1→B2→B4 (second call)",
+      "precondition": "Parser obtained via reflection access to private tagSet, and two distinct ParseSettings instances",
+      "expectedResult": "After each invocation, parser.settings() returns the newly passed instance, and parser is returned both times",
+      "tags": [
+        "positive",
+        "chaining",
+        "reflection"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 tagSet chaining replaces settings",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", ParseSettings.class);",
+        "    tagSet.setAccessible(true);",
+        "    ParseSettings s1 = new ParseSettings(false, true);",
+        "    ParseSettings s2 = new ParseSettings(true, false);",
+        "  WHEN",
+        "    Parser ret1 = (Parser) tagSet.invoke(parser, s1);",
+        "    Parser ret2 = (Parser) tagSet.invoke(parser, s2);",
+        "  THEN",
+        "    assertSame(parser, ret1);",
+        "    assertSame(s1, parser.settings());",
+        "    assertSame(parser, ret2);",
+        "    assertSame(s2, parser.settings());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "Calling public settings(ParseSettings) delegates to tagSet and returns this parser instance",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser created via htmlParser(), public settings() setter used",
+      "expectedResult": "settings(ParseSettings) returns same parser and parser.settings() equals provided settings",
+      "tags": [
+        "positive",
+        "public-api",
+        "chaining"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 public settings delegates to tagSet",
+        "  GIVEN",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings newSettings = new ParseSettings(true, true);",
+        "  WHEN",
+        "    Parser returned = parser.settings(newSettings);",
+        "  THEN",
+        "    assertSame(parser, returned);",
+        "    assertSame(newSettings, parser.settings());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "Reflection invocation of tagSet with unsupported subclass of ParseSettings (immutable) still assigns provided instance",
+      "path": "B0→B1→B2→B4",
+      "precondition": "Parser via htmlParser(); a subclass of ParseSettings overrides nothing (acts same)",
+      "expectedResult": "tagSet accepts subclass, sets parser.settings to it and returns same parser",
+      "tags": [
+        "positive",
+        "extension",
+        "reflection"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 tagSet accepts subclass of ParseSettings",
+        "  GIVEN",
+        "    class MySettings extends ParseSettings { MySettings() { super(true,false); } }",
+        "    Parser parser = Parser.htmlParser();",
+        "    ParseSettings sub = new MySettings();",
+        "    Method tagSet = Parser.class.getDeclaredMethod(\"tagSet\", ParseSettings.class);",
+        "    tagSet.setAccessible(true);",
+        "  WHEN",
+        "    Parser result = (Parser) tagSet.invoke(parser, sub);",
+        "  THEN",
+        "    assertSame(parser, result);",
+        "    assertSame(sub, parser.settings());",
+        "END"
+      ]
+    }
+  ]
+}

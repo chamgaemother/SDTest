@@ -1,0 +1,74 @@
+{
+  "scenarios": [
+    {
+      "id": "TC03",
+      "description": "isFormSubmittable() returns true for known formSubmit tag via valueOf(tagName,settings) overload",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "true for select tag obtained via valueOf(String, ParseSettings)",
+      "tags": [
+        "positive",
+        "overload"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 isFormSubmittable overload-preserveCase",
+        "  GIVEN",
+        "    ParseSettings settings = ParseSettings.preserveCase;",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(\"select\", settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == true;"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "isFormSubmittable() returns false for unknown tag when preserveTagCase triggers clone path",
+      "path": "B0→B1→B4→B5→B6",
+      "precondition": "none",
+      "expectedResult": "false for cloned unknown tag with preserveTagCase=true",
+      "tags": [
+        "negative",
+        "branch",
+        "clone-path"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 unknown-tag clone-branch",
+        "  GIVEN",
+        "    String tagName = \"Custom\";",
+        "    String normalName = ParseSettings.normalName(tagName);",
+        "    String ns = \"http://example.com\";",
+        "    ParseSettings settings = new ParseSettings(true, true);",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(tagName, normalName, ns, settings);",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "isFormSubmittable() returns false on known but non-submittable tag (formatAsInlineTags list)",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "false for span tag from static setup with formSubmit=false",
+      "tags": [
+        "negative",
+        "static-init"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 isFormSubmittable static-inline-tag",
+        "  GIVEN",
+        "    // 'span' is inline and not in formSubmitTags",
+        "  WHEN",
+        "    Tag tag = Tag.valueOf(\"span\");",
+        "  THEN",
+        "    assert tag.isFormSubmittable() == false;"
+      ]
+    }
+  ]
+}

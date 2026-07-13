@@ -1,0 +1,191 @@
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.parser.Parser;
+import org.jsoup.parser.TreeBuilder;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Token;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.UncheckedIOException;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+public class Parser_parseFragmentInput_0_Test {
+
+    // Stub TreeBuilder that returns an empty list for parseFragment
+    static class StubTreeBuilderReturningEmpty extends TreeBuilder {
+        @Override
+        public ParseSettings defaultSettings() {
+            return new ParseSettings(ParseErrorList.noErrors());
+        }
+        @Override
+        public String defaultNamespace() {
+            return "";
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            return new StubTreeBuilderReturningEmpty();
+        }
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            return null;
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            return Collections.emptyList();
+        }
+        @Override
+        public void process(Token token) {} // Implemented required method
+    }
+
+    // Stub TreeBuilder that throws an UncheckedIOException for parseFragment
+    static class StubTreeBuilderThrowingIOException extends TreeBuilder {
+        @Override
+        public ParseSettings defaultSettings() {
+            return new ParseSettings(ParseErrorList.noErrors());
+        }
+        @Override
+        public String defaultNamespace() {
+            return "";
+        }
+        @Override
+        public TreeBuilder newInstance() {
+            return new StubTreeBuilderThrowingIOException();
+        }
+        @Override
+        public Document parse(Reader input, String baseUri, Parser parser) {
+            return null;
+        }
+        @Override
+        public List<Node> parseFragment(Reader input, Element context, String baseUri, Parser parser) {
+            throw new UncheckedIOException(new IOException("stub I/O error"));
+        }
+        @Override
+        public void process(Token token) {} // Implemented required method
+    }
+
+    @Test
+    @DisplayName("TC01_O1: Reader overload with stub returns empty when context null")
+    void test_TC01_O1() {
+        Reader fragment = new StringReader("anything");
+        Parser parser = new Parser(new StubTreeBuilderReturningEmpty());
+        List<Node> result = parser.parseFragmentInput(fragment, null, "base");
+        assertTrue(result.isEmpty(), "Expected empty result list from stubbed TreeBuilder");
+    }
+
+    @Test
+    @DisplayName("TC02_O1: Reader overload throws UncheckedIOException when stub throws")
+    void test_TC02_O1() {
+        Reader fragment = new StringReader("any");
+        Parser parser = new Parser(new StubTreeBuilderThrowingIOException());
+        assertThrows(UncheckedIOException.class, () ->
+            parser.parseFragmentInput(fragment, null, "base"),
+            "Expected UncheckedIOException from stubbed TreeBuilder"
+        );
+    }
+
+    @Test
+    @DisplayName("TC03_O1: Reader overload with real HtmlTreeBuilder parses single <p>Hi</p> fragment")
+    void test_TC03_O1() {
+        Reader fragment = new StringReader("<p>Hi</p>");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, null, "base");
+        assertEquals(1, result.size(), "Expected one node parsed");
+        Element el = (Element) result.get(0);
+        assertEquals("p", el.tagName(), "Expected tag 'p'");
+        assertEquals("Hi", el.text(), "Expected text 'Hi'");
+    }
+
+    @Test
+    @DisplayName("TC04_O1: Reader overload with context parses <span>Hi</span> and appends to context")
+    void test_TC04_O1() {
+        Reader fragment = new StringReader("<span>Hi</span>");
+        Element context = new Element("div");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, "base");
+        assertEquals(1, result.size(), "Expected one node parsed");
+        Element span = (Element) result.get(0);
+        assertEquals("span", span.tagName(), "Expected tag 'span'");
+        assertTrue(context.children().contains(span), "Context should contain appended span");
+    }
+
+    @Test
+    @DisplayName("TC05_O2: String overload integration parses <b>bold</b> in context")
+    void test_TC05_O2() {
+        String fragment = "<b>bold</b>";
+        Element context = new Element("div");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, "base");
+        assertEquals(1, result.size(), "Expected one node parsed");
+        Element b = (Element) result.get(0);
+        assertEquals("b", b.tagName(), "Expected tag 'b'");
+    }
+
+    @Test
+    @DisplayName("TC06_O2: String overload throws UncheckedIOException when stub throws")
+    void test_TC06_O2() {
+        String fragment = "anything";
+        Element context = new Element("div");
+        Parser parser = new Parser(new StubTreeBuilderThrowingIOException());
+        assertThrows(UncheckedIOException.class, () ->
+            parser.parseFragmentInput(fragment, context, "base"),
+            "Expected UncheckedIOException from stubbed TreeBuilder via string overload"
+        );
+    }
+
+    @Test
+    @DisplayName("TC07_O1: Reader overload returns empty for empty fragment without context")
+    void test_TC07_O1() {
+        Reader fragment = new StringReader("");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, null, "base");
+        assertTrue(result.isEmpty(), "Expected empty list for empty fragment");
+    }
+
+    @Test
+    @DisplayName("TC08_O2: String overload returns empty and context unchanged for empty fragment")
+    void test_TC08_O2() {
+        String fragment = "";
+        Element context = new Element("div");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, context, "base");
+        assertTrue(result.isEmpty(), "Expected empty list for empty fragment");
+        assertTrue(context.children().isEmpty(), "Context should have no new children");
+    }
+
+    @Test
+    @DisplayName("TC09_O1: Reader overload parses multiple <p> siblings without context")
+    void test_TC09_O1() {
+        Reader fragment = new StringReader("<p>1</p><p>2</p><p>3</p>");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, null, "base");
+        assertEquals(3, result.size(), "Expected three nodes parsed");
+        assertEquals("p", ((Element) result.get(0)).tagName(), "First tag should be 'p'");
+        assertEquals("p", ((Element) result.get(1)).tagName(), "Second tag should be 'p'");
+        assertEquals("p", ((Element) result.get(2)).tagName(), "Third tag should be 'p'");
+    }
+
+    @Test
+    @DisplayName("TC10_O1: Reader overload parses nested <div><span></span></div> without context")
+    void test_TC10_O1() {
+        Reader fragment = new StringReader("<div><span></span></div>");
+        Parser parser = Parser.htmlParser();
+        List<Node> result = parser.parseFragmentInput(fragment, null, "base");
+        assertEquals(1, result.size(), "Expected one root node");
+        Element div = (Element) result.get(0);
+        assertEquals("div", div.tagName(), "Root tag should be 'div'");
+        List<Node> children = div.childNodes();
+        assertEquals(1, children.size(), "Div should have one child");
+        assertEquals("span", ((Element) children.get(0)).tagName(), "Child tag should be 'span'");
+    }
+}

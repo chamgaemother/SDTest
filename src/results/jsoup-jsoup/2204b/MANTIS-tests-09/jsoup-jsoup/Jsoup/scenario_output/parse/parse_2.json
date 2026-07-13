@@ -1,0 +1,150 @@
+{
+  "scenarios": [
+    {
+      "id": "TC22",
+      "description": "parse(html) with non-empty HTML returns a Document with correct body element",
+      "path": "B0→B2→B5→B8",
+      "precondition": "none",
+      "expectedResult": "Document.body().html() equals input fragment",
+      "tags": [
+        "positive",
+        "overload",
+        "single-arg"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC22 parse non-empty single-arg overload",
+        "  GIVEN",
+        "    String html = \"<p>hello</p>\";",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html);",
+        "  THEN",
+        "    assert doc.body().html().equals(\"<p>hello</p>\");"
+      ]
+    },
+    {
+      "id": "TC23",
+      "description": "parse(html, Parser.htmlParser()) exercises htmlParser path in two-arg overload",
+      "path": "B0→B3→B6→B9",
+      "precondition": "none",
+      "expectedResult": "Document.select(\"p\").text() equals 'test'",
+      "tags": [
+        "positive",
+        "overload",
+        "parser"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC23 parse with htmlParser two-arg overload",
+        "  GIVEN",
+        "    String html = \"<p>test</p>\";",
+        "    Parser parser = Parser.htmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(html, parser);",
+        "  THEN",
+        "    assert doc.select(\"p\").first().text().equals(\"test\");"
+      ]
+    },
+    {
+      "id": "TC24",
+      "description": "parse(InputStream,charset,baseUri,Parser.xmlParser()) processes self-closing tags via xmlParser",
+      "path": "B0→B7→B11→B14",
+      "precondition": "input stream with XML fragment",
+      "expectedResult": "Document.select(\"item\").size() == 1",
+      "tags": [
+        "positive",
+        "overload",
+        "parser",
+        "inputstream"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC24 parse InputStream with xmlParser overload",
+        "  GIVEN",
+        "    byte[] data = \"<item/>\".getBytes(\"UTF-8\");",
+        "    InputStream in = new ByteArrayInputStream(data);",
+        "    Parser parser = Parser.xmlParser();",
+        "  WHEN",
+        "    Document doc = Jsoup.parse(in, \"UTF-8\", \"base\", parser);",
+        "  THEN",
+        "    assert doc.select(\"item\").size() == 1;"
+      ]
+    },
+    {
+      "id": "TC25",
+      "description": "parse(URL,timeout) throws HttpStatusException on HTTP 404 response",
+      "path": "B0→B15→B18→B20",
+      "precondition": "local HTTP stub returning 404",
+      "expectedResult": "HttpStatusException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC25 parse URL with 404 response",
+        "  GIVEN",
+        "    start HTTP server on random port that returns 404 for any request;",
+        "    URL url = new URL(\"http://localhost:{port}/missing\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws org.jsoup.HttpStatusException;"
+      ]
+    },
+    {
+      "id": "TC26",
+      "description": "parse(URL,timeout) throws UnsupportedMimeTypeException on unsupported Content-Type",
+      "path": "B0→B15→B18→B21",
+      "precondition": "local HTTP stub returning Content-Type image/png",
+      "expectedResult": "UnsupportedMimeTypeException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC26 parse URL with unsupported MIME type",
+        "  GIVEN",
+        "    start HTTP server on random port that returns 200 and Content-Type 'image/png';",
+        "    URL url = new URL(\"http://localhost:{port}/img\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 1000);",
+        "  THEN",
+        "    throws org.jsoup.UnsupportedMimeTypeException;"
+      ]
+    },
+    {
+      "id": "TC27",
+      "description": "parse(URL,timeout) throws SocketTimeoutException when connection exceeds timeoutMillis",
+      "path": "B0→B15→B17→B19",
+      "precondition": "local HTTP stub delaying response beyond timeout",
+      "expectedResult": "java.net.SocketTimeoutException is thrown",
+      "tags": [
+        "negative",
+        "exception",
+        "timeout",
+        "network"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC27 parse URL with delayed response",
+        "  GIVEN",
+        "    start HTTP server on random port that sleeps 200ms before sending response;",
+        "    URL url = new URL(\"http://localhost:{port}/delay\");",
+        "  WHEN",
+        "    call Jsoup.parse(url, 50);",
+        "  THEN",
+        "    throws java.net.SocketTimeoutException;"
+      ]
+    }
+  ]
+}

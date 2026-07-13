@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "TC07",
+      "description": "Constructor with null pattern uses default 'uuuu-M-d' and parseAndAddToColumn(null) calls addObject(null)",
+      "path": "C0→C1(true)→C3→P0→P2(true)→P4",
+      "precondition": "CsvSchema created; newPattern is null",
+      "expectedResult": "column.addObject(null) is called once using default formatter",
+      "tags": [
+        "constructor-default-pattern",
+        "null-input",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC07 default-pattern-null-input",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", null);",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(null, column);",
+        "  THEN",
+        "    assert column.getObject(0) == null;",
+        "END"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "parseAndAddToColumn(\"2019-02-29\", column) with strict resolver throws DateTimeParseException on invalid leap date",
+      "path": "P0→P2(false)→P3(false)→P6",
+      "precondition": "DateSchemaColumn with pattern 'uuuu-M-d' created",
+      "expectedResult": "DateTimeParseException is thrown and column.addObject is not called",
+      "tags": [
+        "exception",
+        "strict-resolver",
+        "boundary"
+      ],
+      "priority": "P0",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC08 strict-resolver-invalid-leap-date",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"uuuu-M-d\");",
+        "    DfDateColumn column = mock(DfDateColumn.class);",
+        "  WHEN",
+        "    call dsc.parseAndAddToColumn(\"2019-02-29\", column);",
+        "  THEN",
+        "    throws DateTimeParseException;",
+        "    verify(column, never()).addObject(any());",
+        "END"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "parseAndAddToColumn(\"31/12/2021\", column) parses correctly with custom pattern 'dd/MM/uuuu'",
+      "path": "P0→P2(false)→P3(false)→P5",
+      "precondition": "DateSchemaColumn created with pattern 'dd/MM/uuuu'",
+      "expectedResult": "column.addObject(LocalDate.of(2021,12,31)) is called once",
+      "tags": [
+        "custom-pattern",
+        "positive"
+      ],
+      "priority": "P1",
+      "environment": "Java 11",
+      "pseudocode": [
+        "TEST TC09 custom-pattern-parse",
+        "  GIVEN",
+        "    CsvSchema schema = new CsvSchema();",
+        "    DateSchemaColumn dsc = new DateSchemaColumn(schema, \"col\", \"dd/MM/uuuu\");",
+        "    DfDateColumn column = new DfDateColumn();",
+        "  WHEN",
+        "    dsc.parseAndAddToColumn(\"31/12/2021\", column);",
+        "  THEN",
+        "    assert column.getObject(0).equals(LocalDate.of(2021,12,31));",
+        "END"
+      ]
+    }
+  ]
+}

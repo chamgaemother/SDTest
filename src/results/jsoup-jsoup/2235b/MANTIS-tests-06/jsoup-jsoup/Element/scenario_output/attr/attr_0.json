@@ -1,0 +1,255 @@
+{
+  "method": "attr",
+  "scenarios": [
+    {
+      "id": "TC01",
+      "description": "attr(String,String) sets new attribute when key and value non-null covering normal branch",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "attributes().get(\"title\") == \"Jsoup\"",
+      "tags": [
+        "branch-true",
+        "normal",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC01 attr sets new attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"title\";",
+        "    String value = \"Jsoup\";",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.attributes().get(key).equals(value);"
+      ]
+    },
+    {
+      "id": "TC02",
+      "description": "attr(String,String) overrides existing attribute value covering update branch",
+      "path": "B0→B1→B2→B3",
+      "precondition": "element already has attribute \"data\"",
+      "expectedResult": "attributes().get(\"data\") == \"updated\"",
+      "tags": [
+        "branch-true",
+        "override",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC02 attr overrides existing attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"span\");",
+        "    el.attr(\"data\", \"initial\");",
+        "  WHEN",
+        "    el.attr(\"data\", \"updated\");",
+        "  THEN",
+        "    assert el.attributes().get(\"data\").equals(\"updated\");"
+      ]
+    },
+    {
+      "id": "TC03",
+      "description": "attr(String,String) with empty value sets attribute to empty string covering boundary empty value",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "attributes().get(\"empty\") == \"\"",
+      "tags": [
+        "boundary",
+        "empty-value",
+        "overload:String,String"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC03 attr with empty value",
+        "  GIVEN",
+        "    Element el = new Element(\"p\");",
+        "    String key = \"empty\";",
+        "    String value = \"\";",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.attributes().get(key).equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC04",
+      "description": "attr(String,String) throws IllegalArgumentException when key is null covering exception on key null",
+      "path": "B0→B1→BError",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "key-null",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC04 attr null key exception",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = null;",
+        "    String value = \"v\";",
+        "  WHEN",
+        "    call el.attr(key, value);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC05",
+      "description": "attr(String,String) throws IllegalArgumentException when value is null covering exception on value null",
+      "path": "B0→B1→BError",
+      "precondition": "none",
+      "expectedResult": "throws IllegalArgumentException",
+      "tags": [
+        "exception",
+        "value-null",
+        "overload:String,String"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC05 attr null value exception",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"k\";",
+        "    String value = null;",
+        "  WHEN",
+        "    call el.attr(key, value);",
+        "  THEN",
+        "    throws IllegalArgumentException;"
+      ]
+    },
+    {
+      "id": "TC06",
+      "description": "attr(String,boolean) true adds boolean attribute covering boolean-true branch",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "attributes().hasKey(\"checked\") is true and attributes().get(\"checked\").equals(\"\")",
+      "tags": [
+        "branch-true",
+        "boolean-true",
+        "overload:String,boolean"
+      ],
+      "priority": "P0",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC06 attr boolean true adds attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"input\");",
+        "    String key = \"checked\";",
+        "    boolean value = true;",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.attributes().hasKey(key) && el.attributes().get(key).equals(\"\");"
+      ]
+    },
+    {
+      "id": "TC07",
+      "description": "attr(String,boolean) false removes existing attribute covering boolean-false remove branch",
+      "path": "B0→B1→B2→B3",
+      "precondition": "element has boolean attribute \"disabled\"",
+      "expectedResult": "attributes().hasKey(\"disabled\") is false",
+      "tags": [
+        "branch-false",
+        "boolean-false",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC07 attr boolean false removes attribute",
+        "  GIVEN",
+        "    Element el = new Element(\"button\");",
+        "    el.attr(\"disabled\", true);",
+        "    String key = \"disabled\";",
+        "    boolean value = false;",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(key);"
+      ]
+    },
+    {
+      "id": "TC08",
+      "description": "attr(String,boolean) false on absent attribute does nothing covering boolean-false no-op",
+      "path": "B0→B1→B2→B3",
+      "precondition": "element does not have attribute \"readonly\"",
+      "expectedResult": "attributes().hasKey(\"readonly\") is false",
+      "tags": [
+        "branch-false",
+        "boolean-false-noop",
+        "overload:String,boolean"
+      ],
+      "priority": "P1",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC08 attr boolean false no-op when absent",
+        "  GIVEN",
+        "    Element el = new Element(\"input\");",
+        "    String key = \"readonly\";",
+        "    boolean value = false;",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(key);"
+      ]
+    },
+    {
+      "id": "TC09",
+      "description": "attr(String,String) with empty key sets attribute with empty name covering boundary empty key",
+      "path": "B0→B1→B2→B3",
+      "precondition": "none",
+      "expectedResult": "attributes().hasKey(\"\") is true and attributes().get(\"\").equals(\"value\")",
+      "tags": [
+        "boundary",
+        "empty-key",
+        "overload:String,String"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC09 attr with empty key",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"\";",
+        "    String value = \"value\";",
+        "  WHEN",
+        "    el.attr(key, value);",
+        "  THEN",
+        "    assert el.attributes().hasKey(key) && el.attributes().get(key).equals(value);"
+      ]
+    },
+    {
+      "id": "TC10",
+      "description": "attr(String,boolean) true then false toggles attribute covering boolean toggle sequence",
+      "path": "B0→B1→B2→B3→B2→B3",
+      "precondition": "none",
+      "expectedResult": "after true: attributes().hasKey(\"hidden\")==true; after false: attributes().hasKey(\"hidden\")==false",
+      "tags": [
+        "sequence",
+        "boolean-toggle",
+        "overload:String,boolean"
+      ],
+      "priority": "P2",
+      "environment": "Java 8",
+      "pseudocode": [
+        "TEST TC10 attr boolean toggle sequence",
+        "  GIVEN",
+        "    Element el = new Element(\"div\");",
+        "    String key = \"hidden\";",
+        "  WHEN",
+        "    el.attr(key, true);",
+        "    el.attr(key, false);",
+        "  THEN",
+        "    assert !el.attributes().hasKey(key);"
+      ]
+    }
+  ]
+}

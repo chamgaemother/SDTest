@@ -1,0 +1,71 @@
+package org.jsoup.nodes;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import java.lang.reflect.Field;
+import java.lang.ref.WeakReference;
+import java.util.List;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+public class Element_child_1_Test {
+
+    @Test
+    @DisplayName("child(1) returns second Element using cached shadowChildrenRef on subsequent call (cache-hit branch)")
+    public void test_TC07() throws Exception {
+        // GIVEN: a parent element with two children; shadowChildrenRef is initially null
+        Element parent = new Element("list");
+        parent.appendElement("item1");
+        Element second = parent.appendElement("item2");
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        // initially, cache empty
+        assertNull(shadowField.get(parent), "Cache should be empty before first child() call");
+
+        // WHEN: first access populates cache (build loop over children twice, then store)
+        Element firstCall = parent.child(1);
+        // THEN: first call returns the second element; cache stored
+        assertSame(second, firstCall, "First call to child(1) should return the second appended element");
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> cacheAfterFirst = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNotNull(cacheAfterFirst, "Cache should be populated after first access");
+        assertNotNull(cacheAfterFirst.get(), "Cached list should not be null after first access");
+        assertEquals(2, cacheAfterFirst.get().size(), "Cached list should contain two elements");
+
+        // WHEN: second access should use the cache (cache-hit branch, no rebuild)
+        Element secondCall = parent.child(1);
+        // THEN: second call returns the same second element without rebuilding
+        assertSame(second, secondCall, "Second call to child(1) should return the same cached second element");
+        WeakReference<List<Element>> cacheAfterSecond = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertSame(cacheAfterFirst, cacheAfterSecond, "Cache reference should remain the same on cache-hit");
+    }
+
+    @Test
+    @DisplayName("child(0) rebuilds shadowChildrenRef after tree mutation (cache-invalidate branch)")
+    public void test_TC08() throws Exception {
+        // GIVEN: a parent element with one child; populate cache
+        Element parent = new Element("div");
+        Element first = parent.appendElement("span");
+        Field shadowField = Element.class.getDeclaredField("shadowChildrenRef");
+        shadowField.setAccessible(true);
+        // populate cache via first child access
+        Element pre = parent.child(0);
+        assertSame(first, pre, "Initial child(0) should return the first appended element");
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> cacheBefore = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNotNull(cacheBefore, "Cache should be populated after first child call");
+
+        // WHEN: mutate tree by appending a new child, which should invalidate cache via nodelistChanged()
+        parent.appendElement("p");
+        WeakReference<List<Element>> cacheAfterMutation = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNull(cacheAfterMutation, "Cache should be invalidated (set to null) after mutation");
+
+        // THEN: calling child(0) rebuilds cache and still returns original first element
+        Element result = parent.child(0);
+        assertSame(first, result, "After mutation, child(0) should still return the original first element");
+        @SuppressWarnings("unchecked")
+        WeakReference<List<Element>> cacheAfterRebuild = (WeakReference<List<Element>>) shadowField.get(parent);
+        assertNotNull(cacheAfterRebuild, "Cache should be rebuilt after accessing child(0) post-mutation");
+        assertNotNull(cacheAfterRebuild.get(), "Rebuilt cached list should not be null");
+    }
+}
