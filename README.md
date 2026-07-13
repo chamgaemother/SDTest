@@ -1,62 +1,102 @@
-# SDTest : Scenario-Driven Unit Test Generation with Multi-Agent LLMs.
+# SDTest — Scenario-Driven Unit Test Generation with Multi-Agent LLMs
 
-----------
-# Requirement
+SDTest automatically generates JUnit tests for Java methods. It runs a static
+analysis over each target method and then uses an LLM-based pipeline to produce,
+run, and refine the tests.
+
+The workflow has two stages:
+
+1. **Static analysis** (`methodanalyzer_*`) — extracts per-method information and
+   writes it to JSON.
+2. **Test generation** (`src/main.py`) — consumes that JSON and generates tests.
+
+## Repository Layout
+
+```
+.
+├── methodanalyzer_sootup/   # method analyzer (JDK 17+)
+├── methodanalyzer_soot/     # method analyzer (JDK 8+)
+├── src/
+│   ├── main.py              # pipeline entry point
+│   ├── agents/              # generation modules
+│   ├── tools/               # coverage / execution / utils
+│   ├── prompt/              # prompt templates
+│   ├── method-json/         # preprocessed method metadata
+│   └── results/             # generated tests & logs
+├── Benchmark/               # datasets & targets
+└── requirement.txt
+```
+
+## Requirements
+
+- Python 3+ (virtual environment recommended)
+- Java 8+ and Maven (`mvn`) on the system PATH
+- An OpenAI API key
+
+```bash
+python -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
 pip install -r requirement.txt
+```
 
-> **Recommendation:**  
-> - Run within a Python virtual environment.  
-> - Ensure that **Java** and **Maven (mvn)** are installed and available in your `PATH`.
+## Stage 1 — Extract method metadata
 
----------
-# How to run?
-### Step 1: Configure your test targets in `lib_path_total.csv`
+Build and run the analyzer over your target projects:
 
-Make sure your CSV file has the following columns (one row per method):
+```bash
+cd methodanalyzer_sootup
+mvn -q compile
+mvn exec:java -Dexec.mainClass=MethodAnalysisToJson \
+  -Dexec.args="--root /path/to/projects --csv targets.csv --out /path/to/method-json --skipExisting"
+```
 
-- **lib**: Name of the target project  
-  _Example:_ `commons-codec`
-- **class**: Name of the target class  
-  _Example:_ `Md5Crypt`
-- **method**: Name of the target method  
-  _Example:_ `md5Crypt`
-- **path**: Path to the target class file (relative or absolute)  
-  - Relative: `.\main\java\org\apache\commons\codec\digest\Md5Crypt.java`  
-  - Absolute: `C:\Users\…\main\java\org\apache\commons\codec\digest\Md5Crypt.java`
-- **test**: Package path for the test folder (relative or absolute)  
-  _Example:_ `.\test\java\org\apache\commons\codec\digest`
-- **name**: Identifier for the test (often same as the method name)  
-  _Example:_ `md5Crypt`
-- **folder**: Path to the test folder (relative or absolute)  
-  _Example:_ `.\test`
-- **method_signature**: Full signature of the target method  
-  _Example:_ `public static String md5Crypt(byte[] data)`
+- `--csv` must contain `project` and `vid` columns.
+- Output is written to `{out}/{project}/{vid}/methods.json`.
 
-### Step 2: Configure the settings file
+## Stage 2 — Generate tests
 
-In your config (e.g. `config.py`), set the following fields:
+Set your OpenAI key and model in `src/agents/config.py`, then run:
 
-- **API_KEY**: Your OpenAI API key  
-  _Example:_ `"sk-ABC123yourapikey"`
-- **CONFIG_JSON**: Path to the preprocessed data JSON  
-  _Example:_ `"/preprocess_data/cod_all_methods.json"
+```bash
+cd src
+python main.py \
+  --root-dir /path/to/target/project \
+  --project-name Lang \
+  --csv-path targets.csv \
+  --preprocess-data-path /path/to/method-json \
+  --output-dir ./results \
+  --max-enhance-count 2 \
+  --coverage-threshold 0.9
+```
 
+All arguments are required except `--class-column` (defaults to `class_name`).
 
-### Step 3: Run the core MANTIS pipeline
+| Argument | Description |
+|---|---|
+| `--root-dir` | Target project root directory |
+| `--project-name` | Project name (used for logging/output) |
+| `--csv-path` | CSV listing the target classes |
+| `--class-column` | CSV column holding the class name (default: `class_name`) |
+| `--preprocess-data-path` | Path to the JSON produced in Stage 1 |
+| `--output-dir` | Directory for generated tests and logs |
+| `--max-enhance-count` | Maximum enhancement iterations |
+| `--coverage-threshold` | Target coverage ratio (e.g. `0.9`) |
 
-```python main.py``` : 
-Generates MANTIS e0.
+## Results
 
-```python main_enhance.py``` : 
-Based on MANTIS eN, generates MANTIS eN+1.
+Generated tests, logs, and coverage are written under `--output-dir`.
+For an aggregate report, run JaCoCo on the target project:
 
-### Step 4: Measure Coverage
+```bash
+mvn jacoco:report
+```
 
-- Check the log file for coverage metrics and the number of times each agent ran.  
-- To collect project-level coverage, run:
-  ```mvn jacoco:report```
+## Benchmark
 
+Evaluation datasets and target lists are under `Benchmark/`.
 
------------
-# Real Data
-https://drive.google.com/drive/folders/1vcmN0djs3UMyYzSXcvkGC3DOwVBmPxJF?usp=sharing
+## Notes
+
+- **Do not commit your API key.** Keep `config.py` secrets local or load them
+  from an environment variable / untracked file.
+- Build artifacts (`target/`) are excluded via `.gitignore`.
